@@ -1,0 +1,103 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
+import { Table as TableIcon, FileText, Calendar as CalendarIcon } from "lucide-react";
+import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AttendanceCalendarClient } from "./attendance-calendar-client";
+
+export const dynamic = "force-dynamic";
+
+export default async function GuruAttendancePage() {
+  const session = await getSession();
+  if (!session || session.role !== "guru") {
+    redirect("/login");
+  }
+
+  const guruClass = session.kelas || "";
+  const now = new Date();
+  const todayFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  let filledDatesSet: string[] = [];
+  try {
+    const recordedDates = guruClass
+      ? await prisma.absen.findMany({
+          where: { kelas: guruClass },
+          select: { date: true },
+          distinct: ["date"],
+        })
+      : [];
+    filledDatesSet = recordedDates.map((r) => r.date).filter(Boolean) as string[];
+  } catch (e) {
+    console.warn("DB error in attendance calendar dates:", e);
+    filledDatesSet = [todayFormatted];
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header Info */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+          <ClipboardListIcon className="h-6 w-6" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Presensi Absensi Kelas</h1>
+          <p className="text-xs text-muted-foreground">Kelola kehadiran harian dan rekap kelas {guruClass}</p>
+        </div>
+      </div>
+
+      {/* Quick Navigation Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Link href={`/guru/attendance/${todayFormatted}`}>
+          <Card className="hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer bg-gradient-to-br from-emerald-500/10 via-background to-background">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                <ClipboardListIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Isi Cepat Hari Ini</p>
+                <p className="text-sm font-bold text-foreground">Form Absen Hari Ini</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href={`/guru/attendance/table/${todayFormatted}`}>
+          <Card className="hover:border-sky-500 hover:shadow-md transition-all cursor-pointer bg-gradient-to-br from-sky-500/10 via-background to-background">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                <TableIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tampilan Matriks</p>
+                <p className="text-sm font-bold text-foreground">Tabel Absen Bulanan</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/guru/attendance/recap">
+          <Card className="hover:border-amber-500 hover:shadow-md transition-all cursor-pointer bg-gradient-to-br from-amber-500/10 via-background to-background">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Export Dokumen</p>
+                <p className="text-sm font-bold text-foreground">Rekap Absen & PDF</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Monthly Attendance Calendar */}
+      <AttendanceCalendarClient
+        filledDates={filledDatesSet}
+        guruClass={guruClass}
+      />
+    </div>
+  );
+}
