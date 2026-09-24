@@ -977,51 +977,6 @@ async function main() {
   }
   console.log("✅ Pengumuman sekolah disiapkan.");
 
-  // ---------------------------------------------------------------------------
-  // 7. DATA SAMPLE CHECKLIST SHOLAT UNTUK SISWA
-  // ---------------------------------------------------------------------------
-  console.log("\n🕌 Menyiapkan sampel Checklist Sholat Siswa...");
-  const studentUser = await prisma.user.findUnique({
-    where: { email: "siswa@gmail.com" },
-  });
-
-  if (studentUser) {
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const studentIdInt = Number(studentUser.id);
-
-    await prisma.prayer.upsert({
-      where: {
-        id_date: {
-          id: studentIdInt,
-          date: todayStr,
-        },
-      },
-      update: {
-        subuh: "1",
-        dhuha: "1",
-        dzuhur: "1",
-        ashar: "1",
-        maghrib: "1",
-        isya: "1",
-        verified_otm: "verified",
-        verified_guru: "verified",
-      },
-      create: {
-        id: studentIdInt,
-        date: todayStr,
-        subuh: "1",
-        dhuha: "1",
-        dzuhur: "1",
-        ashar: "1",
-        maghrib: "1",
-        isya: "1",
-        verified_otm: "verified",
-        verified_guru: "verified",
-      },
-    });
-    console.log(`✅ Sample checklist sholat hari ini disiapkan untuk ${studentUser.name}.`);
-  }
 
   // ---------------------------------------------------------------------------
   // 8. DATA AGENDA & KEGIATAN KALENDER SEKOLAH

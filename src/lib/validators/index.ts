@@ -63,34 +63,10 @@ export const violationSchema = z.object({
   keterangan: z.string().min(1, "Keterangan wajib diisi"),
 });
 
-export const latenessSchema = z.object({
-  user_id: z.string().min(1, "Pilih siswa"),
-  nama: z.string().min(1, "Nama siswa wajib diisi"),
-  kelas: z.string().min(1, "Kelas wajib diisi"),
-  waktu: z.string().min(1, "Waktu keterlambatan wajib diisi"),
-  keterangan: z.string().min(1, "Alasan keterlambatan wajib diisi"),
-});
-
-export const bestStudentSchema = z.object({
-  name: z.string().min(1, "Nama siswa wajib diisi"),
-  kelas: z.string().min(1, "Kelas wajib diisi"),
-  kategori: z.string().min(1, "Kategori penghargaan wajib diisi"),
-  foto: z.string().optional(),
-});
-
 export const achievementSchema = z.object({
   id_user: z.string().min(1, "ID siswa wajib diisi"),
   nama: z.string().min(1, "Nama siswa wajib diisi"),
   kelas: z.string().min(1, "Kelas wajib diisi"),
   fotoanak: z.string().min(1, "Foto prestasi wajib diisi"),
   prestasi: z.string().min(1, "Deskripsi prestasi wajib diisi"),
-});
-
-export const prayerChecklistSchema = z.object({
-  subuh: z.boolean().optional(),
-  dhuha: z.boolean().optional(),
-  dzuhur: z.boolean().optional(),
-  ashar: z.boolean().optional(),
-  maghrib: z.boolean().optional(),
-  isya: z.boolean().optional(),
 });

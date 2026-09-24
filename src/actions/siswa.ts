@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSession, setSessionCookie } from "@/lib/auth";
 import { saveUploadedFile } from "@/lib/upload";
-import { PrayerService } from "@/services/prayer.service";
 import { AnnouncementService } from "@/services/announcement.service";
 import { UserService } from "@/services/user.service";
 
@@ -14,31 +13,6 @@ async function checkStudent() {
     throw new Error("Unauthorized");
   }
   return session;
-}
-
-export async function savePrayerChecklistAction(formData: FormData) {
-  try {
-    const session = await checkStudent();
-    const studentId = parseInt(session.id, 10) || 2;
-
-    const checklist = {
-      subuh: formData.get("subuh") === "on",
-      dhuha: formData.get("dhuha") === "on",
-      dzuhur: formData.get("dzuhur") === "on",
-      ashar: formData.get("ashar") === "on",
-      maghrib: formData.get("maghrib") === "on",
-      isya: formData.get("isya") === "on",
-    };
-
-    await PrayerService.saveChecklist(studentId, checklist);
-
-    revalidatePath("/siswa/prayers");
-    revalidatePath("/siswa/prayers/history");
-    return { success: true, message: "Checklist sholat hari ini berhasil disimpan." };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Gagal menyimpan checklist sholat.";
-    return { success: false, error: errorMsg };
-  }
 }
 
 export async function updateStudentProfileAction(formData: FormData) {

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Trophy, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateIndo } from "@/lib/utils";
 import { SiswaProfileForm } from "@/components/profile/siswa-profile-form";
@@ -80,19 +80,8 @@ export default async function SiswaProfilePage() {
           </Card>
         </div>
 
-        {/* Sidebar Info: Point & Prestasi (1 Col) */}
+        {/* Sidebar Info: Prestasi (1 Col) */}
         <div className="space-y-6">
-          <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-background to-background shadow-sm">
-            <CardContent className="p-6 text-center">
-              <Trophy className="h-10 w-10 text-amber-500 mx-auto mb-2" />
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Poin Reward</p>
-              <div className="font-mono text-3xl font-black text-amber-600 dark:text-amber-400 mt-1">
-                {student.point || "0"}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">Poin reward kedisiplinan dan ibadah</p>
-            </CardContent>
-          </Card>
-
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">

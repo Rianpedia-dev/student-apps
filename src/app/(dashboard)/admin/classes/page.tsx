@@ -33,6 +33,8 @@ export default async function AdminClassesPage() {
     formattedClasses = classes.map((c) => ({
       id: c.id.toString(),
       nama_kelas: c.nama_kelas,
+      jenjang: c.jenjang || (c.nama_kelas.startsWith("7") || c.nama_kelas.startsWith("8") || c.nama_kelas.startsWith("9") ? "SMP" : "SD"),
+      tingkat: c.tingkat,
       wali_kelas: c.wali_kelas || "-",
       jumlah_siswa: c.jumlah_siswa || String(studentCountMap.get(c.nama_kelas) || 0),
       code_restrict: c.code_restrict || "-",

@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowLeft, Send, Calendar, Edit, Trash2 } from "lucide-react";
+import { Send, Calendar, Edit, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,14 +32,6 @@ export default async function AdminAnnouncementsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/admin"
-          className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Kembali ke Dashboard
-        </Link>
-      </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Form Buat Pengumuman (5 Cols) */}

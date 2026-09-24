@@ -25,6 +25,8 @@ export interface UserItem {
 export interface KelasItem {
   id: string;
   nama_kelas: string;
+  jenjang?: string | null;
+  tingkat?: number | null;
   wali_kelas?: string | null;
   jumlah_siswa?: string | null;
   code_restrict?: string | null;
@@ -61,28 +63,6 @@ export interface AbsenItem {
   month?: string | null;
 }
 
-export interface PrayerItem {
-  id: string;
-  date: string;
-  subuh?: string | null;
-  dhuha?: string | null;
-  dzuhur?: string | null;
-  ashar?: string | null;
-  maghrib?: string | null;
-  isya?: string | null;
-  verified_otm?: string | null;
-  verified_guru?: string | null;
-}
-
-export interface BestStudentItem {
-  id: string;
-  name: string;
-  foto?: string | null;
-  kelas: string;
-  kategori: string;
-  created_at?: Date | string | null;
-}
-
 export interface PrestasiItem {
   id: string;
   id_user: string;
@@ -100,16 +80,6 @@ export interface ViolationItem {
   kelas?: string | null;
   kategori?: string | null;
   keterangan?: string | null;
-  created_at?: Date | string | null;
-}
-
-export interface LatenessItem {
-  id: string;
-  user_id: string;
-  nama: string;
-  kelas: string;
-  waktu: string;
-  keterangan: string;
   created_at?: Date | string | null;
 }
 

@@ -11,7 +11,6 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,14 +38,11 @@ import {
 import {
   enrollStudentAction,
   removeStudentsAction,
-  verifyPrayerAction,
 } from "@/actions/guru";
 import { toast } from "sonner";
-import { UserItem, PrayerItem } from "@/types";
+import { UserItem } from "@/types";
 
-interface StudentRow extends UserItem {
-  prayerToday?: PrayerItem | null;
-}
+interface StudentRow extends UserItem {}
 
 interface MyClassTableProps {
   students: StudentRow[];
@@ -127,27 +123,6 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
   };
 
 
-  // Verify prayer today
-  const handleVerifyPrayer = async (studentId: string) => {
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const res = await verifyPrayerAction(studentId, todayStr);
-    if (res.success) {
-      toast.success(res.message);
-      if (profileModalStudent && profileModalStudent.id === studentId) {
-        setProfileModalStudent({
-          ...profileModalStudent,
-          prayerToday: {
-            id: studentId,
-            date: todayStr,
-            verified_guru: "verified",
-          },
-        });
-      }
-    } else {
-      toast.error("Gagal memverifikasi sholat");
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -207,7 +182,6 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
               <TableHead className="font-bold">Nama Lengkap</TableHead>
               <TableHead className="font-bold">NIS</TableHead>
               <TableHead className="font-bold text-center">L/P</TableHead>
-              <TableHead className="font-bold text-center">Sholat Hari Ini</TableHead>
               <TableHead className="font-bold text-center">Poin</TableHead>
               <TableHead className="w-36 text-center font-bold">Aksi</TableHead>
             </TableRow>
@@ -215,13 +189,12 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   Belum ada siswa di kelas {guruClass}. Klik tombol &quot;Tambah Siswa ke Kelas&quot; untuk mendaftarkan siswa.
                 </TableCell>
               </TableRow>
             ) : (
               paginated.map((s, idx) => {
-                const pt = s.prayerToday;
                 const isSelected = selectedIds.includes(s.id);
                 return (
                   <TableRow key={s.id} className={isSelected ? "bg-muted/60" : "hover:bg-muted/30"}>
@@ -251,17 +224,6 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                     </TableCell>
                     <TableCell className="font-mono text-xs">{s.nis || "-"}</TableCell>
                     <TableCell className="text-center font-medium">{s.gender || "-"}</TableCell>
-                    {/* Status Sholat 6 waktu per PRD 7.3.3 */}
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-[10px]">
-                        <span title="Subuh" className={`inline-flex h-5 w-5 items-center justify-center rounded-full font-bold ${pt?.subuh === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>S</span>
-                        <span title="Dhuha" className={`inline-flex h-5 w-5 items-center justify-center rounded-full font-bold ${pt?.dhuha === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>Dh</span>
-                        <span title="Dzuhur" className={`inline-flex h-5 w-5 items-center justify-center rounded-full font-bold ${pt?.dzuhur === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>Dz</span>
-                        <span title="Ashar" className={`inline-flex h-5 w-5 items-center justify-center rounded-full font-bold ${pt?.ashar === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>A</span>
-                        <span title="Maghrib" className={`inline-flex h-5 w-5 items-center justify-center rounded-full font-bold ${pt?.maghrib === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>M</span>
-                        <span title="Isya" className={`inline-flex h-5 w-5 items-center justify-center rounded-full font-bold ${pt?.isya === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>I</span>
-                      </div>
-                    </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline" className="font-mono text-xs bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300">
                         {s.point || "0"}
@@ -269,15 +231,15 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
-                        {/* Quick View / Checklist sholat */}
+                        {/* Quick View */}
                         <Button
                           variant="ghost"
                           size="icon-sm"
                           className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 cursor-pointer"
-                          title="Info Singkat & Sholat"
+                          title="Info Singkat Siswa"
                           onClick={() => setProfileModalStudent(s)}
                         >
-                          <ShieldCheck className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                         {/* Full Detail Link */}
                         <Link href={`/guru/my-class/${s.id}`}>
@@ -287,7 +249,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                             className="h-8 w-8 text-sky-600 hover:bg-sky-50 cursor-pointer"
                             title="Detail Lengkap & Catatan"
                           >
-                            <Eye className="h-4 w-4" />
+                            <ChevronRight className="h-4 w-4" />
                           </Button>
                         </Link>
                       </div>
@@ -308,7 +270,6 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
           </div>
         ) : (
           paginated.map((s, idx) => {
-            const pt = s.prayerToday;
             const isSelected = selectedIds.includes(s.id);
 
             return (
@@ -342,19 +303,6 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                   </Badge>
                 </div>
 
-                {/* Sholat Indicator Strip */}
-                <div className="mt-3 pt-2.5 border-t flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Sholat Hari Ini:</span>
-                  <div className="flex items-center gap-1 text-[10px]">
-                    <span title="Subuh" className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-bold ${pt?.subuh === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>S</span>
-                    <span title="Dhuha" className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-bold ${pt?.dhuha === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>Dh</span>
-                    <span title="Dzuhur" className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-bold ${pt?.dzuhur === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>Dz</span>
-                    <span title="Ashar" className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-bold ${pt?.ashar === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>A</span>
-                    <span title="Maghrib" className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-bold ${pt?.maghrib === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>M</span>
-                    <span title="Isya" className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-bold ${pt?.isya === "1" ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>I</span>
-                  </div>
-                </div>
-
                 {/* Action Buttons */}
                 <div className="mt-3 pt-2.5 border-t grid grid-cols-2 gap-2">
                   <Button
@@ -363,8 +311,8 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                     className="text-xs gap-1 h-9 cursor-pointer"
                     onClick={() => setProfileModalStudent(s)}
                   >
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                    <span>Sholat</span>
+                    <Eye className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Info</span>
                   </Button>
                   <Link href={`/guru/my-class/${s.id}`}>
                     <Button
@@ -372,7 +320,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                       size="sm"
                       className="text-xs gap-1 h-9 w-full cursor-pointer"
                     >
-                      <Eye className="h-3.5 w-3.5 text-sky-600" />
+                      <ChevronRight className="h-3.5 w-3.5 text-sky-600" />
                       <span>Detail</span>
                     </Button>
                   </Link>
@@ -477,42 +425,15 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                 <p><strong>Keterampilan:</strong> {profileModalStudent.skills || "-"}</p>
               </div>
 
-              {/* Status Sholat Hari Ini */}
-              <div>
-                <p className="font-semibold text-xs mb-2">Checklist Sholat Hari Ini:</p>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  {[
-                    { label: "Subuh", done: profileModalStudent.prayerToday?.subuh === "1" },
-                    { label: "Dhuha", done: profileModalStudent.prayerToday?.dhuha === "1" },
-                    { label: "Dzuhur", done: profileModalStudent.prayerToday?.dzuhur === "1" },
-                    { label: "Ashar", done: profileModalStudent.prayerToday?.ashar === "1" },
-                    { label: "Maghrib", done: profileModalStudent.prayerToday?.maghrib === "1" },
-                    { label: "Isya", done: profileModalStudent.prayerToday?.isya === "1" },
-                  ].map((sh) => (
-                    <div
-                      key={sh.label}
-                      className={`flex items-center justify-between rounded-md border p-2 ${sh.done ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-muted/30 text-muted-foreground"}`}
-                    >
-                      <span>{sh.label}</span>
-                      {sh.done ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <X className="h-3.5 w-3.5 text-muted-foreground" />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between border-t pt-3">
-                <span className="text-xs text-muted-foreground">
-                  Status Verifikasi:{" "}
-                  <strong>{profileModalStudent.prayerToday?.verified_guru === "verified" ? "Sudah Diverifikasi" : "Belum Diverifikasi"}</strong>
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1 text-xs border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                  onClick={() => handleVerifyPrayer(profileModalStudent.id)}
-                >
-                  <ShieldCheck className="h-3.5 w-3.5" /> Verifikasi Sholat
-                </Button>
+              <div className="flex items-center justify-end border-t pt-3">
+                <Link href={`/guru/my-class/${profileModalStudent.id}`}>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                  >
+                    <Eye className="h-3.5 w-3.5" /> Buka Detail Lengkap
+                  </Button>
+                </Link>
               </div>
             </div>
           )}

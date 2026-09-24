@@ -11,6 +11,7 @@ import { useSidebar } from "./sidebar-context";
 import { NavbarLiveClock } from "./navbar-clock";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getAcademicYear, getRoleLabel, cn } from "@/lib/utils";
+import { AlAzharCornerMosaic } from "@/components/ui/alazhar-patterns";
 
 interface NavbarProps {
   role: "admin" | "guru" | "siswa";
@@ -78,8 +79,11 @@ export function Navbar({ role, userName, userEmail, kelas, userImage }: NavbarPr
   );
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur-md sm:px-6">
-      <div className="flex items-center gap-2 sm:gap-3">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border/80 bg-background/85 px-4 backdrop-blur-md shadow-xs sm:px-6 relative overflow-hidden">
+      {/* Al-Azhar Geometric Triangular Prism Mosaic in Top Right Corner */}
+      <AlAzharCornerMosaic className="absolute top-0 right-0 w-36 sm:w-44 h-16 pointer-events-none opacity-90 select-none" />
+
+      <div className="flex items-center gap-2 sm:gap-3 relative z-10">
         {/* Desktop Sidebar Toggle */}
         <button
           type="button"
@@ -99,6 +103,7 @@ export function Navbar({ role, userName, userEmail, kelas, userImage }: NavbarPr
             )}
           />
         </button>
+
 
         {/* Mobile School Logo (Di kiri pada mobile) */}
         <div className="md:hidden flex items-center shrink-0">
@@ -123,7 +128,7 @@ export function Navbar({ role, userName, userEmail, kelas, userImage }: NavbarPr
         <NavbarLiveClock academic={academic} />
       </div>
 
-      <div className="flex items-center gap-1.5 sm:gap-2.5">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 relative z-10">
         {/* Theme Toggle (Light / Dark Mode) */}
         <ThemeToggle />
 

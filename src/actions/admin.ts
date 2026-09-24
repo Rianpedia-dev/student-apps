@@ -139,12 +139,16 @@ export async function createClassAction(formData: FormData) {
     await checkAdmin();
 
     const nama_kelas = formData.get("nama_kelas") as string;
+    const jenjang = (formData.get("jenjang") as string) || undefined;
+    const tingkat = formData.get("tingkat") ? parseInt(formData.get("tingkat") as string, 10) : undefined;
     const wali_kelas = formData.get("wali_kelas") as string;
     const jumlah_siswa = formData.get("jumlah_siswa") as string;
     const code_restrict = formData.get("code_restrict") as string;
 
     await ClassService.createClass({
       nama_kelas,
+      jenjang,
+      tingkat,
       wali_kelas,
       jumlah_siswa,
       code_restrict,

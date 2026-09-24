@@ -9,13 +9,14 @@ import {
   GraduationCap,
   School,
   Megaphone,
-  Award,
-  Trophy,
   AlertTriangle,
   LogOut,
   Sparkles,
   BookOpen,
   MonitorPlay,
+  FileCheck,
+  MessageSquare,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
@@ -28,23 +29,18 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
-import { ClipboardCheckIcon } from "@/components/ui/clipboard-check-icon";
 import { LayoutDashboardIcon } from "@/components/ui/layout-dashboard-icon";
 import { AccountIcon } from "@/components/ui/account-icon";
 import { CalendarDaysIcon } from "@/components/ui/calendar-days-icon";
-import { HistoryIcon } from "@/components/ui/history-icon";
 import { VideoIcon } from "@/components/ui/video-icon";
-import { ClockAlertIcon } from "@/components/ui/clock-alert-icon";
+import { AlAzharCornerMosaic, AlAzharMosaicStrip } from "@/components/ui/alazhar-patterns";
 
 const ANIMATED_ICONS = new Set<unknown>([
   ClipboardListIcon,
-  ClipboardCheckIcon,
   LayoutDashboardIcon,
   AccountIcon,
   CalendarDaysIcon,
-  HistoryIcon,
   VideoIcon,
-  ClockAlertIcon,
 ]);
 
 interface SidebarProps {
@@ -74,40 +70,41 @@ export function Sidebar({
   const collapsed = forceExpanded ? false : isCollapsed;
 
   const adminMenu = [
-    { label: "Dashboard", href: "/admin", icon: LayoutDashboardIcon },
-    { label: "Kelola Siswa", href: "/admin/students", icon: GraduationCap },
-    { label: "Kelola Guru", href: "/admin/teachers", icon: Users },
-    { label: "Kelola Kelas", href: "/admin/classes", icon: School },
-    { label: "Buat Pengumuman", href: "/admin/announcements", icon: Megaphone },
-    { label: "Kalender Kegiatan", href: "/admin/calendar", icon: CalendarDaysIcon },
-    { label: "Monitor Kelas Online", href: "/admin/kelas-online", icon: MonitorPlay },
+    { label: "Dashboard", href: "/admin", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
+    { label: "Kelola Siswa", href: "/admin/students", icon: GraduationCap, iconColor: "text-amber-600" },
+    { label: "Kelola Guru", href: "/admin/teachers", icon: Users, iconColor: "text-orange-500" },
+    { label: "Kelola Kelas", href: "/admin/classes", icon: School, iconColor: "text-emerald-500" },
+    { label: "Mata Pelajaran", href: "/admin/subjects", icon: BookOpen, iconColor: "text-teal-600" },
+    { label: "Jadwal Pelajaran", href: "/admin/schedules", icon: CalendarClock, iconColor: "text-cyan-600" },
+    { label: "Buat Pengumuman", href: "/admin/announcements", icon: Megaphone, iconColor: "text-rose-500" },
+    { label: "Kalender Kegiatan", href: "/admin/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
+    { label: "Monitor Kelas Online", href: "/admin/kelas-online", icon: MonitorPlay, iconColor: "text-indigo-500" },
   ];
 
   const guruMenu = [
-    { label: "Dashboard", href: "/guru", icon: LayoutDashboardIcon },
-    { label: "Profil Saya", href: "/guru/profile", icon: AccountIcon },
-    { label: "Kelas Saya", href: "/guru/my-class", icon: School },
-    { label: "Absensi Kelas", href: "/guru/attendance", icon: ClipboardListIcon },
-    { label: "Pengumuman", href: "/guru/announcements", icon: Megaphone },
-    { label: "Kalender Kegiatan", href: "/guru/calendar", icon: CalendarDaysIcon },
-    { label: "Best Student", href: "/guru/best-student", icon: Award },
-    { label: "Leaderboard Poin", href: "/guru/best-point", icon: Trophy },
-    { label: "Prestasi Siswa", href: "/guru/achievements", icon: Sparkles },
-    { label: "Kelas Online", href: "/guru/kelas-online", icon: VideoIcon },
+    { label: "Dashboard", href: "/guru", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
+    { label: "Profil Saya", href: "/guru/profile", icon: AccountIcon, iconColor: "text-amber-600" },
+    { label: "Tugas Siswa", href: "/guru/tugas", icon: FileCheck, iconColor: "text-emerald-600" },
+    { label: "Jadwal & Mapel", href: "/guru/mapel", icon: BookOpen, iconColor: "text-teal-600" },
+    { label: "Chat Siswa", href: "/guru/chat", icon: MessageSquare, iconColor: "text-cyan-600" },
+    { label: "Kelas Saya", href: "/guru/my-class", icon: School, iconColor: "text-emerald-500" },
+    { label: "Absensi Kelas", href: "/guru/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
+    { label: "Pengumuman", href: "/guru/announcements", icon: Megaphone, iconColor: "text-rose-500" },
+    { label: "Kalender Kegiatan", href: "/guru/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
+    { label: "Prestasi Siswa", href: "/guru/achievements", icon: Sparkles, iconColor: "text-amber-500" },
+    { label: "Kelas Online", href: "/guru/kelas-online", icon: VideoIcon, iconColor: "text-indigo-500" },
   ];
 
   const siswaMenu = [
-    { label: "Dashboard", href: "/siswa", icon: LayoutDashboardIcon },
-    { label: "Profil Saya", href: "/siswa/profile", icon: AccountIcon },
-    { label: "Checklist Sholat", href: "/siswa/prayers", icon: ClipboardCheckIcon },
-    { label: "Riwayat Sholat", href: "/siswa/prayers/history", icon: HistoryIcon },
-    { label: "Kalender Kegiatan", href: "/siswa/calendar", icon: CalendarDaysIcon },
-    { label: "Riwayat Absensi", href: "/siswa/attendance", icon: ClipboardListIcon },
-    { label: "Data Pelanggaran", href: "/siswa/violations", icon: AlertTriangle },
-    { label: "Data Keterlambatan", href: "/siswa/lateness", icon: ClockAlertIcon },
-    { label: "Leaderboard Poin", href: "/siswa/best-point", icon: Trophy },
-    { label: "Best Student", href: "/siswa/best-student", icon: Award },
-    { label: "Kelas Online", href: "/siswa/kelas-online", icon: VideoIcon },
+    { label: "Dashboard", href: "/siswa", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
+    { label: "Profil Saya", href: "/siswa/profile", icon: AccountIcon, iconColor: "text-amber-600" },
+    { label: "Mata Pelajaran", href: "/siswa/mapel", icon: BookOpen, iconColor: "text-teal-600" },
+    { label: "Tugas Saya", href: "/siswa/tugas", icon: FileCheck, iconColor: "text-emerald-600" },
+    { label: "Chat Guru", href: "/siswa/chat", icon: MessageSquare, iconColor: "text-cyan-600" },
+    { label: "Kalender Kegiatan", href: "/siswa/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
+    { label: "Riwayat Absensi", href: "/siswa/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
+    { label: "Data Pelanggaran", href: "/siswa/violations", icon: AlertTriangle, iconColor: "text-rose-500" },
+    { label: "Kelas Online", href: "/siswa/kelas-online", icon: VideoIcon, iconColor: "text-indigo-500" },
   ];
 
   const menu = role === "admin" ? adminMenu : role === "guru" ? guruMenu : siswaMenu;
@@ -116,7 +113,7 @@ export function Sidebar({
     <TooltipProvider delay={100}>
       <aside
         className={cn(
-          "flex h-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl transition-all duration-300 ease-in-out select-none",
+          "flex h-full flex-col border-r border-sidebar-border bg-sidebar/95 backdrop-blur-md text-sidebar-foreground shadow-xl transition-all duration-300 ease-in-out select-none",
           collapsed ? "w-20" : "w-64",
           className
         )}
@@ -124,21 +121,28 @@ export function Sidebar({
         {/* Brand Header */}
         <div
           className={cn(
-            "flex h-16 shrink-0 items-center border-b border-sidebar-border transition-all duration-300",
+            "relative flex shrink-0 border-b border-sidebar-border transition-all duration-300 overflow-hidden",
             collapsed
-              ? "justify-center px-2"
+              ? "h-16 items-center justify-center px-2"
               : isMobileDrawer
-                ? "justify-between pl-4 pr-12"
-                : "px-5"
+                ? "py-5 px-4 flex-col items-center justify-center"
+                : "py-5 sm:py-6 px-4 flex-col items-center justify-center"
           )}
         >
+          {/* Al-Azhar Triangular Prism Mosaic Accent */}
+          <AlAzharCornerMosaic
+            className={cn(
+              "absolute top-0 right-0 pointer-events-none select-none transition-all",
+              collapsed ? "w-16 h-16 opacity-75" : "w-36 sm:w-40 h-24 opacity-85 dark:opacity-70"
+            )}
+          />
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Link
                     href={`/${role}`}
-                    className="flex h-11 w-11 items-center justify-center rounded-[var(--radius)] transition-transform hover:scale-105"
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-105"
                   >
                     <Image
                       src="/images/logo-alazhar-cairo.avif"
@@ -156,23 +160,33 @@ export function Sidebar({
                 sideOffset={14}
                 className="z-50 rounded-[var(--radius)] bg-popover px-3 py-1.5 text-xs font-semibold text-popover-foreground border border-border shadow-xl"
               >
-                Student Apps SD Islam Al-Azhar Cairo Palembang
+                SD Islam Al-Azhar Cairo Palembang
               </TooltipContent>
             </Tooltip>
           ) : (
             <Link
               href={`/${role}`}
               onClick={onNavigate}
-              className="flex items-center gap-2.5 overflow-hidden group py-1"
+              className="flex flex-col items-center justify-center text-center overflow-hidden group py-1 z-10 w-full"
             >
-              <Image
-                src="/images/SISFO-SD.avif"
-                alt="Student Apps SD Islam Al-Azhar Cairo Palembang"
-                width={170}
-                height={40}
-                priority
-                className="h-9 w-auto max-w-[160px] sm:max-w-[185px] object-contain transition-transform duration-200 group-hover:scale-[1.02]"
-              />
+              <div className="relative h-20 w-20 sm:h-22 sm:w-22 shrink-0 rounded-full overflow-hidden p-1 border-2 border-amber-500/30 bg-white shadow-md transition-transform duration-300 group-hover:scale-105">
+                <Image
+                  src="/images/logo-alazhar-cairo.avif"
+                  alt="Logo Al-Azhar Cairo Palembang"
+                  width={88}
+                  height={88}
+                  priority
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="flex flex-col items-center min-w-0 mt-2.5">
+                <span className="text-[14px] font-black tracking-tight text-slate-800 dark:text-slate-100 leading-snug uppercase">
+                  Al-Azhar Cairo
+                </span>
+                <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 tracking-widest uppercase mt-0.5">
+                  Palembang
+                </span>
+              </div>
             </Link>
           )}
         </div>
@@ -182,11 +196,11 @@ export function Sidebar({
         <nav
           className={cn(
             "flex-1 overflow-y-auto py-3 text-[14px] scrollbar-thin scrollbar-thumb-sidebar-border transition-all duration-300",
-            collapsed ? "px-2 space-y-1.5 flex flex-col items-center" : "px-3 space-y-1"
+            collapsed ? "px-2 space-y-1.5 flex flex-col items-center" : "pr-3 pl-0 space-y-1"
           )}
         >
           {!collapsed ? (
-            <div className="px-3 pt-1 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-sidebar-foreground/60">
+            <div className="px-5 pt-1 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
               Menu Navigasi
             </div>
           ) : (
@@ -217,16 +231,16 @@ export function Sidebar({
                         className={cn(
                           "flex h-11 w-11 items-center justify-center rounded-[var(--radius)] transition-all duration-150 relative group",
                           isActive
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-xs"
-                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent/20 hover:text-sidebar-foreground"
+                            ? "bg-slate-100 dark:bg-slate-800 text-foreground font-semibold border-l-4 border-amber-500 shadow-xs"
+                            : "text-muted-foreground hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-foreground"
                         )}
                         aria-label={item.label}
                       >
                         <span className="menu-icon-wrapper">
                           <Icon
                             className={cn(
-                              "h-5 w-5 shrink-0",
-                              isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/80 group-hover:text-sidebar-foreground"
+                              "h-5 w-5 shrink-0 transition-colors",
+                              item.iconColor || "text-foreground"
                             )}
                             {...(isAnimatedIcon ? { isHovered } : {})}
                           />
@@ -255,17 +269,17 @@ export function Sidebar({
                   setHoveredHref((curr) => (curr === item.href ? null : curr))
                 }
                 className={cn(
-                  "flex items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-sm font-medium transition-all duration-150 group",
+                  "flex items-center gap-3 py-2 px-4 text-sm font-medium transition-all duration-150 group rounded-r-xl",
                   isActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-xs font-medium"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/20 hover:text-sidebar-foreground"
+                    ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold border-l-4 border-amber-500 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 border-l-4 border-transparent"
                 )}
               >
                 <span className="menu-icon-wrapper shrink-0">
                   <Icon
                     className={cn(
-                      "h-4.5 w-4.5 shrink-0",
-                      isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/80 group-hover:text-sidebar-foreground"
+                      "h-4.5 w-4.5 shrink-0 transition-transform duration-200 group-hover:scale-110",
+                      item.iconColor || "text-foreground"
                     )}
                     {...(isAnimatedIcon ? { isHovered } : {})}
                   />
@@ -280,7 +294,7 @@ export function Sidebar({
         <div
           className={cn(
             "border-t border-sidebar-border shrink-0 transition-all duration-300",
-            collapsed ? "p-2 flex justify-center" : isMobileDrawer ? "p-3 pb-6" : "p-3"
+            collapsed ? "p-2 flex justify-center" : isMobileDrawer ? "p-3 pb-4" : "p-3"
           )}
         >
           <form action={logoutAction} className={collapsed ? "" : "w-full"}>
@@ -318,6 +332,11 @@ export function Sidebar({
               </Button>
             )}
           </form>
+        </div>
+
+        {/* Al-Azhar Colorful Triangular Prism Mosaic Strip at Bottom */}
+        <div className="mt-auto shrink-0 w-full overflow-hidden border-t border-sidebar-border/30">
+          <AlAzharMosaicStrip className="h-8 sm:h-9 w-full opacity-95 select-none pointer-events-none" />
         </div>
       </aside>
     </TooltipProvider>

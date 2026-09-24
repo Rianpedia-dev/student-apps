@@ -20,8 +20,6 @@ import {
 } from "@/components/ui/table";
 import {
   updateNotesAction,
-  createLatenessAction,
-  deleteLatenessAction,
   createViolationAction,
   deleteViolationAction,
 } from "@/actions/guru";
@@ -40,30 +38,22 @@ export default async function GuruStudentDetailPage(props: {
   const { id } = await props.params;
 
   let student: any = null;
-  let latenessList: any[] = [];
   let violationsList: any[] = [];
 
   try {
     const isNum = /^\d+$/.test(id);
-    const [dbStudent, dbLateness, dbViolations] = await Promise.all([
+    const [dbStudent, dbViolations] = await Promise.all([
       isNum
         ? prisma.user.findUnique({
             where: { id: BigInt(id) },
           })
         : null,
-      isNum
-        ? prisma.keterlambatan.findMany({
-            where: { user_id: BigInt(id) },
-            orderBy: { created_at: "desc" },
-          })
-        : [],
       prisma.pelanggaran.findMany({
         where: { user_id: id },
         orderBy: { created_at: "desc" },
       }),
     ]);
     student = dbStudent;
-    latenessList = dbLateness;
     violationsList = dbViolations;
   } catch (e) {
     console.warn("DB error in guru student detail, falling back to mock:", e);
@@ -80,20 +70,8 @@ export default async function GuruStudentDetailPage(props: {
       status: "1",
       point: "125",
       appleid: "fatih@appleid.com",
-      notes: "Siswa sangat aktif di kelas, perlu perhatian agar selalu tepat waktu sholat subuh.",
+      notes: "Siswa sangat aktif di kelas.",
     };
-  }
-
-  if (latenessList.length === 0) {
-    latenessList = [
-      {
-        id: BigInt(1),
-        nama: student.name,
-        waktu: "07:20 WIB",
-        keterangan: "Terjebak macet di Jl. Sudirman",
-        created_at: new Date("2026-09-18T07:20:00Z"),
-      },
-    ];
   }
 
   if (violationsList.length === 0) {
@@ -143,11 +121,7 @@ export default async function GuruStudentDetailPage(props: {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="rounded-lg border bg-muted/30 p-2.5 text-center text-xs">
-                <p className="text-muted-foreground">Keterlambatan</p>
-                <p className="text-base font-bold text-amber-600">{latenessList.length}</p>
-              </div>
-              <div className="rounded-lg border bg-muted/30 p-2.5 text-center text-xs">
+              <div className="rounded-lg border bg-muted/30 p-2.5 text-center text-xs min-w-[100px]">
                 <p className="text-muted-foreground">Pelanggaran</p>
                 <p className="text-base font-bold text-rose-600">{violationsList.length}</p>
               </div>
@@ -156,14 +130,11 @@ export default async function GuruStudentDetailPage(props: {
         </CardContent>
       </Card>
 
-      {/* 3 Tabs: Catatan Siswa, Keterlambatan, Pelanggaran per PRD 7.3.4 */}
+      {/* 2 Tabs: Catatan Siswa & Pelanggaran */}
       <Tabs defaultValue="notes" className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full max-w-md">
+        <TabsList className="grid grid-cols-2 w-full max-w-xs">
           <TabsTrigger value="notes" className="flex items-center gap-2">
             <FileText className="h-4 w-4" /> Catatan
-          </TabsTrigger>
-          <TabsTrigger value="lateness" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" /> Keterlambatan
           </TabsTrigger>
           <TabsTrigger value="violations" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" /> Pelanggaran
@@ -204,105 +175,7 @@ export default async function GuruStudentDetailPage(props: {
           </Card>
         </TabsContent>
 
-        {/* TAB 2: KETERLAMBATAN */}
-        <TabsContent value="lateness" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Catat Keterlambatan</CardTitle>
-              <CardDescription>
-                Catat tanggal/jam dan alasan keterlambatan kehadiran siswa di sekolah.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                action={async (formData: FormData) => {
-                  "use server";
-                  await createLatenessAction(formData);
-                }}
-                className="space-y-3"
-              >
-                <input type="hidden" name="user_id" value={id} />
-                <input type="hidden" name="nama" value={student.name} />
-                <input type="hidden" name="kelas" value={student.kelas || ""} />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="waktu">Waktu / Jam Terlambat</Label>
-                    <Input id="waktu" name="waktu" placeholder="Contoh: 07:35 WIB" required />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="keterangan">Alasan Keterlambatan</Label>
-                    <Input id="keterangan" name="keterangan" placeholder="Contoh: Terjebak macet" required />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-1">
-                  <Button type="submit" size="sm">
-                    <Plus className="h-4 w-4" /> Catat Keterlambatan
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* List Keterlambatan */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Riwayat Keterlambatan ({latenessList.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="w-12 text-center font-bold">No</TableHead>
-                      <TableHead className="font-bold">Tanggal Dicatat</TableHead>
-                      <TableHead className="font-bold">Waktu Jam</TableHead>
-                      <TableHead className="font-bold">Alasan / Keterangan</TableHead>
-                      <TableHead className="w-20 text-center font-bold">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {latenessList.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                          Tidak ada catatan keterlambatan untuk siswa ini.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      latenessList.map((lt, idx) => (
-                        <TableRow key={lt.id.toString()}>
-                          <TableCell className="text-center font-medium">{idx + 1}</TableCell>
-                          <TableCell className="text-xs">{formatDateIndo(lt.created_at)}</TableCell>
-                          <TableCell className="font-mono text-xs">{lt.waktu}</TableCell>
-                          <TableCell>{lt.keterangan}</TableCell>
-                          <TableCell className="text-center">
-                            <form
-                              action={async () => {
-                                "use server";
-                                await deleteLatenessAction(lt.id.toString(), id);
-                              }}
-                            >
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                className="h-7 w-7 text-rose-500 hover:bg-rose-50"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </form>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* TAB 3: PELANGGARAN */}
+        {/* TAB 2: PELANGGARAN */}
         <TabsContent value="violations" className="space-y-6">
           <Card>
             <CardHeader>

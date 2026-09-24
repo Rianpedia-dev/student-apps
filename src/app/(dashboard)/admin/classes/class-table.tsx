@@ -35,16 +35,23 @@ interface ClassTableProps {
 export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
   const [classes, setClasses] = useState<KelasItem[]>(initialClasses);
   const [search, setSearch] = useState("");
+  const [filterJenjang, setFilterJenjang] = useState<"all" | "SD" | "SMP">("all");
   const [openAddModal, setOpenAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<KelasItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const filtered = classes.filter((c) =>
-    c.nama_kelas.toLowerCase().includes(search.toLowerCase()) ||
-    (c.wali_kelas || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = classes.filter((c) => {
+    const matchesSearch =
+      c.nama_kelas.toLowerCase().includes(search.toLowerCase()) ||
+      (c.wali_kelas || "").toLowerCase().includes(search.toLowerCase());
+    const matchesJenjang =
+      filterJenjang === "all" ||
+      (filterJenjang === "SMP" ? c.jenjang === "SMP" || c.nama_kelas.startsWith("7") || c.nama_kelas.startsWith("8") || c.nama_kelas.startsWith("9")
+                              : c.jenjang === "SD" || (!c.nama_kelas.startsWith("7") && !c.nama_kelas.startsWith("8") && !c.nama_kelas.startsWith("9")));
+    return matchesSearch && matchesJenjang;
+  });
 
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -86,23 +93,72 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
 
   return (
     <div className="space-y-4">
+      {/* Filters and Action Bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-sm w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari nama kelas atau wali..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="pl-9"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative max-w-xs w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari nama kelas atau wali..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9 h-9 text-sm"
+            />
+          </div>
+
+          {/* Jenjang Filter Badges */}
+          <div className="inline-flex rounded-lg bg-muted p-1 border text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => {
+                setFilterJenjang("all");
+                setPage(1);
+              }}
+              className={`rounded-md px-3 py-1 transition-all ${
+                filterJenjang === "all"
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Semua ({classes.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterJenjang("SD");
+                setPage(1);
+              }}
+              className={`rounded-md px-3 py-1 transition-all ${
+                filterJenjang === "SD"
+                  ? "bg-background text-emerald-700 font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              SD ({classes.filter((c) => c.jenjang === "SD" || (!c.nama_kelas.startsWith("7") && !c.nama_kelas.startsWith("8") && !c.nama_kelas.startsWith("9"))).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterJenjang("SMP");
+                setPage(1);
+              }}
+              className={`rounded-md px-3 py-1 transition-all ${
+                filterJenjang === "SMP"
+                  ? "bg-background text-indigo-700 font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              SMP ({classes.filter((c) => c.jenjang === "SMP" || c.nama_kelas.startsWith("7") || c.nama_kelas.startsWith("8") || c.nama_kelas.startsWith("9")).length})
+            </button>
+          </div>
         </div>
 
         <Button
           onClick={() => setOpenAddModal(true)}
-          className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
         >
           <Plus className="h-4 w-4" /> Tambah Kelas Baru
         </Button>
@@ -114,6 +170,7 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
             <TableRow>
               <TableHead className="w-12 text-center font-bold">No</TableHead>
               <TableHead className="font-bold">Nama Kelas</TableHead>
+              <TableHead className="font-bold">Jenjang</TableHead>
               <TableHead className="font-bold">Wali Kelas</TableHead>
               <TableHead className="font-bold text-center">Kapasitas / Siswa</TableHead>
               <TableHead className="font-bold">Code Restrict iPad</TableHead>
@@ -123,20 +180,34 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   Tidak ada data kelas ditemukan.
                 </TableCell>
               </TableRow>
             ) : (
-              paginated.map((c, idx) => (
-                <TableRow key={c.id} className="hover:bg-muted/30">
-                  <TableCell className="text-center font-medium">
-                    {(page - 1) * pageSize + idx + 1}
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-semibold text-foreground">{c.nama_kelas}</span>
-                  </TableCell>
-                  <TableCell>
+              paginated.map((c, idx) => {
+                const isSMP = c.jenjang === "SMP" || c.nama_kelas.startsWith("7") || c.nama_kelas.startsWith("8") || c.nama_kelas.startsWith("9");
+                return (
+                  <TableRow key={c.id} className="hover:bg-muted/30">
+                    <TableCell className="text-center font-medium">
+                      {(page - 1) * pageSize + idx + 1}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-semibold text-foreground">{c.nama_kelas}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          isSMP
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold"
+                        }
+                      >
+                        {isSMP ? "SMP" : "SD"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                     {c.wali_kelas ? (
                       <span className="font-medium text-sm text-foreground">{c.wali_kelas}</span>
                     ) : (
@@ -172,7 +243,8 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -215,12 +287,43 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddClass} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="jenjang">Jenjang Sekolah</Label>
+                <select
+                  id="jenjang"
+                  name="jenjang"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                  defaultValue="SD"
+                >
+                  <option value="SD">SD (Sekolah Dasar)</option>
+                  <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="tingkat">Tingkat Kelas</Label>
+                <select
+                  id="tingkat"
+                  name="tingkat"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                  defaultValue="4"
+                >
+                  <option value="4">Kelas 4 (SD)</option>
+                  <option value="5">Kelas 5 (SD)</option>
+                  <option value="6">Kelas 6 (SD)</option>
+                  <option value="7">Kelas 7 (SMP)</option>
+                  <option value="8">Kelas 8 (SMP)</option>
+                  <option value="9">Kelas 9 (SMP)</option>
+                </select>
+              </div>
+            </div>
+
             <div className="space-y-1">
               <Label htmlFor="nama_kelas">Nama Kelas</Label>
               <Input
                 id="nama_kelas"
                 name="nama_kelas"
-                placeholder="Contoh: Kelas 4 - Sholahuddin Al Ayubi"
+                placeholder="Contoh: Kelas 7 - Ibnu Sina atau Kelas 4 - Sholahuddin"
                 required
               />
             </div>

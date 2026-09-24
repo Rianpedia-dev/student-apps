@@ -26,21 +26,6 @@ export default async function GuruMyClassPage() {
         })
       : [];
 
-    const studentIds = studentsInClass.map((s) => Number(s.id));
-    const prayersToday = studentIds.length > 0
-      ? await prisma.prayer.findMany({
-          where: {
-            id: { in: studentIds },
-            date: todayStr,
-          },
-        })
-      : [];
-
-    const prayerMap = new Map();
-    prayersToday.forEach((p) => {
-      prayerMap.set(p.id.toString(), p);
-    });
-
     formattedStudents = studentsInClass.map((s) => ({
       id: s.id.toString(),
       name: s.name,
@@ -54,7 +39,6 @@ export default async function GuruMyClassPage() {
       skills: s.skills,
       notes: s.notes,
       image: s.image,
-      prayerToday: prayerMap.get(s.id.toString()) || null,
     }));
 
     const availableStudents = await prisma.user.findMany({

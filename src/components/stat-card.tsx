@@ -3,6 +3,7 @@ import Image from "next/image";
 import { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { AlAzharMosqueWatermark, AlAzharCornerMosaic } from "@/components/ui/alazhar-patterns";
 
 interface StatCardProps {
   title: string;
@@ -13,6 +14,7 @@ interface StatCardProps {
   variant?: "emerald" | "blue" | "amber" | "rose" | "purple" | "primary" | "secondary" | "accent";
   href?: string;
   valueClassName?: string;
+  showWatermark?: boolean;
 }
 
 export function StatCard({
@@ -24,75 +26,94 @@ export function StatCard({
   variant = "primary",
   href,
   valueClassName,
+  showWatermark = true,
 }: StatCardProps) {
   const variantStyles = {
-    // Primary: Crimson Red
+    // Primary / Emerald: Hijau Zamrud Al-Azhar
     primary: {
-      card: "border-primary/30 bg-card hover:border-primary hover:shadow-lg",
-      glow: "bg-primary/20",
-      iconBg: "bg-primary/10 text-primary border border-primary/30 shadow-xs",
-      dot: "bg-primary shadow-xs",
-      titleHover: "group-hover:text-primary",
-      accent: "text-primary",
+      card: "border-emerald-500/25 bg-white dark:bg-card hover:border-emerald-500/50 hover:shadow-lg",
+      header: "bg-emerald-500/10 border-b border-emerald-500/15 text-emerald-800 dark:text-emerald-300",
+      glow: "bg-emerald-500/15",
+      iconBg: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-xs",
+      dot: "bg-emerald-500 shadow-xs",
+      titleHover: "group-hover:text-emerald-600",
+      accent: "text-emerald-600",
+      watermark: "text-emerald-600/20 dark:text-emerald-400/20",
     },
     emerald: {
-      card: "border-primary/30 bg-card hover:border-primary hover:shadow-lg",
-      glow: "bg-primary/20",
-      iconBg: "bg-primary/10 text-primary border border-primary/30 shadow-xs",
-      dot: "bg-primary shadow-xs",
-      titleHover: "group-hover:text-primary",
-      accent: "text-primary",
+      card: "border-emerald-500/25 bg-white dark:bg-card hover:border-emerald-500/50 hover:shadow-lg",
+      header: "bg-emerald-500/10 border-b border-emerald-500/15 text-emerald-800 dark:text-emerald-300",
+      glow: "bg-emerald-500/15",
+      iconBg: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-xs",
+      dot: "bg-emerald-500 shadow-xs",
+      titleHover: "group-hover:text-emerald-600",
+      accent: "text-emerald-600",
+      watermark: "text-emerald-600/20 dark:text-emerald-400/20",
     },
-    // Accent: Steel Blue
+    // Amber / Gold: Emas & Jingga Al-Azhar
+    amber: {
+      card: "border-amber-500/25 bg-white dark:bg-card hover:border-amber-500/50 hover:shadow-lg",
+      header: "bg-amber-500/10 border-b border-amber-500/15 text-amber-800 dark:text-amber-300",
+      glow: "bg-amber-500/15",
+      iconBg: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 shadow-xs",
+      dot: "bg-amber-500 shadow-xs",
+      titleHover: "group-hover:text-amber-600",
+      accent: "text-amber-600",
+      watermark: "text-amber-600/20 dark:text-amber-400/20",
+    },
+    // Accent / Blue: Biru Safir & Cyan Lembut
     accent: {
-      card: "border-accent/30 bg-card hover:border-accent hover:shadow-lg",
-      glow: "bg-accent/20",
-      iconBg: "bg-accent/15 text-accent border border-accent/30 shadow-xs",
-      dot: "bg-accent shadow-xs",
-      titleHover: "group-hover:text-accent",
-      accent: "text-accent",
+      card: "border-sky-500/25 bg-white dark:bg-card hover:border-sky-500/50 hover:shadow-lg",
+      header: "bg-sky-500/10 border-b border-sky-500/15 text-sky-800 dark:text-sky-300",
+      glow: "bg-sky-500/15",
+      iconBg: "bg-sky-500/15 text-sky-700 dark:text-sky-400 border border-sky-500/30 shadow-xs",
+      dot: "bg-sky-500 shadow-xs",
+      titleHover: "group-hover:text-sky-600",
+      accent: "text-sky-600",
+      watermark: "text-sky-600/20 dark:text-sky-400/20",
     },
     blue: {
-      card: "border-accent/30 bg-card hover:border-accent hover:shadow-lg",
-      glow: "bg-accent/20",
-      iconBg: "bg-accent/15 text-accent border border-accent/30 shadow-xs",
-      dot: "bg-accent shadow-xs",
-      titleHover: "group-hover:text-accent",
-      accent: "text-accent",
+      card: "border-sky-500/25 bg-white dark:bg-card hover:border-sky-500/50 hover:shadow-lg",
+      header: "bg-sky-500/10 border-b border-sky-500/15 text-sky-800 dark:text-sky-300",
+      glow: "bg-sky-500/15",
+      iconBg: "bg-sky-500/15 text-sky-700 dark:text-sky-400 border border-sky-500/30 shadow-xs",
+      dot: "bg-sky-500 shadow-xs",
+      titleHover: "group-hover:text-sky-600",
+      accent: "text-sky-600",
+      watermark: "text-sky-600/20 dark:text-sky-400/20",
     },
-    // Secondary: Olive Green
+    // Secondary: Teal / Jade Green
     secondary: {
-      card: "border-secondary/30 bg-card hover:border-secondary hover:shadow-lg",
-      glow: "bg-secondary/20",
-      iconBg: "bg-secondary/15 text-secondary border border-secondary/30 shadow-xs",
-      dot: "bg-secondary shadow-xs",
-      titleHover: "group-hover:text-secondary",
-      accent: "text-secondary",
+      card: "border-teal-500/25 bg-white dark:bg-card hover:border-teal-500/50 hover:shadow-lg",
+      header: "bg-teal-500/10 border-b border-teal-500/15 text-teal-800 dark:text-teal-300",
+      glow: "bg-teal-500/15",
+      iconBg: "bg-teal-500/15 text-teal-700 dark:text-teal-400 border border-teal-500/30 shadow-xs",
+      dot: "bg-teal-500 shadow-xs",
+      titleHover: "group-hover:text-teal-600",
+      accent: "text-teal-600",
+      watermark: "text-teal-600/20 dark:text-teal-400/20",
     },
-    // Destructive: Amber / Orange
-    amber: {
-      card: "border-destructive/30 bg-card hover:border-destructive hover:shadow-lg",
-      glow: "bg-destructive/20",
-      iconBg: "bg-destructive/15 text-destructive border border-destructive/30 shadow-xs",
-      dot: "bg-destructive shadow-xs",
-      titleHover: "group-hover:text-destructive",
-      accent: "text-destructive",
-    },
-    rose: {
-      card: "border-primary/40 bg-card hover:border-primary hover:shadow-lg",
-      glow: "bg-primary/20",
-      iconBg: "bg-primary/15 text-primary border border-primary/30 shadow-xs",
-      dot: "bg-primary shadow-xs",
-      titleHover: "group-hover:text-primary",
-      accent: "text-primary",
-    },
+    // Purple: Ungu Amethyst Al-Azhar
     purple: {
-      card: "border-border bg-card hover:border-accent hover:shadow-lg",
-      glow: "bg-accent/15",
-      iconBg: "bg-muted text-foreground border border-border shadow-xs",
-      dot: "bg-accent shadow-xs",
-      titleHover: "group-hover:text-accent",
-      accent: "text-accent",
+      card: "border-purple-500/25 bg-white dark:bg-card hover:border-purple-500/50 hover:shadow-lg",
+      header: "bg-purple-500/10 border-b border-purple-500/15 text-purple-800 dark:text-purple-300",
+      glow: "bg-purple-500/15",
+      iconBg: "bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30 shadow-xs",
+      dot: "bg-purple-500 shadow-xs",
+      titleHover: "group-hover:text-purple-600",
+      accent: "text-purple-600",
+      watermark: "text-purple-600/20 dark:text-purple-400/20",
+    },
+    // Rose: Red Carmine
+    rose: {
+      card: "border-rose-500/25 bg-white dark:bg-card hover:border-rose-500/50 hover:shadow-lg",
+      header: "bg-rose-500/10 border-b border-rose-500/15 text-rose-800 dark:text-rose-300",
+      glow: "bg-rose-500/15",
+      iconBg: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 shadow-xs",
+      dot: "bg-rose-500 shadow-xs",
+      titleHover: "group-hover:text-rose-600",
+      accent: "text-rose-600",
+      watermark: "text-rose-600/20 dark:text-rose-400/20",
     },
   };
 
@@ -101,9 +122,9 @@ export function StatCard({
   const cardContent = (
     <Card
       className={cn(
-        "group relative overflow-hidden rounded-xl border transition-all duration-300 h-full",
+        "group relative overflow-hidden rounded-2xl border transition-all duration-300 h-full flex flex-col justify-between shadow-xs",
         href
-          ? "cursor-pointer hover:-translate-y-1 hover:shadow-lg active:scale-[0.99]"
+          ? "cursor-pointer hover:-translate-y-1 hover:shadow-md active:scale-[0.99]"
           : "hover:-translate-y-0.5 hover:shadow-sm",
         current.card
       )}
@@ -111,25 +132,42 @@ export function StatCard({
       {/* Ambient background glow */}
       <div
         className={cn(
-          "pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full blur-2xl transition-opacity duration-300 opacity-50 group-hover:opacity-100",
+          "pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full blur-2xl transition-opacity duration-300 opacity-40 group-hover:opacity-80",
           current.glow
         )}
       />
 
-      <CardContent className="relative p-4 sm:p-5 flex flex-col justify-between h-full">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1.5 min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", current.dot)} />
-              <p
-                className={cn(
-                  "text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate transition-colors",
-                  href && current.titleHover
-                )}
-              >
-                {title}
-              </p>
-            </div>
+      {/* Top Themed Header Band with Mosque Watermark (As seen in Al-Azhar mockup) */}
+      <div
+        className={cn(
+          "relative flex items-center justify-between px-3.5 py-2 text-xs font-semibold overflow-hidden shrink-0",
+          current.header
+        )}
+      >
+        {/* Corner Geometric Prism Accent */}
+        <AlAzharCornerMosaic className="absolute top-0 right-0 w-24 sm:w-28 h-full pointer-events-none opacity-60 group-hover:opacity-90 transition-opacity select-none z-0" />
+        <div className="flex items-center gap-1.5 min-w-0 z-10">
+          <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", current.dot)} />
+          <span
+            className={cn(
+              "text-[11px] font-bold uppercase tracking-wider truncate",
+              href && current.titleHover
+            )}
+          >
+            {title}
+          </span>
+        </div>
+
+        {showWatermark && (
+          <AlAzharMosqueWatermark
+            className={cn("h-5.5 w-14 shrink-0 transition-opacity", current.watermark)}
+          />
+        )}
+      </div>
+
+      <CardContent className="relative p-3.5 sm:p-4 flex flex-col justify-between flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-1 min-w-0 flex-1">
             <div
               className={cn(
                 "tracking-tight text-foreground",
@@ -139,45 +177,41 @@ export function StatCard({
             >
               {value}
             </div>
+            {description && (
+              <p className="text-[11px] font-medium text-muted-foreground truncate">
+                {description}
+              </p>
+            )}
           </div>
 
           {Icon ? (
             <div
               className={cn(
-                "flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3",
+                "flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110",
                 current.iconBg
               )}
             >
               <span className="menu-icon-wrapper shrink-0 flex items-center justify-center">
-                <Icon className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.2]" />
+                <Icon className="h-5 w-5 stroke-[2.2]" />
               </span>
             </div>
           ) : imageSrc ? (
-            <div className="relative h-11 w-11 sm:h-12 sm:w-12 shrink-0 rounded-xl overflow-hidden border border-border bg-muted/60 flex items-center justify-center shadow-xs">
+            <div className="relative h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-xl overflow-hidden border border-border bg-muted/60 flex items-center justify-center shadow-xs">
               <Image
                 src={imageSrc}
                 alt={title}
                 fill
-                sizes="48px"
+                sizes="44px"
                 className="object-contain p-1.5 transition-transform duration-300 group-hover:scale-110"
               />
             </div>
           ) : null}
         </div>
 
-        {description && (
-          <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between gap-2">
-            <p className="text-xs font-medium text-muted-foreground truncate">
-              {description}
-            </p>
-            {href && (
-              <span className={cn("text-[11px] font-semibold flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0", current.accent)}>
-                Lihat &rarr;
-              </span>
-            )}
-          </div>
-        )}
       </CardContent>
+
+      {/* Subtle Bottom Multi-Color Prism Strip Indicator */}
+      <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-emerald-500 to-sky-400 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
     </Card>
   );
 
@@ -191,3 +225,4 @@ export function StatCard({
 
   return cardContent;
 }
+

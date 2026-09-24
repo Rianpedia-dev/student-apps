@@ -4,6 +4,8 @@ import { serializeBigInt } from "@/lib/serializer";
 
 export interface CreateClassInput {
   nama_kelas: string;
+  jenjang?: string | null;
+  tingkat?: number | null;
   wali_kelas?: string | null;
   jumlah_siswa?: string | null;
   code_restrict?: string | null;
@@ -22,9 +24,16 @@ export class ClassService {
       throw new ValidationError("Nama kelas wajib diisi.");
     }
 
+    // Auto detect jenjang & tingkat if not given
+    const detectedJenjang = data.jenjang || (/^(7|8|9|smp)/i.test(data.nama_kelas.trim()) ? "SMP" : "SD");
+    const matchTingkat = data.nama_kelas.match(/\b([1-9]|1[0-2])\b/);
+    const detectedTingkat = data.tingkat ?? (matchTingkat ? parseInt(matchTingkat[1], 10) : null);
+
     const created = await prisma.kelas.create({
       data: {
         nama_kelas: data.nama_kelas,
+        jenjang: detectedJenjang,
+        tingkat: detectedTingkat,
         wali_kelas: data.wali_kelas || null,
         jumlah_siswa: data.jumlah_siswa || null,
         code_restrict: data.code_restrict || null,
@@ -55,10 +64,16 @@ export class ClassService {
       throw new NotFoundError("Kelas tidak ditemukan.");
     }
 
+    const detectedJenjang = data.jenjang || (/^(7|8|9|smp)/i.test(data.nama_kelas.trim()) ? "SMP" : "SD");
+    const matchTingkat = data.nama_kelas.match(/\b([1-9]|1[0-2])\b/);
+    const detectedTingkat = data.tingkat ?? (matchTingkat ? parseInt(matchTingkat[1], 10) : null);
+
     const updated = await prisma.kelas.update({
       where: { id: BigInt(data.id) },
       data: {
         nama_kelas: data.nama_kelas,
+        jenjang: detectedJenjang,
+        tingkat: detectedTingkat,
         wali_kelas: data.wali_kelas || null,
         jumlah_siswa: data.jumlah_siswa || null,
         code_restrict: data.code_restrict || null,

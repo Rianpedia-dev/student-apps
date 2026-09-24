@@ -25,6 +25,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useKelasOnline } from "./kelas-online-context";
+import { AlAzharCornerMosaic } from "@/components/ui/alazhar-patterns";
 
 interface ClassroomTopBarProps {
   role: "guru" | "siswa" | "admin";
@@ -68,7 +69,9 @@ export function ClassroomTopBar({
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 shadow-xs p-3 sm:p-4 flex flex-col gap-3 sticky top-16 z-20 backdrop-blur-md">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 shadow-xs p-3 sm:p-4 flex flex-col gap-3 sticky top-16 z-20 backdrop-blur-md">
+        {/* Al-Azhar Corner Prism Accent */}
+        <AlAzharCornerMosaic className="absolute top-0 right-0 w-24 h-12 pointer-events-none opacity-40 select-none z-0" />
         {/* Row 1: Class Information & Primary Leave/End Button */}
         <div className="flex items-center justify-between gap-3 min-w-0">
           {/* Left: Back Arrow + Info */}

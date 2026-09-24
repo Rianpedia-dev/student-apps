@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AlAzharCornerMosaic } from "@/components/ui/alazhar-patterns";
 
 export interface AnnouncementData {
   id: string;
@@ -91,7 +92,9 @@ export function AnnouncementTimeline({
     <div className="space-y-4">
       {items.map((item) => (
         <Card key={item.id} className="relative overflow-hidden rounded-xl border-l-4 border-l-primary transition-all duration-200 hover:shadow-md">
-          <CardContent className="p-4 sm:p-5.5">
+          {/* Al-Azhar Triangular Prism Mosaic Accent */}
+          <AlAzharCornerMosaic className="absolute top-0 right-0 w-24 sm:w-28 h-14 pointer-events-none opacity-40 group-hover:opacity-75 transition-opacity select-none" />
+          <CardContent className="p-4 sm:p-5.5 relative z-10">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/25 text-xs font-medium rounded-md">

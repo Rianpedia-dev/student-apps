@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Users, Trophy, Award, Sparkles, School } from "lucide-react";
+import { Users, FileCheck, Sparkles, School } from "lucide-react";
 import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
 import { StatCard } from "@/components/stat-card";
 import { AnnouncementTimeline } from "@/components/announcement-timeline";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { getDefaultProfileImage } from "@/lib/utils";
+import { AlAzharSchoolBanner } from "@/components/ui/alazhar-patterns";
 
 export const dynamic = "force-dynamic";
 
@@ -23,16 +23,19 @@ export default async function GuruDashboardPage() {
   const guruClass = session.kelas || "";
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const isNum = /^\d+$/.test(session.id);
+  const guruIdBigInt = isNum ? BigInt(session.id) : null;
 
   let students: any[] = [];
   let attendanceToday = 0;
   let totalAbsenToday = 0;
-  let bestStudents: any[] = [];
+  let totalTugas = 0;
+  let pendingReview = 0;
   let achievements: any[] = [];
   let announcements: any[] = [];
 
   try {
-    const [dbStudents, dbAttHadir, dbAttTotal, dbBest, dbAchieve, dbAnnounce] =
+    const [dbStudents, dbAttHadir, dbAttTotal, dbTugas, dbReview, dbAchieve, dbAnnounce] =
       await Promise.all([
         guruClass
           ? prisma.user.findMany({
@@ -54,13 +57,16 @@ export default async function GuruDashboardPage() {
               where: { kelas: guruClass, date: todayStr },
             })
           : 0,
-        guruClass
-          ? prisma.bestStudent.findMany({
-              where: { kelas: guruClass },
-              orderBy: { created_at: "desc" },
-              take: 6,
+        guruIdBigInt
+          ? prisma.tugas.count({
+              where: { guru_id: guruIdBigInt, status: "aktif" },
             })
-          : [],
+          : 0,
+        guruIdBigInt
+          ? prisma.tugasSubmission.count({
+              where: { tugas: { guru_id: guruIdBigInt }, status: "dikumpulkan" },
+            })
+          : 0,
         prisma.prestasi.findMany({
           orderBy: { created_at: "desc" },
           take: 5,
@@ -74,37 +80,16 @@ export default async function GuruDashboardPage() {
         }),
       ]);
 
-    const normalizeName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
-    const photoMap = new Map<string, string | null>();
-    const genderMap = new Map<string, string | null>();
-    dbStudents.forEach((u) => {
-      if (u.image) {
-        photoMap.set(normalizeName(u.name), u.image);
-      }
-      genderMap.set(normalizeName(u.name), u.gender);
-    });
-
     students = dbStudents;
     attendanceToday = dbAttHadir;
     totalAbsenToday = dbAttTotal;
-    bestStudents = dbBest.map((bs) => {
-      const g = genderMap.get(normalizeName(bs.name));
-      return {
-        ...bs,
-        gender: g,
-        foto: bs.foto || photoMap.get(normalizeName(bs.name)) || getDefaultProfileImage(g),
-      };
-    });
+    totalTugas = dbTugas;
+    pendingReview = dbReview;
     achievements = dbAchieve;
     announcements = dbAnnounce;
   } catch (e) {
     console.error("Database query error in guru dashboard:", e);
   }
-
-  // 3. Best Point student in this class
-  const studentWithMaxPoints = [...students].sort(
-    (a, b) => (parseInt(b.point || "0", 10) || 0) - (parseInt(a.point || "0", 10) || 0)
-  )[0];
 
   const formattedAnnouncements = announcements.map((p) => ({
     id: p.id.toString(),
@@ -122,7 +107,7 @@ export default async function GuruDashboardPage() {
     <div className="space-y-6 sm:space-y-8">
       {/* Header Greeting */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="space-y-1">
           <h1 dir="ltr" className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
             <span dir="rtl" className="inline-block">السَّلاَمُ عَلَيْكُمْ</span>, {session.name}
           </h1>
@@ -165,14 +150,25 @@ export default async function GuruDashboardPage() {
         </Card>
       )}
 
-      {/* 4 Stat Cards per PRD 7.3.1 */}
+      {/* Subheader Beranda Dashboard & Analisis Data (Sesuai Mockup) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 border-b border-border/40 pb-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-slate-100">
+            Beranda Dashboard
+          </h2>
+        </div>
+        <div className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
+          Analisis Data & Kinerja Kelas
+        </div>
+      </div>
+
+      {/* 4 Stat Cards Bertema Al-Azhar */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="Kelas Saya"
           value={`${students.length} Siswa`}
           icon={Users}
-          description={guruClass || "Belum ada kelas"}
-          variant="primary"
+          variant="amber"
           href="/guru/my-class"
         />
         <StatCard
@@ -184,25 +180,24 @@ export default async function GuruDashboardPage() {
           href={`/guru/attendance/${todayFormatted}`}
         />
         <StatCard
-          title="Best Point"
-          value={studentWithMaxPoints?.name || "-"}
-          icon={Trophy}
-          description={studentWithMaxPoints ? `${studentWithMaxPoints.point || 0} Poin Reward` : "Belum ada poin"}
-          variant="secondary"
-          href="/guru/best-point"
-          valueClassName="text-base sm:text-lg lg:text-xl font-bold leading-snug line-clamp-2 break-words"
+          title="Tugas Kelas"
+          value={`${totalTugas} Tugas`}
+          icon={FileCheck}
+          description="Tugas aktif berjalan"
+          variant="primary"
+          href="/guru/tugas"
         />
         <StatCard
-          title="Best Student"
-          value={`${bestStudents.length} Siswa`}
-          icon={Award}
-          description="Siswa teladan kelas"
-          variant="amber"
-          href="/guru/best-student"
+          title="Perlu Dinilai"
+          value={`${pendingReview} Submisi`}
+          icon={Sparkles}
+          description="Koreksi lembar tugas"
+          variant="rose"
+          href="/guru/tugas"
         />
       </div>
 
-      {/* 2 Columns: Announcements + Best Student & Prestasi */}
+      {/* 2 Columns: Announcements + Prestasi */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Timeline Pengumuman */}
         <div className="space-y-3.5 lg:col-span-7">
@@ -216,57 +211,15 @@ export default async function GuruDashboardPage() {
           />
         </div>
 
-        {/* Right side: Best Student Carousel & Prestasi Siswa */}
+        {/* Right side: Prestasi Siswa & Banner Motto */}
         <div className="space-y-6 lg:col-span-5">
-          {/* Best Student Box */}
-          <Card className="border border-purple-500/20 rounded-xl">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Best Student Kelas</CardTitle>
-                <Link
-                  href="/guru/best-student"
-                  className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline"
-                >
-                  Kelola
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {bestStudents.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4 italic">
-                  Belum ada Best Student yang ditambahkan.
-                </p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {bestStudents.map((bs) => (
-                    <div
-                      key={bs.id.toString()}
-                      className="flex flex-col items-center justify-center rounded-xl border bg-card p-3 text-center transition-all hover:shadow-sm"
-                    >
-                      <div className="h-14 w-14 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-lg mb-2 overflow-hidden border border-purple-200">
-                        <UserAvatar
-                          src={bs.foto}
-                          gender={bs.gender}
-                          alt={bs.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <p className="font-bold text-xs truncate w-full">{bs.name}</p>
-                      <Badge variant="secondary" className="mt-1 text-[10px] bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
-                        {bs.kategori}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Prestasi Siswa Section */}
-          <Card className="border border-amber-500/20 rounded-xl">
-            <CardHeader className="pb-3">
+          <Card className="border border-amber-500/20 rounded-xl shadow-xs">
+            <CardHeader className="pb-3 border-b border-border/50">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Prestasi Terkini</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <span>🏆 Prestasi Terkini</span>
+                </CardTitle>
                 <Link
                   href="/guru/achievements"
                   className="text-xs font-semibold text-amber-600 hover:underline"
@@ -296,6 +249,14 @@ export default async function GuruDashboardPage() {
                   </div>
                 ))
               )}
+            </CardContent>
+          </Card>
+
+          {/* Official Al-Azhar School Motto Banner (As shown in reference mockup) */}
+          <Card className="border border-border/80 bg-white/95 dark:bg-card/95 rounded-2xl shadow-xs overflow-hidden">
+            <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-amber-500 to-sky-500" />
+            <CardContent className="p-4 flex flex-col items-center justify-center">
+              <AlAzharSchoolBanner />
             </CardContent>
           </Card>
         </div>
