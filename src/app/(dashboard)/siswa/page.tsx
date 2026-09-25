@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { getDefaultProfileImage, getUserProfileImage } from "@/lib/utils";
 import { SubjectCard } from "@/components/subjects/subject-card";
-import { IslamicMosaicPattern, AlAzharPrismBadge, AlAzharSchoolBanner } from "@/components/ui/alazhar-patterns";
+import { IslamicMosaicPattern, AlAzharSchoolBanner } from "@/components/ui/alazhar-patterns";
 
 export const dynamic = "force-dynamic";
 
@@ -263,12 +263,6 @@ export default async function SiswaDashboardPage() {
         <div className="relative z-10">
           {/* Greeting */}
           <div className="space-y-2 max-w-3xl">
-            <div className="flex items-center gap-2">
-              <AlAzharPrismBadge className="shrink-0 scale-90" />
-              <span className="text-xs uppercase tracking-wider font-semibold text-emerald-300">
-                SD Islam Al-Azhar Cairo Palembang
-              </span>
-            </div>
             <h1 dir="ltr" className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
               <span dir="rtl" className="inline-block">السَّلاَمُ عَلَيْكُمْ</span>,{" "}
               <span className="bg-gradient-to-r from-emerald-200 via-teal-100 to-amber-200 bg-clip-text text-transparent">
@@ -283,17 +277,6 @@ export default async function SiswaDashboardPage() {
         </div>
       </div>
 
-      {/* Subheader Beranda Dashboard & Analisis Data (Sesuai Mockup) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 border-b border-border/40 pb-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-slate-100">
-            Beranda Dashboard
-          </h2>
-        </div>
-        <div className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
-          Analisis Data Terpadu
-        </div>
-      </div>
 
       {/* 4 Stat Cards Bertema Al-Azhar */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

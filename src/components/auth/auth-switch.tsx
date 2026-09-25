@@ -95,7 +95,9 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
     }
   };
 
-  const handleDemoLogin = async (role: "admin" | "guru" | "siswa") => {
+  const handleDemoLogin = async (
+    role: "admin" | "guru" | "siswa" | "siswa1" | "siswa2" | "siswa3"
+  ) => {
     setLoadingDemoRole(role);
     setLoginError("");
 
@@ -106,7 +108,8 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
         setLoadingDemoRole(null);
         return;
       }
-      window.location.href = result.redirectPath || `/${role}`;
+      window.location.href =
+        result.redirectPath || (role.startsWith("siswa") ? "/siswa" : `/${role}`);
     } catch (e: any) {
       setLoginError(e?.message || "Terjadi kesalahan saat masuk demo.");
       setLoadingDemoRole(null);
@@ -161,7 +164,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
 
         .auth-switch {
           font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          background: radial-gradient(circle at 15% 15%, #064e3b 0%, #033a2c 50%, #022018 100%);
+          background-color: #022018;
           min-height: 100vh;
           width: 100%;
           display: flex;
@@ -170,33 +173,6 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           padding: 20px;
           position: relative;
           overflow: hidden;
-        }
-
-        /* Ambient glowing background watermark using m1.png */
-        .auth-bg-watermark-left {
-          position: absolute;
-          top: -30px;
-          left: -40px;
-          width: 420px;
-          height: 290px;
-          opacity: 0.22;
-          filter: blur(1px);
-          pointer-events: none;
-          z-index: 1;
-          transform: rotate(-6deg);
-        }
-
-        .auth-bg-watermark-right {
-          position: absolute;
-          bottom: -40px;
-          right: -40px;
-          width: 450px;
-          height: 310px;
-          opacity: 0.20;
-          filter: blur(1px);
-          pointer-events: none;
-          z-index: 1;
-          transform: rotate(8deg);
         }
 
         .container {
@@ -701,32 +677,26 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
         }
       `}</style>
 
-      {/* Decorative Page Background with Islamic Geometric Pattern & m1.png Watermark */}
-      <div className="absolute inset-0 pointer-events-none opacity-20 z-0">
-        <IslamicMosaicPattern />
-      </div>
+      {/* Background Kampus Al-Azhar Cairo (bc.avif) */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden select-none">
+        <Image
+          src="/bc.avif"
+          alt="Latar Belakang Gedung Kampus Al-Azhar Cairo Palembang"
+          fill
+          priority
+          quality={90}
+          className="object-cover object-center"
+        />
 
-      <div className="auth-bg-watermark-left">
-        <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border border-emerald-400/20">
-          <Image
-            src="/images/m1.png"
-            alt="Motif Al-Azhar Background"
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
-      </div>
+        {/* Emerald & Dark Sapphire Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-950/80 via-emerald-900/65 to-slate-950/80 backdrop-blur-[1.5px]" />
 
-      <div className="auth-bg-watermark-right">
-        <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border border-emerald-400/20">
-          <Image
-            src="/images/m1.png"
-            alt="Motif Al-Azhar Background"
-            fill
-            className="object-cover"
-            priority
-          />
+        {/* Ambient Radial Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,32,24,0.70)_100%)]" />
+
+        {/* Subtle Islamic Geometric Tessellation Texture */}
+        <div className="absolute inset-0 opacity-[0.06] mix-blend-overlay">
+          <IslamicMosaicPattern />
         </div>
       </div>
 
@@ -836,11 +806,32 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                   <button
                     type="button"
                     disabled={isAnyLoginBusy}
-                    onClick={() => handleDemoLogin("siswa")}
+                    onClick={() => handleDemoLogin("siswa1")}
                     className="demo-badge"
+                    title="Masuk sebagai Muhammad Rayhan"
                   >
                     <BookOpen size={13} className="text-emerald-700" />
-                    {loadingDemoRole === "siswa" ? "..." : "Siswa"}
+                    {loadingDemoRole === "siswa1" ? "..." : "Rayhan"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isAnyLoginBusy}
+                    onClick={() => handleDemoLogin("siswa2")}
+                    className="demo-badge"
+                    title="Masuk sebagai Khalid Al-Ghazi"
+                  >
+                    <BookOpen size={13} className="text-emerald-700" />
+                    {loadingDemoRole === "siswa2" ? "..." : "Khalid"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isAnyLoginBusy}
+                    onClick={() => handleDemoLogin("siswa3")}
+                    className="demo-badge"
+                    title="Masuk sebagai Zahra Salsabila"
+                  >
+                    <BookOpen size={13} className="text-emerald-700" />
+                    {loadingDemoRole === "siswa3" ? "..." : "Zahra"}
                   </button>
                 </div>
               </div>
@@ -1004,14 +995,15 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           {/* Panel Kiri (Terlihat saat Sign In, mengajak ke Sign Up) */}
           <div className="panel left-panel">
             <div className="content">
-              {/* Highlighted m1.png Motif Card Banner */}
-              <div className="relative w-44 h-24 sm:w-52 sm:h-28 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30 mb-3.5 bg-slate-950/40 backdrop-blur-md group transition-transform duration-300 hover:scale-105">
+              {/* Logo Resmi Al-Azhar Cairo Palembang */}
+              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-2xl border-2 border-amber-400/50 mb-3.5 bg-white p-2 backdrop-blur-md group transition-transform duration-300 hover:scale-105 flex items-center justify-center">
                 <Image
-                  src="/images/m1.png"
-                  alt="Motif Al-Azhar Cairo Palembang"
-                  fill
-                  className="object-cover"
+                  src="/logo-alazhar-cairo.avif"
+                  alt="Logo Al-Azhar Cairo Palembang"
+                  width={96}
+                  height={96}
                   priority
+                  className="h-full w-full object-contain"
                 />
               </div>
 
@@ -1032,14 +1024,15 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           {/* Panel Kanan (Terlihat saat Sign Up, mengajak ke Sign In) */}
           <div className="panel right-panel">
             <div className="content">
-              {/* Highlighted m1.png Motif Card Banner */}
-              <div className="relative w-44 h-24 sm:w-52 sm:h-28 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30 mb-3.5 bg-slate-950/40 backdrop-blur-md group transition-transform duration-300 hover:scale-105">
+              {/* Logo Resmi Al-Azhar Cairo Palembang */}
+              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-2xl border-2 border-amber-400/50 mb-3.5 bg-white p-2 backdrop-blur-md group transition-transform duration-300 hover:scale-105 flex items-center justify-center">
                 <Image
-                  src="/images/m1.png"
-                  alt="Motif Al-Azhar Cairo Palembang"
-                  fill
-                  className="object-cover"
+                  src="/logo-alazhar-cairo.avif"
+                  alt="Logo Al-Azhar Cairo Palembang"
+                  width={96}
+                  height={96}
                   priority
+                  className="h-full w-full object-contain"
                 />
               </div>
 

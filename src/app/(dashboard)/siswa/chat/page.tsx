@@ -21,6 +21,7 @@ export default async function SiswaChatPage() {
     <div className="h-full">
       <ChatContainer
         currentUserId={session.id}
+        currentUserName={session.name || "Siswa"}
         currentUserRole="siswa"
         initialRooms={rooms}
         contacts={contacts}

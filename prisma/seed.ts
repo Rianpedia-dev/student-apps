@@ -434,7 +434,55 @@ async function main() {
   // ---------------------------------------------------------------------------
   console.log("\n🎓 Menyiapkan data Siswa...");
   const studentsData = [
-    // --- Kelas 4 - Mehmed Al Fatih (Kelas Utama Ustadzah Fatimah) ---
+    // --- Akun Siswa Teladan ---
+    {
+      name: "Muhammad Rayhan",
+      email: "siswa1@gmail.com",
+      password: hashSiswa,
+      password1: "siswa123",
+      status: "1",
+      gender: "L",
+      nis: "202404001",
+      kelas: "Kelas 4 - Mehmed Al Fatih",
+      appleid: "rayhan.demo1@icloud.com",
+      passwordappleid: "AppleSiswa123!",
+      point: "95",
+      address: "Jl. Jenderal Sudirman No. 45, Palembang",
+      skills: "Tahfidz Juz 30, Robotika, Sains",
+      notes: "Siswa Al-Azhar",
+    },
+    {
+      name: "Khalid Al-Ghazi",
+      email: "siswa2@gmail.com",
+      password: hashSiswa,
+      password1: "siswa123",
+      status: "1",
+      gender: "L",
+      nis: "202404002",
+      kelas: "Kelas 4 - Mehmed Al Fatih",
+      appleid: "khalid.demo2@icloud.com",
+      passwordappleid: "AppleSiswa123!",
+      point: "90",
+      address: "Jl. Basuki Rahmat No. 12, Palembang",
+      skills: "Panahan, Futsal, Tartil",
+      notes: "Siswa Al-Azhar",
+    },
+    {
+      name: "Zahra Salsabila",
+      email: "siswa3@gmail.com",
+      password: hashSiswa,
+      password1: "siswa123",
+      status: "1",
+      gender: "P",
+      nis: "202404003",
+      kelas: "Kelas 4 - Mehmed Al Fatih",
+      appleid: "zahra.demo3@icloud.com",
+      passwordappleid: "AppleSiswa123!",
+      point: "92",
+      address: "Jl. Kolonel H. Barlian No. 33, Palembang",
+      skills: "Pidato Bahasa Inggris, Kaligrafi, Matematika",
+      notes: "Siswa Al-Azhar",
+    },
     {
       name: "Muhammad Rayhan Al-Fatih",
       email: "siswa@gmail.com", // Akun Demo Utama Siswa

@@ -146,7 +146,7 @@ export function Sidebar({
                   >
                     <Image
                       src="/images/logo-alazhar-cairo.avif"
-                      alt="Logo SD Islam Al-Azhar Cairo Palembang"
+                      alt="Logo SD - SMP Islam Al-Azhar Cairo Palembang"
                       width={44}
                       height={44}
                       priority
@@ -160,7 +160,7 @@ export function Sidebar({
                 sideOffset={14}
                 className="z-50 rounded-[var(--radius)] bg-popover px-3 py-1.5 text-xs font-semibold text-popover-foreground border border-border shadow-xl"
               >
-                SD Islam Al-Azhar Cairo Palembang
+                SD - SMP Islam Al-Azhar Cairo Palembang
               </TooltipContent>
             </Tooltip>
           ) : (

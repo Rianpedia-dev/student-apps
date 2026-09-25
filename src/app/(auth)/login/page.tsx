@@ -3,8 +3,8 @@ import AuthSwitch from "@/components/auth/auth-switch";
 import { PencilLoader } from "@/components/ui/loader-1";
 
 export const metadata = {
-  title: "Masuk Akun | Al-Azhar Cairo Palembang",
-  description: "Portal Sistem Sekolah Terpadu Al-Azhar Cairo Palembang",
+  title: "Masuk Akun",
+  description: "Portal Sistem Sekolah Terpadu SD - SMP Islam Al-Azhar Cairo Palembang",
 };
 
 export default function LoginPage() {

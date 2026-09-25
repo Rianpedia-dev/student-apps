@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, Clock, Calendar, BookOpen, User, Download, FileText } from "lucide-react";
+import { ArrowLeft, Clock, User, Download, FileText } from "lucide-react";
 import { FileSubmissionZone } from "@/components/assignment/file-submission-zone";
 
 export const dynamic = "force-dynamic";
@@ -36,19 +36,24 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
   if (!tugas) notFound();
 
   const sub = tugas.submissions[0];
-  const existingSubmission = sub ? {
-    fileUrl: sub.file_url,
-    fileName: sub.file_name,
-    fileType: sub.file_type,
-    catatanSiswa: sub.catatan_siswa,
-    status: sub.status,
-    nilai: sub.nilai,
-    catatanGuru: sub.catatan_guru,
-  } : null;
+  const existingSubmission = sub
+    ? {
+        fileUrl: sub.file_url,
+        fileName: sub.file_name,
+        fileType: sub.file_type,
+        fileSize: sub.file_size,
+        catatanSiswa: sub.catatan_siswa,
+        status: sub.status,
+        nilai: sub.nilai,
+        catatanGuru: sub.catatan_guru,
+        annotatedFileUrl: sub.annotated_file_url,
+        submittedAt: sub.submitted_at.toISOString(),
+      }
+    : null;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Back button */}
+    <div className="space-y-5 max-w-3xl mx-auto">
+      {/* Tombol Kembali Sederhana */}
       <div>
         <Link
           href="/siswa/tugas"
@@ -59,11 +64,12 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* Task Details Card */}
-      <div className="bg-card border border-border rounded-2xl p-6 sm:p-7 shadow-xs space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
+      {/* Informasi Tugas */}
+      <div className="bg-card border border-border rounded-xl p-5 sm:p-6 space-y-4">
+        {/* Header Mapel & Tenggat */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-primary/10 text-primary uppercase">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-primary/10 text-primary">
               {tugas.mapel.nama_mapel}
             </span>
             <span className="text-xs text-muted-foreground font-medium">
@@ -71,63 +77,64 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5 text-primary" />
-              Tenggat: {new Date(tugas.deadline).toLocaleDateString("id-ID", {
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="h-3.5 w-3.5 text-primary" />
+            <span>
+              Tenggat:{" "}
+              {new Date(tugas.deadline).toLocaleDateString("id-ID", {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
                 hour: "2-digit",
                 minute: "2-digit",
-              })} WIB
+              })}
             </span>
           </div>
         </div>
 
+        {/* Judul & Guru */}
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-snug">
+          <h1 className="text-lg sm:text-xl font-bold text-foreground">
             {tugas.judul}
           </h1>
-          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-            <User className="h-3.5 w-3.5 text-primary" />
-            <span>Diberikan oleh: <strong className="text-foreground">{tugas.guru.name}</strong></span>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Guru Pengampu: <span className="font-semibold text-foreground">{tugas.guru.name}</span> • Maksimal:{" "}
+            <span className="font-semibold text-foreground">{tugas.poin_maksimal} Poin</span>
           </p>
         </div>
 
-        {/* Task Description / Instructions */}
+        {/* Petunjuk / Soal */}
         <div className="p-4 rounded-xl bg-muted/30 border border-border/80 text-xs sm:text-sm text-foreground/90 space-y-2 leading-relaxed">
-          <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Instruksi Pengerjaan:</h3>
+          <p className="font-bold text-xs text-muted-foreground uppercase tracking-wider">
+            Instruksi Soal:
+          </p>
           <div
             className="prose prose-sm dark:prose-invert max-w-none text-xs sm:text-sm"
             dangerouslySetInnerHTML={{ __html: tugas.deskripsi }}
           />
         </div>
 
-        {/* Teacher's Attachment / Guide File if any */}
+        {/* Lampiran File Soal Jika Ada */}
         {tugas.file_petunjuk && (
-          <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <FileText className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-xs font-bold text-foreground">Lampiran Petunjuk / Lembar Soal</p>
-                <p className="text-[11px] text-muted-foreground">Unduh atau buka panduan dari guru</p>
-              </div>
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <span className="text-xs font-semibold text-foreground">Lampiran Lembar Soal dari Guru</span>
             </div>
             <a
               href={tugas.file_petunjuk}
               target="_blank"
               rel="noreferrer"
-              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>Buka File</span>
+              <span>Buka Dokumen</span>
             </a>
           </div>
         )}
       </div>
 
-      {/* Submission Upload & Preview Zone */}
+      {/* Bagian Pengumpulan & Nilai Siswa */}
       <FileSubmissionZone
         tugasId={tugas.id.toString()}
         poinMaksimal={tugas.poin_maksimal}

@@ -21,7 +21,7 @@ export async function createTugasAction(formData: FormData) {
   const filePetunjuk = formData.get("file_petunjuk") as File | null;
 
   if (!judul || !deskripsi || !kelas_id || !mapel_id || !deadlineStr) {
-    return { success: false, error: "Mohon lengkapi semua kolom bertanda wajib." };
+    return { success: false, error: "Mohon lengkapi semua kolom yang wajib diisi." };
   }
 
   let petunjukUrl: string | null = null;
@@ -56,6 +56,7 @@ export async function createTugasAction(formData: FormData) {
 
     revalidatePath("/guru/tugas");
     revalidatePath("/siswa/tugas");
+    revalidatePath("/siswa");
     return { success: true, message: "Tugas berhasil dibuat!", data: { id: tugas.id.toString() } };
   } catch (err: any) {
     return { success: false, error: err.message || "Gagal membuat tugas baru." };
@@ -74,6 +75,7 @@ export async function deleteTugasAction(tugasId: string) {
     });
     revalidatePath("/guru/tugas");
     revalidatePath("/siswa/tugas");
+    revalidatePath("/siswa");
     return { success: true, message: "Tugas berhasil dihapus." };
   } catch (err: any) {
     return { success: false, error: err.message || "Gagal menghapus tugas." };
@@ -90,35 +92,68 @@ export async function submitTugasAction(formData: FormData) {
   const catatanSiswa = (formData.get("catatan_siswa") as string) || "";
   const file = formData.get("file") as File | null;
 
-  if (!tugasIdStr || !file || file.size === 0) {
-    return { success: false, error: "File tugas wajib diunggah." };
+  if (!tugasIdStr) {
+    return { success: false, error: "ID Tugas tidak valid." };
   }
 
   const tugasId = BigInt(tugasIdStr);
-  const allowedExtensions = [".pdf", ".png", ".jpg", ".jpeg"];
-  const ext = path.extname(file.name).toLowerCase();
-  if (!allowedExtensions.includes(ext)) {
-    return { success: false, error: "Format file harus berupa PDF, PNG, atau JPG." };
+  const studentId = BigInt(session.id);
+
+  // Check if student already submitted
+  const existing = await prisma.tugasSubmission.findUnique({
+    where: {
+      tugas_id_siswa_id: {
+        tugas_id: tugasId,
+        siswa_id: studentId,
+      },
+    },
+  });
+
+  const hasNewFile = file && file.size > 0;
+  const hasExistingFile = existing && existing.file_url && existing.file_url !== "text_submission";
+  const hasTextAnswer = catatanSiswa.trim().length > 0;
+
+  if (!hasNewFile && !hasExistingFile && !hasTextAnswer) {
+    return { success: false, error: "Silakan unggah file tugas (foto/PDF) atau tulis jawaban Anda." };
   }
 
-  if (file.size > 10 * 1024 * 1024) {
-    return { success: false, error: "Ukuran file tugas maksimal 10MB." };
+  let fileUrl = existing?.file_url || "text_submission";
+  let fileName = existing?.file_name || "Jawaban Teks Siswa";
+  let fileType = existing?.file_type || "text";
+  let fileSize = existing?.file_size || 0;
+
+  if (hasNewFile) {
+    const allowedExtensions = [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".heic", ".doc", ".docx"];
+    const ext = path.extname(file.name).toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      return { success: false, error: "Format file harus berupa PDF, Foto (PNG/JPG/WEBP), atau Dokumen Word." };
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      return { success: false, error: "Ukuran file tugas maksimal 15MB." };
+    }
+
+    try {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const safeFileName = `tugas-${tugasId}-siswa-${session.id}-${Date.now()}${ext}`;
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas");
+      await mkdir(uploadDir, { recursive: true });
+      await writeFile(path.join(uploadDir, safeFileName), buffer);
+
+      fileUrl = `/uploads/tugas/${safeFileName}`;
+      fileType = ext === ".pdf" ? "pdf" : [".doc", ".docx"].includes(ext) ? "doc" : "image";
+      fileName = file.name;
+      fileSize = file.size;
+    } catch (e) {
+      console.error("Gagal menyimpan file tugas:", e);
+      return { success: false, error: "Gagal menyimpan file ke server." };
+    }
   }
 
   try {
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const safeFileName = `tugas-${tugasId}-siswa-${session.id}-${Date.now()}${ext}`;
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas");
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, safeFileName), buffer);
-
-    const fileUrl = `/uploads/tugas/${safeFileName}`;
-    const fileType = ext === ".pdf" ? "pdf" : "png";
-    const studentId = BigInt(session.id);
-
-    // Cek apakah tenggat terlewati
+    // Cek tenggat waktu
     const task = await prisma.tugas.findUnique({ where: { id: tugasId } });
     const isLate = task && task.deadline ? new Date() > task.deadline : false;
     const initialStatus = isLate ? "terlambat" : "menunggu_penilaian";
@@ -134,28 +169,30 @@ export async function submitTugasAction(formData: FormData) {
         tugas_id: tugasId,
         siswa_id: studentId,
         file_url: fileUrl,
-        file_name: file.name,
+        file_name: fileName,
         file_type: fileType,
-        file_size: file.size,
+        file_size: fileSize,
         catatan_siswa: catatanSiswa,
         status: initialStatus,
         submitted_at: new Date(),
       },
       update: {
         file_url: fileUrl,
-        file_name: file.name,
+        file_name: fileName,
         file_type: fileType,
-        file_size: file.size,
+        file_size: fileSize,
         catatan_siswa: catatanSiswa,
         status: initialStatus,
         submitted_at: new Date(),
       },
     });
 
+    revalidatePath("/siswa");
     revalidatePath("/siswa/tugas");
     revalidatePath(`/siswa/tugas/${tugasIdStr}`);
     revalidatePath(`/guru/tugas/${tugasIdStr}`);
-    return { success: true, message: "Alhamdulillah, tugasmu berhasil dikumpulkan! Ustadz/Ustadzah akan segera memeriksa." };
+    revalidatePath("/guru/tugas");
+    return { success: true, message: "Tugas berhasil dikumpulkan!" };
   } catch (err: any) {
     return { success: false, error: err.message || "Gagal mengumpulkan tugas." };
   }
@@ -167,7 +204,11 @@ export async function gradeTugasAction(formData: FormData) {
     return { success: false, error: "Hanya guru atau admin yang berhak menilai tugas." };
   }
 
-  const submissionId = BigInt(formData.get("submission_id") as string);
+  const submissionIdStr = formData.get("submission_id") as string;
+  if (!submissionIdStr) {
+    return { success: false, error: "Data tugas tidak ditemukan." };
+  }
+  const submissionId = BigInt(submissionIdStr);
   const nilaiStr = formData.get("nilai") as string;
   const catatanGuru = (formData.get("catatan_guru") as string) || "";
   const status = (formData.get("status") as string) || "sudah_dinilai";
@@ -209,9 +250,61 @@ export async function gradeTugasAction(formData: FormData) {
       },
     });
 
+    revalidatePath("/guru/tugas");
     revalidatePath(`/guru/tugas/${updated.tugas_id}`);
+    revalidatePath(`/guru/tugas/${updated.tugas_id}/review/${submissionIdStr}`);
+    revalidatePath("/siswa");
     revalidatePath("/siswa/tugas");
-    return { success: true, message: "Koreksi dan nilai berhasil disimpan tanpa download!" };
+    revalidatePath(`/siswa/tugas/${updated.tugas_id}`);
+    return { success: true, message: "Nilai dan koreksi berhasil disimpan!" };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Gagal menyimpan penilaian." };
+  }
+}
+
+export async function quickGradeTugasAction({
+  submissionId,
+  nilai,
+  catatanGuru,
+  status = "sudah_dinilai",
+}: {
+  submissionId: string;
+  nilai: number;
+  catatanGuru?: string;
+  status?: string;
+}) {
+  const session = await getSession();
+  if (!session || (session.role !== "guru" && session.role !== "admin")) {
+    return { success: false, error: "Hanya guru atau admin yang berhak menilai tugas." };
+  }
+
+  if (isNaN(nilai) || nilai < 0 || nilai > 100) {
+    return { success: false, error: "Nilai harus di rentang 0 hingga 100." };
+  }
+
+  try {
+    const subId = BigInt(submissionId);
+    const updated = await prisma.tugasSubmission.update({
+      where: { id: subId },
+      data: {
+        nilai,
+        catatan_guru: catatanGuru || "",
+        status,
+        graded_at: new Date(),
+        graded_by: BigInt(session.id),
+      },
+      include: {
+        tugas: true,
+      },
+    });
+
+    revalidatePath("/guru/tugas");
+    revalidatePath(`/guru/tugas/${updated.tugas_id}`);
+    revalidatePath(`/guru/tugas/${updated.tugas_id}/review/${submissionId}`);
+    revalidatePath("/siswa");
+    revalidatePath("/siswa/tugas");
+    revalidatePath(`/siswa/tugas/${updated.tugas_id}`);
+    return { success: true, message: "Nilai berhasil disimpan!" };
   } catch (err: any) {
     return { success: false, error: err.message || "Gagal menyimpan penilaian." };
   }

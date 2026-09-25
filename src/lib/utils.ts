@@ -69,21 +69,39 @@ export function getRoleLabel(status: string | number): string {
  * - Laki-laki ('L', 'laki-laki', 'pria', dll) -> /profil-default-laki-laki.avif
  * - Perempuan ('P', 'perempuan', 'wanita', dll) -> /profil-default-perempuan.avif
  */
-export function getDefaultProfileImage(gender?: string | null): string {
-  if (!gender) return "/profil-default-laki-laki.avif";
-  const g = String(gender).trim().toUpperCase();
-  if (g === "P" || g === "PEREMPUAN" || g === "WANITA" || g === "F" || g === "FEMALE") {
-    return "/profil-default-perempuan.avif";
+export function getDefaultProfileImage(gender?: string | null, name?: string | null): string {
+  if (gender) {
+    const g = String(gender).trim().toUpperCase();
+    if (g === "P" || g === "PEREMPUAN" || g === "WANITA" || g === "F" || g === "FEMALE") {
+      return "/profil-default-perempuan.avif";
+    }
+    if (g === "L" || g === "LAKI-LAKI" || g === "PRIA" || g === "M" || g === "MALE") {
+      return "/profil-default-laki-laki.avif";
+    }
   }
+
+  // Cek nama jika gender belum tersedia
+  if (name) {
+    const lower = name.toLowerCase();
+    const femaleKeywords = [
+      "ustadzah", "zahra", "salsabila", "fatimah", "aisyah", "maryam", "khadijah",
+      "nurul", "salma", "dewi", "nadia", "yasmin", "keisha", "safitri", "rina",
+      "maya", "laila", "putri", "haura", "insyirah", "amira", "humaira"
+    ];
+    if (femaleKeywords.some((kw) => lower.includes(kw))) {
+      return "/profil-default-perempuan.avif";
+    }
+  }
+
   return "/profil-default-laki-laki.avif";
 }
 
 /**
- * Mengembalikan foto profil jika pengguna sudah mengunggah, atau foto default sesuai gender jika belum update.
+ * Mengembalikan foto profil jika pengguna sudah mengunggah, atau foto default sesuai gender/nama jika belum update.
  */
-export function getUserProfileImage(image?: string | null, gender?: string | null): string {
+export function getUserProfileImage(image?: string | null, gender?: string | null, name?: string | null): string {
   if (image && typeof image === "string" && image.trim() !== "" && image !== "null" && image !== "undefined") {
     return image;
   }
-  return getDefaultProfileImage(gender);
+  return getDefaultProfileImage(gender, name);
 }

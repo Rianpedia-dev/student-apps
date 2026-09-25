@@ -2,9 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, FileCheck, UploadCloud, Calendar, Clock, BookOpen, School } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { createTugasAction } from "@/actions/assignment";
+import { ArrowLeft } from "lucide-react";
 import { CreateTaskForm } from "./create-task-form";
 
 export const dynamic = "force-dynamic";
@@ -25,23 +23,20 @@ export default async function GuruCreateTugasPage() {
   ]);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-5">
       <div>
         <Link
           href="/guru/tugas"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Kembali ke Manajemen Tugas</span>
+          <span>Kembali ke Daftar Tugas</span>
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-          <span className="p-2 rounded-xl bg-primary/10 text-primary">
-            <FileCheck className="h-6 w-6" />
-          </span>
-          <span>Buat Tugas Baru</span>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+          Buat Tugas Baru
         </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          Kirim instruksi tugas kepada siswa SD atau SMP. Siswa dapat mengunggah file tugas PDF/foto untuk dikoreksi langsung.
+        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+          Tentukan kelas, mata pelajaran, tenggat pengumpulan, dan instruksi tugas.
         </p>
       </div>
 

@@ -12,5 +12,16 @@ module.exports = {
         PORT: 3000,
       },
     },
+    {
+      name: "student-apps-socket",
+      script: "socket-server.cjs",
+      instances: 1,
+      exec_mode: "fork",
+      max_memory_restart: "500M",
+      env: {
+        NODE_ENV: "production",
+        SOCKET_PORT: 3001,
+      },
+    },
   ],
 };

@@ -12,7 +12,7 @@ interface PageLoaderProps {
 export function PageLoader({
   className,
   message = "Memuat halaman...",
-  subMessage = "SD Islam Al-Azhar Cairo Palembang",
+  subMessage = "SD - SMP Islam Al-Azhar Cairo Palembang",
   fullScreen = false,
 }: PageLoaderProps) {
   return (

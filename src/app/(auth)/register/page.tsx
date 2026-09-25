@@ -3,8 +3,8 @@ import AuthSwitch from "@/components/auth/auth-switch";
 import { PencilLoader } from "@/components/ui/loader-1";
 
 export const metadata = {
-  title: "Registrasi Pendidik | Al-Azhar Cairo Palembang",
-  description: "Pendaftaran Akun Guru & Pendidik Al-Azhar Cairo Palembang",
+  title: "Registrasi Pendidik",
+  description: "Pendaftaran Akun Guru & Pendidik SD - SMP Islam Al-Azhar Cairo Palembang",
 };
 
 export default function RegisterPage() {

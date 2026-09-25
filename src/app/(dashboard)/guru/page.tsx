@@ -7,8 +7,6 @@ import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
 import { StatCard } from "@/components/stat-card";
 import { AnnouncementTimeline } from "@/components/announcement-timeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { AlAzharSchoolBanner } from "@/components/ui/alazhar-patterns";
 
@@ -114,51 +112,6 @@ export default async function GuruDashboardPage() {
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1 font-normal">
             <span>Wali Kelas: <strong className="text-foreground font-medium">{guruClass || "Belum ditentukan"}</strong></span>
           </p>
-        </div>
-      </div>
-
-      {/* Quick Action Banner: Status Absensi Hari Ini (Hanya muncul jika belum melakukan absensi hari ini) */}
-      {totalAbsenToday === 0 && (
-        <Card className="border border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/20 overflow-hidden rounded-xl">
-          <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-xs bg-amber-500">
-                <ClipboardListIcon className="h-6 w-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm sm:text-base font-bold text-foreground">Presensi Kelas Hari Ini</p>
-                  <Badge className="bg-amber-500 text-white font-mono text-xs px-2 py-0.5">
-                    Belum Diisi
-                  </Badge>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-              <Link href={`/guru/attendance/${todayFormatted}`} className="flex-1 sm:flex-none">
-                <Button variant="default" size="default" className="w-full sm:w-auto">
-                  Isi Presensi Sekarang
-                </Button>
-              </Link>
-              <Link href={`/guru/attendance/table/${todayFormatted}`} className="hidden sm:inline-flex">
-                <Button variant="outline" size="default">
-                  Tabel Matriks
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Subheader Beranda Dashboard & Analisis Data (Sesuai Mockup) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 border-b border-border/40 pb-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-slate-100">
-            Beranda Dashboard
-          </h2>
-        </div>
-        <div className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
-          Analisis Data & Kinerja Kelas
         </div>
       </div>
 

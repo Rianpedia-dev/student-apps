@@ -9,16 +9,11 @@ import {
   PenTool, 
   Eraser, 
   Check, 
-  Save, 
   ArrowLeft, 
   FileText, 
   Image as ImageIcon,
-  Clock,
-  User as UserIcon,
-  Award,
-  Sparkles,
   Loader2,
-  Maximize2
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { gradeTugasAction } from "@/actions/assignment";
@@ -58,9 +53,8 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [penColor, setPenColor] = useState("#ef4444"); // Red by default
 
-  // Grading form state
+  // Form state
   const [nilai, setNilai] = useState<string>(
     submission.nilai !== null && submission.nilai !== undefined ? String(submission.nilai) : ""
   );
@@ -73,7 +67,9 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const imageRef = useRef<HTMLImageElement | null>(null);
 
-  const isPdf = submission.fileType.toLowerCase() === "pdf" || submission.fileUrl.toLowerCase().endsWith(".pdf");
+  const isPdf =
+    submission.fileType.toLowerCase() === "pdf" ||
+    submission.fileUrl.toLowerCase().endsWith(".pdf");
 
   // Init canvas for image marking
   useEffect(() => {
@@ -101,7 +97,7 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
     setIsDrawing(true);
     ctx.beginPath();
     ctx.moveTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
-    ctx.strokeStyle = penColor;
+    ctx.strokeStyle = "#ef4444";
     ctx.lineWidth = 4;
     ctx.lineCap = "round";
   };
@@ -133,11 +129,7 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
     }
   };
 
-  const handleQuickScore = (score: number) => {
-    setNilai(String(score));
-  };
-
-  const handleSubmitGrade = async (targetStatus: string = "sudah_dinilai") => {
+  const handleSubmitGrade = async (targetStatus: string = "sudah_dinilai", redirectBack: boolean = false) => {
     if (!nilai || isNaN(Number(nilai))) {
       toast.error("Silakan masukkan nilai angka (0 - 100).");
       return;
@@ -156,7 +148,6 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
     formData.append("catatan_guru", catatanGuru);
     formData.append("status", targetStatus);
 
-    // Save annotated canvas if drawn
     if (!isPdf && canvasRef.current) {
       try {
         const dataUrl = canvasRef.current.toDataURL("image/png");
@@ -171,61 +162,63 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
       if (res.success) {
         toast.success(res.message);
         setStatus(targetStatus);
-        router.refresh();
+        if (redirectBack) {
+          router.push(`/guru/tugas/${submission.tugasId}`);
+        } else {
+          router.refresh();
+        }
       } else {
         toast.error(res.error || "Gagal menyimpan nilai.");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Terjadi kesalahan koneksi.");
+    } catch {
+      toast.error("Terjadi kesalahan.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4.5rem)] bg-background -m-4 sm:-m-6 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-5rem)] bg-background -m-4 sm:-m-6 overflow-hidden">
       {/* Top Header Toolbar */}
-      <div className="h-14 border-b border-border bg-card/80 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-20">
-        <div className="flex items-center gap-3">
+      <div className="h-14 border-b border-border bg-card px-4 flex items-center justify-between shrink-0 z-20">
+        <div className="flex items-center gap-3 truncate">
           <Link
             href={`/guru/tugas/${submission.tugasId}`}
-            className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted"
+            className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Kembali ke Rekap</span>
+            <span>Kembali</span>
           </Link>
-          <div className="h-4 w-px bg-border hidden sm:block" />
-          <div>
-            <h2 className="text-sm font-bold text-foreground leading-tight truncate max-w-xs sm:max-w-md">
-              {submission.tugasJudul}
+          <div className="h-4 w-px bg-border shrink-0" />
+          <div className="truncate">
+            <h2 className="text-xs sm:text-sm font-bold text-foreground truncate">
+              {submission.siswa.name}
             </h2>
-            <p className="text-xs text-muted-foreground">
-              {submission.mapelNama} • {submission.kelasNama}
+            <p className="text-[11px] text-muted-foreground truncate">
+              {submission.tugasJudul} • {submission.kelasNama}
             </p>
           </div>
         </div>
 
         {/* Viewer Tools */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}
-            title="Perkecil (-)"
+            title="Perkecil"
             className="h-8 w-8 p-0"
           >
             <ZoomOut className="h-4 w-4" />
           </Button>
-          <span className="text-xs font-mono font-medium text-muted-foreground w-12 text-center">
-            {Math.round(zoom * 100)}%
-          </span>
+
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setZoom((z) => Math.min(3, z + 0.2))}
-            title="Perbesar (+)"
+            title="Perbesar"
             className="h-8 w-8 p-0"
           >
             <ZoomIn className="h-4 w-4" />
@@ -238,7 +231,7 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setRotation((r) => (r + 90) % 360)}
-                title="Putar 90 Derajat"
+                title="Putar 90°"
                 className="h-8 w-8 p-0"
               >
                 <RotateCw className="h-4 w-4" />
@@ -249,11 +242,10 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
                 variant={isDrawingMode ? "default" : "outline"}
                 size="sm"
                 onClick={() => setIsDrawingMode(!isDrawingMode)}
-                title={isDrawingMode ? "Matikan Spidol Coretan" : "Aktifkan Spidol Coretan Koreksi"}
-                className="h-8 px-2.5 text-xs gap-1.5"
+                className="h-8 px-2.5 text-xs gap-1"
               >
                 <PenTool className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">{isDrawingMode ? "Spidol Aktif" : "Coret/Tandai"}</span>
+                <span className="hidden sm:inline">{isDrawingMode ? "Spidol Aktif" : "Coret Lembar"}</span>
               </Button>
 
               {isDrawingMode && (
@@ -262,7 +254,7 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
                   variant="ghost"
                   size="sm"
                   onClick={handleClearDraw}
-                  title="Hapus Semua Coretan"
+                  title="Hapus Coretan"
                   className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
                 >
                   <Eraser className="h-4 w-4" />
@@ -275,8 +267,11 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => { setZoom(1); setRotation(0); }}
-            title="Reset Tampilan"
+            onClick={() => {
+              setZoom(1);
+              setRotation(0);
+            }}
+            title="Reset"
             className="h-8 w-8 p-0"
           >
             <RefreshCw className="h-4 w-4" />
@@ -286,24 +281,22 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
 
       {/* Main Split-Screen Workspace */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* LEFT PANE: ZERO-DOWNLOAD IN-BROWSER DOCUMENT VIEWER */}
-        <div className="flex-1 bg-muted/40 relative overflow-auto p-4 flex items-center justify-center select-none border-b lg:border-b-0 lg:border-r border-border">
+        {/* LEFT PANE: DOCUMENT VIEWER */}
+        <div className="flex-1 bg-muted/30 relative overflow-auto p-4 flex items-center justify-center select-none border-b lg:border-b-0 lg:border-r border-border">
           {isPdf ? (
-            /* PDF INLINE VIEWER (Zero download) */
             <div
-              className="w-full h-full bg-card rounded-xl border border-border shadow-lg overflow-hidden transition-transform duration-200"
+              className="w-full h-full bg-card rounded-xl border border-border shadow-xs overflow-hidden"
               style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}
             >
               <iframe
                 src={`${submission.fileUrl}#toolbar=0&navpanes=0`}
                 title={submission.fileName}
-                className="w-full h-full border-0 min-h-[550px]"
+                className="w-full h-full border-0 min-h-[500px]"
               />
             </div>
           ) : (
-            /* IMAGE VIEWER WITH OPTIONAL CANVAS DRAWING OVERLAY */
             <div
-              className="relative transition-transform duration-200 shadow-xl rounded-xl overflow-hidden bg-card border border-border"
+              className="relative transition-transform duration-200 shadow-md rounded-xl overflow-hidden bg-card border border-border"
               style={{
                 transform: `scale(${zoom}) rotate(${rotation}deg)`,
                 transformOrigin: "center center",
@@ -322,7 +315,6 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
                   }
                 }}
               />
-              {/* Annotation Canvas Overlay */}
               <canvas
                 ref={canvasRef}
                 onMouseDown={handleStartDraw}
@@ -337,136 +329,107 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
           )}
         </div>
 
-        {/* RIGHT PANE: GRADING & EVALUATION FORM */}
-        <div className="w-full lg:w-[380px] xl:w-[420px] bg-card p-5 overflow-y-auto shrink-0 flex flex-col justify-between border-t lg:border-t-0 shadow-lg z-10">
-          <div className="space-y-5">
-            {/* Student Profile & Meta */}
-            <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-2.5">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm ring-1 ring-primary/20">
-                  {submission.siswa.name.substring(0, 2).toUpperCase()}
-                </div>
+        {/* RIGHT PANE: FORM PENILAIAN */}
+        <div className="w-full lg:w-[360px] xl:w-[400px] bg-card p-5 overflow-y-auto shrink-0 flex flex-col justify-between border-t lg:border-t-0 shadow-xs z-10 space-y-4">
+          <div className="space-y-4">
+            {/* Info Siswa Sederhana */}
+            <div className="p-3.5 rounded-xl bg-muted/40 border border-border space-y-2">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-foreground leading-tight">
+                  <h3 className="text-xs sm:text-sm font-bold text-foreground">
                     {submission.siswa.name}
                   </h3>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground">
                     NIS: {submission.siswa.nis || "-"} • {submission.kelasNama}
                   </p>
                 </div>
-              </div>
-
-              <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {new Date(submission.submittedAt).toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <span className={`px-2 py-0.5 rounded-full font-medium ${
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
                   status === "sudah_dinilai"
-                    ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                    : status === "terlambat"
-                    ? "bg-red-500/10 text-red-600 border border-red-500/20"
-                    : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                    ? "bg-emerald-500/10 text-emerald-600"
+                    : status === "perlu_revisi"
+                    ? "bg-rose-500/10 text-rose-600"
+                    : "bg-amber-500/10 text-amber-600"
                 }`}>
-                  {status === "sudah_dinilai" ? "Sudah Dinilai" : status === "terlambat" ? "Terlambat" : "Menunggu Dinilai"}
+                  {status === "sudah_dinilai" ? "Sudah Dinilai" : status === "perlu_revisi" ? "Perlu Revisi" : "Menunggu"}
                 </span>
               </div>
 
               {submission.catatanSiswa && (
-                <div className="p-2.5 rounded-lg bg-background text-xs border border-border/80">
-                  <p className="text-muted-foreground font-semibold mb-0.5">💬 Pesan dari Siswa:</p>
-                  <p className="text-foreground italic">&ldquo;{submission.catatanSiswa}&rdquo;</p>
+                <div className="pt-2 border-t border-border/60">
+                  <p className="text-[11px] text-muted-foreground font-semibold mb-0.5">Pesan Siswa:</p>
+                  <p className="text-xs text-foreground italic">&ldquo;{submission.catatanSiswa}&rdquo;</p>
                 </div>
               )}
             </div>
 
-            {/* Score Input (0 - 100) */}
+            {/* Input Nilai */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Award className="h-4 w-4 text-primary" />
-                  <span>Nilai Tugas (Skala 0 - 100)</span>
+                <label className="text-xs font-bold text-foreground">
+                  Nilai Tugas (0 - 100) *
                 </label>
-                {nilai && (
-                  <span className="text-xs font-bold text-primary">
-                    Predikat: {Number(nilai) >= 90 ? "A (Sangat Baik)" : Number(nilai) >= 80 ? "B (Baik)" : Number(nilai) >= 70 ? "C (Cukup)" : "D (Perlu Bimbingan)"}
-                  </span>
-                )}
+                <div className="flex items-center gap-1">
+                  {[100, 95, 90, 85, 80].map((sc) => (
+                    <button
+                      key={sc}
+                      type="button"
+                      onClick={() => setNilai(String(sc))}
+                      className={`text-[11px] px-2 py-0.5 rounded-md font-semibold border ${
+                        Number(nilai) === sc
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted/40 border-border text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {sc}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Quick Score Chips */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {[100, 95, 90, 85, 80, 75].map((score) => (
-                  <button
-                    key={score}
-                    type="button"
-                    onClick={() => handleQuickScore(score)}
-                    className={`text-xs px-2.5 py-1 rounded-lg font-semibold border transition-all ${
-                      Number(nilai) === score
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-muted/50 border-border text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {score}
-                  </button>
-                ))}
-              </div>
-
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={nilai}
-                  onChange={(e) => setNilai(e.target.value)}
-                  placeholder="Ketik nilai di sini (e.g. 95)"
-                  className="w-full text-2xl font-bold font-mono h-14 rounded-xl border border-input bg-background px-4 text-primary focus:outline-hidden focus:ring-2 focus:ring-primary/40 text-center"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
-                  / 100
-                </span>
-              </div>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.5"
+                value={nilai}
+                onChange={(e) => setNilai(e.target.value)}
+                placeholder="Masukkan nilai"
+                className="w-full text-xl font-bold font-mono h-11 rounded-xl border border-input bg-background px-3 text-center text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+              />
             </div>
 
-            {/* Teacher Feedback / Notes */}
+            {/* Catatan Evaluasi Guru */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                <span>Umpan Balik & Catatan Evaluasi Guru:</span>
+              <label className="text-xs font-bold text-foreground block">
+                Catatan / Evaluasi Guru:
               </label>
               <textarea
                 value={catatanGuru}
                 onChange={(e) => setCatatanGuru(e.target.value)}
                 rows={4}
-                placeholder="Contoh: MasyaAllah pengerjaan nomor 1-4 sangat rapi dan tepat. Perhatikan tanda kurung di nomor 5. Pertahankan prestasimu Ananda!"
-                className="w-full text-xs rounded-xl border border-input bg-background p-3 text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+                placeholder="Tuliskan umpan balik atau pesan untuk siswa..."
+                className="w-full text-xs sm:text-sm rounded-xl border border-input bg-background p-3 text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 leading-relaxed"
               />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="pt-4 mt-4 border-t border-border space-y-2">
+          {/* Tombol Aksi Simpan */}
+          <div className="pt-3 border-t border-border space-y-2">
             <Button
               type="button"
-              onClick={() => handleSubmitGrade("sudah_dinilai")}
+              onClick={() => handleSubmitGrade("sudah_dinilai", true)}
               disabled={isSubmitting || !nilai}
-              className="w-full h-11 text-xs font-bold rounded-xl gap-2 shadow-md bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="w-full h-10 text-xs font-bold rounded-xl gap-2 shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Menyimpan Nilai...
+                  <span>Menyimpan...</span>
                 </>
               ) : (
                 <>
                   <Check className="h-4 w-4" />
-                  Simpan & Rilis Nilai ke Siswa
+                  <span>Simpan Nilai & Selesai</span>
                 </>
               )}
             </Button>
@@ -474,9 +437,9 @@ export function InBrowserGrader({ submission }: InBrowserGraderProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => handleSubmitGrade("perlu_revisi")}
+              onClick={() => handleSubmitGrade("perlu_revisi", true)}
               disabled={isSubmitting}
-              className="w-full h-9 text-xs font-medium rounded-xl text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 border-amber-500/30"
+              className="w-full h-8 text-xs font-medium rounded-xl text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 border-rose-500/30"
             >
               Minta Siswa Perbaiki (Revisi)
             </Button>

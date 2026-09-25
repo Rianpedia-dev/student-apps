@@ -110,12 +110,12 @@ export function Navbar({ role, userName, userEmail, kelas, userImage }: NavbarPr
           <Link
             href={`/${role}`}
             className="flex h-11 w-11 items-center justify-center rounded-[var(--radius)] transition-transform hover:scale-105 active:scale-95 -ml-1"
-            title="SD Islam Al-Azhar Cairo Palembang"
+            title="SD - SMP Islam Al-Azhar Cairo Palembang"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/logo-alazhar-cairo.avif"
-              alt="Logo SD Islam Al-Azhar Cairo Palembang"
+              alt="Logo SD - SMP Islam Al-Azhar Cairo Palembang"
               className="h-10 w-10 object-contain drop-shadow-xs"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = "/favicon.ico";

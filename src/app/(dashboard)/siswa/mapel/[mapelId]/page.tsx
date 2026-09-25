@@ -151,51 +151,47 @@ export default async function SiswaMapelDetailPage({ params }: PageProps) {
               const sub = task.submissions[0];
               const isSubmitted = !!sub;
               const isGraded = sub?.status === "sudah_dinilai";
-              const isPending = sub?.status === "menunggu_penilaian";
+              const isPending = sub?.status === "menunggu_penilaian" || sub?.status === "terlambat";
 
               return (
                 <div
                   key={task.id.toString()}
-                  className="rounded-2xl bg-card border border-border p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-primary/40 transition-all"
+                  className="rounded-xl bg-card border border-border p-5 flex flex-col justify-between hover:border-primary/40 transition-colors"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
                         isGraded
                           ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                           : isPending
-                          ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                          : "bg-red-500/10 text-red-600 border-red-500/20"
+                          ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                          : "bg-amber-500/10 text-amber-600 border-amber-500/20"
                       }`}>
                         {isGraded
-                          ? `Nilai: ${sub.nilai}/100 ⭐`
+                          ? `Nilai: ${sub.nilai} / ${task.poin_maksimal || 100}`
                           : isPending
-                          ? "Menunggu Dinilai ⏳"
-                          : "Belum Dikerjakan ⚠️"}
+                          ? "Menunggu Nilai"
+                          : "Belum Dikerjakan"}
                       </span>
                       <span className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
                         <Clock className="h-3 w-3" />
-                        Tenggat: {new Date(task.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                        <span>Tenggat: {new Date(task.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
                       </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-foreground leading-snug">
+                    <h3 className="text-sm sm:text-base font-bold text-foreground leading-snug">
                       {task.judul}
                     </h3>
-                    <div
-                      className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: task.deskripsi }}
-                    />
                   </div>
 
-                  <div className="pt-3 border-t border-border flex items-center justify-between">
+                  <div className="pt-3 mt-3 border-t border-border flex items-center justify-between">
                     <span className="text-xs font-medium text-muted-foreground">
                       Maks. {task.poin_maksimal} Poin
                     </span>
 
                     <Link href={`/siswa/tugas/${task.id}`}>
-                      <Button size="sm" variant={isGraded ? "outline" : "default"} className="h-8 text-xs font-bold rounded-xl gap-1">
-                        {isGraded ? "Lihat Hasil Koreksi" : isPending ? "Lihat Status Tugas" : "Kumpulkan Tugas ➔"}
+                      <Button size="sm" variant={isGraded ? "outline" : "default"} className="h-8 text-xs font-semibold rounded-lg">
+                        {isGraded ? "Lihat Nilai" : isPending ? "Lihat Tugas" : "Kerjakan"}
                       </Button>
                     </Link>
                   </div>

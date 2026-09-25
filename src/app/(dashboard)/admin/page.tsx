@@ -63,7 +63,7 @@ export default async function AdminDashboardPage() {
           Dashboard Administrator
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1 font-normal">
-          Selamat datang di panel kontrol Sistem Informasi SD Islam Al-Azhar Cairo Palembang.
+          Selamat datang di panel kontrol Sistem Informasi SD - SMP Islam Al-Azhar Cairo Palembang.
         </p>
       </div>
 

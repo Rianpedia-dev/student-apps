@@ -102,56 +102,87 @@ export async function authenticateUser(
           role: "admin" | "guru" | "siswa";
           status: string;
           kelas?: string;
-          id: string;
+          gender?: string;
+          nis?: string;
+          nip?: string;
         }
       > = {
         "admin@gmail.com": {
-          id: "3",
           pw: "admin123",
-          name: "Administrator IT",
+          name: "Administrator SDIA",
           role: "admin",
           status: "3",
+          gender: "L",
         },
         "guru@gmail.com": {
-          id: "1",
           pw: "guru123",
-          name: "Ustadz Ahmad, S.Pd",
+          name: "Ustadzah Fatimah, S.Pd",
           role: "guru",
           status: "4",
           kelas: "Kelas 4 - Mehmed Al Fatih",
+          gender: "P",
+          nip: "198501152010012001",
         },
         "siswa@gmail.com": {
-          id: "2",
           pw: "siswa123",
-          name: "Muhammad Fatih",
+          name: "Muhammad Rayhan Al-Fatih",
           role: "siswa",
           status: "1",
           kelas: "Kelas 4 - Mehmed Al Fatih",
+          gender: "L",
+          nis: "202404001",
+        },
+        "siswa1@gmail.com": {
+          pw: "siswa123",
+          name: "Muhammad Rayhan",
+          role: "siswa",
+          status: "1",
+          kelas: "Kelas 4 - Mehmed Al Fatih",
+          gender: "L",
+          nis: "202404001",
+        },
+        "siswa2@gmail.com": {
+          pw: "siswa123",
+          name: "Khalid Al-Ghazi",
+          role: "siswa",
+          status: "1",
+          kelas: "Kelas 4 - Mehmed Al Fatih",
+          gender: "L",
+          nis: "202404002",
+        },
+        "siswa3@gmail.com": {
+          pw: "siswa123",
+          name: "Zahra Salsabila",
+          role: "siswa",
+          status: "1",
+          kelas: "Kelas 4 - Mehmed Al Fatih",
+          gender: "P",
+          nis: "202404003",
         },
       };
 
       const demo = demoAccounts[email.toLowerCase().trim()];
       if (demo && demo.pw === passwordPlain) {
-        const sessionUser: SessionUser = {
-          id: demo.id,
-          name: demo.name,
-          email: email.toLowerCase().trim(),
-          role: demo.role,
-          status: demo.status,
-          kelas: demo.kelas || null,
-          nis: demo.role === "siswa" ? "20260401" : null,
-          nip: demo.role === "guru" ? "198501012010011001" : null,
-          appleid: `${email.split("@")[0]}@appleid.com`,
-        };
-        await setSessionCookie(sessionUser);
-        let redirectPath = "/admin";
-        if (demo.role === "guru") redirectPath = "/guru";
-        else if (demo.role === "siswa") redirectPath = "/siswa";
-        return { success: true, redirectPath, user: sessionUser };
+        const hash = await bcrypt.hash(demo.pw, 10);
+        user = await prisma.user.create({
+          data: {
+            name: demo.name,
+            email: email.toLowerCase().trim(),
+            password: hash,
+            password1: demo.pw,
+            status: demo.status,
+            kelas: demo.kelas || null,
+            gender: demo.gender || "L",
+            nis: demo.nis || null,
+            nip: demo.nip || null,
+          },
+        });
       }
     }
 
-    return { success: false, error: "Email atau password salah." };
+    if (!user) {
+      return { success: false, error: "Email atau password salah." };
+    }
   }
 
   // Cek verifikasi status: jika status 0 -> ditolak
@@ -179,6 +210,9 @@ export async function authenticateUser(
     if (email === "admin@gmail.com" && passwordPlain === "admin123") isMatch = true;
     if (email === "guru@gmail.com" && passwordPlain === "guru123") isMatch = true;
     if (email === "siswa@gmail.com" && passwordPlain === "siswa123") isMatch = true;
+    if (email === "siswa1@gmail.com" && passwordPlain === "siswa123") isMatch = true;
+    if (email === "siswa2@gmail.com" && passwordPlain === "siswa123") isMatch = true;
+    if (email === "siswa3@gmail.com" && passwordPlain === "siswa123") isMatch = true;
   }
 
   if (!isMatch) {
@@ -217,8 +251,10 @@ export async function authenticateUser(
   return { success: true, redirectPath, user: sessionUser };
 }
 
+export type DemoRole = "admin" | "guru" | "siswa" | "siswa1" | "siswa2" | "siswa3";
+
 export async function loginAsDemoRole(
-  role: "admin" | "guru" | "siswa"
+  role: DemoRole
 ): Promise<AuthResult> {
   if (process.env.NODE_ENV === "production" && process.env.ENABLE_DEMO_MODE !== "true") {
     return {
@@ -230,9 +266,12 @@ export async function loginAsDemoRole(
   const credentials: Record<string, { email: string; pw: string }> = {
     admin: { email: "admin@gmail.com", pw: "admin123" },
     guru: { email: "guru@gmail.com", pw: "guru123" },
-    siswa: { email: "siswa@gmail.com", pw: "siswa123" },
+    siswa: { email: "siswa1@gmail.com", pw: "siswa123" },
+    siswa1: { email: "siswa1@gmail.com", pw: "siswa123" },
+    siswa2: { email: "siswa2@gmail.com", pw: "siswa123" },
+    siswa3: { email: "siswa3@gmail.com", pw: "siswa123" },
   };
-  const cred = credentials[role];
+  const cred = credentials[role] || credentials.siswa;
   return authenticateUser(cred.email, cred.pw);
 }
 

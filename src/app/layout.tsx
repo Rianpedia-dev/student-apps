@@ -21,10 +21,10 @@ const sourceCodePro = Source_Code_Pro({
 
 export const metadata: Metadata = {
   title: {
-    default: "Student Apps - SD Islam Al-Azhar Cairo Palembang",
-    template: "%s | Student Apps",
+    default: "Student Apps - SD - SMP Islam Al-Azhar Cairo Palembang",
+    template: "%s | Student Apps - SD - SMP",
   },
-  description: "Student Apps SD Islam Al-Azhar Cairo Palembang",
+  description: "Student Apps SD - SMP Islam Al-Azhar Cairo Palembang",
   icons: {
     icon: "/images/logo-alazhar-cairo.avif",
     shortcut: "/images/logo-alazhar-cairo.avif",

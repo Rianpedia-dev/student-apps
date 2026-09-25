@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { SubjectCard } from "@/components/subjects/subject-card";
-import { BookOpen, Calendar, Clock, User } from "lucide-react";
+import { Calendar, Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
@@ -59,20 +59,6 @@ export default async function SiswaMataPelajaranPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <BookOpen className="h-6 w-6" />
-            </span>
-            <span>Mata Pelajaran & Jadwal Belajar</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Daftar mata pelajaran resmi {kelas?.jenjang || "SD"} untuk {studentClass || "Rombel Siswa"}
-          </p>
-        </div>
-      </div>
 
       {/* Grid Mata Pelajaran */}
       <div className="space-y-3">
