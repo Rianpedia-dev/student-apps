@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { SubjectCard } from "@/components/subjects/subject-card";
+import { SubjectTable } from "@/components/subjects/subject-table";
 import { Calendar, Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -50,6 +50,29 @@ export default async function SiswaMataPelajaranPage() {
       })
     : [];
 
+  // Transform subjects for table view
+  const subjectsData = allMapel.map((mapel) => {
+    const jadwalMapel = jadwalList.find((j) => j.mapel_id === mapel.id);
+    const tasks = activeTasks.filter((t) => t.mapel_id === mapel.id);
+    const unsubmitted = tasks.filter((t) => t.submissions.length === 0).length;
+
+    return {
+      id: mapel.id.toString(),
+      kodeMapel: mapel.kode_mapel,
+      namaMapel: mapel.nama_mapel,
+      jenjang: mapel.jenjang,
+      icon: mapel.icon,
+      warna: mapel.warna,
+      guruNama: jadwalMapel?.guru.name || "Guru Pengampu",
+      guruImage: jadwalMapel?.guru.image || null,
+      jadwalHari: jadwalMapel?.hari,
+      jadwalWaktu: jadwalMapel ? `${jadwalMapel.jam_mulai} - ${jadwalMapel.jam_selesai}` : undefined,
+      ruang: jadwalMapel?.ruang,
+      activeTasksCount: unsubmitted,
+      detailUrl: `/siswa/mapel/${mapel.id}`,
+    };
+  });
+
   // Group jadwal by day
   const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
   const jadwalByDay = days.map((day) => ({
@@ -59,39 +82,12 @@ export default async function SiswaMataPelajaranPage() {
 
   return (
     <div className="space-y-6">
-
-      {/* Grid Mata Pelajaran */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          Daftar Mata Pelajaran
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {allMapel.map((mapel) => {
-            const jadwalMapel = jadwalList.find((j) => j.mapel_id === mapel.id);
-            const tasks = activeTasks.filter((t) => t.mapel_id === mapel.id);
-            const unsubmitted = tasks.filter((t) => t.submissions.length === 0).length;
-
-            return (
-              <SubjectCard
-                key={mapel.id.toString()}
-                id={mapel.id.toString()}
-                kodeMapel={mapel.kode_mapel}
-                namaMapel={mapel.nama_mapel}
-                jenjang={mapel.jenjang}
-                icon={mapel.icon}
-                warna={mapel.warna}
-                guruNama={jadwalMapel?.guru.name || "Guru Pengampu"}
-                jadwalHari={jadwalMapel?.hari}
-                jadwalWaktu={jadwalMapel ? `${jadwalMapel.jam_mulai} - ${jadwalMapel.jam_selesai}` : undefined}
-                ruang={jadwalMapel?.ruang}
-                activeTasksCount={unsubmitted}
-                detailUrl={`/siswa/mapel/${mapel.id}`}
-              />
-            );
-          })}
-        </div>
-      </div>
+      {/* Tabel Daftar Mata Pelajaran */}
+      <SubjectTable
+        subjects={subjectsData}
+        title="Daftar Mata Pelajaran"
+        subtitle={`Daftar mata pelajaran aktif untuk kelas ${studentClass || "Semua Jenjang"}`}
+      />
 
       {/* Weekly Schedule Table */}
       <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-4">

@@ -286,6 +286,7 @@ export default async function SiswaDashboardPage() {
           icon={ClipboardListIcon}
           description="Total kehadiran bulan ini"
           variant="amber"
+          meta="Presensi"
           href="/siswa/attendance"
         />
         <StatCard
@@ -294,6 +295,7 @@ export default async function SiswaDashboardPage() {
           icon={CalendarDaysIcon}
           description="Agenda kalender sekolah"
           variant="accent"
+          meta="Kalender"
           href="/siswa/calendar"
         />
         <StatCard
@@ -302,6 +304,7 @@ export default async function SiswaDashboardPage() {
           icon={FileCheck}
           description="Tugas perlu dikerjakan"
           variant="rose"
+          meta="Deadline"
           href="/siswa/tugas"
         />
         <StatCard
@@ -310,6 +313,7 @@ export default async function SiswaDashboardPage() {
           icon={BookOpen}
           description="Jadwal & materi aktif"
           variant="primary"
+          meta="Semester Genap"
           href="/siswa/mapel"
         />
       </div>

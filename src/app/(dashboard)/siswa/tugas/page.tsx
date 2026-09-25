@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { StudentTaskList, StudentTaskItem } from "@/components/assignment/student-task-list";
+import { StudentTaskQuestList, StudentTaskItem } from "@/components/assignment/student-task-quest-list";
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +63,8 @@ export default async function SiswaTugasListPage() {
         </p>
       </div>
 
-      {/* Daftar Tugas dengan Filter Tab */}
-      <StudentTaskList tasks={tasks} />
+      {/* Daftar Tugas Siswa */}
+      <StudentTaskQuestList tasks={tasks} />
     </div>
   );
 }

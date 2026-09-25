@@ -11,7 +11,8 @@ import {
   Clock, 
   ExternalLink,
   Loader2,
-  Edit3
+  Edit3,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { submitTugasAction } from "@/actions/assignment";
@@ -174,16 +175,26 @@ export function FileSubmissionZone({
               <p className="text-xs font-semibold text-muted-foreground mb-1.5">
                 Lembar Tugas yang Dikoreksi Guru:
               </p>
-              <a
-                href={existingSubmission.annotatedFileUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline bg-primary/5 px-3 py-2 rounded-lg border border-primary/20"
-              >
-                <FileText className="h-4 w-4" />
-                <span>Buka Lembar Catatan Guru</span>
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={existingSubmission.annotatedFileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/20"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  <span>Lihat Catatan Guru</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <a
+                  href={`/api/download?file=${encodeURIComponent(existingSubmission.annotatedFileUrl)}&name=${encodeURIComponent("Koreksi-Guru-" + (existingSubmission.fileName || "Tugas"))}`}
+                  download
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Download Koreksi</span>
+                </a>
+              </div>
             </div>
           )}
         </div>
@@ -246,15 +257,25 @@ export function FileSubmissionZone({
                     <p className="text-[11px] text-muted-foreground">File tugas tersimpan</p>
                   </div>
                 </div>
-                <a
-                  href={existingSubmission.fileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 shrink-0"
-                >
-                  <span>Lihat</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={existingSubmission.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-semibold text-muted-foreground hover:text-foreground hover:underline flex items-center gap-1"
+                  >
+                    <span>Lihat</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <a
+                    href={`/api/download?file=${encodeURIComponent(existingSubmission.fileUrl)}&name=${encodeURIComponent(existingSubmission.fileName || "Tugas-Siswa")}`}
+                    download
+                    className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                  >
+                    <span>Download</span>
+                    <Download className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
             )}
 

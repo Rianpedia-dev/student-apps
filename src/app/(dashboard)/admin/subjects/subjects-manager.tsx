@@ -14,6 +14,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { 
   Dialog, 
   DialogContent, 
@@ -140,56 +148,140 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
         </div>
       </div>
 
-      {/* Grid of Subjects */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((sub) => (
-          <div
-            key={sub.id}
-            className="rounded-2xl bg-card border border-border p-5 shadow-xs flex flex-col justify-between space-y-3 hover:border-primary/40 transition-colors"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant="outline" className="text-xs font-bold uppercase text-primary border-primary/30">
-                  {sub.kode}
-                </Badge>
-                <Badge variant={sub.jenjang === "SMP" ? "secondary" : "default"} className="text-[10px]">
-                  {sub.jenjang === "SEMUA" ? "SD & SMP" : `Jenjang ${sub.jenjang}`}
-                </Badge>
-              </div>
+      {/* Table of Subjects */}
+      <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+        <Table>
+          <TableHeader className="bg-muted/40">
+            <TableRow className="border-b border-border/80">
+              <TableHead className="w-12 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                No
+              </TableHead>
+              <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground min-w-[100px]">
+                Kode
+              </TableHead>
+              <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground min-w-[240px]">
+                Nama Mata Pelajaran
+              </TableHead>
+              <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground min-w-[130px]">
+                Jenjang
+              </TableHead>
+              <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground min-w-[110px]">
+                Jadwal
+              </TableHead>
+              <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground min-w-[110px]">
+                Tugas
+              </TableHead>
+              <TableHead className="text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground pr-6 min-w-[80px]">
+                Aksi
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="py-12 text-center text-muted-foreground"
+                >
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                      <Search className="h-5 w-5" />
+                    </div>
+                    <p className="text-xs font-semibold text-foreground">
+                      Mata pelajaran tidak ditemukan
+                    </p>
+                    <p className="text-[11px] text-muted-foreground max-w-sm">
+                      Tidak ada data yang cocok dengan kata kunci &ldquo;{search}&rdquo; atau filter jenjang yang dipilih.
+                    </p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((sub, idx) => (
+                <TableRow
+                  key={sub.id}
+                  className="hover:bg-muted/40 transition-colors border-b border-border/60"
+                >
+                  {/* 1. No */}
+                  <TableCell className="text-center text-xs font-medium text-muted-foreground/80 py-3.5">
+                    {idx + 1}
+                  </TableCell>
 
-              <h3 className="text-base font-bold text-foreground leading-snug">
-                {sub.nama}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {sub.deskripsi || "Mata pelajaran kurikulum Al-Azhar Cairo Palembang."}
-              </p>
-            </div>
+                  {/* 2. Kode */}
+                  <TableCell className="py-3.5">
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-bold font-mono uppercase text-primary border-primary/30"
+                    >
+                      {sub.kode}
+                    </Badge>
+                  </TableCell>
 
-            <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3 text-primary" />
-                  {sub.totalJadwal} Sesi
-                </span>
-                <span className="flex items-center gap-1">
-                  <FileCheck className="h-3 w-3 text-primary" />
-                  {sub.totalTugas} Tugas
-                </span>
-              </div>
+                  {/* 3. Nama Mata Pelajaran */}
+                  <TableCell className="py-3.5">
+                    <p className="text-sm font-semibold text-foreground leading-tight">
+                      {sub.nama}
+                    </p>
+                  </TableCell>
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setDeleteTarget(sub)}
-                className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg"
-                title="Hapus Mata Pelajaran"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        ))}
+                  {/* 4. Jenjang */}
+                  <TableCell className="py-3.5">
+                    <Badge
+                      variant={
+                        sub.jenjang === "SMP"
+                          ? "secondary"
+                          : sub.jenjang === "SD"
+                          ? "outline"
+                          : "default"
+                      }
+                      className="text-[11px] font-medium"
+                    >
+                      {sub.jenjang === "SEMUA"
+                        ? "SD & SMP"
+                        : `Jenjang ${sub.jenjang}`}
+                    </Badge>
+                  </TableCell>
+
+                  {/* 5. Total Jadwal */}
+                  <TableCell className="py-3.5 text-center">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5 text-primary" />
+                      <span>{sub.totalJadwal} Sesi</span>
+                    </span>
+                  </TableCell>
+
+                  {/* 6. Total Tugas */}
+                  <TableCell className="py-3.5 text-center">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <FileCheck className="h-3.5 w-3.5 text-primary" />
+                      <span>{sub.totalTugas} Tugas</span>
+                    </span>
+                  </TableCell>
+
+                  {/* 7. Aksi */}
+                  <TableCell className="py-3.5 text-right pr-6">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteTarget(sub)}
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-colors"
+                      title="Hapus Mata Pelajaran"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Summary info */}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+        <span>Menampilkan {filtered.length} dari {subjects.length} mata pelajaran</span>
+        <span>Total: {subjects.length} Mapel terdaftar</span>
       </div>
 
       {/* Create Dialog */}

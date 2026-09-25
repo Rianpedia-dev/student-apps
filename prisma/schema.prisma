@@ -382,10 +382,12 @@ model TugasSubmission {
   file_type          String    @db.VarChar(50)
   file_size          Int?
   catatan_siswa      String?   @db.Text
+  attachments        String?   @db.Text
   status             String    @default("menunggu_penilaian") @db.VarChar(50)
   nilai              Float?
   catatan_guru       String?   @db.Text
   annotated_file_url String?   @db.VarChar(500)
+  annotated_data     String?   @db.Text
   submitted_at       DateTime  @default(now()) @db.Timestamp(0)
   graded_at          DateTime? @db.Timestamp(0)
   graded_by          BigInt?   @db.UnsignedBigInt

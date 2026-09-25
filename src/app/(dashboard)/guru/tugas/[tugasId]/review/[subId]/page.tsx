@@ -44,6 +44,20 @@ export default async function GuruReviewTugasPage({ params }: PageProps) {
 
   if (!submission) notFound();
 
+  // Fetch sibling submissions in this task for Speed-Grader next/previous navigation
+  const allSubs = await prisma.tugasSubmission.findMany({
+    where: { tugas_id: submission.tugas_id },
+    select: { id: true },
+    orderBy: { submitted_at: "asc" },
+  });
+
+  const currentIndex = allSubs.findIndex((s) => s.id === submission.id);
+  const prevSubId = currentIndex > 0 ? allSubs[currentIndex - 1].id.toString() : null;
+  const nextSubId =
+    currentIndex >= 0 && currentIndex < allSubs.length - 1
+      ? allSubs[currentIndex + 1].id.toString()
+      : null;
+
   return (
     <InBrowserGrader
       submission={{
@@ -56,10 +70,13 @@ export default async function GuruReviewTugasPage({ params }: PageProps) {
         fileUrl: submission.file_url,
         fileName: submission.file_name,
         fileType: submission.file_type,
+        attachments: submission.attachments,
         catatanSiswa: submission.catatan_siswa,
         status: submission.status,
         nilai: submission.nilai,
         catatanGuru: submission.catatan_guru,
+        annotatedFileUrl: submission.annotated_file_url,
+        annotatedData: submission.annotated_data,
         submittedAt: submission.submitted_at.toISOString(),
         siswa: {
           id: submission.siswa.id.toString(),
@@ -68,6 +85,8 @@ export default async function GuruReviewTugasPage({ params }: PageProps) {
           image: submission.siswa.image,
         },
       }}
+      prevSubId={prevSubId}
+      nextSubId={nextSubId}
     />
   );
 }

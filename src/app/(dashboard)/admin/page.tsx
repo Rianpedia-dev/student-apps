@@ -72,33 +72,41 @@ export default async function AdminDashboardPage() {
         <StatCard
           title="Jumlah Siswa"
           value={totalSiswa}
+          countLabel="Siswa"
           icon={GraduationCap}
           description="Total siswa aktif"
           variant="primary"
+          meta="Terdaftar"
           href="/admin/students"
         />
         <StatCard
           title="Jumlah Guru"
           value={totalGuru}
+          countLabel="Guru"
           icon={Users}
           description="Total dewan pengajar"
           variant="accent"
+          meta="Pengajar"
           href="/admin/teachers"
         />
         <StatCard
           title="Akun Aktif"
           value={totalAktif}
+          countLabel="Akun"
           icon={UserCheck}
           description="Pengguna terverifikasi"
           variant="secondary"
+          meta="Aktif"
           href="/admin/students"
         />
         <StatCard
           title="Akun Non-Aktif"
           value={totalNonAktif}
+          countLabel="Akun"
           icon={UserX}
           description="Menunggu verifikasi admin"
           variant="amber"
+          meta="Pending"
           href="/admin/students"
         />
       </div>

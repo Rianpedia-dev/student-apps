@@ -154,30 +154,38 @@ export default async function AdminKelasOnlinePage() {
         <StatCard
           title="Total Sesi"
           value={totalSessions.toString()}
+          countLabel="Sesi"
           icon={Video}
           description="Bulan ini"
           variant="emerald"
+          meta="Live Class"
         />
         <StatCard
           title="Total Menit"
           value={totalMinutes.toLocaleString("id-ID")}
+          countLabel="Menit"
           icon={Clock}
           description="Menit belajar siswa"
           variant="blue"
+          meta="Total Durasi"
         />
         <StatCard
           title="Rata-rata Durasi"
           value={`${avgDuration}m`}
+          countLabel="Menit"
           icon={BarChart3}
-          description="Per sesi"
+          description="Per sesi belajar"
           variant="amber"
+          meta="Rata-rata"
         />
         <StatCard
           title="Rata-rata Peserta"
           value={avgParticipants.toString()}
+          countLabel="Siswa"
           icon={Users}
-          description="Per sesi"
+          description="Kehadiran per sesi"
           variant="purple"
+          meta="Peserta"
         />
       </div>
 

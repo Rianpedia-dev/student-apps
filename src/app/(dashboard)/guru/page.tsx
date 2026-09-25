@@ -121,15 +121,20 @@ export default async function GuruDashboardPage() {
           title="Kelas Saya"
           value={`${students.length} Siswa`}
           icon={Users}
+          description="Wali kelas & murid"
           variant="amber"
+          meta="Aktif"
           href="/guru/my-class"
         />
         <StatCard
           title="Absensi Hari Ini"
-          value={totalAbsenToday > 0 ? `${attendanceToday} Hadir` : "Belum diisi"}
+          value={totalAbsenToday > 0 ? `${attendanceToday} Hadir` : "0 Hadir"}
+          count={totalAbsenToday > 0 ? attendanceToday : "—"}
+          countLabel={totalAbsenToday > 0 ? "Hadir" : "Belum diisi"}
           icon={ClipboardListIcon}
           description={totalAbsenToday > 0 ? `Dari ${students.length} siswa` : "Buka form absen"}
           variant="accent"
+          meta="Presensi"
           href={`/guru/attendance/${todayFormatted}`}
         />
         <StatCard
@@ -138,6 +143,7 @@ export default async function GuruDashboardPage() {
           icon={FileCheck}
           description="Tugas aktif berjalan"
           variant="primary"
+          meta="Penugasan"
           href="/guru/tugas"
         />
         <StatCard
@@ -146,6 +152,7 @@ export default async function GuruDashboardPage() {
           icon={Sparkles}
           description="Koreksi lembar tugas"
           variant="rose"
+          meta="Evaluasi"
           href="/guru/tugas"
         />
       </div>
