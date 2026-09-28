@@ -51,12 +51,12 @@ export default async function SiswaDashboardPage() {
           ? prisma.user.findUnique({
               where: { id: userIdBigInt },
               select: { image: true, point: true, nis: true, name: true, gender: true },
-            })
+            }).catch(() => null)
           : null,
         studentClass
           ? prisma.kelas.findFirst({
               where: { nama_kelas: studentClass },
-            })
+            }).catch(() => null)
           : null,
         userIdBigInt
           ? prisma.absen.count({
@@ -65,7 +65,7 @@ export default async function SiswaDashboardPage() {
                 date: { startsWith: currentYearMonth },
                 keterangan: { in: ["Hadir", "hadir", "H"] },
               },
-            })
+            }).catch(() => 0)
           : 0,
         prisma.event.count({
           where: {
@@ -89,25 +89,25 @@ export default async function SiswaDashboardPage() {
               },
             ],
           },
-        }),
+        }).catch(() => 0),
         studentClass
           ? prisma.user.findMany({
               where: { kelas: studentClass, status: "1" },
-            })
+            }).catch(() => [])
           : [],
         prisma.pengumuman.findMany({
           where: {
-            OR: [{ from: "IT" }, { from: studentClass }],
+            OR: [{ from: "IT" }, ...(studentClass ? [{ from: studentClass }] : [])],
           },
           orderBy: { id: "desc" },
           take: 10,
-        }),
+        }).catch(() => []),
       ]);
 
     const normalizeName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
     const photoMap = new Map<string, string | null>();
     const genderMap = new Map<string, string | null>();
-    dbClassmates.forEach((u) => {
+    (dbClassmates || []).forEach((u) => {
       if (u.image) {
         photoMap.set(normalizeName(u.name), u.image);
       }
@@ -115,10 +115,10 @@ export default async function SiswaDashboardPage() {
     });
 
     kelasInfo = dbKelas;
-    totalHadirMonth = dbHadirMonth;
-    totalEventsMonth = dbEventsMonth;
-    classmates = dbClassmates;
-    announcements = dbAnnounce;
+    totalHadirMonth = dbHadirMonth || 0;
+    totalEventsMonth = dbEventsMonth || 0;
+    classmates = dbClassmates || [];
+    announcements = dbAnnounce || [];
 
     // Student identity info
     studentImage = getUserProfileImage(dbUser?.image || session.image, dbUser?.gender || (session as any).gender);
@@ -129,7 +129,7 @@ export default async function SiswaDashboardPage() {
   }
 
   if (!kelasInfo) {
-    kelasInfo = { wali_kelas: "-", nama_kelas: studentClass || "Belum ditentukan" };
+    kelasInfo = { id: null, wali_kelas: "-", nama_kelas: studentClass || "Belum ditentukan" };
   }
 
   let waliKelas = kelasInfo?.wali_kelas;
@@ -150,86 +150,99 @@ export default async function SiswaDashboardPage() {
     }
   }
 
-  const formattedAnnouncements = announcements.map((p) => ({
-    id: p.id.toString(),
-    from: p.from,
-    title: p.title,
-    file: p.file,
-    pengumuman: p.pengumuman,
-    like: p.like,
-    created_at: p.created_at,
+  const formattedAnnouncements = (announcements || []).map((p) => ({
+    id: p.id ? p.id.toString() : Math.random().toString(),
+    from: p.from || "IT",
+    title: p.title || "Pengumuman",
+    file: p.file || null,
+    pengumuman: p.pengumuman || "",
+    like: p.like || "0",
+    created_at: p.created_at || null,
   }));
 
   // Fetch Mata Pelajaran & Jadwal Siswa
   let subjectsForDashboard: any[] = [];
   let pendingTasksCount = 0;
 
-  if (kelasInfo) {
-    const [jadwalKelas, activeTasks] = await Promise.all([
-      prisma.jadwalPelajaran.findMany({
-        where: { kelas_id: kelasInfo.id },
-        include: {
-          mapel: true,
-          guru: { select: { name: true, image: true } },
-        },
-        orderBy: [{ hari: "asc" }, { jam_mulai: "asc" }],
-      }),
-      prisma.tugas.findMany({
-        where: { kelas_id: kelasInfo.id, status: "aktif" },
-        include: {
-          submissions: userIdBigInt ? { where: { siswa_id: userIdBigInt } } : false,
-        },
-      }),
-    ]);
+  try {
+    if (kelasInfo?.id) {
+      const [jadwalKelas, activeTasks] = await Promise.all([
+        prisma.jadwalPelajaran.findMany({
+          where: { kelas_id: kelasInfo.id },
+          include: {
+            mapel: true,
+            guru: { select: { name: true, image: true } },
+          },
+          orderBy: [{ hari: "asc" }, { jam_mulai: "asc" }],
+        }).catch(() => []),
+        prisma.tugas.findMany({
+          where: { kelas_id: kelasInfo.id, status: "aktif" },
+          include: userIdBigInt
+            ? {
+                submissions: { where: { siswa_id: userIdBigInt } },
+              }
+            : undefined,
+        }).catch(() => []),
+      ]);
 
-    pendingTasksCount = activeTasks.filter(
-      (t) => !t.submissions || t.submissions.length === 0 || t.submissions[0].status === "perlu_revisi"
-    ).length;
+      const tasksList = (activeTasks as any[]) || [];
+      pendingTasksCount = tasksList.filter(
+        (t) => !t.submissions || t.submissions.length === 0 || t.submissions[0]?.status === "perlu_revisi"
+      ).length;
 
-    if (jadwalKelas.length > 0) {
-      subjectsForDashboard = jadwalKelas.map((j) => {
-        const tasksForMapel = activeTasks.filter((t) => t.mapel_id === j.mapel_id);
-        const unsubmitted = tasksForMapel.filter(
-          (t) => !t.submissions || t.submissions.length === 0
-        ).length;
+      if (jadwalKelas && jadwalKelas.length > 0) {
+        subjectsForDashboard = (jadwalKelas as any[]).map((j) => {
+          const tasksForMapel = tasksList.filter((t) => t.mapel_id === j.mapel_id);
+          const unsubmitted = tasksForMapel.filter(
+            (t) => !t.submissions || t.submissions.length === 0
+          ).length;
 
-        return {
-          id: j.mapel.id.toString(),
-          kodeMapel: j.mapel.kode_mapel,
-          namaMapel: j.mapel.nama_mapel,
-          jenjang: j.mapel.jenjang,
-          icon: j.mapel.icon,
-          warna: j.mapel.warna,
-          guruNama: j.guru.name,
-          guruImage: j.guru.image,
-          jadwalHari: j.hari,
-          jadwalWaktu: `${j.jam_mulai} - ${j.jam_selesai}`,
-          ruang: j.ruang,
-          activeTasksCount: unsubmitted,
-          detailUrl: `/siswa/mapel/${j.mapel.id}`,
-        };
-      });
-    } else {
+          return {
+            id: j.mapel ? j.mapel.id.toString() : j.id.toString(),
+            kodeMapel: j.mapel?.kode_mapel || "-",
+            namaMapel: j.mapel?.nama_mapel || "Mata Pelajaran",
+            jenjang: j.mapel?.jenjang || "SD",
+            icon: j.mapel?.icon || "BookOpen",
+            warna: j.mapel?.warna || "#059669",
+            guruNama: j.guru?.name || "Guru Pengampu",
+            guruImage: j.guru?.image || null,
+            jadwalHari: j.hari || "Senin",
+            jadwalWaktu: `${j.jam_mulai || "07:30"} - ${j.jam_selesai || "09:00"}`,
+            ruang: j.ruang || "-",
+            activeTasksCount: unsubmitted,
+            detailUrl: `/siswa/mapel/${j.mapel_id || j.id}`,
+          };
+        });
+      }
+    }
+
+    if (subjectsForDashboard.length === 0) {
       const generalMapel = await prisma.mataPelajaran.findMany({
-        where: { OR: [{ jenjang: kelasInfo.jenjang || "SD" }, { jenjang: "SEMUA" }] },
+        where: { OR: [{ jenjang: kelasInfo?.jenjang || "SD" }, { jenjang: "SEMUA" }] },
         take: 6,
         orderBy: { nama_mapel: "asc" },
-      });
+      }).catch(() => []);
 
-      subjectsForDashboard = generalMapel.map((m) => ({
-        id: m.id.toString(),
-        kodeMapel: m.kode_mapel,
-        namaMapel: m.nama_mapel,
-        jenjang: m.jenjang,
-        icon: m.icon,
-        warna: m.warna,
-        guruNama: "Guru Pengampu",
-        jadwalHari: "Senin - Jumat",
-        jadwalWaktu: "07:30 - 09:00",
-        activeTasksCount: 0,
-        detailUrl: `/siswa/mapel/${m.id}`,
-      }));
+      if (generalMapel && generalMapel.length > 0) {
+        subjectsForDashboard = generalMapel.map((m) => ({
+          id: m.id.toString(),
+          kodeMapel: m.kode_mapel || "-",
+          namaMapel: m.nama_mapel || "Mata Pelajaran",
+          jenjang: m.jenjang || "SD",
+          icon: m.icon || "BookOpen",
+          warna: m.warna || "#059669",
+          guruNama: "Guru Pengampu",
+          guruImage: null,
+          jadwalHari: "Senin - Jumat",
+          jadwalWaktu: "07:30 - 09:00",
+          ruang: "Kelas",
+          activeTasksCount: 0,
+          detailUrl: `/siswa/mapel/${m.id}`,
+        }));
+      }
     }
+  } catch (err) {
+    console.error("Error fetching subjects/tasks in siswa dashboard:", err);
   }
 
   return (
