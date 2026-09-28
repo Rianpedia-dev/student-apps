@@ -92,7 +92,7 @@ export async function logoutAction() {
 }
 
 export async function demoLoginAction(role: "admin" | "guru" | "siswa") {
-  if (process.env.NODE_ENV === "production" && process.env.ENABLE_DEMO_MODE !== "true") {
+  if (process.env.ENABLE_DEMO_MODE === "false") {
     redirect("/login?error=demo_disabled");
   }
   const { loginAsDemoRole } = await import("@/lib/auth");
@@ -130,10 +130,10 @@ export async function loginDirectAction(
 export async function demoLoginDirectAction(
   role: "admin" | "guru" | "siswa" | "siswa1" | "siswa2" | "siswa3"
 ): Promise<AuthResult> {
-  if (process.env.NODE_ENV === "production" && process.env.ENABLE_DEMO_MODE !== "true") {
+  if (process.env.ENABLE_DEMO_MODE === "false") {
     return {
       success: false,
-      error: "Demo login dinonaktifkan di lingkungan produksi.",
+      error: "Demo login dinonaktifkan oleh administrator.",
     };
   }
   const { loginAsDemoRole } = await import("@/lib/auth");

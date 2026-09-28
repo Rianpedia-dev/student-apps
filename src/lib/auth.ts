@@ -90,8 +90,7 @@ export async function authenticateUser(
 
   // Fallback demo credentials hanya jika database offline/kosong DAN demo mode aktif
   if (!user) {
-    const isDemoEnabled =
-      process.env.ENABLE_DEMO_MODE === "true" || process.env.NODE_ENV !== "production";
+    const isDemoEnabled = process.env.ENABLE_DEMO_MODE !== "false";
 
     if (isDemoEnabled) {
       const demoAccounts: Record<
@@ -206,7 +205,7 @@ export async function authenticateUser(
   }
 
   // Also check default passwords for seeded accounts if password hash differs and demo mode is allowed
-  if (!isMatch && (process.env.ENABLE_DEMO_MODE === "true" || process.env.NODE_ENV !== "production")) {
+  if (!isMatch && process.env.ENABLE_DEMO_MODE !== "false") {
     if (email === "admin@gmail.com" && passwordPlain === "admin123") isMatch = true;
     if (email === "guru@gmail.com" && passwordPlain === "guru123") isMatch = true;
     if (email === "siswa@gmail.com" && passwordPlain === "siswa123") isMatch = true;
@@ -256,10 +255,10 @@ export type DemoRole = "admin" | "guru" | "siswa" | "siswa1" | "siswa2" | "siswa
 export async function loginAsDemoRole(
   role: DemoRole
 ): Promise<AuthResult> {
-  if (process.env.NODE_ENV === "production" && process.env.ENABLE_DEMO_MODE !== "true") {
+  if (process.env.ENABLE_DEMO_MODE === "false") {
     return {
       success: false,
-      error: "Demo login dinonaktifkan di lingkungan produksi. Silakan login menggunakan akun terdaftar.",
+      error: "Demo login dinonaktifkan oleh administrator.",
     };
   }
 
