@@ -3,8 +3,8 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft } from "lucide-react";
-import { StudentTaskQuestionCard } from "@/components/assignment/student-task-question-card";
-import { KidsSubmissionZone } from "@/components/assignment/kids-submission-zone";
+import { StudentTaskQuestionCard } from "@/components/features/assignment/student-task-question-card";
+import { KidsSubmissionZone } from "@/components/features/assignment/kids-submission-zone";
 
 export const dynamic = "force-dynamic";
 

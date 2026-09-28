@@ -3,8 +3,8 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft, FileText } from "lucide-react";
-import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
-import { RecapClient } from "./recap-client";
+import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
+import { RecapClient } from "./_components/recap-client";
 import { getAcademicYear } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";

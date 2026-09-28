@@ -3,8 +3,8 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft } from "lucide-react";
-import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
-import { DailyAttendanceForm } from "./daily-attendance-form";
+import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
+import { DailyAttendanceForm } from "./_components/daily-attendance-form";
 import { formatDateIndo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";

@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, Maximize2, Minimize2, User } from "lucide-react";
-import { MenuUnfoldLeftIcon } from "@/components/ui/menu-unfold-left-icon";
-import { NotificationIcon } from "@/components/ui/notification-icon";
+import { MenuUnfoldLeftIcon } from "@/components/icons/menu-unfold-left-icon";
+import { NotificationIcon } from "@/components/icons/notification-icon";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./sidebar";
-import { useSidebar } from "./sidebar-context";
+import { useSidebar } from "@/components/providers/sidebar-provider";
 import { NavbarLiveClock } from "./navbar-clock";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { getAcademicYear, getRoleLabel, cn } from "@/lib/utils";
-import { AlAzharCornerMosaic } from "@/components/ui/alazhar-patterns";
+import { AlAzharCornerMosaic } from "@/components/shared/alazhar-patterns";
 
 interface NavbarProps {
   role: "admin" | "guru" | "siswa";

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { CalendarClient } from "@/components/calendar/calendar-client";
+import { CalendarClient } from "@/components/features/calendar/calendar-client";
 
 export const dynamic = "force-dynamic";
 

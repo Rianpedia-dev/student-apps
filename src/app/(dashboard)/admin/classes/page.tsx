@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { ClassTable } from "./class-table";
+import { ClassTable } from "./_components/class-table";
 import { School } from "lucide-react";
 
 export const dynamic = "force-dynamic";

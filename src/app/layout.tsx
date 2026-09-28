@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Oxanium, Source_Code_Pro } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
-import { GlobalBackground } from "@/components/ui/global-background";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { GlobalBackground } from "@/components/shared/global-background";
 
 const oxanium = Oxanium({
   variable: "--font-oxanium",

@@ -3,7 +3,7 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft, Table as TableIcon, Download, ChevronLeft, ChevronRight, School } from "lucide-react";
-import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
+import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

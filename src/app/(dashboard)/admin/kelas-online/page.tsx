@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Video, Clock, Users, BarChart3, Wifi } from "lucide-react";
-import { StatCard } from "@/components/stat-card";
+import { StatCard } from "@/components/shared/stat-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AdminSessionLogSection } from "./admin-session-log-section";
+import { AdminSessionLogSection } from "./_components/admin-session-log-section";
 
 export const dynamic = "force-dynamic";
 

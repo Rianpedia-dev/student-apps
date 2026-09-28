@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { StudentTaskQuestList, StudentTaskItem } from "@/components/assignment/student-task-quest-list";
+import { StudentTaskQuestList, StudentTaskItem } from "@/components/features/assignment/student-task-quest-list";
 
 export const dynamic = "force-dynamic";
 

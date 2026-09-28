@@ -1180,29 +1180,57 @@ async function main() {
   const mapelInfor = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "INFOR" } });
   const mapelBarab = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "BARAB" } });
 
-  if (kelasSD && guruSD && mapelPai && mapelMtk && mapelBarab) {
-    const existJadwalSD = await prisma.jadwalPelajaran.findFirst({ where: { kelas_id: kelasSD.id } });
-    if (!existJadwalSD) {
-      await prisma.jadwalPelajaran.createMany({
-        data: [
-          { kelas_id: kelasSD.id, mapel_id: mapelPai.id, guru_id: guruSD.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "R. Mehmed Al Fatih" },
-          { kelas_id: kelasSD.id, mapel_id: mapelMtk.id, guru_id: guruSD.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "R. Mehmed Al Fatih" },
-          { kelas_id: kelasSD.id, mapel_id: mapelBarab.id, guru_id: guruSD.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "R. Mehmed Al Fatih" },
-        ],
-      });
+  const mapelBind = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "BIND" } });
+  const mapelTahfidz = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "TAHFIDZ" } });
+  const mapelBing = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "BING" } });
+  const mapelPjok = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "PJOK" } });
+  const mapelIps = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "IPS" } });
+
+  const guruAhmad = (await prisma.user.findFirst({ where: { email: "ahmad.guru@alazhar.sch.id" } })) || guruSD;
+  const guruMaryam = (await prisma.user.findFirst({ where: { email: "maryam.guru@alazhar.sch.id" } })) || guruSD;
+  const guruIbrahim = (await prisma.user.findFirst({ where: { email: "ibrahim.guru@alazhar.sch.id" } })) || guruSD;
+  const guruAisyah = (await prisma.user.findFirst({ where: { email: "aisyah.guru@alazhar.sch.id" } })) || guruSD;
+  const guruHasan = (await prisma.user.findFirst({ where: { email: "hasan.guru@alazhar.sch.id" } })) || guruSD;
+  const guruRidwan = (await prisma.user.findFirst({ where: { email: "ridwan.guru@alazhar.sch.id" } })) || guruSD;
+  const guruFaisal = (await prisma.user.findFirst({ where: { email: "faisal.guru@alazhar.sch.id" } })) || guruSD;
+
+  if (kelasSD && guruSD) {
+    await prisma.jadwalPelajaran.deleteMany({ where: { kelas_id: kelasSD.id } });
+    const jadwalSDList = [];
+    if (mapelPai && guruSD) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelPai.id, guru_id: guruSD.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "R. Mehmed Al Fatih" });
+    if (mapelMtk && guruMaryam) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelMtk.id, guru_id: guruMaryam.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "R. Mehmed Al Fatih" });
+    if (mapelBarab && guruAhmad) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelBarab.id, guru_id: guruAhmad.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "R. Mehmed Al Fatih" });
+    if (mapelBind && guruSD) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelBind.id, guru_id: guruSD.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "R. Mehmed Al Fatih" });
+    if (mapelTahfidz && guruHasan) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelTahfidz.id, guru_id: guruHasan.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Masjid Al-Azhar" });
+    if (mapelIpa && guruIbrahim) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelIpa.id, guru_id: guruIbrahim.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "Lab Sains Terpadu" });
+    if (mapelBing && guruAisyah) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelBing.id, guru_id: guruAisyah.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "R. Mehmed Al Fatih" });
+    if (mapelInfor && guruRidwan) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelInfor.id, guru_id: guruRidwan.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "Lab Komputer / iPad" });
+    if (mapelPjok && guruFaisal) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelPjok.id, guru_id: guruFaisal.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Lapangan Olahraga" });
+    if (mapelPai && guruSD) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelPai.id, guru_id: guruSD.id, hari: "Jumat", jam_mulai: "09:30", jam_selesai: "10:45", ruang: "Masjid Al-Azhar" });
+
+    if (jadwalSDList.length > 0) {
+      await prisma.jadwalPelajaran.createMany({ data: jadwalSDList });
+      console.log(`✅ ${jadwalSDList.length} sesi jadwal pelajaran disiapkan untuk Kelas 4 SD.`);
     }
   }
 
-  if (kelasSMP && guruSmp && mapelMtk && mapelIpa && mapelInfor) {
-    const existJadwalSMP = await prisma.jadwalPelajaran.findFirst({ where: { kelas_id: kelasSMP.id } });
-    if (!existJadwalSMP) {
-      await prisma.jadwalPelajaran.createMany({
-        data: [
-          { kelas_id: kelasSMP.id, mapel_id: mapelMtk.id, guru_id: guruSmp.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Lab Komputer / iPad" },
-          { kelas_id: kelasSMP.id, mapel_id: mapelIpa.id, guru_id: guruSmp.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "Lab Sains Terpadu" },
-          { kelas_id: kelasSMP.id, mapel_id: mapelInfor.id, guru_id: guruSmp.id, hari: "Kamis", jam_mulai: "10:30", jam_selesai: "12:00", ruang: "Digital Classroom" },
-        ],
-      });
+  if (kelasSMP && guruSmp) {
+    await prisma.jadwalPelajaran.deleteMany({ where: { kelas_id: kelasSMP.id } });
+    const jadwalSMPList = [];
+    if (mapelMtk) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelMtk.id, guru_id: guruSmp.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "R. Ibnu Sina" });
+    if (mapelBing && guruAisyah) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelBing.id, guru_id: guruAisyah.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "R. Ibnu Sina" });
+    if (mapelBind) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelBind.id, guru_id: guruSmp.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "R. Ibnu Sina" });
+    if (mapelBarab && guruAhmad) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelBarab.id, guru_id: guruAhmad.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "R. Ibnu Sina" });
+    if (mapelIpa) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelIpa.id, guru_id: guruSmp.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Lab Sains Terpadu" });
+    if (mapelIps) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelIps.id, guru_id: guruSmp.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "R. Ibnu Sina" });
+    if (mapelTahfidz && guruHasan) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelTahfidz.id, guru_id: guruHasan.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Masjid Al-Azhar" });
+    if (mapelInfor && guruRidwan) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelInfor.id, guru_id: guruRidwan.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "Lab Komputer / iPad" });
+    if (mapelPjok && guruFaisal) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelPjok.id, guru_id: guruFaisal.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Lapangan Olahraga" });
+    if (mapelPai) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelPai.id, guru_id: guruSmp.id, hari: "Jumat", jam_mulai: "09:30", jam_selesai: "10:45", ruang: "Masjid Al-Azhar" });
+
+    if (jadwalSMPList.length > 0) {
+      await prisma.jadwalPelajaran.createMany({ data: jadwalSMPList });
+      console.log(`✅ ${jadwalSMPList.length} sesi jadwal pelajaran disiapkan untuk Kelas 7 SMP.`);
     }
   }
 

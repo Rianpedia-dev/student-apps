@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { SubjectTable } from "@/components/subjects/subject-table";
+import { SubjectTable } from "@/components/features/subjects/subject-table";
 import { Calendar, Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 

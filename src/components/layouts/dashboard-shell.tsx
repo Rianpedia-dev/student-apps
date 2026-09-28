@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { SidebarProvider, useSidebar } from "./sidebar-context";
+import { SidebarProvider, useSidebar } from "@/components/providers/sidebar-provider";
 import { Sidebar } from "./sidebar";
 import { Navbar } from "./navbar";
 import { Footer } from "./footer";
 import { cn } from "@/lib/utils";
-import { KelasOnlineProvider } from "@/components/kelas-online/kelas-online-context";
-import { PersistentVideoHost } from "@/components/kelas-online/persistent-video-host";
+import { KelasOnlineProvider } from "@/components/features/kelas-online/kelas-online-context";
+import { PersistentVideoHost } from "@/components/features/kelas-online/persistent-video-host";
 
 interface DashboardShellProps {
   role: "admin" | "guru" | "siswa";

@@ -21,19 +21,19 @@ import {
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
-import { useSidebar } from "./sidebar-context";
+import { useSidebar } from "@/components/providers/sidebar-provider";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
-import { LayoutDashboardIcon } from "@/components/ui/layout-dashboard-icon";
-import { AccountIcon } from "@/components/ui/account-icon";
-import { CalendarDaysIcon } from "@/components/ui/calendar-days-icon";
-import { VideoIcon } from "@/components/ui/video-icon";
-import { AlAzharCornerMosaic, AlAzharMosaicStrip } from "@/components/ui/alazhar-patterns";
+import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
+import { LayoutDashboardIcon } from "@/components/icons/layout-dashboard-icon";
+import { AccountIcon } from "@/components/icons/account-icon";
+import { CalendarDaysIcon } from "@/components/icons/calendar-days-icon";
+import { VideoIcon } from "@/components/icons/video-icon";
+import { AlAzharCornerMosaic, AlAzharMosaicStrip } from "@/components/shared/alazhar-patterns";
 
 const ANIMATED_ICONS = new Set<unknown>([
   ClipboardListIcon,

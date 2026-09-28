@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
-import { AttendanceHistoryClient } from "./attendance-history-client";
+import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
+import { AttendanceHistoryClient } from "./_components/attendance-history-client";
 
 export const dynamic = "force-dynamic";
 

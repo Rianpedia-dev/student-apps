@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateIndo } from "@/lib/utils";
-import { SiswaProfileForm } from "@/components/profile/siswa-profile-form";
+import { SiswaProfileForm } from "@/components/features/profile/siswa-profile-form";
 
 export const dynamic = "force-dynamic";
 

@@ -3,7 +3,7 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft, Clock, Users, CheckCircle, AlertCircle } from "lucide-react";
-import { TeacherSubmissionsView, StudentSubmissionItem } from "@/components/assignment/teacher-submissions-view";
+import { TeacherSubmissionsView, StudentSubmissionItem } from "@/components/features/assignment/teacher-submissions-view";
 
 export const dynamic = "force-dynamic";
 

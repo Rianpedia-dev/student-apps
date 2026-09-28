@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Tiles } from "@/components/ui/tiles";
+import { Tiles } from "@/components/shared/tiles";
 
 // ─── Card Background (Interactive Grid) ─────────────────────────────────────
 

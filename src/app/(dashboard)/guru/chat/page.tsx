@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getUserChatRooms, getContactsForCurrentUser } from "@/actions/chat";
-import { ChatContainer } from "@/components/chat/chat-container";
+import { ChatContainer } from "@/components/features/chat/chat-container";
 
 export const dynamic = "force-dynamic";
 

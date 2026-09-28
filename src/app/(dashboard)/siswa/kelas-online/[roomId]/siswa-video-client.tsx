@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { ClassroomTopBar } from "@/components/kelas-online/classroom-top-bar";
-import { useKelasOnline } from "@/components/kelas-online/kelas-online-context";
+import { ClassroomTopBar } from "@/components/features/kelas-online/classroom-top-bar";
+import { useKelasOnline } from "@/components/features/kelas-online/kelas-online-context";
 
 interface RoomData {
   id: string;

@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TeacherTaskList, TeacherTaskItem } from "@/components/assignment/teacher-task-list";
+import { TeacherTaskList, TeacherTaskItem } from "@/components/features/assignment/teacher-task-list";
 
 export const dynamic = "force-dynamic";
 

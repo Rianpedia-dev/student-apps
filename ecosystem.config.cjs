@@ -14,7 +14,7 @@ module.exports = {
     },
     {
       name: "student-apps-socket",
-      script: "socket-server.cjs",
+      script: "server/socket-server.cjs",
       instances: 1,
       exec_mode: "fork",
       max_memory_restart: "500M",

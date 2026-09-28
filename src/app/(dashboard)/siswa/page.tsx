@@ -2,24 +2,16 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import {
-  Sparkles,
-  BookOpen,
-  FileCheck,
-  MessageSquare,
-  ArrowRight,
-} from "lucide-react";
-import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
-import { CalendarDaysIcon } from "@/components/ui/calendar-days-icon";
-import { StatCard } from "@/components/stat-card";
-import { AnnouncementTimeline } from "@/components/announcement-timeline";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ArrowRight } from "lucide-react";
+import { StatCard } from "@/components/shared/stat-card";
+import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/ui/user-avatar";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { getDefaultProfileImage, getUserProfileImage } from "@/lib/utils";
-import { SubjectCard } from "@/components/subjects/subject-card";
-import { IslamicMosaicPattern, AlAzharSchoolBanner } from "@/components/ui/alazhar-patterns";
+import { SubjectCard } from "@/components/features/subjects/subject-card";
+import { IslamicMosaicPattern, AlAzharSchoolBanner } from "@/components/shared/alazhar-patterns";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +29,6 @@ export default async function SiswaDashboardPage() {
   let totalHadirMonth = 0;
   let totalEventsMonth = 0;
   let classmates: any[] = [];
-  let achievements: any[] = [];
   let announcements: any[] = [];
   let studentImage: string | null = session.image || null;
   let studentNis = session.nis || "-";
@@ -54,7 +45,7 @@ export default async function SiswaDashboardPage() {
   const endOfMonth = new Date(currentYear, now.getMonth() + 1, 0, 23, 59, 59, 999);
 
   try {
-    const [dbUser, dbKelas, dbHadirMonth, dbEventsMonth, dbClassmates, dbPrestasi, dbAnnounce] =
+    const [dbUser, dbKelas, dbHadirMonth, dbEventsMonth, dbClassmates, dbAnnounce] =
       await Promise.all([
         userIdBigInt
           ? prisma.user.findUnique({
@@ -104,10 +95,6 @@ export default async function SiswaDashboardPage() {
               where: { kelas: studentClass, status: "1" },
             })
           : [],
-        prisma.prestasi.findMany({
-          orderBy: { created_at: "desc" },
-          take: 5,
-        }),
         prisma.pengumuman.findMany({
           where: {
             OR: [{ from: "IT" }, { from: studentClass }],
@@ -131,7 +118,6 @@ export default async function SiswaDashboardPage() {
     totalHadirMonth = dbHadirMonth;
     totalEventsMonth = dbEventsMonth;
     classmates = dbClassmates;
-    achievements = dbPrestasi;
     announcements = dbAnnounce;
 
     // Student identity info
@@ -283,104 +269,33 @@ export default async function SiswaDashboardPage() {
         <StatCard
           title="Hadir Bulan Ini"
           value={`${totalHadirMonth} Hari`}
-          icon={ClipboardListIcon}
           description="Total kehadiran bulan ini"
           variant="amber"
-          meta="Presensi"
           href="/siswa/attendance"
         />
         <StatCard
           title="Kegiatan Bulan Ini"
           value={`${totalEventsMonth} Kegiatan`}
-          icon={CalendarDaysIcon}
           description="Agenda kalender sekolah"
           variant="accent"
-          meta="Kalender"
           href="/siswa/calendar"
         />
         <StatCard
           title="Tugas Aktif"
           value={`${pendingTasksCount} Tugas`}
-          icon={FileCheck}
           description="Tugas perlu dikerjakan"
           variant="rose"
-          meta="Deadline"
           href="/siswa/tugas"
         />
         <StatCard
           title="Mata Pelajaran"
           value={`${subjectsForDashboard.length} Mapel`}
-          icon={BookOpen}
           description="Jadwal & materi aktif"
           variant="primary"
-          meta="Semester Genap"
           href="/siswa/mapel"
         />
       </div>
 
-      {/* Quick Action Navigation Bar untuk Siswa */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Link
-          href="/siswa/mapel"
-          className="group p-4 rounded-2xl bg-card border border-border hover:border-emerald-500/40 shadow-xs hover:shadow-md transition-all duration-300 flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                Mata Pelajaran
-              </p>
-              <p className="text-[11px] text-muted-foreground">Silabus & Materi Kelas</p>
-            </div>
-          </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-        </Link>
-
-        <Link
-          href="/siswa/tugas"
-          className="group p-4 rounded-2xl bg-card border border-border hover:border-blue-500/40 shadow-xs hover:shadow-md transition-all duration-300 flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-              <FileCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                  Tugas & PR
-                </p>
-                {pendingTasksCount > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-red-500 text-white">
-                    {pendingTasksCount}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-muted-foreground">Kumpul Tugas PDF & Foto</p>
-            </div>
-          </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-        </Link>
-
-        <Link
-          href="/siswa/chat"
-          className="group p-4 rounded-2xl bg-card border border-border hover:border-purple-500/40 shadow-xs hover:shadow-md transition-all duration-300 flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-              <MessageSquare className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                Tanya Ustadz / Chat
-              </p>
-              <p className="text-[11px] text-muted-foreground">Konsultasi Belajar Langsung</p>
-            </div>
-          </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-        </Link>
-      </div>
 
       {/* Widget Section: Mata Pelajaran Saya */}
       {subjectsForDashboard.length > 0 && (
@@ -428,10 +343,10 @@ export default async function SiswaDashboardPage() {
         </div>
       )}
 
-      {/* 2 Columns: Announcements + Prestasi Siswa */}
+      {/* 2 Columns: Announcements + Banner Sekolah */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Timeline Pengumuman */}
-        <div className="space-y-3.5 lg:col-span-7">
+        <div className="space-y-3.5 lg:col-span-8">
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Pengumuman Sekolah & Kelas</h2>
           </div>
@@ -442,44 +357,8 @@ export default async function SiswaDashboardPage() {
           />
         </div>
 
-        {/* Prestasi Siswa */}
-        <div className="space-y-6 lg:col-span-5">
-          <Card className="border border-amber-500/20 rounded-xl shadow-xs">
-            <CardHeader className="pb-3 border-b border-border/50">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <span>🏆 Prestasi Teman Sekolah</span>
-                </CardTitle>
-              </div>
-              <CardDescription className="text-xs">
-                Inspirasi dan kebanggaan siswa Al-Azhar Cairo
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-4">
-              {achievements.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-6 italic">
-                  Belum ada catatan prestasi terbaru.
-                </p>
-              ) : (
-                achievements.map((ach) => (
-                  <div
-                    key={ach.id.toString()}
-                    className="flex items-center gap-3 rounded-xl border p-3 text-xs transition-colors hover:bg-muted/30"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold text-sm shadow-xs">
-                      🏆
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-foreground truncate">{ach.prestasi}</p>
-                      <p className="text-muted-foreground truncate">{ach.nama} • {ach.kelas}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Official Al-Azhar School Motto Banner (As shown in reference mockup) */}
+        {/* Official Al-Azhar School Motto Banner */}
+        <div className="space-y-6 lg:col-span-4">
           <Card className="border border-border/80 bg-white/95 dark:bg-card/95 rounded-2xl shadow-xs overflow-hidden">
             <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-amber-500 to-sky-500" />
             <CardContent className="p-4 flex flex-col items-center justify-center">

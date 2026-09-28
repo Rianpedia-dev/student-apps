@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
-import { GuruProfileForm } from "@/components/profile/guru-profile-form";
+import { GuruProfileForm } from "@/components/features/profile/guru-profile-form";
 
 export const dynamic = "force-dynamic";
 

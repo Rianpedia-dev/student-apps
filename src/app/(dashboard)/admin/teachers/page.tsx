@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { TeacherTable } from "./teacher-table";
+import { TeacherTable } from "./_components/teacher-table";
 
 export const dynamic = "force-dynamic";
 

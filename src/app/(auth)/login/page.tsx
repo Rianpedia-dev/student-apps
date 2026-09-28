@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import AuthSwitch from "@/components/auth/auth-switch";
+import AuthSwitch from "@/components/features/auth/auth-switch";
 import { PencilLoader } from "@/components/ui/loader-1";
 
 export const metadata = {

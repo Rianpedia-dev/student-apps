@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { InBrowserGrader } from "@/components/assignment/in-browser-grader";
+import { InBrowserGrader } from "@/components/features/assignment/in-browser-grader";
 
 export const dynamic = "force-dynamic";
 

@@ -4,8 +4,8 @@ import { getSession } from "@/lib/auth";
 import { Inbox } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { SiswaRoomList } from "./siswa-room-list";
-import { SiswaHistorySection } from "./siswa-history-section";
+import { SiswaRoomList } from "./_components/siswa-room-list";
+import { SiswaHistorySection } from "./_components/siswa-history-section";
 
 export const dynamic = "force-dynamic";
 

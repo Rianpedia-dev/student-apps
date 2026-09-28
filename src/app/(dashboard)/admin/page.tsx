@@ -1,9 +1,9 @@
 import prisma from "@/lib/prisma";
 import { Users, GraduationCap, UserCheck, UserX } from "lucide-react";
-import { StatCard } from "@/components/stat-card";
-import { AnnouncementTimeline } from "@/components/announcement-timeline";
-import { CalendarWidget } from "@/components/calendar-widget";
-import { AdminRestrictTable } from "./restrict-table";
+import { StatCard } from "@/components/shared/stat-card";
+import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
+import { CalendarWidget } from "@/components/shared/calendar-widget";
+import { AdminRestrictTable } from "./_components/restrict-table";
 
 export const dynamic = "force-dynamic";
 

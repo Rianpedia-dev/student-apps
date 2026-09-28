@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Calendar, Plus, Clock, School, User, BookOpen } from "lucide-react";
-import { SchedulesManager } from "./schedules-manager";
+import { SchedulesManager } from "./_components/schedules-manager";
 
 export const dynamic = "force-dynamic";
 

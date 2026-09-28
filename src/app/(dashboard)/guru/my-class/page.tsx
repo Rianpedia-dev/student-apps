@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { MyClassTable } from "./my-class-table";
+import { MyClassTable } from "./_components/my-class-table";
 
 export const dynamic = "force-dynamic";
 

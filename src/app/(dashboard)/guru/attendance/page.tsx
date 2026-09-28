@@ -3,10 +3,10 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Table as TableIcon, FileText, Calendar as CalendarIcon } from "lucide-react";
-import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
+import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AttendanceCalendarClient } from "./attendance-calendar-client";
+import { AttendanceCalendarClient } from "./_components/attendance-calendar-client";
 
 export const dynamic = "force-dynamic";
 

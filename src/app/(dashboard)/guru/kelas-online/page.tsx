@@ -3,9 +3,9 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { CreateRoomForm } from "@/components/kelas-online/create-room-form";
-import { GuruRoomList } from "./guru-room-list";
-import { GuruHistorySection } from "./guru-history-section";
+import { CreateRoomForm } from "@/components/features/kelas-online/create-room-form";
+import { GuruRoomList } from "./_components/guru-room-list";
+import { GuruHistorySection } from "./_components/guru-history-section";
 
 export const dynamic = "force-dynamic";
 

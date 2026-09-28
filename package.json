@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "socket": "node socket-server.cjs",
+    "socket": "node server/socket-server.cjs",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",

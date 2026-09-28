@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { BookOpen, Plus, Trash2, Atom, Calculator, Languages, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SubjectsManager } from "./subjects-manager";
+import { SubjectsManager } from "./_components/subjects-manager";
 
 export const dynamic = "force-dynamic";
 

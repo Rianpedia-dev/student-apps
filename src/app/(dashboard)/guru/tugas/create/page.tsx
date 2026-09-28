@@ -3,7 +3,7 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft } from "lucide-react";
-import { CreateTaskForm } from "./create-task-form";
+import { CreateTaskForm } from "./_components/create-task-form";
 
 export const dynamic = "force-dynamic";
 

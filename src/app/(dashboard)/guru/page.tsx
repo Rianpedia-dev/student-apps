@@ -3,12 +3,12 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Users, FileCheck, Sparkles, School } from "lucide-react";
-import { ClipboardListIcon } from "@/components/ui/clipboard-list-icon";
-import { StatCard } from "@/components/stat-card";
-import { AnnouncementTimeline } from "@/components/announcement-timeline";
+import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
+import { StatCard } from "@/components/shared/stat-card";
+import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserAvatar } from "@/components/ui/user-avatar";
-import { AlAzharSchoolBanner } from "@/components/ui/alazhar-patterns";
+import { UserAvatar } from "@/components/shared/user-avatar";
+import { AlAzharSchoolBanner } from "@/components/shared/alazhar-patterns";
 
 export const dynamic = "force-dynamic";
 

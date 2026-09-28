@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { CalendarClient } from "@/components/calendar/calendar-client";
+import { CalendarClient } from "@/components/features/calendar/calendar-client";
 
 export const dynamic = "force-dynamic";
 
