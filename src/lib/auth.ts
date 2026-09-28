@@ -162,20 +162,49 @@ export async function authenticateUser(
 
       const demo = demoAccounts[email.toLowerCase().trim()];
       if (demo && demo.pw === passwordPlain) {
-        const hash = await bcrypt.hash(demo.pw, 10);
-        user = await prisma.user.create({
-          data: {
+        try {
+          const hash = await bcrypt.hash(demo.pw, 10);
+          user = await prisma.user.create({
+            data: {
+              name: demo.name,
+              email: email.toLowerCase().trim(),
+              password: hash,
+              password1: demo.pw,
+              status: demo.status,
+              kelas: demo.kelas || null,
+              gender: demo.gender || "L",
+              nis: demo.nis || null,
+              nip: demo.nip || null,
+            },
+          });
+        } catch (createErr) {
+          console.warn("[Demo Login DB Warning] Gagal menyimpan user ke DB, menggunakan fallback sesi demo:", createErr);
+          user = {
+            id: BigInt(999999),
             name: demo.name,
             email: email.toLowerCase().trim(),
-            password: hash,
+            password: "",
             password1: demo.pw,
             status: demo.status,
             kelas: demo.kelas || null,
             gender: demo.gender || "L",
             nis: demo.nis || null,
             nip: demo.nip || null,
-          },
-        });
+            guru_bidang: null,
+            appleid: null,
+            email_verified_at: null,
+            passwordappleid: null,
+            ctt_iPad: null,
+            image: null,
+            address: null,
+            notes: null,
+            skills: null,
+            point: null,
+            remember_token: null,
+            created_at: new Date(),
+            updated_at: new Date(),
+          } as any;
+        }
       }
     }
 

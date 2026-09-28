@@ -123,8 +123,19 @@ export async function loginDirectAction(
     };
   }
 
-  const result = await authenticateUser(email, passwordPlain);
-  return result;
+  try {
+    const result = await authenticateUser(email, passwordPlain);
+    return result;
+  } catch (err: any) {
+    console.error("[Login Action Error]:", err);
+    return {
+      success: false,
+      error:
+        err?.message?.includes("connect") || err?.message?.includes("database") || err?.message?.includes("reach")
+          ? "Gagal terhubung ke database. Pastikan DATABASE_URL sudah dikonfigurasi di Environment Variables Vercel."
+          : `Gagal memproses login: ${err?.message || "Kesalahan server internal"}`,
+    };
+  }
 }
 
 export async function demoLoginDirectAction(
@@ -136,7 +147,18 @@ export async function demoLoginDirectAction(
       error: "Demo login dinonaktifkan oleh administrator.",
     };
   }
-  const { loginAsDemoRole } = await import("@/lib/auth");
-  return await loginAsDemoRole(role);
+  try {
+    const { loginAsDemoRole } = await import("@/lib/auth");
+    return await loginAsDemoRole(role);
+  } catch (err: any) {
+    console.error("[Demo Login Action Error]:", err);
+    return {
+      success: false,
+      error:
+        err?.message?.includes("connect") || err?.message?.includes("database") || err?.message?.includes("reach")
+          ? "Gagal terhubung ke database. Pastikan DATABASE_URL sudah dikonfigurasi di Environment Variables Vercel."
+          : `Gagal demo login: ${err?.message || "Kesalahan server internal"}`,
+    };
+  }
 }
 
