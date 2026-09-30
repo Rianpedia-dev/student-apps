@@ -238,7 +238,14 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
                   </TableCell>
                   <TableCell>
                     {s.kelas ? (
-                      <Badge variant="secondary" className="font-normal text-xs">
+                      <Badge
+                        variant={
+                          s.kelas.startsWith("7") || s.kelas.startsWith("8") || s.kelas.startsWith("9")
+                            ? "indigo"
+                            : "teal"
+                        }
+                        size="sm"
+                      >
                         {s.kelas}
                       </Badge>
                     ) : (
@@ -251,11 +258,11 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
                   </TableCell>
                   <TableCell className="text-center">
                     {s.status === "1" ? (
-                      <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/20 border-emerald-500/30">
+                      <Badge variant="success" size="sm">
                         Aktif
                       </Badge>
                     ) : (
-                      <Badge variant="destructive" className="bg-rose-500/15 text-rose-700 border-rose-500/30">
+                      <Badge variant="destructive" size="sm">
                         Non-Aktif
                       </Badge>
                     )}

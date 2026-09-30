@@ -305,7 +305,7 @@ export function PersistentVideoHost() {
         ) : viewState === "fullscreen" || viewState === "theater" ? (
           <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white shrink-0">
             <div className="flex items-center gap-3">
-              <Badge className="bg-emerald-600 text-white font-semibold">
+              <Badge variant="success">
                 {activeSession.mataPelajaran || "Kelas Online"}
               </Badge>
               <span className="text-sm font-medium text-slate-300">

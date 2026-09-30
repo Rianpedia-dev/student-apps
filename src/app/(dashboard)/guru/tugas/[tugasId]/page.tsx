@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, Clock, Users, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { TeacherSubmissionsView, StudentSubmissionItem } from "@/components/features/assignment/teacher-submissions-view";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +45,7 @@ export default async function GuruTugasSubmissionsPage({ params }: PageProps) {
       kelas: tugas.kelas.nama_kelas,
       status: "1",
     },
-    select: { id: true, name: true, nis: true, image: true },
+    select: { id: true, name: true, nis: true, image: true, gender: true },
     orderBy: { name: "asc" },
   });
 
@@ -63,6 +63,7 @@ export default async function GuruTugasSubmissionsPage({ params }: PageProps) {
         siswaName: student.name,
         siswaNis: student.nis,
         siswaImage: student.image,
+        siswaGender: student.gender,
         submissionId: sub.id.toString(),
         submittedAt: sub.submitted_at.toISOString(),
         fileUrl: sub.file_url,
@@ -81,6 +82,7 @@ export default async function GuruTugasSubmissionsPage({ params }: PageProps) {
       siswaName: student.name,
       siswaNis: student.nis,
       siswaImage: student.image,
+      siswaGender: student.gender,
       submissionId: null,
       submittedAt: null,
       fileUrl: null,
@@ -93,11 +95,6 @@ export default async function GuruTugasSubmissionsPage({ params }: PageProps) {
       annotatedFileUrl: null,
     };
   });
-
-  const waitingCount = tugas.submissions.filter(
-    (s) => s.status === "menunggu_penilaian" || s.status === "terlambat"
-  ).length;
-  const gradedCount = tugas.submissions.filter((s) => s.status === "sudah_dinilai").length;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -138,29 +135,6 @@ export default async function GuruTugasSubmissionsPage({ params }: PageProps) {
               })}
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* Ringkasan Pengumpulan */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3.5 rounded-xl bg-card border border-border">
-          <p className="text-xs text-muted-foreground font-medium">Total Siswa</p>
-          <p className="text-xl font-bold text-foreground mt-0.5">{allStudentsInClass.length}</p>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-card border border-border">
-          <p className="text-xs text-muted-foreground font-medium">Sudah Mengumpulkan</p>
-          <p className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-0.5">{tugas.submissions.length}</p>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-card border border-border">
-          <p className="text-xs text-muted-foreground font-medium">Perlu Dikoreksi</p>
-          <p className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5">{waitingCount}</p>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-card border border-border">
-          <p className="text-xs text-muted-foreground font-medium">Selesai Dinilai</p>
-          <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{gradedCount}</p>
         </div>
       </div>
 

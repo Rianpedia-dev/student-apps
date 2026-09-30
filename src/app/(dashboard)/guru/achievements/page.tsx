@@ -117,7 +117,12 @@ export default async function GuruAchievementsPage() {
 
         {/* List Prestasi (8 Cols) */}
         <div className="space-y-4 lg:col-span-8">
-          <h2 className="text-lg font-bold">Daftar Prestasi Terkini ({achievements.length})</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold">Daftar Prestasi Terkini</h2>
+            <Badge variant="amber" size="sm">
+              {achievements.length} Prestasi
+            </Badge>
+          </div>
 
           {achievements.length === 0 ? (
             <Card className="border-dashed rounded-xl">
@@ -140,9 +145,14 @@ export default async function GuruAchievementsPage() {
                         <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mt-1 truncate">
                           {ach.nama}
                         </p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {ach.kelas} • {formatDateIndo(ach.created_at)}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Badge variant="amber" size="xs">
+                            {ach.kelas}
+                          </Badge>
+                          <span className="text-[11px] text-muted-foreground">
+                            {formatDateIndo(ach.created_at)}
+                          </span>
+                        </div>
                       </div>
                     </div>
 

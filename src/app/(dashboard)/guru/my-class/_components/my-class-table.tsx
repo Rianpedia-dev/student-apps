@@ -223,10 +223,18 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-xs">{s.nis || "-"}</TableCell>
-                    <TableCell className="text-center font-medium">{s.gender || "-"}</TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="font-mono text-xs bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300">
-                        {s.point || "0"}
+                      {s.gender ? (
+                        <Badge variant={s.gender === "L" ? "blue" : "pink"} size="xs">
+                          {s.gender === "L" ? "L" : "P"}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground/60">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="warning" size="sm" className="font-mono">
+                        {s.point || "0"} Poin
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
@@ -290,7 +298,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-foreground">{s.name}</span>
-                        <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal">
+                        <Badge variant={s.gender === "L" ? "blue" : "pink"} size="xs">
                           {s.gender === "L" ? "L" : "P"}
                         </Badge>
                       </div>
@@ -298,7 +306,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                     </div>
                   </div>
 
-                  <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 font-mono text-xs">
+                  <Badge variant="warning" size="sm" className="font-mono">
                     {s.point || "0"} Poin
                   </Badge>
                 </div>

@@ -41,7 +41,7 @@ export default async function SiswaViolationsPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Catatan Pelanggaran Pribadi</CardTitle>
-            <Badge variant="outline" className="font-mono text-xs">
+            <Badge variant="purple" size="sm" className="font-mono">
               Total: {violations.length} Catatan
             </Badge>
           </div>
@@ -70,7 +70,7 @@ export default async function SiswaViolationsPage() {
                       <TableCell className="text-center font-medium">{idx + 1}</TableCell>
                       <TableCell className="font-mono text-xs">{formatDateIndo(vl.created_at)}</TableCell>
                       <TableCell>
-                        <Badge variant="destructive" className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 font-normal text-xs">
+                        <Badge variant="destructive" size="sm">
                           {vl.kategori}
                         </Badge>
                       </TableCell>

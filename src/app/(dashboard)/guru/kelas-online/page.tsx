@@ -122,7 +122,7 @@ export default async function GuruKelasOnlinePage() {
           </h1>
         </div>
         {guruClass && (
-          <Badge className="w-fit bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/30">
+          <Badge variant="indigo">
             {guruClass}
           </Badge>
         )}
@@ -137,7 +137,7 @@ export default async function GuruKelasOnlinePage() {
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Wifi className="h-5 w-5 text-emerald-500" />
             Kelas Aktif
-            <Badge className="bg-emerald-500 text-white border-none text-xs">
+            <Badge variant="success" size="sm">
               {activeRooms.length}
             </Badge>
           </h2>

@@ -132,7 +132,7 @@ const AURORA_VARIANTS: Record<FolderCardVariant, string> = {
 };
 
 const FONT_STACK =
-  'var(--font-oxanium), "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+  'var(--font-plus-jakarta-sans), var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
 const LIGHT_TOKENS = [
   "[--folder-card-bezel:#e2e8f0]",

@@ -163,7 +163,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
         }
 
         .auth-switch {
-          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-family: var(--font-plus-jakarta-sans), var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           background-color: #022018;
           min-height: 100vh;
           width: 100%;

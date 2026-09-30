@@ -114,7 +114,7 @@ export function Sidebar({
       <aside
         className={cn(
           "flex h-full flex-col border-r border-sidebar-border bg-sidebar/95 backdrop-blur-md text-sidebar-foreground shadow-xl transition-all duration-300 ease-in-out select-none",
-          collapsed ? "w-20" : "w-64",
+          collapsed ? "w-20" : "w-[228px]",
           className
         )}
       >
@@ -125,15 +125,15 @@ export function Sidebar({
             collapsed
               ? "h-16 items-center justify-center px-2"
               : isMobileDrawer
-                ? "py-5 px-4 flex-col items-center justify-center"
-                : "py-5 sm:py-6 px-4 flex-col items-center justify-center"
+                ? "py-4 px-3 flex-col items-center justify-center"
+                : "py-4 px-3 flex-col items-center justify-center"
           )}
         >
           {/* Al-Azhar Triangular Prism Mosaic Accent */}
           <AlAzharCornerMosaic
             className={cn(
               "absolute top-0 right-0 pointer-events-none select-none transition-all",
-              collapsed ? "w-16 h-16 opacity-75" : "w-36 sm:w-40 h-24 opacity-85 dark:opacity-70"
+              collapsed ? "w-16 h-16 opacity-75" : "w-32 h-20 opacity-80 dark:opacity-65"
             )}
           />
           {collapsed ? (
@@ -167,23 +167,23 @@ export function Sidebar({
             <Link
               href={`/${role}`}
               onClick={onNavigate}
-              className="flex flex-col items-center justify-center text-center overflow-hidden group py-1 z-10 w-full"
+              className="flex flex-col items-center justify-center text-center overflow-hidden group py-0.5 z-10 w-full"
             >
-              <div className="relative h-20 w-20 sm:h-22 sm:w-22 shrink-0 rounded-full overflow-hidden p-1 border-2 border-amber-500/30 bg-white shadow-md transition-transform duration-300 group-hover:scale-105">
+              <div className="relative h-16 w-16 sm:h-17 sm:w-17 shrink-0 rounded-full overflow-hidden p-1 border-2 border-amber-500/30 bg-white shadow-md transition-transform duration-300 group-hover:scale-105">
                 <Image
                   src="/images/logo-alazhar-cairo.avif"
                   alt="Logo Al-Azhar Cairo Palembang"
-                  width={88}
-                  height={88}
+                  width={68}
+                  height={68}
                   priority
                   className="h-full w-full object-contain"
                 />
               </div>
-              <div className="flex flex-col items-center min-w-0 mt-2.5">
-                <span className="text-[14px] font-black tracking-tight text-slate-800 dark:text-slate-100 leading-snug uppercase">
+              <div className="flex flex-col items-center min-w-0 mt-2">
+                <span className="text-[13px] font-black tracking-tight text-slate-800 dark:text-slate-100 leading-snug uppercase">
                   Al-Azhar Cairo
                 </span>
-                <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 tracking-widest uppercase mt-0.5">
+                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 tracking-widest uppercase mt-0.5">
                   Palembang
                 </span>
               </div>
@@ -195,12 +195,12 @@ export function Sidebar({
         {/* Nav Menu */}
         <nav
           className={cn(
-            "flex-1 overflow-y-auto py-3 text-[14px] scrollbar-thin scrollbar-thumb-sidebar-border transition-all duration-300",
-            collapsed ? "px-2 space-y-1.5 flex flex-col items-center" : "pr-3 pl-0 space-y-1"
+            "flex-1 overflow-y-auto py-2.5 text-[13px] scrollbar-thin scrollbar-thumb-sidebar-border transition-all duration-300",
+            collapsed ? "px-2 space-y-1.5 flex flex-col items-center" : "pr-2 pl-0 space-y-0.5"
           )}
         >
           {!collapsed ? (
-            <div className="px-5 pt-1 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
+            <div className="px-3.5 pt-0.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
               Menu Navigasi
             </div>
           ) : (
@@ -269,7 +269,7 @@ export function Sidebar({
                   setHoveredHref((curr) => (curr === item.href ? null : curr))
                 }
                 className={cn(
-                  "flex items-center gap-3 py-2 px-4 text-sm font-medium transition-all duration-150 group rounded-r-xl",
+                  "flex items-center gap-2.5 py-1.5 px-3.5 text-[13px] font-medium transition-all duration-150 group rounded-r-xl",
                   isActive
                     ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold border-l-4 border-amber-500 shadow-xs"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 border-l-4 border-transparent"
@@ -294,7 +294,7 @@ export function Sidebar({
         <div
           className={cn(
             "border-t border-sidebar-border shrink-0 transition-all duration-300",
-            collapsed ? "p-2 flex justify-center" : isMobileDrawer ? "p-3 pb-4" : "p-3"
+            collapsed ? "p-2 flex justify-center" : isMobileDrawer ? "p-2.5 pb-3.5" : "p-2.5"
           )}
         >
           <form action={logoutAction} className={collapsed ? "" : "w-full"}>
@@ -325,7 +325,7 @@ export function Sidebar({
               <Button
                 type="submit"
                 variant="ghost"
-                className="w-full justify-start gap-3 rounded-[var(--radius)] py-2 px-3 text-destructive hover:bg-destructive/15 hover:text-destructive text-sm font-medium cursor-pointer transition-colors"
+                className="w-full justify-start gap-2.5 rounded-[var(--radius)] py-1.5 px-3 text-destructive hover:bg-destructive/15 hover:text-destructive text-[13px] font-medium cursor-pointer transition-colors"
               >
                 <LogOut className="h-4.5 w-4.5 shrink-0" />
                 <span>Keluar Sistem</span>

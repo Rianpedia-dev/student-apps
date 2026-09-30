@@ -128,6 +128,28 @@ io.on("connection", (socket) => {
     });
   });
 
+  // Edit message broadcast
+  socket.on("edit_message", ({ roomId, messageId, newMessage, editedAt }) => {
+    if (!roomId || !messageId) return;
+    const roomKey = `room_${roomId}`;
+    socket.to(roomKey).emit("message_edited", {
+      roomId,
+      messageId,
+      newMessage,
+      editedAt: editedAt || new Date().toISOString(),
+    });
+  });
+
+  // Delete message broadcast
+  socket.on("delete_message", ({ roomId, messageId }) => {
+    if (!roomId || !messageId) return;
+    const roomKey = `room_${roomId}`;
+    socket.to(roomKey).emit("message_deleted", {
+      roomId,
+      messageId,
+    });
+  });
+
   // Check online status of specific user IDs
   socket.on("check_online_users", (userIds, callback) => {
     if (typeof callback !== "function") return;

@@ -224,18 +224,22 @@ export default async function GuruAttendanceTablePage(props: {
                           )}
                         >
                           {code ? (
-                            <span
-                              className={cn(
-                                "inline-flex h-6 w-6 items-center justify-center rounded-md font-extrabold text-xs leading-none transition-transform select-none shadow-2xs",
-                                code === "H" && "bg-emerald-100 text-emerald-800 border border-emerald-300/80 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40",
-                                code === "S" && "bg-sky-100 text-sky-800 border border-sky-300/80 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/40",
-                                code === "I" && "bg-amber-100 text-amber-900 border border-amber-300/80 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40",
-                                code === "A" && "bg-rose-100 text-rose-800 border border-rose-300/80 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40"
-                              )}
+                            <Badge
+                              variant={
+                                code === "H"
+                                  ? "success"
+                                  : code === "S"
+                                  ? "info"
+                                  : code === "I"
+                                  ? "warning"
+                                  : "destructive"
+                              }
+                              size="xs"
+                              className="w-6 h-6 p-0 font-extrabold text-[11px] justify-center"
                               title={`${s.name} - ${code === "H" ? "Hadir" : code === "S" ? "Sakit" : code === "I" ? "Izin" : "Alpha"} (${d} ${monthNames[month]})`}
                             >
                               {code}
-                            </span>
+                            </Badge>
                           ) : null}
                         </td>
                       );
@@ -312,23 +316,23 @@ export default async function GuruAttendanceTablePage(props: {
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0 font-mono text-xs">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/80 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40" title="Hadir">
+                  <Badge variant="success" size="xs" title="Hadir">
                     {countH} H
-                  </span>
+                  </Badge>
                   {countS > 0 && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-300/80 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/40" title="Sakit">
+                    <Badge variant="info" size="xs" title="Sakit">
                       {countS} S
-                    </span>
+                    </Badge>
                   )}
                   {countI > 0 && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300/80 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40" title="Izin">
+                    <Badge variant="warning" size="xs" title="Izin">
                       {countI} I
-                    </span>
+                    </Badge>
                   )}
                   {countA > 0 && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300/80 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40" title="Alpha">
+                    <Badge variant="destructive" size="xs" title="Alpha">
                       {countA} A
-                    </span>
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -341,27 +345,27 @@ export default async function GuruAttendanceTablePage(props: {
       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground p-3 border rounded-xl bg-card shadow-xs">
         <span className="font-semibold text-foreground">Keterangan:</span>
         <div className="flex items-center gap-1.5">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300/80 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40 text-[11px] font-extrabold shadow-2xs">
+          <Badge variant="success" size="xs" className="w-5 h-5 p-0 justify-center font-extrabold">
             H
-          </span>
+          </Badge>
           <span className="font-medium text-foreground/80">Hadir</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-sky-100 text-sky-800 border border-sky-300/80 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/40 text-[11px] font-extrabold shadow-2xs">
+          <Badge variant="info" size="xs" className="w-5 h-5 p-0 justify-center font-extrabold">
             S
-          </span>
+          </Badge>
           <span className="font-medium text-foreground/80">Sakit</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-amber-100 text-amber-900 border border-amber-300/80 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40 text-[11px] font-extrabold shadow-2xs">
+          <Badge variant="warning" size="xs" className="w-5 h-5 p-0 justify-center font-extrabold">
             I
-          </span>
+          </Badge>
           <span className="font-medium text-foreground/80">Izin</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-rose-100 text-rose-800 border border-rose-300/80 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40 text-[11px] font-extrabold shadow-2xs">
+          <Badge variant="destructive" size="xs" className="w-5 h-5 p-0 justify-center font-extrabold">
             A
-          </span>
+          </Badge>
           <span className="font-medium text-foreground/80">Alpha</span>
         </div>
       </div>

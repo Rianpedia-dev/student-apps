@@ -11,6 +11,8 @@ interface UseSocketProps {
   onUserTyping?: (data: { roomId: string; senderId: string; senderName: string; isTyping: boolean }) => void;
   onMessagesRead?: (data: { roomId: string; readerId: string }) => void;
   onRoomNotification?: (data: { roomId: string; lastMessage: string; lastMessageAt: string; senderName: string }) => void;
+  onMessageEdited?: (data: { roomId: string; messageId: string; newMessage: string; editedAt: string }) => void;
+  onMessageDeleted?: (data: { roomId: string; messageId: string }) => void;
 }
 
 export function useSocket({
@@ -21,6 +23,8 @@ export function useSocket({
   onUserTyping,
   onMessagesRead,
   onRoomNotification,
+  onMessageEdited,
+  onMessageDeleted,
 }: UseSocketProps) {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -31,12 +35,16 @@ export function useSocket({
   const onUserTypingRef = useRef(onUserTyping);
   const onMessagesReadRef = useRef(onMessagesRead);
   const onRoomNotificationRef = useRef(onRoomNotification);
+  const onMessageEditedRef = useRef(onMessageEdited);
+  const onMessageDeletedRef = useRef(onMessageDeleted);
 
   useEffect(() => {
     onNewMessageRef.current = onNewMessage;
     onUserTypingRef.current = onUserTyping;
     onMessagesReadRef.current = onMessagesRead;
     onRoomNotificationRef.current = onRoomNotification;
+    onMessageEditedRef.current = onMessageEdited;
+    onMessageDeletedRef.current = onMessageDeleted;
   });
 
   useEffect(() => {
@@ -94,6 +102,18 @@ export function useSocket({
       }
     });
 
+    socket.on("message_edited", (data) => {
+      if (onMessageEditedRef.current) {
+        onMessageEditedRef.current(data);
+      }
+    });
+
+    socket.on("message_deleted", (data) => {
+      if (onMessageDeletedRef.current) {
+        onMessageDeletedRef.current(data);
+      }
+    });
+
     socket.on("user_status_changed", ({ userId: changedId, isOnline }: { userId: string; isOnline: boolean }) => {
       setOnlineUsers((prev) => {
         const next = new Set(prev);
@@ -130,6 +150,24 @@ export function useSocket({
     }
   }, []);
 
+  const emitEditMessage = useCallback(
+    (data: { roomId: string; messageId: string; newMessage: string; editedAt?: string }) => {
+      if (socketRef.current) {
+        socketRef.current.emit("edit_message", data);
+      }
+    },
+    []
+  );
+
+  const emitDeleteMessage = useCallback(
+    (data: { roomId: string; messageId: string }) => {
+      if (socketRef.current) {
+        socketRef.current.emit("delete_message", data);
+      }
+    },
+    []
+  );
+
   const emitTyping = useCallback(
     (isTyping: boolean) => {
       if (socketRef.current && activeRoomId) {
@@ -157,6 +195,8 @@ export function useSocket({
     isConnected,
     onlineUsers,
     emitMessage,
+    emitEditMessage,
+    emitDeleteMessage,
     emitTyping,
     emitMarkRead,
   };

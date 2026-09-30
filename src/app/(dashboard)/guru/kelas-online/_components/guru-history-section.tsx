@@ -40,7 +40,7 @@ export function GuruHistorySection({ rooms }: GuruHistorySectionProps) {
             Riwayat Kelas Online
           </span>
           {rooms.length > 0 && (
-            <Badge variant="secondary" className="text-xs px-2 py-0.5">
+            <Badge variant="secondary" size="sm">
               {rooms.length}
             </Badge>
           )}
@@ -77,7 +77,7 @@ export function GuruHistorySection({ rooms }: GuruHistorySectionProps) {
                             : "-"}
                         </p>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" size="sm">
                         ⚫ Selesai
                       </Badge>
                     </div>

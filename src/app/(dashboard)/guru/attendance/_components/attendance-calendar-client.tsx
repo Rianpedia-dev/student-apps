@@ -130,7 +130,7 @@ export function AttendanceCalendarClient({ filledDates, guruClass }: AttendanceC
 
                 <div className="mt-2">
                   {isFilled ? (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                    <Badge variant="success" size="sm">
                       Tercatat
                     </Badge>
                   ) : (

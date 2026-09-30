@@ -110,16 +110,16 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
           </div>
 
           {/* Jenjang Filter Badges */}
-          <div className="inline-flex rounded-lg bg-muted p-1 border text-xs font-medium">
+          <div className="inline-flex rounded-full bg-muted/60 p-1 border border-border/80 text-xs font-medium gap-1">
             <button
               type="button"
               onClick={() => {
                 setFilterJenjang("all");
                 setPage(1);
               }}
-              className={`rounded-md px-3 py-1 transition-all ${
+              className={`rounded-full px-3 py-1 transition-all ${
                 filterJenjang === "all"
-                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  ? "bg-gradient-to-b from-slate-800 to-slate-900 text-white dark:from-slate-100 dark:to-slate-200 dark:text-slate-900 shadow-sm font-bold"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -131,9 +131,9 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                 setFilterJenjang("SD");
                 setPage(1);
               }}
-              className={`rounded-md px-3 py-1 transition-all ${
+              className={`rounded-full px-3 py-1 transition-all ${
                 filterJenjang === "SD"
-                  ? "bg-background text-emerald-700 font-semibold shadow-xs"
+                  ? "bg-gradient-to-b from-emerald-400 to-teal-500 text-white shadow-sm font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -145,9 +145,9 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                 setFilterJenjang("SMP");
                 setPage(1);
               }}
-              className={`rounded-md px-3 py-1 transition-all ${
+              className={`rounded-full px-3 py-1 transition-all ${
                 filterJenjang === "SMP"
-                  ? "bg-background text-indigo-700 font-semibold shadow-xs"
+                  ? "bg-gradient-to-b from-indigo-400 to-indigo-600 text-white shadow-sm font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -197,12 +197,8 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant="outline"
-                        className={
-                          isSMP
-                            ? "bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold"
-                            : "bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold"
-                        }
+                        variant={isSMP ? "indigo" : "emerald"}
+                        size="sm"
                       >
                         {isSMP ? "SMP" : "SD"}
                       </Badge>
@@ -215,14 +211,20 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                     )}
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge variant="outline" className="font-mono text-xs">
+                    <Badge variant="sky" size="sm" className="font-mono">
                       {c.jumlah_siswa || "0"} Siswa
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                      {c.code_restrict || "-"}
-                    </span>
+                    {c.code_restrict ? (
+                      <Badge variant="amber" size="sm" className="font-mono">
+                        {c.code_restrict}
+                      </Badge>
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground/60">
+                        -
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">

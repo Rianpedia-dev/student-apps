@@ -163,14 +163,19 @@ export function SchedulesManager({
                   <tr key={s.id} className="hover:bg-muted/30 transition-colors">
                     <td className="p-3 font-bold text-foreground">
                       <div className="flex items-center gap-1.5">
-                        <Badge variant={s.jenjang === "SMP" ? "secondary" : "default"} className="text-[10px]">
+                        <Badge variant={s.jenjang === "SMP" ? "indigo" : "emerald"} size="sm">
                           {s.jenjang}
                         </Badge>
                         <span>{s.kelasNama}</span>
                       </div>
                     </td>
                     <td className="p-3 font-semibold text-foreground">
-                      {s.mapelNama} ({s.mapelKode})
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="purple" size="xs" className="font-mono">
+                          {s.mapelKode}
+                        </Badge>
+                        <span>{s.mapelNama}</span>
+                      </div>
                     </td>
                     <td className="p-3 text-muted-foreground">
                       <div className="flex items-center gap-1.5">
@@ -315,7 +320,7 @@ export function SchedulesManager({
               <input
                 type="text"
                 name="ruang"
-                placeholder="Contoh: R. Mehmed Al Fatih / Lab Sains"
+                placeholder="Contoh: Lab Sains / Lab Komputer / Masjid"
                 className="w-full text-xs rounded-xl border border-input bg-background p-2.5"
               />
             </div>

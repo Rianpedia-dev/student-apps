@@ -4,12 +4,14 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 export interface StudentSubmissionItem {
   siswaId: string;
   siswaName: string;
   siswaNis: string | null;
   siswaImage: string | null;
+  siswaGender?: string | null;
   submissionId: string | null;
   submittedAt: string | null;
   fileUrl: string | null;
@@ -139,8 +141,14 @@ export function TeacherSubmissionsView({
               >
                 {/* Info Siswa */}
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs shrink-0">
-                    {student.siswaName.substring(0, 2).toUpperCase()}
+                  <div className="h-10 w-10 rounded-full overflow-hidden border border-border/80 shrink-0 bg-muted/40 shadow-2xs">
+                    <UserAvatar
+                      src={student.siswaImage}
+                      gender={student.siswaGender}
+                      name={student.siswaName}
+                      alt={student.siswaName}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                   <div>
                     <p className="text-xs sm:text-sm font-semibold text-foreground">

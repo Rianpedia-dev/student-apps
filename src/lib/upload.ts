@@ -2,7 +2,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 
-export type UploadCategory = "avatar" | "attachment" | "achievement" | "best_student";
+export type UploadCategory = "avatar" | "attachment" | "achievement" | "best_student" | "material";
 
 interface UploadOptions {
   category: UploadCategory;
@@ -16,10 +16,11 @@ export interface UploadResult {
 
 /**
  * Validasi dan simpan file yang diupload ke storage publik sesuai PRD Section 13:
- * - Foto Profil (Guru/Siswa): jpg, jpeg, png, max 1MB -> /uploads/images/
- * - Lampiran Pengumuman: pdf, jpg, jpeg, png, max 2MB -> /uploads/files/
- * - Foto Prestasi: jpg, jpeg, png, max 2MB -> /uploads/images/
- * - Foto Best Student: jpg, jpeg, png, max 2MB -> /uploads/images/
+ * - Foto Profil (Guru/Siswa): jpg, jpeg, png, max 5MB -> /uploads/images/
+ * - Lampiran Pengumuman: pdf, jpg, jpeg, png, max 5MB -> /uploads/files/
+ * - Foto Prestasi: jpg, jpeg, png, max 5MB -> /uploads/images/
+ * - Foto Best Student: jpg, jpeg, png, max 5MB -> /uploads/images/
+ * - Materi Pelajaran: pdf, ppt, pptx, doc, docx, xls, xlsx, mp4, gambar, max 30MB -> /uploads/materials/
  */
 export async function saveUploadedFile(
   file: File | Blob | null | undefined,
@@ -51,6 +52,19 @@ export async function saveUploadedFile(
     ".ico",
   ];
 
+  const docExtensions = [
+    ".pdf",
+    ".ppt",
+    ".pptx",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".txt",
+    ".mp4",
+    ".webm",
+  ];
+
   // Tentukan batas ukuran dan direktori tujuan
   let maxBytes = 5 * 1024 * 1024; // Default 5MB
   let subDir = "images";
@@ -64,6 +78,9 @@ export async function saveUploadedFile(
   } else if (category === "achievement" || category === "best_student") {
     maxBytes = 5 * 1024 * 1024; // 5MB
     subDir = "images";
+  } else if (category === "material") {
+    maxBytes = 35 * 1024 * 1024; // 35MB untuk modul PPT / PDF / Video pendek
+    subDir = "materials";
   }
 
   // Validasi ukuran
@@ -79,6 +96,7 @@ export async function saveUploadedFile(
   const mimeType = file.type.toLowerCase();
   const isImageMime = mimeType.startsWith("image/");
   const isImageExt = imageExtensions.includes(originalExt);
+  const isDocExt = docExtensions.includes(originalExt);
 
   if (category === "attachment") {
     const isPdf = mimeType === "application/pdf" || originalExt === ".pdf";
@@ -86,6 +104,23 @@ export async function saveUploadedFile(
       return {
         success: false,
         error: "Format file tidak diizinkan. Harap upload dokumen PDF atau file gambar (JPG, PNG, WebP, AVIF, dll).",
+      };
+    }
+  } else if (category === "material") {
+    const isAllowedMaterial =
+      isImageMime ||
+      isImageExt ||
+      isDocExt ||
+      mimeType === "application/pdf" ||
+      mimeType.includes("presentation") ||
+      mimeType.includes("wordprocessingml") ||
+      mimeType.includes("spreadsheet") ||
+      mimeType.startsWith("video/");
+
+    if (!isAllowedMaterial) {
+      return {
+        success: false,
+        error: "Format file tidak didukung. Harap unggah berkas PDF, PowerPoint (PPT/PPTX), Word (DOC/DOCX), Excel, Gambar, atau Video (MP4).",
       };
     }
   } else {

@@ -63,7 +63,7 @@ export default async function AdminClassDetailPage(props: {
         >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Kelas
         </Link>
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="sky" size="sm">
           ID: {id}
         </Badge>
       </div>
@@ -113,7 +113,7 @@ export default async function AdminClassDetailPage(props: {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Daftar Siswa Terdaftar</CardTitle>
-            <Badge className="bg-emerald-600">
+            <Badge variant="success">
               Total: {students.length} Siswa
             </Badge>
           </div>
@@ -148,11 +148,15 @@ export default async function AdminClassDetailPage(props: {
                       <TableCell className="text-center font-medium">{idx + 1}</TableCell>
                       <TableCell className="font-semibold">{s.name}</TableCell>
                       <TableCell className="font-mono text-xs">{s.nis || "-"}</TableCell>
-                      <TableCell>{s.gender === "L" ? "Laki-laki" : "Perempuan"}</TableCell>
+                      <TableCell>
+                        <Badge variant={s.gender === "L" ? "blue" : "pink"} size="xs">
+                          {s.gender === "L" ? "L" : "P"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">{s.appleid || "-"}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className="font-mono text-xs text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-300">
-                          {s.point || "0"}
+                        <Badge variant="warning" size="sm" className="font-mono">
+                          {s.point || "0"} Poin
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">

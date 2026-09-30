@@ -244,10 +244,13 @@ export async function getRoomMessages(roomIdStr: string | bigint) {
       senderName: m.sender.name,
       senderImage: getUserProfileImage(m.sender.image, m.sender.gender, m.sender.name),
       isMe: m.sender_id === myId,
-      message: m.message,
-      attachmentUrl: m.attachment_url,
-      attachmentType: m.attachment_type,
+      message: m.is_deleted ? "Pesan ini telah dihapus" : m.message,
+      attachmentUrl: m.is_deleted ? null : m.attachment_url,
+      attachmentType: m.is_deleted ? null : m.attachment_type,
       isRead: m.is_read,
+      isEdited: m.is_edited,
+      isDeleted: m.is_deleted,
+      editedAt: m.edited_at ? m.edited_at.toISOString() : null,
       createdAt: m.created_at ? m.created_at.toISOString() : "",
     }));
   } catch (err: any) {
@@ -328,7 +331,7 @@ export async function sendMessageAction(formData: FormData) {
       data: {
         room_id: roomId,
         sender_id: myId,
-        message: message || "Mengirim lampiran",
+        message: message || "",
         attachment_url: attachmentUrl,
         attachment_type: attachmentType,
         is_read: false,
@@ -338,14 +341,19 @@ export async function sendMessageAction(formData: FormData) {
     await prisma.chatRoom.update({
       where: { id: roomId },
       data: {
-        last_message: message || "📎 Lampiran file",
+        last_message: message || (attachmentType === "image" ? "📷 Foto" : "📎 Dokumen"),
         last_message_at: new Date(),
       },
     });
 
     revalidatePath("/siswa/chat");
     revalidatePath("/guru/chat");
-    return { success: true, messageId: chat.id.toString() };
+    return {
+      success: true,
+      messageId: chat.id.toString(),
+      attachmentUrl,
+      attachmentType,
+    };
   } catch (err: any) {
     return { success: false, error: err.message || "Gagal mengirim pesan." };
   }
@@ -452,5 +460,178 @@ export async function getContactsForCurrentUser() {
   } catch (err: any) {
     console.error("Gagal mengambil kontak:", err);
     return [];
+  }
+}
+
+/**
+ * Mengedit pesan yang sudah terkirim.
+ * Aturan: Hanya pengirim pesan yang boleh mengedit dan hanya dalam batas 12 jam setelah terkirim.
+ */
+export async function editMessageAction(messageIdStr: string, newMessage: string) {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Akses ditolak." };
+
+  const trimmed = (newMessage || "").trim();
+  if (!trimmed) {
+    return { success: false, error: "Pesan tidak boleh kosong." };
+  }
+
+  const messageId = BigInt(messageIdStr);
+  const myId = BigInt(session.id);
+
+  try {
+    const msg = await prisma.chatMessage.findUnique({
+      where: { id: messageId },
+      include: { room: true },
+    });
+
+    if (!msg) {
+      return { success: false, error: "Pesan tidak ditemukan." };
+    }
+
+    if (msg.sender_id !== myId) {
+      return {
+        success: false,
+        error: "Anda hanya dapat mengedit pesan yang Anda kirimkan sendiri.",
+      };
+    }
+
+    if (msg.is_deleted) {
+      return {
+        success: false,
+        error: "Pesan yang telah dihapus tidak dapat diedit.",
+      };
+    }
+
+    // Validasi batas waktu 12 jam (12 * 60 * 60 * 1000 ms)
+    if (msg.created_at) {
+      const diffHours =
+        (Date.now() - new Date(msg.created_at).getTime()) / (1000 * 60 * 60);
+      if (diffHours > 12) {
+        return {
+          success: false,
+          error: "Batas waktu pengeditan pesan (12 jam) telah berakhir.",
+        };
+      }
+    }
+
+    const now = new Date();
+    try {
+      await prisma.chatMessage.update({
+        where: { id: messageId },
+        data: {
+          message: trimmed,
+          is_edited: true,
+          edited_at: now,
+        },
+      });
+    } catch (updateErr: any) {
+      console.warn("Prisma update failed, attempting raw query fallback:", updateErr?.message);
+      await prisma.$executeRaw`
+        UPDATE tbl_chat_messages 
+        SET message = ${trimmed}, is_edited = 1, edited_at = ${now} 
+        WHERE id = ${messageId}
+      `;
+    }
+
+    // Jika pesan ini adalah pesan terakhir di room, update preview last_message
+    const latestMessage = await prisma.chatMessage.findFirst({
+      where: { room_id: msg.room_id },
+      orderBy: { created_at: "desc" },
+    });
+
+    if (latestMessage && latestMessage.id === msg.id) {
+      await prisma.chatRoom.update({
+        where: { id: msg.room_id },
+        data: {
+          last_message: trimmed,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      messageId: messageIdStr,
+      newMessage: trimmed,
+      editedAt: now.toISOString(),
+      roomId: msg.room_id.toString(),
+    };
+  } catch (err: any) {
+    console.error("Gagal mengedit pesan:", err);
+    return { success: false, error: "Terjadi kesalahan saat mengedit pesan." };
+  }
+}
+
+/**
+ * Menghapus pesan (Delete for Everyone).
+ * Pesan ditandai sebagai is_deleted dan teksnya menjadi "Pesan ini telah dihapus".
+ */
+export async function deleteMessageAction(messageIdStr: string) {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Akses ditolak." };
+
+  const messageId = BigInt(messageIdStr);
+  const myId = BigInt(session.id);
+
+  try {
+    const msg = await prisma.chatMessage.findUnique({
+      where: { id: messageId },
+      include: { room: true },
+    });
+
+    if (!msg) {
+      return { success: false, error: "Pesan tidak ditemukan." };
+    }
+
+    if (msg.sender_id !== myId) {
+      return {
+        success: false,
+        error: "Anda hanya dapat menghapus pesan yang Anda kirimkan sendiri.",
+      };
+    }
+
+    const now = new Date();
+    try {
+      await prisma.chatMessage.update({
+        where: { id: messageId },
+        data: {
+          is_deleted: true,
+          deleted_at: now,
+          attachment_url: null,
+          attachment_type: null,
+        },
+      });
+    } catch (deleteErr: any) {
+      console.warn("Prisma update failed, attempting raw query fallback:", deleteErr?.message);
+      await prisma.$executeRaw`
+        UPDATE tbl_chat_messages 
+        SET is_deleted = 1, deleted_at = ${now}, attachment_url = NULL, attachment_type = NULL 
+        WHERE id = ${messageId}
+      `;
+    }
+
+    // Update last_message di chat room jika ini pesan terakhir
+    const latestMessage = await prisma.chatMessage.findFirst({
+      where: { room_id: msg.room_id },
+      orderBy: { created_at: "desc" },
+    });
+
+    if (latestMessage && latestMessage.id === msg.id) {
+      await prisma.chatRoom.update({
+        where: { id: msg.room_id },
+        data: {
+          last_message: "🚫 Pesan ini telah dihapus",
+        },
+      });
+    }
+
+    return {
+      success: true,
+      messageId: messageIdStr,
+      roomId: msg.room_id.toString(),
+    };
+  } catch (err: any) {
+    console.error("Gagal menghapus pesan:", err);
+    return { success: false, error: "Terjadi kesalahan saat menghapus pesan." };
   }
 }

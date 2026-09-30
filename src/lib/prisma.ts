@@ -3,6 +3,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  prismaBuild: string | undefined;
 };
 
 function createPrismaClient() {
@@ -58,9 +59,27 @@ function createPrismaClient() {
   }
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+const PRISMA_SCHEMA_BUILD = "2026-09-30-chat-v2";
+
+// Pastikan instansiasi ulang jika schema berubah atau belum memiliki build version saat ini
+const existingPrisma =
+  globalForPrisma.prismaBuild === PRISMA_SCHEMA_BUILD
+    ? globalForPrisma.prisma
+    : undefined;
+
+if (globalForPrisma.prisma && globalForPrisma.prismaBuild !== PRISMA_SCHEMA_BUILD) {
+  try {
+    globalForPrisma.prisma.$disconnect().catch(() => {});
+  } catch {}
+}
+
+export const prisma =
+  existingPrisma && "pertemuan" in existingPrisma
+    ? existingPrisma
+    : createPrismaClient();
 
 // Selalu simpan di globalThis agar tidak membuat pool baru pada re-evaluasi server actions
 globalForPrisma.prisma = prisma;
+globalForPrisma.prismaBuild = PRISMA_SCHEMA_BUILD;
 
 export default prisma;

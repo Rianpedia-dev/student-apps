@@ -53,9 +53,9 @@
   --color-shadow-offset-y: var(--shadow-offset-y);
 
   /* Typography utilities */
-  --font-sans: var(--font-oxanium), "Oxanium", sans-serif;
+  --font-sans: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
   --font-mono: var(--font-source-code-pro), "Source Code Pro", monospace;
-  --font-heading: var(--font-oxanium), "Oxanium", sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 
   /* Corner radius utilities mapped to theme radius */
@@ -111,7 +111,8 @@
   --sidebar-ring: #059669;
   --spacing: 0.25rem;
   --font-mono: "Source Code Pro", monospace;
-  --font-sans: "Oxanium", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-heading: "Plus Jakarta Sans", sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --shadow-blur: 8px;
   --shadow-color: hsl(160 25% 20%);
@@ -162,7 +163,8 @@
   --sidebar-ring: #10b981;
   --spacing: 0.25rem;
   --font-mono: "Source Code Pro", monospace;
-  --font-sans: "Oxanium", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-heading: "Plus Jakarta Sans", sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --shadow-blur: 10px;
   --shadow-color: hsl(0 0% 0%);
@@ -181,14 +183,21 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   html {
     @apply font-sans antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+
   body {
     @apply bg-background text-foreground font-sans text-base font-normal;
-    letter-spacing: var(--letter-spacing);
+    letter-spacing: -0.011em;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+
   :root:fullscreen,
   html:fullscreen {
     overflow-y: auto;
@@ -196,28 +205,39 @@
 }
 
 @layer utilities {
-  /* Typography System — Oxanium & Source Code Pro */
-  .typography-h1, .text-hero-title {
-    @apply font-sans text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight;
+
+  /* Typography System — Plus Jakarta Sans (Heading) & Inter (Body) */
+  .typography-h1,
+  .text-hero-title {
+    @apply font-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight;
   }
-  .typography-h2, .text-section-title {
-    @apply font-sans text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-snug;
+
+  .typography-h2,
+  .text-section-title {
+    @apply font-heading text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-snug;
   }
-  .typography-h3, .text-card-title {
+
+  .typography-h3,
+  .text-card-title {
     @apply font-heading text-xl sm:text-2xl font-semibold leading-snug;
   }
+
   .typography-body {
     @apply font-sans text-base sm:text-[17px] font-normal leading-relaxed;
   }
+
   .typography-body-emphasis {
     @apply font-sans text-base sm:text-[17px] font-medium leading-relaxed;
   }
+
   .typography-nav {
-    @apply font-sans text-[15px] sm:text-base font-medium;
+    @apply font-heading text-[15px] sm:text-base font-medium;
   }
+
   .typography-btn {
-    @apply font-sans text-sm sm:text-base font-semibold;
+    @apply font-heading text-sm sm:text-base font-semibold tracking-wide;
   }
+
   .typography-caption {
     @apply font-sans text-[13px] sm:text-sm font-normal text-muted-foreground;
   }
@@ -231,8 +251,8 @@
     -webkit-backdrop-filter: blur(12px);
     box-shadow: var(--shadow-offset-x) var(--shadow-offset-y) var(--shadow-blur) var(--shadow-spread) hsl(0 0% 0% / var(--shadow-opacity));
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 0.2s ease;
+      box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.2s ease;
   }
 
   .card-elevation-hover:hover {
@@ -252,9 +272,27 @@
     border-color: var(--border);
     box-shadow: var(--shadow-offset-x) var(--shadow-offset-y) var(--shadow-blur) var(--shadow-spread) hsl(0 0% 0% / var(--shadow-opacity));
   }
+
   :is(.dark) .card-elevation-hover:hover {
     box-shadow: var(--shadow-offset-x) calc(var(--shadow-offset-y) + 3px) calc(var(--shadow-blur) + 6px) var(--shadow-spread) hsl(0 0% 0% / 0.7);
     border-color: var(--primary);
+  }
+
+  /* Soft Glow Button Utilities */
+  .btn-soft-glow {
+    @apply from-primary to-primary/85 text-primary-foreground border-2 border-foreground/10 bg-gradient-to-t shadow-xl shadow-primary/70 ring-4 ring-offset-2 ring-background/30 transition-[filter,box-shadow,transform] duration-200 hover:brightness-120 active:brightness-100 active:scale-[0.98];
+  }
+
+  .btn-soft-glow-amber {
+    @apply from-amber-500 to-amber-400 text-slate-950 border-2 border-foreground/10 bg-gradient-to-t shadow-xl shadow-amber-500/70 ring-4 ring-offset-2 ring-background/30 transition-[filter,box-shadow,transform] duration-200 hover:brightness-120 active:brightness-100 active:scale-[0.98];
+  }
+
+  .btn-soft-glow-emerald {
+    @apply from-emerald-600 to-emerald-500 text-white border-2 border-foreground/10 bg-gradient-to-t shadow-xl shadow-emerald-600/70 ring-4 ring-offset-2 ring-background/30 transition-[filter,box-shadow,transform] duration-200 hover:brightness-120 active:brightness-100 active:scale-[0.98];
+  }
+
+  .btn-soft-glow-steel {
+    @apply from-sky-500 to-blue-600 text-white border-2 border-foreground/10 bg-gradient-to-t shadow-xl shadow-sky-500/70 ring-4 ring-offset-2 ring-background/30 transition-[filter,box-shadow,transform] duration-200 hover:brightness-120 active:brightness-100 active:scale-[0.98];
   }
 
   /* 3D Tactile Launch Button Utilities */
@@ -263,23 +301,25 @@
     color: #451a03;
     font-weight: 700;
     box-shadow: 0 0 16px rgba(245, 158, 11, 0.35),
-                0 0 0 1px rgba(251, 191, 36, 0.6),
-                0 4px 0 #b45309,
-                0 10px 15px -3px rgba(0, 0, 0, 0.35);
+      0 0 0 1px rgba(251, 191, 36, 0.6),
+      0 4px 0 #b45309,
+      0 10px 15px -3px rgba(0, 0, 0, 0.35);
     transition: all 0.15s ease-in-out;
   }
+
   .btn-tactile-amber:hover {
     box-shadow: 0 0 24px rgba(245, 158, 11, 0.65),
-                0 0 0 1px rgba(251, 191, 36, 0.75),
-                0 4px 0 #b45309,
-                0 12px 18px -3px rgba(0, 0, 0, 0.45);
+      0 0 0 1px rgba(251, 191, 36, 0.75),
+      0 4px 0 #b45309,
+      0 12px 18px -3px rgba(0, 0, 0, 0.45);
   }
+
   .btn-tactile-amber:active {
     transform: translateY(2px);
     box-shadow: 0 0 12px rgba(245, 158, 11, 0.4),
-                0 0 0 1px rgba(251, 191, 36, 0.6),
-                0 2px 0 #b45309,
-                0 5px 8px -2px rgba(0, 0, 0, 0.3);
+      0 0 0 1px rgba(251, 191, 36, 0.6),
+      0 2px 0 #b45309,
+      0 5px 8px -2px rgba(0, 0, 0, 0.3);
   }
 
   .btn-tactile-crimson {
@@ -287,23 +327,25 @@
     color: #ffffff;
     font-weight: 700;
     box-shadow: 0 0 16px rgba(183, 28, 28, 0.35),
-                0 0 0 1px rgba(239, 83, 80, 0.6),
-                0 4px 0 #7f0000,
-                0 10px 15px -3px rgba(0, 0, 0, 0.35);
+      0 0 0 1px rgba(239, 83, 80, 0.6),
+      0 4px 0 #7f0000,
+      0 10px 15px -3px rgba(0, 0, 0, 0.35);
     transition: all 0.15s ease-in-out;
   }
+
   .btn-tactile-crimson:hover {
     box-shadow: 0 0 24px rgba(183, 28, 28, 0.65),
-                0 0 0 1px rgba(239, 83, 80, 0.75),
-                0 4px 0 #7f0000,
-                0 12px 18px -3px rgba(0, 0, 0, 0.45);
+      0 0 0 1px rgba(239, 83, 80, 0.75),
+      0 4px 0 #7f0000,
+      0 12px 18px -3px rgba(0, 0, 0, 0.45);
   }
+
   .btn-tactile-crimson:active {
     transform: translateY(2px);
     box-shadow: 0 0 12px rgba(183, 28, 28, 0.4),
-                0 0 0 1px rgba(239, 83, 80, 0.6),
-                0 2px 0 #7f0000,
-                0 5px 8px -2px rgba(0, 0, 0, 0.3);
+      0 0 0 1px rgba(239, 83, 80, 0.6),
+      0 2px 0 #7f0000,
+      0 5px 8px -2px rgba(0, 0, 0, 0.3);
   }
 
   .btn-tactile-steel {
@@ -311,23 +353,25 @@
     color: #0f172a;
     font-weight: 700;
     box-shadow: 0 0 16px rgba(70, 130, 180, 0.35),
-                0 0 0 1px rgba(100, 181, 246, 0.6),
-                0 4px 0 #1e3a8a,
-                0 10px 15px -3px rgba(0, 0, 0, 0.35);
+      0 0 0 1px rgba(100, 181, 246, 0.6),
+      0 4px 0 #1e3a8a,
+      0 10px 15px -3px rgba(0, 0, 0, 0.35);
     transition: all 0.15s ease-in-out;
   }
+
   .btn-tactile-steel:hover {
     box-shadow: 0 0 24px rgba(70, 130, 180, 0.65),
-                0 0 0 1px rgba(100, 181, 246, 0.75),
-                0 4px 0 #1e3a8a,
-                0 12px 18px -3px rgba(0, 0, 0, 0.45);
+      0 0 0 1px rgba(100, 181, 246, 0.75),
+      0 4px 0 #1e3a8a,
+      0 12px 18px -3px rgba(0, 0, 0, 0.45);
   }
+
   .btn-tactile-steel:active {
     transform: translateY(2px);
     box-shadow: 0 0 12px rgba(70, 130, 180, 0.4),
-                0 0 0 1px rgba(100, 181, 246, 0.6),
-                0 2px 0 #1e3a8a,
-                0 5px 8px -2px rgba(0, 0, 0, 0.3);
+      0 0 0 1px rgba(100, 181, 246, 0.6),
+      0 2px 0 #1e3a8a,
+      0 5px 8px -2px rgba(0, 0, 0, 0.3);
   }
 
   .btn-tactile-emerald {
@@ -335,23 +379,25 @@
     color: #ffffff;
     font-weight: 700;
     box-shadow: 0 0 16px rgba(16, 185, 129, 0.35),
-                0 0 0 1px rgba(52, 211, 153, 0.6),
-                0 4px 0 #065f46,
-                0 10px 15px -3px rgba(0, 0, 0, 0.35);
+      0 0 0 1px rgba(52, 211, 153, 0.6),
+      0 4px 0 #065f46,
+      0 10px 15px -3px rgba(0, 0, 0, 0.35);
     transition: all 0.15s ease-in-out;
   }
+
   .btn-tactile-emerald:hover {
     box-shadow: 0 0 24px rgba(16, 185, 129, 0.65),
-                0 0 0 1px rgba(52, 211, 153, 0.75),
-                0 4px 0 #065f46,
-                0 12px 18px -3px rgba(0, 0, 0, 0.45);
+      0 0 0 1px rgba(52, 211, 153, 0.75),
+      0 4px 0 #065f46,
+      0 12px 18px -3px rgba(0, 0, 0, 0.45);
   }
+
   .btn-tactile-emerald:active {
     transform: translateY(2px);
     box-shadow: 0 0 12px rgba(16, 185, 129, 0.4),
-                0 0 0 1px rgba(52, 211, 153, 0.6),
-                0 2px 0 #065f46,
-                0 5px 8px -2px rgba(0, 0, 0, 0.3);
+      0 0 0 1px rgba(52, 211, 153, 0.6),
+      0 2px 0 #065f46,
+      0 5px 8px -2px rgba(0, 0, 0, 0.3);
   }
 
   /* Sidebar menu icon hover animation */
@@ -372,15 +418,19 @@
   0% {
     transform: scale(1) rotate(0deg) translateY(0);
   }
+
   25% {
     transform: scale(1.2) rotate(-12deg) translateY(-2px);
   }
+
   50% {
     transform: scale(1.22) rotate(10deg) translateY(-3px);
   }
+
   75% {
     transform: scale(1.15) rotate(-4deg) translateY(-1px);
   }
+
   100% {
     transform: scale(1.14) rotate(0deg) translateY(-1px);
   }
@@ -450,11 +500,13 @@
 
 /* Pencil Keyframe Animations */
 @keyframes pencilBody1 {
+
   from,
   to {
     stroke-dashoffset: 351.86;
     transform: rotate(-90deg);
   }
+
   50% {
     stroke-dashoffset: 150.8;
     transform: rotate(-225deg);
@@ -462,11 +514,13 @@
 }
 
 @keyframes pencilBody2 {
+
   from,
   to {
     stroke-dashoffset: 406.84;
     transform: rotate(-90deg);
   }
+
   50% {
     stroke-dashoffset: 174.36;
     transform: rotate(-225deg);
@@ -474,11 +528,13 @@
 }
 
 @keyframes pencilBody3 {
+
   from,
   to {
     stroke-dashoffset: 296.88;
     transform: rotate(-90deg);
   }
+
   50% {
     stroke-dashoffset: 127.23;
     transform: rotate(-225deg);
@@ -486,30 +542,36 @@
 }
 
 @keyframes pencilEraser {
+
   from,
   to {
     transform: rotate(-45deg) translate(49px, 0);
   }
+
   50% {
     transform: rotate(0deg) translate(49px, 0);
   }
 }
 
 @keyframes pencilEraserSkew {
+
   from,
   32.5%,
   67.5%,
   to {
     transform: skewX(0);
   }
+
   35%,
   65% {
     transform: skewX(-4deg);
   }
+
   37.5%,
   62.5% {
     transform: skewX(8deg);
   }
+
   40%,
   45%,
   50%,
@@ -517,6 +579,7 @@
   60% {
     transform: skewX(-15deg);
   }
+
   42.5%,
   47.5%,
   52.5%,
@@ -526,10 +589,12 @@
 }
 
 @keyframes pencilPoint {
+
   from,
   to {
     transform: rotate(-90deg) translate(49px, -30px);
   }
+
   50% {
     transform: rotate(-225deg) translate(49px, -30px);
   }
@@ -539,6 +604,7 @@
   from {
     transform: translate(100px, 100px) rotate(0);
   }
+
   to {
     transform: translate(100px, 100px) rotate(720deg);
   }
@@ -549,10 +615,12 @@
     stroke-dashoffset: 439.82;
     transform: translate(100px, 100px) rotate(-113deg);
   }
+
   50% {
     stroke-dashoffset: 164.93;
     transform: translate(100px, 100px) rotate(-113deg);
   }
+
   75%,
   to {
     stroke-dashoffset: 439.82;

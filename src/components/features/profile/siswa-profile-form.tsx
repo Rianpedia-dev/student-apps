@@ -134,7 +134,7 @@ export function SiswaProfileForm({ student }: SiswaProfileFormProps) {
         <div className="flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-bold tracking-tight">{student.name}</h2>
-            <Badge className="bg-primary text-primary-foreground rounded-[var(--radius)]">Siswa Aktif</Badge>
+            <Badge variant="success">Siswa Aktif</Badge>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 font-mono text-xs sm:text-sm text-muted-foreground">

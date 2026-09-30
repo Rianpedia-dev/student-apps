@@ -105,3 +105,64 @@ export function getUserProfileImage(image?: string | null, gender?: string | nul
   }
   return getDefaultProfileImage(gender, name);
 }
+
+/**
+ * Bobot urutan hari standar sekolah dari Senin ke Minggu/Ahad.
+ */
+export const HARI_ORDER_WEIGHTS: Record<string, number> = {
+  senin: 1,
+  selasa: 2,
+  rabu: 3,
+  kamis: 4,
+  jumat: 5,
+  "jum'at": 5,
+  sabtu: 6,
+  minggu: 7,
+  ahad: 7,
+};
+
+export function getHariWeight(hari?: string | null): number {
+  if (!hari) return 999;
+  const key = hari.trim().toLowerCase();
+  return HARI_ORDER_WEIGHTS[key] ?? 100;
+}
+
+export function extractStartTime(timeStr?: string | null): string {
+  if (!timeStr) return "99:99";
+  const start = timeStr.split("-")[0]?.trim();
+  return start || "99:99";
+}
+
+/**
+ * Mengurutkan daftar mata pelajaran secara kronologis:
+ * 1. Berdasarkan hari (Senin -> Selasa -> Rabu -> Kamis -> Jumat -> dst)
+ * 2. Berdasarkan jam mulai paling awal ke paling akhir
+ * 3. Mata pelajaran tanpa jadwal ditaruh di akhir, diurutkan menurut nama mapel
+ */
+export function sortSubjectsBySchedule<
+  T extends {
+    jadwalHari?: string | null;
+    jadwalWaktu?: string | null;
+    jamMulai?: string | null;
+    namaMapel: string;
+  }
+>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const dayA = getHariWeight(a.jadwalHari);
+    const dayB = getHariWeight(b.jadwalHari);
+
+    if (dayA !== dayB) {
+      return dayA - dayB;
+    }
+
+    if (dayA < 999) {
+      const timeA = a.jamMulai?.trim() || extractStartTime(a.jadwalWaktu);
+      const timeB = b.jamMulai?.trim() || extractStartTime(b.jadwalWaktu);
+      const timeDiff = timeA.localeCompare(timeB);
+      if (timeDiff !== 0) return timeDiff;
+    }
+
+    return a.namaMapel.localeCompare(b.namaMapel);
+  });
+}
+

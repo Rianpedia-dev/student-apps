@@ -735,13 +735,27 @@ export function EventManager({
           <span className="text-sm text-muted-foreground">Filter aktif:</span>
           {selectedColors.map((colorValue) => {
             const color = getColorClasses(colorValue)
+            const colorVariant =
+              colorValue === "green"
+                ? "emerald"
+                : colorValue === "red"
+                ? "destructive"
+                : colorValue === "yellow"
+                ? "warning"
+                : colorValue === "blue"
+                ? "blue"
+                : colorValue === "purple"
+                ? "purple"
+                : colorValue === "orange"
+                ? "orange"
+                : "secondary"
             return (
-              <Badge key={colorValue} variant="secondary" className="gap-1">
+              <Badge key={colorValue} variant={colorVariant as any} className="gap-1">
                 <div className={cn("h-2 w-2 rounded-full", color.bg)} />
                 {color.name}
                 <button
                   onClick={() => setSelectedColors((prev) => prev.filter((c) => c !== colorValue))}
-                  className="ml-1 hover:text-foreground"
+                  className="ml-1 hover:opacity-75 cursor-pointer"
                   aria-label={`Hapus filter ${color.name}`}
                 >
                   <X className="h-3 w-3" />
@@ -750,11 +764,11 @@ export function EventManager({
             )
           })}
           {selectedTags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="gap-1">
+            <Badge key={tag} variant="sky" className="gap-1">
               {tag}
               <button
                 onClick={() => setSelectedTags((prev) => prev.filter((t) => t !== tag))}
-                className="ml-1 hover:text-foreground"
+                className="ml-1 hover:opacity-75 cursor-pointer"
                 aria-label={`Hapus filter ${tag}`}
               >
                 <X className="h-3 w-3" />
@@ -762,11 +776,11 @@ export function EventManager({
             </Badge>
           ))}
           {selectedCategories.map((category) => (
-            <Badge key={category} variant="secondary" className="gap-1">
+            <Badge key={category} variant="purple" className="gap-1">
               {category}
               <button
                 onClick={() => setSelectedCategories((prev) => prev.filter((c) => c !== category))}
-                className="ml-1 hover:text-foreground"
+                className="ml-1 hover:opacity-75 cursor-pointer"
                 aria-label={`Hapus filter ${category}`}
               >
                 <X className="h-3 w-3" />

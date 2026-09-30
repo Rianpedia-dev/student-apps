@@ -89,21 +89,21 @@ export function RoomCard({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
               </span>
-              <Badge className="bg-emerald-600 text-white font-bold px-3 py-1 text-xs border-none tracking-wide shadow-xs">
+              <Badge variant="success" size="lg" className="font-bold tracking-wide">
                 KELAS SEDANG AKTIF
               </Badge>
             </div>
           ) : (
-            <Badge variant="secondary" className="text-xs font-medium px-3 py-1">
+            <Badge variant="secondary" size="lg">
               ⚫ Selesai
             </Badge>
           )}
 
           {isActive && room.active_participants !== undefined && (
-            <div className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">
+            <Badge variant="sky" size="sm" className="gap-1.5 font-semibold">
               <Users className="h-3.5 w-3.5" />
               <span>{room.active_participants} peserta hadir</span>
-            </div>
+            </Badge>
           )}
         </div>
 

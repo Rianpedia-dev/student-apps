@@ -38,7 +38,7 @@ export function AdminSessionLogSection({ sessions }: AdminSessionLogSectionProps
             Log Semua Sesi
           </span>
           {sessions.length > 0 && (
-            <Badge variant="secondary" className="text-xs px-2 py-0.5">
+            <Badge variant="secondary" size="sm">
               {sessions.length}
             </Badge>
           )}
@@ -101,11 +101,11 @@ export function AdminSessionLogSection({ sessions }: AdminSessionLogSectionProps
                         </td>
                         <td className="py-2.5 px-4">
                           {s.status === "active" ? (
-                            <Badge className="bg-emerald-500 text-white border-none text-xs">
+                            <Badge variant="success" size="sm">
                               Aktif
                             </Badge>
                           ) : (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" size="sm">
                               Selesai
                             </Badge>
                           )}

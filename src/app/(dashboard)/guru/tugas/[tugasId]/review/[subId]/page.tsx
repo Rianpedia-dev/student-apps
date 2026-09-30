@@ -37,6 +37,7 @@ export default async function GuruReviewTugasPage({ params }: PageProps) {
           name: true,
           nis: true,
           image: true,
+          gender: true,
         },
       },
     },
@@ -83,6 +84,7 @@ export default async function GuruReviewTugasPage({ params }: PageProps) {
           name: submission.siswa.name,
           nis: submission.siswa.nis,
           image: submission.siswa.image,
+          gender: submission.siswa.gender,
         },
       }}
       prevSubId={prevSubId}

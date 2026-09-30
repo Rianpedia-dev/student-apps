@@ -191,7 +191,7 @@ export function Navbar({ role, userName, userEmail, kelas, userImage }: NavbarPr
             />
             <SheetContent
               side="right"
-              className="p-0 gap-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground data-[side=right]:w-[285px] sm:data-[side=right]:w-[320px] max-w-[85vw] shadow-2xl overflow-hidden [&>[data-slot=sheet-close]]:text-sidebar-foreground/80 [&>[data-slot=sheet-close]]:hover:text-sidebar-foreground [&>[data-slot=sheet-close]]:hover:bg-muted/70 [&>[data-slot=sheet-close]]:focus-visible:ring-ring [&>[data-slot=sheet-close]]:top-4 [&>[data-slot=sheet-close]]:right-3.5 [&>[data-slot=sheet-close]]:h-8 [&>[data-slot=sheet-close]]:w-8 [&>[data-slot=sheet-close]]:rounded-[var(--radius)] [&>[data-slot=sheet-close]]:cursor-pointer [&>[data-slot=sheet-close]]:transition-all"
+              className="p-0 gap-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground data-[side=right]:w-[250px] sm:data-[side=right]:w-[260px] max-w-[85vw] shadow-2xl overflow-hidden [&>[data-slot=sheet-close]]:text-sidebar-foreground/80 [&>[data-slot=sheet-close]]:hover:text-sidebar-foreground [&>[data-slot=sheet-close]]:hover:bg-muted/70 [&>[data-slot=sheet-close]]:focus-visible:ring-ring [&>[data-slot=sheet-close]]:top-4 [&>[data-slot=sheet-close]]:right-3.5 [&>[data-slot=sheet-close]]:h-8 [&>[data-slot=sheet-close]]:w-8 [&>[data-slot=sheet-close]]:rounded-[var(--radius)] [&>[data-slot=sheet-close]]:cursor-pointer [&>[data-slot=sheet-close]]:transition-all"
             >
               <Sidebar
                 role={role}

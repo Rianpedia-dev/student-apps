@@ -125,7 +125,20 @@ export default async function AdminAnnouncementsPage() {
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      <Badge
+                        variant={
+                          item.from?.toLowerCase().includes("kepala")
+                            ? "indigo"
+                            : item.from?.toLowerCase().includes("admin")
+                            ? "purple"
+                            : item.from?.toLowerCase().includes("kurikulum")
+                            ? "teal"
+                            : item.from?.toLowerCase().includes("kesiswaan")
+                            ? "orange"
+                            : "emerald"
+                        }
+                        size="sm"
+                      >
                         {item.from}
                       </Badge>
                       <span className="text-xs text-muted-foreground flex items-center gap-1">

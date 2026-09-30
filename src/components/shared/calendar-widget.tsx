@@ -243,7 +243,7 @@ export function CalendarWidget({ canManage = false }: CalendarWidgetProps) {
               </div>
               {selectedEvent.extendedProps?.from && (
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Badge variant="outline">Oleh: {selectedEvent.extendedProps.from}</Badge>
+                  <Badge variant="sky">Oleh: {selectedEvent.extendedProps.from}</Badge>
                 </div>
               )}
               {selectedEvent.description && (

@@ -36,7 +36,7 @@ export function SiswaHistorySection({ records }: SiswaHistorySectionProps) {
             Riwayat Kelas Sebelumnya
           </span>
           {records.length > 0 && (
-            <Badge variant="secondary" className="text-xs px-2 py-0.5">
+            <Badge variant="secondary" size="sm">
               {records.length}
             </Badge>
           )}
@@ -64,7 +64,7 @@ export function SiswaHistorySection({ records }: SiswaHistorySectionProps) {
                         👨‍🏫 {rec.guru_name} • {rec.date}
                       </p>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" size="sm">
                       ⏱{" "}
                       {rec.duration_minutes
                         ? rec.duration_minutes < 60

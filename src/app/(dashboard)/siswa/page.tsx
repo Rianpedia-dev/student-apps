@@ -8,9 +8,7 @@ import { AnnouncementTimeline } from "@/components/shared/announcement-timeline"
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/shared/user-avatar";
-import { getDefaultProfileImage, getUserProfileImage } from "@/lib/utils";
-import { SubjectCard } from "@/components/features/subjects/subject-card";
+import { getUserProfileImage } from "@/lib/utils";
 import { IslamicMosaicPattern, AlAzharSchoolBanner } from "@/components/shared/alazhar-patterns";
 
 export const dynamic = "force-dynamic";
@@ -44,28 +42,31 @@ export default async function SiswaDashboardPage() {
   const startOfMonth = new Date(currentYear, now.getMonth(), 1, 0, 0, 0, 0);
   const endOfMonth = new Date(currentYear, now.getMonth() + 1, 0, 23, 59, 59, 999);
 
+  const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const todayDayName = DAY_NAMES[now.getDay()];
+
   try {
     const [dbUser, dbKelas, dbHadirMonth, dbEventsMonth, dbClassmates, dbAnnounce] =
       await Promise.all([
         userIdBigInt
           ? prisma.user.findUnique({
-              where: { id: userIdBigInt },
-              select: { image: true, point: true, nis: true, name: true, gender: true },
-            }).catch(() => null)
+            where: { id: userIdBigInt },
+            select: { image: true, point: true, nis: true, name: true, gender: true },
+          }).catch(() => null)
           : null,
         studentClass
           ? prisma.kelas.findFirst({
-              where: { nama_kelas: studentClass },
-            }).catch(() => null)
+            where: { nama_kelas: studentClass },
+          }).catch(() => null)
           : null,
         userIdBigInt
           ? prisma.absen.count({
-              where: {
-                user_id: userIdBigInt,
-                date: { startsWith: currentYearMonth },
-                keterangan: { in: ["Hadir", "hadir", "H"] },
-              },
-            }).catch(() => 0)
+            where: {
+              user_id: userIdBigInt,
+              date: { startsWith: currentYearMonth },
+              keterangan: { in: ["Hadir", "hadir", "H"] },
+            },
+          }).catch(() => 0)
           : 0,
         prisma.event.count({
           where: {
@@ -92,8 +93,8 @@ export default async function SiswaDashboardPage() {
         }).catch(() => 0),
         studentClass
           ? prisma.user.findMany({
-              where: { kelas: studentClass, status: "1" },
-            }).catch(() => [])
+            where: { kelas: studentClass, status: "1" },
+          }).catch(() => [])
           : [],
         prisma.pengumuman.findMany({
           where: {
@@ -160,8 +161,8 @@ export default async function SiswaDashboardPage() {
     created_at: p.created_at || null,
   }));
 
-  // Fetch Mata Pelajaran & Jadwal Siswa
-  let subjectsForDashboard: any[] = [];
+  // Fetch Jadwal Hari Ini & Tugas Siswa
+  let todaySchedules: any[] = [];
   let pendingTasksCount = 0;
 
   try {
@@ -173,14 +174,14 @@ export default async function SiswaDashboardPage() {
             mapel: true,
             guru: { select: { name: true, image: true } },
           },
-          orderBy: [{ hari: "asc" }, { jam_mulai: "asc" }],
+          orderBy: [{ jam_mulai: "asc" }],
         }).catch(() => []),
         prisma.tugas.findMany({
           where: { kelas_id: kelasInfo.id, status: "aktif" },
           include: userIdBigInt
             ? {
-                submissions: { where: { siswa_id: userIdBigInt } },
-              }
+              submissions: { where: { siswa_id: userIdBigInt } },
+            }
             : undefined,
         }).catch(() => []),
       ]);
@@ -191,23 +192,23 @@ export default async function SiswaDashboardPage() {
       ).length;
 
       if (jadwalKelas && jadwalKelas.length > 0) {
-        subjectsForDashboard = (jadwalKelas as any[]).map((j) => {
+        // Filter khusus jadwal untuk hari ini
+        const schedulesForToday = (jadwalKelas as any[]).filter(
+          (j) => j.hari?.trim().toLowerCase() === todayDayName.toLowerCase()
+        );
+
+        todaySchedules = schedulesForToday.map((j) => {
           const tasksForMapel = tasksList.filter((t) => t.mapel_id === j.mapel_id);
           const unsubmitted = tasksForMapel.filter(
             (t) => !t.submissions || t.submissions.length === 0
           ).length;
 
           return {
-            id: j.mapel ? j.mapel.id.toString() : j.id.toString(),
+            id: j.id.toString(),
             kodeMapel: j.mapel?.kode_mapel || "-",
             namaMapel: j.mapel?.nama_mapel || "Mata Pelajaran",
-            jenjang: j.mapel?.jenjang || "SD",
-            icon: j.mapel?.icon || "BookOpen",
-            warna: j.mapel?.warna || "#059669",
             guruNama: j.guru?.name || "Guru Pengampu",
-            guruImage: j.guru?.image || null,
-            jadwalHari: j.hari || "Senin",
-            jadwalWaktu: `${j.jam_mulai || "07:30"} - ${j.jam_selesai || "09:00"}`,
+            waktu: `${j.jam_mulai || "07:30"} - ${j.jam_selesai || "09:00"}`,
             ruang: j.ruang || "-",
             activeTasksCount: unsubmitted,
             detailUrl: `/siswa/mapel/${j.mapel_id || j.id}`,
@@ -215,34 +216,8 @@ export default async function SiswaDashboardPage() {
         });
       }
     }
-
-    if (subjectsForDashboard.length === 0) {
-      const generalMapel = await prisma.mataPelajaran.findMany({
-        where: { OR: [{ jenjang: kelasInfo?.jenjang || "SD" }, { jenjang: "SEMUA" }] },
-        take: 6,
-        orderBy: { nama_mapel: "asc" },
-      }).catch(() => []);
-
-      if (generalMapel && generalMapel.length > 0) {
-        subjectsForDashboard = generalMapel.map((m) => ({
-          id: m.id.toString(),
-          kodeMapel: m.kode_mapel || "-",
-          namaMapel: m.nama_mapel || "Mata Pelajaran",
-          jenjang: m.jenjang || "SD",
-          icon: m.icon || "BookOpen",
-          warna: m.warna || "#059669",
-          guruNama: "Guru Pengampu",
-          guruImage: null,
-          jadwalHari: "Senin - Jumat",
-          jadwalWaktu: "07:30 - 09:00",
-          ruang: "Kelas",
-          activeTasksCount: 0,
-          detailUrl: `/siswa/mapel/${m.id}`,
-        }));
-      }
-    }
   } catch (err) {
-    console.error("Error fetching subjects/tasks in siswa dashboard:", err);
+    console.error("Error fetching schedules/tasks in siswa dashboard:", err);
   }
 
   return (
@@ -301,60 +276,97 @@ export default async function SiswaDashboardPage() {
           href="/siswa/tugas"
         />
         <StatCard
-          title="Mata Pelajaran"
-          value={`${subjectsForDashboard.length} Mapel`}
-          description="Jadwal & materi aktif"
+          title="Jadwal Hari Ini"
+          value={`${todaySchedules.length} Sesi`}
+          description={`Hari ${todayDayName}`}
           variant="primary"
           href="/siswa/mapel"
         />
       </div>
 
 
-      {/* Widget Section: Mata Pelajaran Saya */}
-      {subjectsForDashboard.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                <span>📚 Mata Pelajaran Saya</span>
-                <span className="text-xs font-normal text-muted-foreground">
-                  ({studentClass || "Semua Jenjang"})
-                </span>
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Akses materi pelajaran, tugas aktif, dan konsultasi dengan guru pengampu
-              </p>
-            </div>
-            <Link
-              href="/siswa/mapel"
-              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
-            >
-              <span>Lihat Semua Jadwal</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+      {/* Widget Section: Jadwal Hari Ini */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Jadwal Hari Ini
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Jadwal pelajaran aktif untuk kelas {studentClass || "Anda"} hari ini
+            </p>
           </div>
+          <Link
+            href="/siswa/mapel"
+            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+          >
+            <span>Lihat Semua Jadwal</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
 
+        {todaySchedules.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {subjectsForDashboard.map((subj) => (
-              <SubjectCard
+            {todaySchedules.map((subj) => (
+              <Link
                 key={subj.id}
-                id={subj.id}
-                kodeMapel={subj.kodeMapel}
-                namaMapel={subj.namaMapel}
-                jenjang={subj.jenjang}
-                icon={subj.icon}
-                warna={subj.warna}
-                guruNama={subj.guruNama}
-                jadwalHari={subj.jadwalHari}
-                jadwalWaktu={subj.jadwalWaktu}
-                ruang={subj.ruang}
-                activeTasksCount={subj.activeTasksCount}
-                detailUrl={subj.detailUrl}
-              />
+                href={subj.detailUrl}
+                className="group relative rounded-2xl border border-border/80 hover:border-emerald-500/40 bg-card p-4 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-xs tracking-tight">
+                      {subj.waktu}
+                    </span>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {subj.activeTasksCount > 0 && (
+                        <Badge variant="amber" size="xs">
+                          {subj.activeTasksCount} Tugas
+                        </Badge>
+                      )}
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/60 transition-transform group-hover:text-primary group-hover:translate-x-0.5" />
+                    </div>
+                  </div>
+
+                  <h3 className="text-base font-bold text-foreground leading-snug truncate group-hover:text-primary transition-colors">
+                    {subj.namaMapel}
+                  </h3>
+
+                  <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground space-y-1">
+                    {subj.guruNama && (
+                      <div className="truncate font-medium text-foreground/80">
+                        {subj.guruNama}
+                      </div>
+                    )}
+                    {subj.ruang && subj.ruang !== "-" && (
+                      <div className="truncate text-[11px] text-muted-foreground/75">
+                        Ruang: {subj.ruang}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border/80 bg-card/50 p-6 sm:p-8 text-center space-y-2">
+            <p className="text-sm font-semibold text-foreground">Tidak Ada Jadwal Pelajaran Hari Ini</p>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              Hari ini ({todayDayName}) tidak ada jadwal pelajaran aktif untuk kelas {studentClass || "Anda"}.
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/siswa/mapel"
+                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+              >
+                <span>Lihat Semua Jadwal Mingguan</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* 2 Columns: Announcements + Banner Sekolah */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">

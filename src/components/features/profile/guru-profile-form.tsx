@@ -135,7 +135,7 @@ export function GuruProfileForm({ teacher, classes }: GuruProfileFormProps) {
         <div className="flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-bold tracking-tight">{teacher.name}</h2>
-            <Badge className="bg-primary text-primary-foreground rounded-[var(--radius)]">{getRoleLabel(teacher.status || "2")}</Badge>
+            <Badge variant="success">{getRoleLabel(teacher.status || "2")}</Badge>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">

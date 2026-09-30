@@ -43,18 +43,15 @@ async function main() {
 
   // Header / Kop Surat Sekolah
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("YAYASAN PESANTREN ISLAM AL-AZHAR", 105, 18, { align: "center" });
-
   doc.setFontSize(16);
   doc.setTextColor(20, 83, 45); // Emerald dark
-  doc.text("SD ISLAM AL-AZHAR CAIRO PALEMBANG", 105, 25, { align: "center" });
+  doc.text("SD ISLAM AL-AZHAR CAIRO PALEMBANG", 105, 20, { align: "center" });
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100, 100, 100);
-  doc.text("Jl. Kolonel H. Barlian No. 6.5, Karya Baru, Alang-Alang Lebar, Palembang", 105, 30, { align: "center" });
-  doc.text("Website: www.alazhar-cairo.sch.id | Email: sdia.cairo@alazhar.sch.id", 105, 34, { align: "center" });
+  doc.text("Jl. Kolonel H. Barlian No. 6.5, Karya Baru, Alang-Alang Lebar, Palembang", 105, 26, { align: "center" });
+  doc.text("Website: www.alazhar-cairo.sch.id | Email: sdia.cairo@alazhar.sch.id", 105, 31, { align: "center" });
 
   // Divider Line
   doc.setDrawColor(20, 83, 45);

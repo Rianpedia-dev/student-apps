@@ -88,8 +88,8 @@ export function ClassroomTopBar({
 
             <div className="flex items-center gap-2 min-w-0 flex-wrap">
               {activeSession.mataPelajaran && (
-                <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60 font-semibold px-2.5 py-1 text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-xs">
-                  <BookOpen className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <Badge variant="success" size="lg" className="flex items-center gap-1.5 shrink-0">
+                  <BookOpen className="h-3.5 w-3.5" />
                   <span className="truncate max-w-[140px] sm:max-w-[200px]">
                     {activeSession.mataPelajaran}
                   </span>

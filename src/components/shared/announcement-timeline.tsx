@@ -97,7 +97,22 @@ export function AnnouncementTimeline({
           <CardContent className="p-4 sm:p-5.5 relative z-10">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/25 text-xs font-medium rounded-md">
+                <Badge
+                  variant={
+                    item.from?.toLowerCase().includes("kepala")
+                      ? "indigo"
+                      : item.from?.toLowerCase().includes("admin")
+                      ? "purple"
+                      : item.from?.toLowerCase().includes("kurikulum")
+                      ? "teal"
+                      : item.from?.toLowerCase().includes("kesiswaan")
+                      ? "orange"
+                      : item.from?.toLowerCase().includes("wali")
+                      ? "sky"
+                      : "emerald"
+                  }
+                  size="sm"
+                >
                   {item.from || "Pengumuman"}
                 </Badge>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

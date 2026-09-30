@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
-import { Oxanium, Source_Code_Pro } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter, Source_Code_Pro } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { GlobalBackground } from "@/components/shared/global-background";
 
-const oxanium = Oxanium({
-  variable: "--font-oxanium",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
   display: "swap",
 });
 
 const sourceCodePro = Source_Code_Pro({
   variable: "--font-source-code-pro",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -42,7 +46,7 @@ export default function RootLayout({
       lang="id"
       dir="ltr"
       suppressHydrationWarning
-      className={`${oxanium.variable} ${sourceCodePro.variable} h-full antialiased`}
+      className={`${plusJakartaSans.variable} ${inter.variable} ${sourceCodePro.variable} h-full antialiased`}
     >
       <body dir="ltr" className="min-h-full flex flex-col font-sans bg-transparent text-foreground relative">
         <ThemeProvider

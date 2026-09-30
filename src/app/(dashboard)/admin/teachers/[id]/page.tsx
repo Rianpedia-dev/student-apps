@@ -56,7 +56,7 @@ export default async function AdminTeacherDetailPage(props: {
         >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Guru
         </Link>
-        <Badge className="bg-emerald-600">
+        <Badge variant="success">
           {getRoleLabel(teacher.status)}
         </Badge>
       </div>

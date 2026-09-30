@@ -204,7 +204,7 @@ export function ProfilePhotoUploader({
             <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs text-primary font-medium">
               <Sparkles className="h-3.5 w-3.5 animate-pulse" />
               <span>Foto baru dipilih: <strong className="truncate max-w-[180px] inline-block align-bottom">{selectedFileName}</strong></span>
-              <Badge variant="outline" className="bg-primary/10 border-primary/30 text-[10px] py-0 px-1.5 text-primary rounded-[var(--radius)]">
+              <Badge variant="warning" size="sm">
                 Belum Tersimpan
               </Badge>
             </div>

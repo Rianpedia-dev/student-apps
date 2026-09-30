@@ -36,15 +36,25 @@ export default async function GuruMapelPage() {
     },
   });
 
+  // Ambil data pertemuan yang telah dibuat
+  const meetings = (prisma as any).pertemuan?.findMany
+    ? await (prisma as any).pertemuan.findMany({
+        where: session.role === "admin" ? {} : { guru_id: guruId },
+        select: {
+          id: true,
+          kelas_id: true,
+          mapel_id: true,
+          is_published: true,
+        },
+      })
+    : [];
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <BookOpen className="h-6 w-6" />
-            </span>
             <span>Jadwal Mengajar & Mata Pelajaran Saya</span>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -75,6 +85,9 @@ export default async function GuruMapelPage() {
             const tasksInSchedule = tasks.filter(
               (t) => t.kelas_id === sch.kelas_id && t.mapel_id === sch.mapel_id
             );
+            const meetingsInSchedule = meetings.filter(
+              (m: any) => m.kelas_id === sch.kelas_id && m.mapel_id === sch.mapel_id
+            );
 
             return (
               <div
@@ -83,10 +96,17 @@ export default async function GuruMapelPage() {
               >
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="text-xs font-bold text-primary border-primary/30 uppercase">
+                    <Badge
+                      variant={(sch.mapel.warna as any) || "emerald"}
+                      size="sm"
+                      className="font-bold font-mono uppercase"
+                    >
                       {sch.mapel.kode_mapel}
                     </Badge>
-                    <Badge variant={sch.kelas.jenjang === "SMP" ? "secondary" : "default"} className="text-[11px]">
+                    <Badge
+                      variant={sch.kelas.jenjang === "SMP" ? "indigo" : "amber"}
+                      size="sm"
+                    >
                       Jenjang {sch.kelas.jenjang}
                     </Badge>
                   </div>
@@ -105,16 +125,29 @@ export default async function GuruMapelPage() {
                       <span>{sch.hari}, {sch.jam_mulai} - {sch.jam_selesai} {sch.ruang ? `(${sch.ruang})` : ""}</span>
                     </div>
                   </div>
+
+                  {/* Summary badges */}
+                  <div className="flex items-center gap-2 pt-1 text-xs">
+                    <Badge variant="sky" size="sm">
+                      {meetingsInSchedule.length} Pertemuan
+                    </Badge>
+                    <Badge variant="pink" size="sm">
+                      {tasksInSchedule.length} Tugas
+                    </Badge>
+                  </div>
                 </div>
 
-                <div className="pt-3 border-t border-border flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {tasksInSchedule.length} Tugas Diberikan
-                  </span>
+                <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
+                  <Link href={`/guru/mapel/${sch.mapel_id}?kelasId=${sch.kelas_id}`} className="flex-1">
+                    <Button variant="default" size="sm" className="w-full h-8 text-xs font-bold gap-1 rounded-xl">
+                      <BookOpen className="h-3.5 w-3.5" />
+                      <span>Kelola Materi</span>
+                    </Button>
+                  </Link>
 
                   <Link href={`/guru/tugas/create`}>
                     <Button variant="outline" size="sm" className="h-8 text-xs font-semibold rounded-xl">
-                      Beri Tugas ➔
+                      + Tugas
                     </Button>
                   </Link>
                 </div>

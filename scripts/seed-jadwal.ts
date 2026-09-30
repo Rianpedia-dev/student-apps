@@ -53,7 +53,7 @@ async function main() {
     hari: string;
     jam_mulai: string;
     jam_selesai: string;
-    ruang: string;
+    ruang?: string | null;
   }> = [];
 
   // SENIN
@@ -65,7 +65,7 @@ async function main() {
       hari: "Senin",
       jam_mulai: "07:30",
       jam_selesai: "09:00",
-      ruang: "R. Mehmed Al Fatih",
+      ruang: null,
     });
   }
   if (mapelMtk && guruMaryam) {
@@ -76,7 +76,7 @@ async function main() {
       hari: "Senin",
       jam_mulai: "09:30",
       jam_selesai: "11:00",
-      ruang: "R. Mehmed Al Fatih",
+      ruang: null,
     });
   }
 
@@ -89,7 +89,7 @@ async function main() {
       hari: "Selasa",
       jam_mulai: "07:30",
       jam_selesai: "09:00",
-      ruang: "R. Mehmed Al Fatih",
+      ruang: null,
     });
   }
   if (mapelBind && guruFatimah) {
@@ -100,7 +100,7 @@ async function main() {
       hari: "Selasa",
       jam_mulai: "09:30",
       jam_selesai: "11:00",
-      ruang: "R. Mehmed Al Fatih",
+      ruang: null,
     });
   }
 
@@ -137,7 +137,7 @@ async function main() {
       hari: "Kamis",
       jam_mulai: "07:30",
       jam_selesai: "09:00",
-      ruang: "R. Mehmed Al Fatih",
+      ruang: null,
     });
   }
   if (mapelInfor && guruRidwan) {

@@ -66,8 +66,7 @@ export default async function AdminStudentDetailPage(props: {
         </Link>
         <div className="flex items-center gap-2">
           <Badge
-            variant={student.status === "1" ? "default" : "destructive"}
-            className={student.status === "1" ? "bg-emerald-600" : ""}
+            variant={student.status === "1" ? "success" : "destructive"}
           >
             {student.status === "1" ? "Siswa Aktif" : "Menunggu Verifikasi"}
           </Badge>

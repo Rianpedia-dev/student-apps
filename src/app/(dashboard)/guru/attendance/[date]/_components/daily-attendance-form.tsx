@@ -135,10 +135,10 @@ export function DailyAttendanceForm({
 
           {/* Real-time Summary Pills */}
           <div className="flex items-center gap-1.5 text-xs font-bold">
-            <Badge className="bg-emerald-600 font-mono text-[11px] px-2 py-0.5">{countHadir} Hadir</Badge>
-            <Badge className="bg-sky-600 font-mono text-[11px] px-2 py-0.5">{countSakit} Sakit</Badge>
-            <Badge className="bg-amber-500 font-mono text-[11px] px-2 py-0.5">{countIzin} Izin</Badge>
-            <Badge className="bg-rose-600 font-mono text-[11px] px-2 py-0.5">{countAlpha} Alpha</Badge>
+            <Badge variant="success" size="sm" className="font-mono">{countHadir} Hadir</Badge>
+            <Badge variant="info" size="sm" className="font-mono">{countSakit} Sakit</Badge>
+            <Badge variant="warning" size="sm" className="font-mono">{countIzin} Izin</Badge>
+            <Badge variant="destructive" size="sm" className="font-mono">{countAlpha} Alpha</Badge>
           </div>
         </div>
 

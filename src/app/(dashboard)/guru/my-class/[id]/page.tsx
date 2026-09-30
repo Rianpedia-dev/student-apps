@@ -96,7 +96,7 @@ export default async function GuruStudentDetailPage(props: {
         >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Kelas Saya
         </Link>
-        <Badge variant="outline" className="font-mono text-xs">
+        <Badge variant="outline" size="sm" className="font-mono">
           Poin Reward: {student.point || "0"}
         </Badge>
       </div>
@@ -246,7 +246,7 @@ export default async function GuruStudentDetailPage(props: {
                           <TableCell className="text-center font-medium">{idx + 1}</TableCell>
                           <TableCell className="text-xs">{formatDateIndo(vl.created_at)}</TableCell>
                           <TableCell>
-                            <Badge variant="destructive" className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 font-normal">
+                            <Badge variant="destructive" size="sm">
                               {vl.kategori}
                             </Badge>
                           </TableCell>

@@ -7,7 +7,6 @@ import {
   Clock,
   ArrowRight,
   Search,
-  CheckCircle2,
   Calendar,
   X,
 } from "lucide-react";
@@ -22,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { sortSubjectsBySchedule } from "@/lib/utils";
 
 export interface SubjectItem {
   id: string;
@@ -32,8 +32,10 @@ export interface SubjectItem {
   warna?: string | null;
   guruNama?: string | null;
   guruImage?: string | null;
+  guruGender?: string | null;
   jadwalHari?: string | null;
   jadwalWaktu?: string | null;
+  jamMulai?: string | null;
   ruang?: string | null;
   activeTasksCount?: number;
   detailUrl: string;
@@ -54,11 +56,7 @@ export function SubjectTable({
 }: SubjectTableProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<"all" | "scheduled" | "tasks">("all");
-
-  const totalTasks = useMemo(() => {
-    return subjects.reduce((acc, curr) => acc + (curr.activeTasksCount || 0), 0);
-  }, [subjects]);
+  const [activeFilter, setActiveFilter] = useState<"all" | "scheduled">("all");
 
   const scheduledCount = useMemo(() => {
     return subjects.filter((s) => !!s.jadwalHari).length;
@@ -70,8 +68,6 @@ export function SubjectTable({
     // Filter tab
     if (activeFilter === "scheduled") {
       result = result.filter((s) => !!s.jadwalHari);
-    } else if (activeFilter === "tasks") {
-      result = result.filter((s) => (s.activeTasksCount || 0) > 0);
     }
 
     // Search query
@@ -87,7 +83,7 @@ export function SubjectTable({
       );
     }
 
-    return result;
+    return sortSubjectsBySchedule(result);
   }, [subjects, activeFilter, searchQuery]);
 
   return (
@@ -99,7 +95,7 @@ export function SubjectTable({
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
               {title}
             </h2>
-            <Badge variant="outline" className="text-[11px] font-semibold">
+            <Badge variant="outline" size="sm">
               {subjects.length} Mapel
             </Badge>
           </div>
@@ -134,20 +130,6 @@ export function SubjectTable({
             >
               Terjadwal ({scheduledCount})
             </button>
-            {totalTasks > 0 && (
-              <button
-                type="button"
-                onClick={() => setActiveFilter("tasks")}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 ${
-                  activeFilter === "tasks"
-                    ? "bg-card text-amber-600 dark:text-amber-400 shadow-2xs font-semibold"
-                    : "text-muted-foreground hover:text-amber-600"
-                }`}
-              >
-                <span>Ada Tugas</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-              </button>
-            )}
           </div>
 
           {/* Search Input */}
@@ -191,9 +173,6 @@ export function SubjectTable({
               <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground min-w-[190px]">
                 Jadwal
               </TableHead>
-              <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground min-w-[140px]">
-                Tugas Aktif
-              </TableHead>
               <TableHead className="text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground pr-6 min-w-[130px]">
                 Aksi
               </TableHead>
@@ -203,7 +182,7 @@ export function SubjectTable({
             {filteredSubjects.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={5}
                   className="py-12 text-center text-muted-foreground"
                 >
                   <div className="flex flex-col items-center justify-center space-y-2">
@@ -234,8 +213,6 @@ export function SubjectTable({
               </TableRow>
             ) : (
               filteredSubjects.map((subject, idx) => {
-                const hasTasks = (subject.activeTasksCount || 0) > 0;
-
                 return (
                   <TableRow
                     key={subject.id}
@@ -259,6 +236,7 @@ export function SubjectTable({
                       <div className="flex items-center gap-2.5">
                         <UserAvatar
                           src={subject.guruImage}
+                          gender={subject.guruGender}
                           name={subject.guruNama || "Guru Pengampu"}
                           className="h-8 w-8 rounded-full border border-border object-cover shrink-0"
                           previewable={false}
@@ -290,22 +268,7 @@ export function SubjectTable({
                       )}
                     </TableCell>
 
-                    {/* 5. Status Tugas */}
-                    <TableCell className="py-3.5 text-center">
-                      {hasTasks ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          <span>{subject.activeTasksCount} Tugas Aktif</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span>Materi & PR Lengkap</span>
-                        </span>
-                      )}
-                    </TableCell>
-
-                    {/* 6. Aksi */}
+                    {/* 5. Aksi */}
                     <TableCell className="py-3.5 text-right pr-6">
                       <Link
                         href={subject.detailUrl}

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { gradeTugasAction } from "@/actions/assignment";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -59,6 +60,7 @@ interface InBrowserGraderProps {
       name: string;
       nis?: string | null;
       image?: string | null;
+      gender?: string | null;
     };
   };
   prevSubId?: string | null;
@@ -274,13 +276,24 @@ export function InBrowserGrader({
 
           <div className="h-4 w-px bg-border shrink-0" />
 
-          <div className="truncate">
-            <h2 className="text-xs sm:text-sm font-black text-foreground truncate">
-              {submission.siswa.name}
-            </h2>
-            <p className="text-[11px] text-muted-foreground truncate">
-              {submission.tugasJudul} • {submission.kelasNama}
-            </p>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-8 w-8 rounded-full overflow-hidden border border-border/80 shrink-0 bg-muted/40 shadow-2xs">
+              <UserAvatar
+                src={submission.siswa.image}
+                gender={submission.siswa.gender}
+                name={submission.siswa.name}
+                alt={submission.siswa.name}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="truncate">
+              <h2 className="text-xs sm:text-sm font-black text-foreground truncate">
+                {submission.siswa.name}
+              </h2>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {submission.tugasJudul} • {submission.kelasNama}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -511,13 +524,24 @@ export function InBrowserGrader({
             {/* Student info card */}
             <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-2">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-black text-foreground">
-                    {submission.siswa.name}
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">
-                    NIS: {submission.siswa.nis || "-"} • Kelas: {submission.kelasNama}
-                  </p>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-10 w-10 rounded-full overflow-hidden border border-border/80 shrink-0 bg-muted/40 shadow-2xs">
+                    <UserAvatar
+                      src={submission.siswa.image}
+                      gender={submission.siswa.gender}
+                      name={submission.siswa.name}
+                      alt={submission.siswa.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-black text-foreground truncate">
+                      {submission.siswa.name}
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      NIS: {submission.siswa.nis || "-"} • Kelas: {submission.kelasNama}
+                    </p>
+                  </div>
                 </div>
                 <span
                   className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${

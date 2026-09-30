@@ -36,9 +36,6 @@ export default async function GuruTugasListPage() {
     orderBy: { created_at: "desc" },
   });
 
-  let totalSubmissionsCount = 0;
-  let totalWaitingCount = 0;
-
   const tasks: TeacherTaskItem[] = rawTasks.map((task) => {
     const totalSubs = task.submissions.length;
     const waiting = task.submissions.filter(
@@ -46,14 +43,12 @@ export default async function GuruTugasListPage() {
     ).length;
     const graded = task.submissions.filter((s) => s.status === "sudah_dinilai").length;
 
-    totalSubmissionsCount += totalSubs;
-    totalWaitingCount += waiting;
-
     return {
       id: task.id.toString(),
       judul: task.judul,
       deskripsi: task.deskripsi,
       mapelNama: task.mapel.nama_mapel,
+      mapelWarna: task.mapel.warna,
       kelasNama: task.kelas.nama_kelas,
       deadline: task.deadline.toISOString(),
       poinMaksimal: task.poin_maksimal,
@@ -64,11 +59,11 @@ export default async function GuruTugasListPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header Sederhana & Tombol Buat Tugas */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* Header & Tombol Buat Tugas */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
             Daftar Tugas & Penilaian
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
@@ -76,34 +71,12 @@ export default async function GuruTugasListPage() {
           </p>
         </div>
 
-        <Link href="/guru/tugas/create">
-          <Button className="h-9 sm:h-10 text-xs font-semibold gap-1.5 rounded-xl shadow-xs">
+        <Link href="/guru/tugas/create" className="shrink-0">
+          <Button className="h-9 sm:h-10 text-xs font-semibold gap-1.5 rounded-xl shadow-xs w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             <span>Buat Tugas Baru</span>
           </Button>
         </Link>
-      </div>
-
-      {/* Ringkasan Singkat Sederhana */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="p-3.5 sm:p-4 rounded-xl bg-card border border-border">
-          <p className="text-xs text-muted-foreground font-medium">Total Tugas</p>
-          <p className="text-xl sm:text-2xl font-bold text-foreground mt-0.5">{tasks.length}</p>
-        </div>
-
-        <div className="p-3.5 sm:p-4 rounded-xl bg-card border border-border">
-          <p className="text-xs text-muted-foreground font-medium">Tugas Terkumpul</p>
-          <p className="text-xl sm:text-2xl font-bold text-foreground mt-0.5">{totalSubmissionsCount}</p>
-        </div>
-
-        <div className="p-3.5 sm:p-4 rounded-xl bg-card border border-border">
-          <p className="text-xs text-muted-foreground font-medium">Perlu Dikoreksi</p>
-          <p className={`text-xl sm:text-2xl font-bold mt-0.5 ${
-            totalWaitingCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
-          }`}>
-            {totalWaitingCount}
-          </p>
-        </div>
       </div>
 
       {/* Daftar Tugas Siswa */}

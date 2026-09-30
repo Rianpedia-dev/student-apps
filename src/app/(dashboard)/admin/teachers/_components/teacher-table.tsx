@@ -141,7 +141,7 @@ export function TeacherTable({ initialTeachers }: { initialTeachers: UserItem[] 
                   <TableCell className="text-sm font-mono">{t.email}</TableCell>
                   <TableCell>
                     {t.kelas ? (
-                      <Badge variant="secondary" className="text-xs font-normal">
+                      <Badge variant="sky" size="sm">
                         {t.kelas}
                       </Badge>
                     ) : (
@@ -150,11 +150,11 @@ export function TeacherTable({ initialTeachers }: { initialTeachers: UserItem[] 
                   </TableCell>
                   <TableCell className="text-center">
                     {t.status === "0" ? (
-                      <Badge variant="destructive" className="bg-rose-500/15 text-rose-700 border-rose-500/30">
+                      <Badge variant="warning" size="sm">
                         Pending Verifikasi
                       </Badge>
                     ) : (
-                      <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30">
+                      <Badge variant="success" size="sm">
                         {getRoleLabel(t.status)}
                       </Badge>
                     )}

@@ -195,7 +195,7 @@ export default async function AdminKelasOnlinePage() {
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Wifi className="h-5 w-5 text-emerald-500" />
             Kelas Aktif Sekarang
-            <Badge className="bg-emerald-500 text-white border-none text-xs">
+            <Badge variant="success" size="sm">
               {activeRooms.length}
             </Badge>
           </h2>
@@ -207,18 +207,22 @@ export default async function AdminKelasOnlinePage() {
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <Badge className="bg-emerald-500 text-white border-none animate-pulse text-xs">
+                    <Badge variant="success" size="sm" className="animate-pulse">
                       🟢 AKTIF
                     </Badge>
-                    <div className="flex items-center gap-1 text-sm text-emerald-600 font-medium">
-                      <Users className="h-3.5 w-3.5" />
-                      {room.active_participants}
-                    </div>
+                    <Badge variant="sky" size="xs" className="gap-1">
+                      <Users className="h-3 w-3" />
+                      {room.active_participants} Peserta
+                    </Badge>
                   </div>
                   <p className="font-semibold">{room.mata_pelajaran || "Kelas Online"}</p>
-                  <p className="text-sm text-muted-foreground">
-                    👨‍🏫 {room.guru_name} • {room.kelas}
-                  </p>
+                  <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+                    <span>👨‍🏫 {room.guru_name}</span>
+                    <span>•</span>
+                    <Badge variant="indigo" size="xs">
+                      {room.kelas}
+                    </Badge>
+                  </div>
                 </CardContent>
               </Card>
             ))}

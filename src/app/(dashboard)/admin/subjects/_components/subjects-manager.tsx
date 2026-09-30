@@ -210,8 +210,9 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
                   {/* 2. Kode */}
                   <TableCell className="py-3.5">
                     <Badge
-                      variant="outline"
-                      className="text-xs font-bold font-mono uppercase text-primary border-primary/30"
+                      variant={(sub.warna as any) || "emerald"}
+                      size="sm"
+                      className="font-bold font-mono uppercase"
                     >
                       {sub.kode}
                     </Badge>
@@ -229,12 +230,12 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
                     <Badge
                       variant={
                         sub.jenjang === "SMP"
-                          ? "secondary"
+                          ? "indigo"
                           : sub.jenjang === "SD"
-                          ? "outline"
-                          : "default"
+                          ? "amber"
+                          : "teal"
                       }
-                      className="text-[11px] font-medium"
+                      size="sm"
                     >
                       {sub.jenjang === "SEMUA"
                         ? "SD & SMP"
@@ -244,18 +245,18 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
 
                   {/* 5. Total Jadwal */}
                   <TableCell className="py-3.5 text-center">
-                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5 text-primary" />
+                    <Badge variant="sky" size="sm" className="gap-1 font-mono">
+                      <Calendar className="h-3 w-3" />
                       <span>{sub.totalJadwal} Sesi</span>
-                    </span>
+                    </Badge>
                   </TableCell>
 
                   {/* 6. Total Tugas */}
                   <TableCell className="py-3.5 text-center">
-                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <FileCheck className="h-3.5 w-3.5 text-primary" />
+                    <Badge variant="warning" size="sm" className="gap-1 font-mono">
+                      <FileCheck className="h-3 w-3" />
                       <span>{sub.totalTugas} Tugas</span>
-                    </span>
+                    </Badge>
                   </TableCell>
 
                   {/* 7. Aksi */}

@@ -18,7 +18,7 @@ export default async function GuruChatPage() {
   ]);
 
   return (
-    <div className="h-full">
+    <div className="h-full w-full">
       <ChatContainer
         currentUserId={session.id}
         currentUserName={session.name || "Guru"}
