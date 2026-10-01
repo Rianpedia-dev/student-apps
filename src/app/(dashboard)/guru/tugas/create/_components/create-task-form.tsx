@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createTugasAction } from "@/actions/assignment";
 import { toast } from "sonner";
-import { 
-  UploadCloud, 
+import {
+  UploadCloud,
   Loader2,
   FileText,
   X
@@ -16,16 +16,26 @@ interface CreateTaskFormProps {
   classes: Array<{ id: string; nama: string; jenjang: string; tingkat?: number | null }>;
   subjects: Array<{ id: string; kode: string; nama: string; jenjang: string }>;
   defaultKelas?: string;
+  initialKelasId?: string;
+  initialMapelId?: string;
+  fromOrigin?: string;
 }
 
-export function CreateTaskForm({ classes, subjects, defaultKelas }: CreateTaskFormProps) {
+export function CreateTaskForm({
+  classes,
+  subjects,
+  defaultKelas,
+  initialKelasId,
+  initialMapelId,
+  fromOrigin,
+}: CreateTaskFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const matchedClass = classes.find((c) => c.nama === defaultKelas);
-  const [kelasId, setKelasId] = useState(matchedClass ? matchedClass.id : classes[0]?.id || "");
-  const [mapelId, setMapelId] = useState(subjects[0]?.id || "");
+  const [kelasId, setKelasId] = useState(initialKelasId || matchedClass?.id || classes[0]?.id || "");
+  const [mapelId, setMapelId] = useState(initialMapelId || subjects[0]?.id || "");
   const [judul, setJudul] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
   const [poinMaksimal, setPoinMaksimal] = useState("100");
@@ -60,7 +70,11 @@ export function CreateTaskForm({ classes, subjects, defaultKelas }: CreateTaskFo
       const res = await createTugasAction(formData);
       if (res.success) {
         toast.success(res.message);
-        router.push("/guru/tugas");
+        if (fromOrigin === "mapel" && mapelId && kelasId) {
+          router.push(`/guru/tugas?mapelId=${mapelId}&kelasId=${kelasId}`);
+        } else {
+          router.push("/guru/tugas");
+        }
       } else {
         toast.error(res.error || "Gagal membuat tugas.");
       }
@@ -75,7 +89,7 @@ export function CreateTaskForm({ classes, subjects, defaultKelas }: CreateTaskFo
   const smpClasses = classes.filter((c) => c.jenjang === "SMP");
 
   return (
-    <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-5 sm:p-7 shadow-xs space-y-5">
+    <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-5 sm:p-7 shadow-xs space-y-5">
       {/* Target Kelas & Mata Pelajaran */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>

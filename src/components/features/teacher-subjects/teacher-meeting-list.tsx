@@ -195,9 +195,8 @@ export function TeacherMeetingList({
                 variant={isActive ? "default" : "outline"}
                 size="sm"
                 onClick={() => router.push(`/guru/mapel/${mapel.id}?kelasId=${cls.id}`)}
-                className={`h-8 text-xs font-bold rounded-xl shrink-0 ${
-                  isActive ? "bg-primary text-primary-foreground" : "hover:border-primary/40"
-                }`}
+                className={`h-8 text-xs font-bold rounded-xl shrink-0 ${isActive ? "bg-primary text-primary-foreground" : "hover:border-primary/40"
+                  }`}
               >
                 {cls.namaKelas}
               </Button>

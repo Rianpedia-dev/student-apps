@@ -65,12 +65,14 @@ interface InBrowserGraderProps {
   };
   prevSubId?: string | null;
   nextSubId?: string | null;
+  fromOrigin?: string;
 }
 
 export function InBrowserGrader({
   submission,
   prevSubId,
   nextSubId,
+  fromOrigin,
 }: InBrowserGraderProps) {
   const router = useRouter();
 
@@ -246,7 +248,7 @@ export function InBrowserGrader({
         setStatus(targetStatus);
 
         if (proceedNext && nextSubId) {
-          router.push(`/guru/tugas/${submission.tugasId}/review/${nextSubId}`);
+          router.push(`/guru/tugas/${submission.tugasId}/review/${nextSubId}${fromOrigin ? `?from=${fromOrigin}` : ""}`);
         } else {
           router.refresh();
         }
@@ -267,7 +269,7 @@ export function InBrowserGrader({
         {/* Left: Back & Student Info */}
         <div className="flex items-center gap-3 truncate">
           <Link
-            href={`/guru/tugas/${submission.tugasId}`}
+            href={`/guru/tugas/${submission.tugasId}${fromOrigin ? `?from=${fromOrigin}` : ""}`}
             className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors p-2 rounded-xl hover:bg-muted shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -300,7 +302,7 @@ export function InBrowserGrader({
         {/* Center/Right: Speed Grader Fast Navigation */}
         <div className="flex items-center gap-1.5 shrink-0">
           {prevSubId && (
-            <Link href={`/guru/tugas/${submission.tugasId}/review/${prevSubId}`}>
+            <Link href={`/guru/tugas/${submission.tugasId}/review/${prevSubId}${fromOrigin ? `?from=${fromOrigin}` : ""}`}>
               <Button
                 type="button"
                 variant="outline"
@@ -315,7 +317,7 @@ export function InBrowserGrader({
           )}
 
           {nextSubId && (
-            <Link href={`/guru/tugas/${submission.tugasId}/review/${nextSubId}`}>
+            <Link href={`/guru/tugas/${submission.tugasId}/review/${nextSubId}${fromOrigin ? `?from=${fromOrigin}` : ""}`}>
               <Button
                 type="button"
                 variant="outline"
@@ -352,11 +354,10 @@ export function InBrowserGrader({
                       setZoom(1);
                       setRotation(0);
                     }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                      activePageIndex === idx
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${activePageIndex === idx
                         ? "bg-primary text-primary-foreground shadow-2xs"
                         : "bg-muted text-muted-foreground hover:text-foreground"
-                    }`}
+                      }`}
                   >
                     Hal. {idx + 1}
                   </button>
@@ -414,9 +415,8 @@ export function InBrowserGrader({
                     onClick={() => {
                       setToolMode(toolMode === "pen_red" ? "none" : "pen_red");
                     }}
-                    className={`h-7 px-2 text-xs font-bold rounded-lg gap-1 ${
-                      toolMode === "pen_red" ? "bg-red-600 hover:bg-red-700 text-white" : "text-red-600"
-                    }`}
+                    className={`h-7 px-2 text-xs font-bold rounded-lg gap-1 ${toolMode === "pen_red" ? "bg-red-600 hover:bg-red-700 text-white" : "text-red-600"
+                      }`}
                     title="Spidol Merah"
                   >
                     <PenTool className="h-3 w-3" />
@@ -431,9 +431,8 @@ export function InBrowserGrader({
                     onClick={() => {
                       setToolMode(toolMode === "pen_green" ? "none" : "pen_green");
                     }}
-                    className={`h-7 px-2 text-xs font-bold rounded-lg gap-1 ${
-                      toolMode === "pen_green" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "text-emerald-600"
-                    }`}
+                    className={`h-7 px-2 text-xs font-bold rounded-lg gap-1 ${toolMode === "pen_green" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "text-emerald-600"
+                      }`}
                     title="Spidol Hijau (Benar)"
                   >
                     <PenTool className="h-3 w-3" />
@@ -505,11 +504,10 @@ export function InBrowserGrader({
                   onMouseMove={handleDraw}
                   onMouseUp={handleStopDraw}
                   onMouseLeave={handleStopDraw}
-                  className={`absolute inset-0 w-full h-full ${
-                    toolMode !== "none"
+                  className={`absolute inset-0 w-full h-full ${toolMode !== "none"
                       ? "cursor-crosshair pointer-events-auto"
                       : "pointer-events-none"
-                  }`}
+                    }`}
                 />
               </div>
             )}
@@ -544,19 +542,18 @@ export function InBrowserGrader({
                   </div>
                 </div>
                 <span
-                  className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${
-                    status === "sudah_dinilai"
+                  className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${status === "sudah_dinilai"
                       ? "bg-emerald-500/15 text-emerald-600"
                       : status === "perlu_revisi"
-                      ? "bg-orange-500/15 text-orange-600"
-                      : "bg-sky-500/15 text-sky-600"
-                  }`}
+                        ? "bg-orange-500/15 text-orange-600"
+                        : "bg-sky-500/15 text-sky-600"
+                    }`}
                 >
                   {status === "sudah_dinilai"
                     ? "Sudah Dinilai ⭐"
                     : status === "perlu_revisi"
-                    ? "Perlu Revisi ✏️"
-                    : "Menunggu Penilaian ⏳"}
+                      ? "Perlu Revisi ✏️"
+                      : "Menunggu Penilaian ⏳"}
                 </span>
               </div>
 

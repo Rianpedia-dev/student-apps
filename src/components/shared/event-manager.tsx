@@ -333,9 +333,9 @@ export function EventManager({
       setSelectedEvent((prev) =>
         prev
           ? {
-              ...prev,
-              tags: prev.tags?.includes(tag) ? prev.tags.filter((t) => t !== tag) : [...(prev.tags || []), tag],
-            }
+            ...prev,
+            tags: prev.tags?.includes(tag) ? prev.tags.filter((t) => t !== tag) : [...(prev.tags || []), tag],
+          }
           : null,
       )
     }
@@ -739,16 +739,16 @@ export function EventManager({
               colorValue === "green"
                 ? "emerald"
                 : colorValue === "red"
-                ? "destructive"
-                : colorValue === "yellow"
-                ? "warning"
-                : colorValue === "blue"
-                ? "blue"
-                : colorValue === "purple"
-                ? "purple"
-                : colorValue === "orange"
-                ? "orange"
-                : "secondary"
+                  ? "destructive"
+                  : colorValue === "yellow"
+                    ? "warning"
+                    : colorValue === "blue"
+                      ? "blue"
+                      : colorValue === "purple"
+                        ? "purple"
+                        : colorValue === "orange"
+                          ? "orange"
+                          : "secondary"
             return (
               <Badge key={colorValue} variant={colorVariant as any} className="gap-1">
                 <div className={cn("h-2 w-2 rounded-full", color.bg)} />
@@ -859,15 +859,15 @@ export function EventManager({
               {isCreating
                 ? "Tambah Agenda Baru"
                 : isEditable
-                ? "Detail & Edit Agenda"
-                : "Detail Agenda Kegiatan"}
+                  ? "Detail & Edit Agenda"
+                  : "Detail Agenda Kegiatan"}
             </DialogTitle>
             <DialogDescription>
               {isCreating
                 ? "Tambahkan kegiatan atau agenda baru ke dalam kalender sekolah"
                 : isEditable
-                ? "Lihat dan ubah rincian agenda kegiatan"
-                : "Informasi lengkap rincian agenda kegiatan sekolah"}
+                  ? "Lihat dan ubah rincian agenda kegiatan"
+                  : "Informasi lengkap rincian agenda kegiatan sekolah"}
             </DialogDescription>
           </DialogHeader>
 
@@ -968,9 +968,9 @@ export function EventManager({
                   onChange={(e) =>
                     isCreating
                       ? setNewEvent((prev) => ({
-                          ...prev,
-                          description: e.target.value,
-                        }))
+                        ...prev,
+                        description: e.target.value,
+                      }))
                       : setSelectedEvent((prev) => (prev ? { ...prev, description: e.target.value } : null))
                   }
                   placeholder="Rincian informasi agenda kegiatan..."

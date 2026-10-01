@@ -83,7 +83,59 @@ export default async function GuruDashboardPage() {
     totalAbsenToday = dbAttTotal;
     totalTugas = dbTugas;
     pendingReview = dbReview;
-    achievements = dbAchieve;
+    // Fetch student profile data for dashboard achievements
+    const achieveUserIds = dbAchieve
+      .map((a) => {
+        try {
+          const n = BigInt(a.id_user);
+          return n > BigInt(0) ? n : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter((id): id is bigint => id !== null);
+
+    const achieveNames = dbAchieve.map((a) => a.nama).filter(Boolean);
+
+    const matchedAchieveUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          ...(achieveUserIds.length > 0 ? [{ id: { in: achieveUserIds } }] : []),
+          ...(achieveNames.length > 0 ? [{ name: { in: achieveNames } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        gender: true,
+        image: true,
+      },
+    });
+
+    const achieveUserById = new Map<string, (typeof matchedAchieveUsers)[0]>();
+    const achieveUserByName = new Map<string, (typeof matchedAchieveUsers)[0]>();
+    for (const u of matchedAchieveUsers) {
+      achieveUserById.set(u.id.toString(), u);
+      achieveUserByName.set(u.name.trim().toLowerCase(), u);
+    }
+
+    achievements = dbAchieve.map((ach) => {
+      const studentUser = achieveUserById.get(ach.id_user) || achieveUserByName.get(ach.nama.trim().toLowerCase());
+      const studentImage =
+        studentUser?.image ||
+        (ach.fotoanak &&
+        !ach.fotoanak.includes("trophy") &&
+        !ach.fotoanak.includes("best-student") &&
+        !ach.fotoanak.includes("best-point")
+          ? ach.fotoanak
+          : null);
+
+      return {
+        ...ach,
+        studentImage,
+        studentGender: studentUser?.gender || null,
+      };
+    });
     announcements = dbAnnounce;
   } catch (e) {
     console.error("Database query error in guru dashboard:", e);
@@ -153,7 +205,7 @@ export default async function GuruDashboardPage() {
           description="Koreksi lembar tugas"
           variant="rose"
           meta="Evaluasi"
-          href="/guru/tugas"
+          href="/guru/tugas?status=need_grading"
         />
       </div>
 
@@ -178,7 +230,7 @@ export default async function GuruDashboardPage() {
             <CardHeader className="pb-3 border-b border-border/50">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <span>🏆 Prestasi Terkini</span>
+                  <span>Prestasi Terkini</span>
                 </CardTitle>
                 <Link
                   href="/guru/achievements"
@@ -199,8 +251,19 @@ export default async function GuruDashboardPage() {
                     key={ach.id.toString()}
                     className="flex items-center gap-3 rounded-lg border p-2.5 text-xs transition-colors hover:bg-muted/30"
                   >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold">
-                      🏆
+                    <div className="relative shrink-0">
+                      <UserAvatar
+                        src={ach.studentImage}
+                        gender={ach.studentGender}
+                        name={ach.nama}
+                        className="h-9 w-9 rounded-lg object-cover border border-amber-500/30 shadow-xs ring-1 ring-border/50"
+                        previewable={true}
+                      />
+                      <span
+                        className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[8px] text-amber-950 font-bold shadow-xs ring-1.5 ring-background select-none"
+                        title="Prestasi Siswa"
+                      >
+                      </span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-foreground truncate">{ach.prestasi}</p>

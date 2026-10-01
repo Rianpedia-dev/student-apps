@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Calendar, Plus, Clock, School, User, BookOpen } from "lucide-react";
 import { SchedulesManager } from "./_components/schedules-manager";
+import { compareScheduleTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +31,25 @@ export default async function AdminSchedulesPage() {
         mapel: true,
         guru: { select: { id: true, name: true } },
       },
-      orderBy: [{ hari: "asc" }, { jam_mulai: "asc" }],
     }),
   ]);
 
-  const formattedSchedules = schedules.map((s) => ({
+  const sortedSchedules = [...schedules].sort((a, b) => {
+    const comp = compareScheduleTime(
+      a.hari,
+      a.jam_mulai,
+      a.jam_selesai,
+      b.hari,
+      b.jam_mulai,
+      b.jam_selesai
+    );
+    if (comp !== 0) return comp;
+    const kelasComp = (a.kelas?.nama_kelas || "").localeCompare(b.kelas?.nama_kelas || "");
+    if (kelasComp !== 0) return kelasComp;
+    return (a.mapel?.nama_mapel || "").localeCompare(b.mapel?.nama_mapel || "");
+  });
+
+  const formattedSchedules = sortedSchedules.map((s) => ({
     id: s.id.toString(),
     kelasId: s.kelas_id.toString(),
     kelasNama: s.kelas.nama_kelas,
@@ -47,22 +62,20 @@ export default async function AdminSchedulesPage() {
     hari: s.hari,
     jamMulai: s.jam_mulai,
     jamSelesai: s.jam_selesai,
-    ruang: s.ruang || "-",
   }));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <span className="p-2 rounded-xl bg-primary/10 text-primary">
-              <Calendar className="h-6 w-6" />
-            </span>
-            <span>Jadwal Pelajaran Kelas SD & SMP</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Atur alokasi mata pelajaran, guru pengampu, hari, dan jam tatap muka untuk setiap kelas.
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Jadwal Pelajaran Kelas SD & SMP
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              Atur alokasi mata pelajaran, guru pengampu, hari, dan jam tatap muka untuk setiap kelas.
+            </p>
+          </div>
         </div>
       </div>
 

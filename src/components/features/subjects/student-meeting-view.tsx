@@ -72,6 +72,7 @@ interface StudentMeetingViewProps {
   guru: {
     name?: string | null;
     image?: string | null;
+    gender?: string | null;
   } | null;
   jadwalInfo?: string | null;
   meetings: MeetingItem[];
@@ -160,59 +161,10 @@ export function StudentMeetingView({
     });
   }, [allTasks, taskFilter]);
 
-  return (
+   return (
     <div className="space-y-6">
-      {/* 2. TAB NAVIGATOR */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-3">
-        <div className="flex items-center gap-2 p-1 rounded-2xl bg-muted/50 border border-border/60 w-fit">
-          <button
-            type="button"
-            onClick={() => setActiveTab("pertemuan")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
-              activeTab === "pertemuan"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <BookOpen className="h-4 w-4" />
-            <span>Modul & Pertemuan</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold ${
-                activeTab === "pertemuan"
-                  ? "bg-white/20 text-white"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {meetings.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("tugas")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
-              activeTab === "tugas"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <FileCheck className="h-4 w-4" />
-            <span>Tugas & Latihan</span>
-            <span
-              className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold ${
-                activeTab === "tugas"
-                  ? "bg-white/20 text-white"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {allTasks.length}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* 3. KONTEN TAB 1: MODUL & PERTEMUAN */}
-      {activeTab === "pertemuan" && (
+      {/* KONTEN: MODUL & PERTEMUAN */}
+      {(
         <div className="space-y-5">
           {/* Search Bar */}
           {meetings.length > 0 && (
@@ -255,7 +207,6 @@ export function StudentMeetingView({
                 size="sm"
                 onClick={() => {
                   setSearchQuery("");
-                  setMeetingFilter("all");
                 }}
                 className="mt-2 text-xs rounded-xl"
               >
@@ -323,12 +274,6 @@ export function StudentMeetingView({
                           <h3 className="text-sm sm:text-base font-bold text-foreground leading-snug tracking-tight">
                             {meeting.judul}
                           </h3>
-
-                          {!isExpanded && meeting.deskripsi && (
-                            <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
-                              {meeting.deskripsi}
-                            </p>
-                          )}
                         </div>
 
                         {/* Right: Media & Task Badges + Chevron */}
@@ -600,161 +545,6 @@ export function StudentMeetingView({
         </div>
       )}
 
-      {/* 4. KONTEN TAB 2: SEMUA TUGAS & LATIHAN */}
-      {activeTab === "tugas" && (
-        <div className="space-y-5">
-          {/* Filter Pills for Tasks */}
-          {allTasks.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setTaskFilter("all")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                  taskFilter === "all"
-                    ? "bg-foreground text-background shadow-xs"
-                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Semua Misi ({allTasks.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setTaskFilter("todo")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                  taskFilter === "todo"
-                    ? "bg-amber-500 text-white shadow-xs"
-                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Perlu Dikerjakan ({allTasks.filter((t) => !t.isGraded && !t.isPending).length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setTaskFilter("pending")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                  taskFilter === "pending"
-                    ? "bg-blue-500 text-white shadow-xs"
-                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Sedang Dinilai ({allTasks.filter((t) => t.isPending).length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setTaskFilter("graded")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                  taskFilter === "graded"
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Sudah Dinilai ({allTasks.filter((t) => t.isGraded).length})
-              </button>
-            </div>
-          )}
-
-          {allTasks.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-card border border-border text-muted-foreground space-y-3 shadow-xs">
-              <div className="h-16 w-16 rounded-3xl bg-emerald-500/10 text-emerald-600 mx-auto flex items-center justify-center">
-                <FileCheck className="h-8 w-8" />
-              </div>
-              <div className="space-y-1 max-w-sm mx-auto">
-                <p className="text-base font-bold text-foreground">Alhamdulillah, Belum Ada Misi Tugas</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Belum ada penugasan atau lembar kerja siswa untuk mata pelajaran ini saat ini. Tetap rajin membaca modul ya!
-                </p>
-              </div>
-            </div>
-          ) : filteredTasks.length === 0 ? (
-            <div className="p-8 text-center rounded-3xl bg-card border border-border text-muted-foreground space-y-2">
-              <p className="text-sm font-bold text-foreground">Tidak Ada Tugas di Kategori Ini</p>
-              <p className="text-xs">Silakan pilih filter lain untuk melihat misi tugas lainnya.</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setTaskFilter("all")}
-                className="mt-2 text-xs rounded-xl"
-              >
-                Tampilkan Semua Tugas
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="rounded-3xl bg-card/85 backdrop-blur-sm border border-border/80 p-5 sm:p-6 flex flex-col justify-between hover:border-primary/40 hover:shadow-md transition-all shadow-xs space-y-4"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
-                          task.isGraded
-                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/25"
-                            : task.isPending
-                            ? "bg-blue-500/10 text-blue-600 border-blue-500/25"
-                            : "bg-amber-500/10 text-amber-600 border-amber-500/25"
-                        }`}
-                      >
-                        {task.isGraded
-                          ? `Nilai: ${task.nilai} / ${task.poinMaksimal} ⭐`
-                          : task.isPending
-                          ? "Sedang Dinilai ⏳"
-                          : "Belum Dikerjakan 🚀"}
-                      </span>
-
-                      <span className="text-xs text-muted-foreground flex items-center gap-1.5 font-semibold bg-muted/50 px-2.5 py-1 rounded-xl">
-                        <Clock className="h-3.5 w-3.5 text-primary" />
-                        <span>
-                          Tenggat:{" "}
-                          {new Date(task.deadline).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </span>
-                    </div>
-
-                    <h3 className="text-base font-bold text-foreground leading-snug">
-                      {task.judul}
-                    </h3>
-
-                    {task.deskripsi && (
-                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-normal">
-                        {task.deskripsi}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="pt-3.5 border-t border-border/60 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      Maksimal {task.poinMaksimal} Poin
-                    </span>
-
-                    <Link href={`/siswa/tugas/${task.id}`}>
-                      <Button
-                        size="sm"
-                        variant={task.isGraded ? "outline" : "default"}
-                        className="h-8.5 text-xs font-bold rounded-xl gap-1.5"
-                      >
-                        <span>
-                          {task.isGraded
-                            ? "Lihat Evaluasi & Nilai"
-                            : task.isPending
-                            ? "Buka Jawaban"
-                            : "Mulai Kerjakan"}
-                        </span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* 5. IN-BROWSER DOCUMENT VIEWER MODAL */}
       {viewerFile && (

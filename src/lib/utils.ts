@@ -127,10 +127,45 @@ export function getHariWeight(hari?: string | null): number {
   return HARI_ORDER_WEIGHTS[key] ?? 100;
 }
 
-export function extractStartTime(timeStr?: string | null): string {
-  if (!timeStr) return "99:99";
-  const start = timeStr.split("-")[0]?.trim();
-  return start || "99:99";
+export function parseTimeToMinutes(timeStr?: string | null): number {
+  if (!timeStr) return 9999;
+  const clean = timeStr.trim();
+  const start = clean.split("-")[0]?.trim() || clean;
+  const parts = start.split(":");
+  if (parts.length < 2) return 9999;
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  if (isNaN(h)) return 9999;
+  return h * 60 + (isNaN(m) ? 0 : m);
+}
+
+export function compareScheduleTime(
+  hariA?: string | null,
+  jamMulaiA?: string | null,
+  jamSelesaiA?: string | null,
+  hariB?: string | null,
+  jamMulaiB?: string | null,
+  jamSelesaiB?: string | null
+): number {
+  const dayA = getHariWeight(hariA);
+  const dayB = getHariWeight(hariB);
+  if (dayA !== dayB) {
+    return dayA - dayB;
+  }
+
+  const startA = parseTimeToMinutes(jamMulaiA);
+  const startB = parseTimeToMinutes(jamMulaiB);
+  if (startA !== startB) {
+    return startA - startB;
+  }
+
+  const endA = parseTimeToMinutes(jamSelesaiA);
+  const endB = parseTimeToMinutes(jamSelesaiB);
+  if (endA !== endB) {
+    return endA - endB;
+  }
+
+  return 0;
 }
 
 /**
@@ -156,10 +191,9 @@ export function sortSubjectsBySchedule<
     }
 
     if (dayA < 999) {
-      const timeA = a.jamMulai?.trim() || extractStartTime(a.jadwalWaktu);
-      const timeB = b.jamMulai?.trim() || extractStartTime(b.jadwalWaktu);
-      const timeDiff = timeA.localeCompare(timeB);
-      if (timeDiff !== 0) return timeDiff;
+      const timeA = parseTimeToMinutes(a.jamMulai || a.jadwalWaktu);
+      const timeB = parseTimeToMinutes(b.jamMulai || b.jadwalWaktu);
+      if (timeA !== timeB) return timeA - timeB;
     }
 
     return a.namaMapel.localeCompare(b.namaMapel);

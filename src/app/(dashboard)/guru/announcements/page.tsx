@@ -111,12 +111,12 @@ export default async function GuruAnnouncementsPage() {
                           item.from?.toLowerCase().includes("kepala")
                             ? "indigo"
                             : item.from?.toLowerCase().includes("admin")
-                            ? "purple"
-                            : item.from?.toLowerCase().includes("kurikulum")
-                            ? "teal"
-                            : item.from?.toLowerCase().includes("kesiswaan")
-                            ? "orange"
-                            : "emerald"
+                              ? "purple"
+                              : item.from?.toLowerCase().includes("kurikulum")
+                                ? "teal"
+                                : item.from?.toLowerCase().includes("kesiswaan")
+                                  ? "orange"
+                                  : "emerald"
                         }
                         size="sm"
                       >

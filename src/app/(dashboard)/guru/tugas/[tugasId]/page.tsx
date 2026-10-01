@@ -2,17 +2,26 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, Clock } from "lucide-react";
+import { Clock, FileCheck, FileText, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { TeacherSubmissionsView, StudentSubmissionItem } from "@/components/features/assignment/teacher-submissions-view";
+import { DashboardBreadcrumb } from "@/components/shared/dashboard-breadcrumb";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ tugasId: string }>;
+  searchParams: Promise<{
+    from?: string;
+    mapelId?: string;
+    kelasId?: string;
+  }>;
 }
 
-export default async function GuruTugasSubmissionsPage({ params }: PageProps) {
+export default async function GuruTugasSubmissionsPage({ params, searchParams }: PageProps) {
   const { tugasId } = await params;
+  const { from } = await searchParams;
   const session = await getSession();
   if (!session || (session.role !== "guru" && session.role !== "admin")) {
     redirect("/login");
@@ -26,6 +35,13 @@ export default async function GuruTugasSubmissionsPage({ params }: PageProps) {
     include: {
       kelas: true,
       mapel: true,
+      pertemuan: {
+        select: {
+          id: true,
+          pertemuan_ke: true,
+          judul: true,
+        },
+      },
       submissions: {
         include: {
           siswa: {
@@ -96,46 +112,82 @@ export default async function GuruTugasSubmissionsPage({ params }: PageProps) {
     };
   });
 
-  return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Tombol Kembali Sederhana */}
-      <div>
-        <Link
-          href="/guru/tugas"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Kembali ke Daftar Tugas</span>
-        </Link>
+  const isFromMapel = from === "mapel";
+  const backHref = isFromMapel
+    ? "/guru/mapel"
+    : `/guru/tugas?mapelId=${tugas.mapel_id}&kelasId=${tugas.kelas_id}`;
+  const backLabel = isFromMapel ? "Kembali ke Jadwal & Mapel" : "Kembali ke Daftar Tugas";
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary">
+  return (
+    <div className="space-y-5 max-w-5xl mx-auto">
+      {/* Back Navigation */}
+      <DashboardBreadcrumb
+        backHref={backHref}
+        backLabel={backLabel}
+      />
+
+      {/* Header Info Banner */}
+      <div className="bg-card/70 backdrop-blur-xs border border-border rounded-2xl p-5 sm:p-6 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
                 {tugas.mapel.nama_mapel}
               </span>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-muted text-foreground">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-lg bg-muted text-foreground border border-border">
                 {tugas.kelas.nama_kelas}
               </span>
+              {tugas.pertemuan && (
+                <Badge variant="sky" size="xs">
+                  Pertemuan {tugas.pertemuan.pertemuan_ke}: {tugas.pertemuan.judul}
+                </Badge>
+              )}
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+
+            <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">
               {tugas.judul}
             </h1>
           </div>
 
-          <div className="text-xs text-muted-foreground flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5 text-primary" />
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5 bg-muted/40 px-3 py-1.5 rounded-xl border border-border/50 shrink-0">
+            <Clock className="h-4 w-4 text-primary" />
             <span>
               Tenggat:{" "}
-              {new Date(tugas.deadline).toLocaleDateString("id-ID", {
-                day: "numeric",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              <strong className="text-foreground">
+                {new Date(tugas.deadline).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </strong>
             </span>
           </div>
         </div>
+
+        {/* Deskripsi / Instruksi Tugas */}
+        {tugas.deskripsi && (
+          <div className="text-xs sm:text-sm text-muted-foreground bg-muted/20 p-3.5 rounded-xl border border-border/40 whitespace-pre-line leading-relaxed">
+            {tugas.deskripsi}
+          </div>
+        )}
+
+        {/* Lampiran File Petunjuk Guru (jika ada) */}
+        {tugas.file_petunjuk && (
+          <div className="flex items-center gap-2 pt-1">
+            <a
+              href={tugas.file_petunjuk}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/25 text-primary text-xs font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Unduh File Petunjuk / Lembar Kerja</span>
+              <Download className="h-3 w-3 ml-0.5" />
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Daftar Pengumpulan Siswa & Modal Koreksi Langsung */}
@@ -144,6 +196,7 @@ export default async function GuruTugasSubmissionsPage({ params }: PageProps) {
         tugasJudul={tugas.judul}
         poinMaksimal={tugas.poin_maksimal}
         students={studentsData}
+        fromOrigin={from}
       />
     </div>
   );

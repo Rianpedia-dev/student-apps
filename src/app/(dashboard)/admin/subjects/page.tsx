@@ -46,9 +46,6 @@ export default async function AdminSubjectsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <span className="p-2 rounded-xl bg-primary/10 text-primary">
-              <BookOpen className="h-6 w-6" />
-            </span>
             <span>Master Data Mata Pelajaran</span>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">

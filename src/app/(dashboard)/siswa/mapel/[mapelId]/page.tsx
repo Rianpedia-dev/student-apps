@@ -39,49 +39,65 @@ export default async function SiswaMapelDetailPage({ params }: PageProps) {
   // Jadwal & Guru Pengampu untuk kelas siswa
   const jadwal = kelas
     ? await prisma.jadwalPelajaran.findFirst({
-        where: { kelas_id: kelas.id, mapel_id: mapel.id },
-        include: {
-          guru: { select: { id: true, name: true, image: true, gender: true, email: true, guru_bidang: true } },
-        },
-      })
+      where: { kelas_id: kelas.id, mapel_id: mapel.id },
+      include: {
+        guru: { select: { id: true, name: true, image: true, gender: true, email: true, guru_bidang: true } },
+      },
+    })
     : null;
+
+  // Fallback guru pengampu jika kelas ini belum dijadwalkan khusus
+  const fallbackGuru = !jadwal?.guru
+    ? (
+        await prisma.jadwalPelajaran.findFirst({
+          where: { mapel_id: mapel.id },
+          include: {
+            guru: { select: { id: true, name: true, image: true, gender: true, email: true, guru_bidang: true } },
+          },
+        })
+      )?.guru
+    : null;
+
+  const targetGuru = jadwal?.guru || fallbackGuru;
+  const targetGuruId = targetGuru?.id ? targetGuru.id.toString() : null;
+  const chatHref = targetGuruId ? `/siswa/chat?guruId=${targetGuruId}` : "/siswa/chat";
 
   // Pertemuan yang sudah diterbitkan untuk kelas ini
   const meetingsData =
     kelas && (prisma as any).pertemuan?.findMany
       ? await (prisma as any).pertemuan.findMany({
-          where: {
-            kelas_id: kelas.id,
-            mapel_id: mapel.id,
-            is_published: true,
-          },
-          include: {
-            tugas: {
-              include: {
-                submissions: {
-                  where: { siswa_id: siswaId },
-                },
+        where: {
+          kelas_id: kelas.id,
+          mapel_id: mapel.id,
+          is_published: true,
+        },
+        include: {
+          tugas: {
+            include: {
+              submissions: {
+                where: { siswa_id: siswaId },
               },
             },
-            progressSiswa: {
-              where: { siswa_id: siswaId },
-            },
           },
-          orderBy: [{ pertemuan_ke: "asc" }, { tanggal: "asc" }],
-        })
+          progressSiswa: {
+            where: { siswa_id: siswaId },
+          },
+        },
+        orderBy: [{ pertemuan_ke: "asc" }, { tanggal: "asc" }],
+      })
       : [];
 
   // Semua tugas untuk mapel dan kelas ini
   const allTasksData = kelas
     ? await prisma.tugas.findMany({
-        where: { kelas_id: kelas.id, mapel_id: mapel.id },
-        include: {
-          submissions: {
-            where: { siswa_id: siswaId },
-          },
+      where: { kelas_id: kelas.id, mapel_id: mapel.id },
+      include: {
+        submissions: {
+          where: { siswa_id: siswaId },
         },
-        orderBy: { deadline: "asc" },
-      })
+      },
+      orderBy: { deadline: "asc" },
+    })
     : [];
 
   // Format data pertemuan
@@ -172,17 +188,19 @@ export default async function SiswaMapelDetailPage({ params }: PageProps) {
           <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/80 shrink-0 sm:min-w-[280px] space-y-3.5 shadow-xs">
             <div className="flex items-center gap-3">
               <UserAvatar
-                src={jadwal?.guru?.image}
-                gender={jadwal?.guru?.gender}
-                name={jadwal?.guru?.name || "Guru Pengampu"}
+                src={targetGuru?.image}
+                gender={targetGuru?.gender}
+                name={targetGuru?.name || "Guru Pengampu"}
                 className="h-12 w-12 rounded-2xl object-cover ring-2 ring-primary/20 shrink-0 shadow-xs border border-border/60"
                 previewable={true}
               />
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm font-black text-foreground truncate">
-                  {jadwal?.guru?.name || "Ustadzah Pengampu"}
+                  {targetGuru?.name || "Guru Pengampu"}
                 </p>
-                <p className="text-[11px] font-semibold text-muted-foreground">Guru Pengampu</p>
+                <p className="text-[11px] font-semibold text-muted-foreground">
+                  {targetGuru?.guru_bidang || "Guru Pengampu"}
+                </p>
               </div>
             </div>
 
@@ -196,7 +214,7 @@ export default async function SiswaMapelDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            <Link href="/siswa/chat" className="block w-full">
+            <Link href={chatHref} className="block w-full">
               <Button size="sm" className="w-full h-9 text-xs font-bold gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs">
                 <MessageSquare className="h-3.5 w-3.5" />
                 <span>Tanya Ustadz / Chat Guru</span>
@@ -216,7 +234,7 @@ export default async function SiswaMapelDetailPage({ params }: PageProps) {
           warna: mapel.warna,
         }}
         studentClass={studentClass}
-        guru={jadwal?.guru ? { name: jadwal.guru.name, image: jadwal.guru.image, gender: jadwal.guru.gender } : null}
+        guru={targetGuru ? { name: targetGuru.name, image: targetGuru.image, gender: targetGuru.gender } : null}
         jadwalInfo={jadwal ? `${jadwal.hari}, ${jadwal.jam_mulai} - ${jadwal.jam_selesai}` : null}
         meetings={formattedMeetings}
         allTasks={formattedTasks}

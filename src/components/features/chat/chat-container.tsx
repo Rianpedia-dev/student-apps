@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Camera,
@@ -91,6 +92,8 @@ interface ChatContainerProps {
   currentUserRole: "siswa" | "guru" | "admin";
   initialRooms: ChatRoom[];
   contacts: ChatContact[];
+  initialActiveRoomId?: string | null;
+  initialTargetUserId?: string | null;
 }
 
 interface UnifiedChatItem {
@@ -230,15 +233,65 @@ export function ChatContainer({
   currentUserRole,
   initialRooms,
   contacts,
+  initialActiveRoomId,
+  initialTargetUserId,
 }: ChatContainerProps) {
+  const searchParams = useSearchParams();
+  const searchUserId = searchParams.get("guruId") || searchParams.get("userId") || searchParams.get("siswaId");
+  const searchRoomId = searchParams.get("roomId");
+
+  const effectiveTargetUserId = searchUserId || initialTargetUserId || null;
+  const effectiveTargetRoomId = searchRoomId || initialActiveRoomId || null;
+
+  // Resolve initial selected room or contact
+  const initialSelection = useMemo(() => {
+    if (effectiveTargetRoomId) {
+      const match = initialRooms.find((r) => r.id === effectiveTargetRoomId);
+      if (match) return { room: match, contact: match.otherUser };
+    }
+    if (effectiveTargetUserId) {
+      const matchRoom = initialRooms.find(
+        (r) => String(r.otherUser?.id) === String(effectiveTargetUserId)
+      );
+      if (matchRoom) return { room: matchRoom, contact: matchRoom.otherUser };
+
+      const matchContact = contacts.find(
+        (c) => String(c.id) === String(effectiveTargetUserId)
+      );
+      if (matchContact) {
+        return {
+          room: null,
+          contact: {
+            id: matchContact.id,
+            name: matchContact.name,
+            image: matchContact.image,
+            email: matchContact.email,
+            role: matchContact.category === "guru" ? "Guru" : "Siswa",
+            kelas: matchContact.badge,
+            guru_bidang: matchContact.subtitle,
+          },
+        };
+      }
+    }
+    if (initialRooms.length > 0) {
+      return { room: initialRooms[0], contact: initialRooms[0].otherUser };
+    }
+    return { room: null, contact: null };
+  }, [initialRooms, contacts, effectiveTargetRoomId, effectiveTargetUserId]);
+
   // State: Chat rooms & active chat
   const [rooms, setRooms] = useState<ChatRoom[]>(initialRooms);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(
-    initialRooms.length > 0 ? initialRooms[0].id : null
+    initialSelection.room ? initialSelection.room.id : null
   );
   const [activeContact, setActiveContact] = useState<any>(
-    initialRooms.length > 0 ? initialRooms[0].otherUser : null
+    initialSelection.contact
   );
+
+  // Sync rooms state when initialRooms changes
+  useEffect(() => {
+    setRooms(initialRooms);
+  }, [initialRooms]);
 
   // State: Messages & Input
   const [messages, setMessages] = useState<any[]>([]);
@@ -258,8 +311,10 @@ export function ChatContainer({
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [isDeletingMessage, setIsDeletingMessage] = useState(false);
 
-  // In WhatsApp Mobile, users start on the Chats list tab
-  const [showMobileList, setShowMobileList] = useState(true);
+  // In WhatsApp Mobile, users start on the Chats list tab UNLESS a specific chat was opened
+  const [showMobileList, setShowMobileList] = useState(
+    !(effectiveTargetRoomId || effectiveTargetUserId)
+  );
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -297,12 +352,12 @@ export function ChatContainer({
           return prev.map((r) =>
             r.id === msg.roomId
               ? {
-                  ...r,
-                  lastMessage: msg.message || "Lampiran",
-                  lastMessageAt: msg.createdAt || new Date().toISOString(),
-                  unreadCount:
-                    msg.roomId === activeRoomId ? 0 : r.unreadCount + 1,
-                }
+                ...r,
+                lastMessage: msg.message || "Lampiran",
+                lastMessageAt: msg.createdAt || new Date().toISOString(),
+                unreadCount:
+                  msg.roomId === activeRoomId ? 0 : r.unreadCount + 1,
+              }
               : r
           );
         }
@@ -324,10 +379,10 @@ export function ChatContainer({
         prev.map((r) =>
           r.id === data.roomId
             ? {
-                ...r,
-                lastMessage: data.lastMessage,
-                lastMessageAt: data.lastMessageAt,
-              }
+              ...r,
+              lastMessage: data.lastMessage,
+              lastMessageAt: data.lastMessageAt,
+            }
             : r
         )
       );
@@ -338,11 +393,11 @@ export function ChatContainer({
           prev.map((m) =>
             m.id === data.messageId
               ? {
-                  ...m,
-                  message: data.newMessage,
-                  isEdited: true,
-                  editedAt: data.editedAt,
-                }
+                ...m,
+                message: data.newMessage,
+                isEdited: true,
+                editedAt: data.editedAt,
+              }
               : m
           )
         );
@@ -361,12 +416,12 @@ export function ChatContainer({
           prev.map((m) =>
             m.id === data.messageId
               ? {
-                  ...m,
-                  message: "Pesan ini telah dihapus",
-                  isDeleted: true,
-                  attachmentUrl: null,
-                  attachmentType: null,
-                }
+                ...m,
+                message: "Pesan ini telah dihapus",
+                isDeleted: true,
+                attachmentUrl: null,
+                attachmentType: null,
+              }
               : m
           )
         );
@@ -472,6 +527,47 @@ export function ChatContainer({
     }
   };
 
+  // Otomatis arahkan ke room guru/siswa yang ditargetkan jika ada parameter URL atau prop
+  useEffect(() => {
+    if (!effectiveTargetUserId && !effectiveTargetRoomId) return;
+
+    if (effectiveTargetRoomId) {
+      const match = rooms.find((r) => r.id === effectiveTargetRoomId);
+      if (match) {
+        setActiveRoomId(match.id);
+        setActiveContact(match.otherUser);
+        setShowMobileList(false);
+        return;
+      }
+    }
+
+    if (effectiveTargetUserId) {
+      const matchRoom = rooms.find(
+        (r) => String(r.otherUser?.id) === String(effectiveTargetUserId)
+      );
+      if (matchRoom) {
+        setActiveRoomId(matchRoom.id);
+        setActiveContact(matchRoom.otherUser);
+        setShowMobileList(false);
+        return;
+      }
+
+      const matchContact = contacts.find(
+        (c) => String(c.id) === String(effectiveTargetUserId)
+      );
+      if (matchContact) {
+        handleStartChatWithContact(matchContact);
+      } else {
+        getOrCreateChatRoom(effectiveTargetUserId).then((res) => {
+          if (res.success && res.room) {
+            setActiveRoomId(res.room.id);
+            setShowMobileList(false);
+          }
+        });
+      }
+    }
+  }, [effectiveTargetUserId, effectiveTargetRoomId, rooms, contacts]);
+
   // Copy message text to clipboard
   const handleCopyMessage = (text: string) => {
     if (!text) return;
@@ -543,12 +639,12 @@ export function ChatContainer({
           prev.map((m) =>
             m.id === messageToDelete
               ? {
-                  ...m,
-                  message: "Pesan ini telah dihapus",
-                  isDeleted: true,
-                  attachmentUrl: null,
-                  attachmentType: null,
-                }
+                ...m,
+                message: "Pesan ini telah dihapus",
+                isDeleted: true,
+                attachmentUrl: null,
+                attachmentType: null,
+              }
               : m
           )
         );
@@ -600,11 +696,11 @@ export function ChatContainer({
             prev.map((m) =>
               m.id === editingMessage.id
                 ? {
-                    ...m,
-                    message: currentText,
-                    isEdited: true,
-                    editedAt: res.editedAt,
-                  }
+                  ...m,
+                  message: currentText,
+                  isEdited: true,
+                  editedAt: res.editedAt,
+                }
                 : m
             )
           );
@@ -645,8 +741,8 @@ export function ChatContainer({
 
     const isImage = currentAttachment
       ? [".jpg", ".jpeg", ".png", ".webp"].some((ext) =>
-          currentAttachment.name.toLowerCase().endsWith(ext)
-        )
+        currentAttachment.name.toLowerCase().endsWith(ext)
+      )
       : false;
 
     // Optimistic message append
@@ -701,11 +797,11 @@ export function ChatContainer({
           prev.map((m) =>
             m.id === optimisticId
               ? {
-                  ...m,
-                  id: res.messageId,
-                  attachmentUrl: finalAttachmentUrl,
-                  attachmentType: finalAttachmentType,
-                }
+                ...m,
+                id: res.messageId,
+                attachmentUrl: finalAttachmentUrl,
+                attachmentType: finalAttachmentType,
+              }
               : m
           )
         );
@@ -714,16 +810,16 @@ export function ChatContainer({
           prev.map((r) =>
             r.id === activeRoomId
               ? {
-                  ...r,
-                  lastMessage:
-                    currentText ||
-                    (currentAttachment
-                      ? isImage
-                        ? "📷 Foto"
-                        : "📎 Lampiran file"
-                      : "Pesan baru"),
-                  lastMessageAt: nowIso,
-                }
+                ...r,
+                lastMessage:
+                  currentText ||
+                  (currentAttachment
+                    ? isImage
+                      ? "📷 Foto"
+                      : "📎 Lampiran file"
+                    : "Pesan baru"),
+                lastMessageAt: nowIso,
+              }
               : r
           )
         );
@@ -901,9 +997,8 @@ export function ChatContainer({
 
       {/* ================= LEFT PANEL - WHATSAPP CHATS LIST ================= */}
       <div
-        className={`flex-col h-full bg-background border-r border-border/70 min-w-0 overflow-hidden w-full lg:w-[380px] xl:w-[420px] lg:shrink-0 transition-all duration-200 ${
-          !showMobileList ? "hidden lg:flex" : "flex"
-        }`}
+        className={`flex-col h-full bg-background border-r border-border/70 min-w-0 overflow-hidden w-full lg:w-[380px] xl:w-[420px] lg:shrink-0 transition-all duration-200 ${!showMobileList ? "hidden lg:flex" : "flex"
+          }`}
       >
         {/* Chats Header */}
         <div className="h-12 sm:h-14 px-4 border-b border-border/70 flex items-center justify-between shrink-0 bg-background/90 backdrop-blur-xs">
@@ -954,22 +1049,20 @@ export function ChatContainer({
             <button
               type="button"
               onClick={() => setFilterType("all")}
-              className={`text-xs px-3 py-1 rounded-full font-medium transition-colors shrink-0 cursor-pointer ${
-                filterType === "all"
+              className={`text-xs px-3 py-1 rounded-full font-medium transition-colors shrink-0 cursor-pointer ${filterType === "all"
                   ? "bg-emerald-600 text-white shadow-2xs font-semibold"
                   : "bg-muted/70 hover:bg-muted text-muted-foreground"
-              }`}
+                }`}
             >
               Semua
             </button>
             <button
               type="button"
               onClick={() => setFilterType("unread")}
-              className={`text-xs px-3 py-1 rounded-full font-medium transition-colors shrink-0 cursor-pointer flex items-center gap-1 ${
-                filterType === "unread"
+              className={`text-xs px-3 py-1 rounded-full font-medium transition-colors shrink-0 cursor-pointer flex items-center gap-1 ${filterType === "unread"
                   ? "bg-emerald-600 text-white shadow-2xs font-semibold"
                   : "bg-muted/70 hover:bg-muted text-muted-foreground"
-              }`}
+                }`}
             >
               Belum dibaca
               {totalUnreadCount > 0 && (
@@ -1015,11 +1108,10 @@ export function ChatContainer({
                   key={item.contactId}
                   type="button"
                   onClick={handleClick}
-                  className={`px-3.5 w-full py-3 active:bg-secondary/70 lg:hover:bg-secondary/60 transition-colors cursor-pointer text-left flex items-center gap-3.5 ${
-                    isSelected
+                  className={`px-3.5 w-full py-3 active:bg-secondary/70 lg:hover:bg-secondary/60 transition-colors cursor-pointer text-left flex items-center gap-3.5 ${isSelected
                       ? "bg-secondary/80 border-l-4 border-emerald-600 dark:border-emerald-400"
                       : ""
-                  }`}
+                    }`}
                 >
                   {/* Large Avatar with Online Dot */}
                   <div className="relative shrink-0">
@@ -1095,9 +1187,8 @@ export function ChatContainer({
 
       {/* ================= RIGHT PANEL - WHATSAPP CHAT ROOM ================= */}
       <div
-        className={`flex-col h-full bg-[#efeae2] dark:bg-[#0b141a] min-w-0 overflow-hidden flex-1 relative transition-all duration-200 ${
-          showMobileList ? "hidden lg:flex" : "flex"
-        }`}
+        className={`flex-col h-full bg-[#efeae2] dark:bg-[#0b141a] min-w-0 overflow-hidden flex-1 relative transition-all duration-200 ${showMobileList ? "hidden lg:flex" : "flex"
+          }`}
       >
         {activeRoomId && activeContact ? (
           <div className="flex flex-col justify-between h-full min-w-0 relative">
@@ -1210,17 +1301,16 @@ export function ChatContainer({
                           className={`flex ${m.isMe ? "justify-end" : "justify-start"} mb-1 group/bubble`}
                         >
                           <div
-                            className={`relative max-w-[85%] sm:max-w-[72%] rounded-2xl shadow-2xs leading-relaxed text-[13.5px] sm:text-sm break-words overflow-hidden ${
-                              hasImage && !captionText
+                            className={`relative max-w-[85%] sm:max-w-[72%] rounded-2xl shadow-2xs leading-relaxed text-[13.5px] sm:text-sm break-words overflow-hidden ${hasImage && !captionText
                                 ? "p-0 bg-card/70 dark:bg-[#1f2c34]/70 rounded-2xl border border-black/10 dark:border-white/15 shadow-xs"
                                 : hasImage
-                                ? m.isMe
-                                  ? "p-0 bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-tr-xs border border-emerald-600/20 dark:border-emerald-500/20"
-                                  : "p-0 bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-tl-xs border border-black/10 dark:border-white/15"
-                                : m.isMe
-                                ? "px-3.5 py-2 bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-tr-xs border border-emerald-600/10"
-                                : "px-3.5 py-2 bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-tl-xs border border-black/5 dark:border-white/5"
-                            }`}
+                                  ? m.isMe
+                                    ? "p-0 bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-tr-xs border border-emerald-600/20 dark:border-emerald-500/20"
+                                    : "p-0 bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-tl-xs border border-black/10 dark:border-white/15"
+                                  : m.isMe
+                                    ? "px-3.5 py-2 bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-tr-xs border border-emerald-600/10"
+                                    : "px-3.5 py-2 bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-tl-xs border border-black/5 dark:border-white/5"
+                              }`}
                           >
                             {/* Message Action Dropdown (Salin, Edit, Hapus) */}
                             {hasDropdownActions && (
@@ -1228,13 +1318,12 @@ export function ChatContainer({
                                 <DropdownMenu>
                                   <DropdownMenuTrigger
                                     type="button"
-                                    className={`h-5 w-5 rounded-full inline-flex items-center justify-center transition-all cursor-pointer ${
-                                      hasImage
+                                    className={`h-5 w-5 rounded-full inline-flex items-center justify-center transition-all cursor-pointer ${hasImage
                                         ? "bg-black/45 hover:bg-black/70 text-white backdrop-blur-xs opacity-80 hover:opacity-100 shadow-xs"
                                         : m.isMe
-                                        ? "text-emerald-950/80 dark:text-emerald-50/90 hover:text-emerald-950 dark:hover:text-white opacity-80 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10"
-                                        : "text-[#54656f]/80 dark:text-[#8696a0]/90 hover:text-foreground opacity-80 hover:opacity-100 hover:bg-muted"
-                                    }`}
+                                          ? "text-emerald-950/80 dark:text-emerald-50/90 hover:text-emerald-950 dark:hover:text-white opacity-80 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10"
+                                          : "text-[#54656f]/80 dark:text-[#8696a0]/90 hover:text-foreground opacity-80 hover:opacity-100 hover:bg-muted"
+                                      }`}
                                     title="Opsi Pesan"
                                   >
                                     <ChevronDown className="h-3.5 w-3.5 stroke-[2.3]" />
@@ -1300,9 +1389,8 @@ export function ChatContainer({
                                   <img
                                     src={m.attachmentUrl}
                                     alt="Lampiran Gambar"
-                                    className={`max-h-80 w-full object-cover block ${
-                                      captionText ? "rounded-t-2xl rounded-b-none" : "rounded-2xl"
-                                    }`}
+                                    className={`max-h-80 w-full object-cover block ${captionText ? "rounded-t-2xl rounded-b-none" : "rounded-2xl"
+                                      }`}
                                   />
                                   {/* Quick Download Button on Image */}
                                   <button
@@ -1319,11 +1407,10 @@ export function ChatContainer({
                                   <div className="px-3 pt-2 pb-1.5">
                                     <p className="whitespace-pre-wrap pr-2">{captionText}</p>
                                     <div
-                                      className={`flex items-center justify-end gap-1 mt-1 text-[10px] select-none ${
-                                        m.isMe
+                                      className={`flex items-center justify-end gap-1 mt-1 text-[10px] select-none ${m.isMe
                                           ? "text-[#667781] dark:text-[#8696a0]"
                                           : "text-[#667781] dark:text-[#8696a0]"
-                                      }`}
+                                        }`}
                                     >
                                       {m.isEdited && !m.isDeleted && (
                                         <span className="text-[9px] text-[#667781] dark:text-[#8696a0] italic mr-0.5" title="Pesan telah diedit">
@@ -1412,11 +1499,10 @@ export function ChatContainer({
 
                                 {/* Timestamp & Status Checkmarks inside text bubble */}
                                 <div
-                                  className={`flex items-center justify-end gap-1 mt-1 text-[10px] select-none ${
-                                    m.isMe
+                                  className={`flex items-center justify-end gap-1 mt-1 text-[10px] select-none ${m.isMe
                                       ? "text-[#667781] dark:text-[#8696a0]"
                                       : "text-[#667781] dark:text-[#8696a0]"
-                                  }`}
+                                    }`}
                                 >
                                   {m.isEdited && !m.isDeleted && (
                                     <span className="text-[9px] text-[#667781] dark:text-[#8696a0] italic mr-0.5" title="Pesan telah diedit">
@@ -1636,8 +1722,8 @@ export function ChatContainer({
                   editingMessage
                     ? "Simpan Perubahan"
                     : inputText.trim() || selectedFile
-                    ? "Kirim Pesan"
-                    : "Pesan Suara"
+                      ? "Kirim Pesan"
+                      : "Pesan Suara"
                 }
               >
                 {isSending ? (

@@ -13,9 +13,11 @@ import {
   X,
   FileText,
   Filter,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -32,9 +34,14 @@ export interface TeacherTaskItem {
   id: string;
   judul: string;
   deskripsi: string;
+  mapelId?: string;
   mapelNama: string;
   mapelWarna?: string | null;
+  kelasId?: string;
   kelasNama: string;
+  pertemuanId?: string | null;
+  pertemuanKe?: number | null;
+  pertemuanJudul?: string | null;
   deadline: string;
   poinMaksimal: number;
   totalSubmissions: number;
@@ -44,14 +51,30 @@ export interface TeacherTaskItem {
 
 interface TeacherTaskListProps {
   tasks: TeacherTaskItem[];
+  availableClasses?: Array<{ id: string; name: string }>;
+  availableSubjects?: Array<{ id: string; name: string }>;
+  initialMapelId?: string;
+  initialKelasId?: string;
+  initialStatus?: string;
 }
 
-export function TeacherTaskList({ tasks }: TeacherTaskListProps) {
+export function TeacherTaskList({
+  tasks,
+  availableClasses = [],
+  availableSubjects = [],
+  initialMapelId,
+  initialKelasId,
+  initialStatus,
+}: TeacherTaskListProps) {
   const router = useRouter();
   const [taskToDelete, setTaskToDelete] = useState<TeacherTaskItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "need_grading" | "completed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "need_grading" | "completed">(
+    initialStatus === "need_grading" || initialStatus === "completed" ? initialStatus : "all"
+  );
+  const [selectedMapelId, setSelectedMapelId] = useState<string>(initialMapelId || "all");
+  const [selectedKelasId, setSelectedKelasId] = useState<string>(initialKelasId || "all");
 
   const waitingTotalCount = useMemo(
     () => tasks.filter((t) => t.waitingCount > 0).length,
@@ -68,6 +91,16 @@ export function TeacherTaskList({ tasks }: TeacherTaskListProps) {
       if (statusFilter === "need_grading" && task.waitingCount === 0) return false;
       if (statusFilter === "completed" && !(task.waitingCount === 0 && task.totalSubmissions > 0)) return false;
 
+      // Subject filter
+      if (selectedMapelId !== "all" && task.mapelId && task.mapelId !== selectedMapelId) {
+        return false;
+      }
+
+      // Class filter
+      if (selectedKelasId !== "all" && task.kelasId && task.kelasId !== selectedKelasId) {
+        return false;
+      }
+
       // Search filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -79,7 +112,7 @@ export function TeacherTaskList({ tasks }: TeacherTaskListProps) {
 
       return true;
     });
-  }, [tasks, statusFilter, searchQuery]);
+  }, [tasks, statusFilter, selectedMapelId, selectedKelasId, searchQuery]);
 
   const handleExecuteDelete = async () => {
     if (!taskToDelete) return;
@@ -145,95 +178,162 @@ export function TeacherTaskList({ tasks }: TeacherTaskListProps) {
   return (
     <div className="space-y-4">
       {/* Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-card/60 backdrop-blur-xs p-2 rounded-2xl border border-border/70">
-        {/* Search Input */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari judul tugas, mapel, atau kelas..."
-            className="pl-9 pr-8 h-9 text-xs rounded-xl bg-background/80 border-border/70 focus-visible:ring-1"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none shrink-0">
-          <button
-            type="button"
-            onClick={() => setStatusFilter("all")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              statusFilter === "all"
-                ? "bg-primary text-primary-foreground shadow-2xs"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            Semua ({tasks.length})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setStatusFilter("need_grading")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-              statusFilter === "need_grading"
-                ? "bg-amber-500 text-white shadow-2xs"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            {waitingTotalCount > 0 && (
-              <span className={`size-1.5 rounded-full ${statusFilter === "need_grading" ? "bg-white" : "bg-amber-500 animate-pulse"}`} />
+      <div className="space-y-2 bg-card/60 backdrop-blur-xs p-3 rounded-2xl border border-border/70">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari judul tugas, mapel, atau kelas..."
+              className="pl-9 pr-8 h-9 text-xs rounded-xl bg-background/80 border-border/70 focus-visible:ring-1"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             )}
-            <span>Perlu Dikoreksi</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${
-              statusFilter === "need_grading"
-                ? "bg-white/20 text-white"
-                : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-            }`}>
-              {waitingTotalCount}
-            </span>
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setStatusFilter("completed")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              statusFilter === "completed"
-                ? "bg-emerald-600 text-white shadow-2xs"
-                : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            Selesai ({completedTotalCount})
-          </button>
+          {/* Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none shrink-0">
+            <button
+              type="button"
+              onClick={() => setStatusFilter("all")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${statusFilter === "all"
+                  ? "bg-primary text-primary-foreground shadow-2xs"
+                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+            >
+              Semua ({tasks.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStatusFilter("need_grading")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${statusFilter === "need_grading"
+                  ? "bg-amber-500 text-white shadow-2xs"
+                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+            >
+              {waitingTotalCount > 0 && (
+                <span className={`size-1.5 rounded-full ${statusFilter === "need_grading" ? "bg-white" : "bg-amber-500 animate-pulse"}`} />
+              )}
+              <span>Perlu Dikoreksi</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${statusFilter === "need_grading"
+                  ? "bg-white/20 text-white"
+                  : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                }`}>
+                {waitingTotalCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStatusFilter("completed")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${statusFilter === "completed"
+                  ? "bg-emerald-600 text-white shadow-2xs"
+                  : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+            >
+              Selesai ({completedTotalCount})
+            </button>
+          </div>
         </div>
+
+        {/* Secondary Filter: Kelas & Mapel Dropdowns */}
+        {(availableClasses.length > 0 || availableSubjects.length > 0) && (
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/40 text-xs">
+            <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1 shrink-0">
+              <Filter className="h-3 w-3 text-primary" />
+              <span>Saring Rombel:</span>
+            </span>
+
+            {availableClasses.length > 0 && (
+              <select
+                value={selectedKelasId}
+                onChange={(e) => setSelectedKelasId(e.target.value)}
+                className="h-8 px-2.5 rounded-xl border border-border/80 bg-background text-xs font-medium text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary shrink-0"
+              >
+                <option value="all">Semua Kelas ({availableClasses.length})</option>
+                {availableClasses.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {availableSubjects.length > 0 && (
+              <select
+                value={selectedMapelId}
+                onChange={(e) => setSelectedMapelId(e.target.value)}
+                className="h-8 px-2.5 rounded-xl border border-border/80 bg-background text-xs font-medium text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary shrink-0"
+              >
+                <option value="all">Semua Mapel ({availableSubjects.length})</option>
+                {availableSubjects.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    {sub.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {(selectedKelasId !== "all" || selectedMapelId !== "all") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedKelasId("all");
+                  setSelectedMapelId("all");
+                }}
+                className="text-[11px] font-semibold text-primary hover:underline ml-auto"
+              >
+                Reset Filter Rombel
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Empty Filter Result */}
       {filteredTasks.length === 0 ? (
-        <div className="py-12 text-center rounded-2xl bg-card border border-border p-6">
-          <Filter className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm font-semibold text-foreground">Tidak Ada Tugas yang Cocok</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Coba ubah kata kunci pencarian atau ganti filter status.
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setSearchQuery("");
-              setStatusFilter("all");
-            }}
-            className="mt-3 text-xs rounded-xl h-8"
-          >
-            Reset Filter
-          </Button>
+        <div className="py-12 text-center rounded-2xl bg-card border border-border p-6 space-y-3">
+          <Filter className="h-8 w-8 text-muted-foreground/40 mx-auto" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Tidak Ada Tugas yang Cocok</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Coba ubah kata kunci pencarian, reset filter rombel/mapel, atau buat tugas baru.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+            <Link
+              href={`/guru/tugas/create?${selectedMapelId !== "all" ? `mapelId=${selectedMapelId}&` : ""}${selectedKelasId !== "all" ? `kelasId=${selectedKelasId}&` : ""}from=tugas`}
+            >
+              <Button size="sm" className="text-xs font-semibold rounded-xl h-8 gap-1.5 shadow-2xs">
+                <Plus className="h-3.5 w-3.5" />
+                <span>Buat Tugas untuk Rombel Ini</span>
+              </Button>
+            </Link>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("all");
+                setSelectedKelasId("all");
+                setSelectedMapelId("all");
+              }}
+              className="text-xs rounded-xl h-8"
+            >
+              Reset Semua Filter
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
@@ -245,7 +345,7 @@ export function TeacherTaskList({ tasks }: TeacherTaskListProps) {
                 key={task.id}
                 className="bg-card border border-border/80 hover:border-primary/40 rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 shadow-2xs hover:shadow-md group relative gap-3.5"
               >
-                {/* Header: Mapel, Kelas, dan Judul */}
+                {/* Header: Mapel, Kelas, Pertemuan, dan Shortcut Link Mapel */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
@@ -254,6 +354,7 @@ export function TeacherTaskList({ tasks }: TeacherTaskListProps) {
                     >
                       {task.mapelNama}
                     </span>
+
                     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-medium shrink-0">
                       <School className="h-3.5 w-3.5 text-muted-foreground/70" />
                       <span>{task.kelasNama}</span>

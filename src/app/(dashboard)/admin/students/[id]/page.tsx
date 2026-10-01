@@ -27,8 +27,8 @@ export default async function AdminStudentDetailPage(props: {
     const [dbStudent, dbClasses, dbAchievements] = await Promise.all([
       isNum
         ? prisma.user.findUnique({
-            where: { id: BigInt(id) },
-          })
+          where: { id: BigInt(id) },
+        })
         : null,
       prisma.kelas.findMany({
         orderBy: { nama_kelas: "asc" },

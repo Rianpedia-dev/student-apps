@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { 
-  Upload, 
-  FileText, 
-  Image as ImageIcon, 
-  X, 
-  CheckCircle, 
-  AlertCircle, 
-  Clock, 
+import {
+  Upload,
+  FileText,
+  Image as ImageIcon,
+  X,
+  CheckCircle,
+  AlertCircle,
+  Clock,
   ExternalLink,
   Loader2,
   Edit3,
@@ -299,8 +299,8 @@ export function FileSubmissionZone({
               {isRevision
                 ? "Kirim Ulang Jawaban Perbaikan"
                 : isEditing
-                ? "Perbarui Jawaban Tugas"
-                : "Pengumpulan Tugas"}
+                  ? "Perbarui Jawaban Tugas"
+                  : "Pengumpulan Tugas"}
             </h3>
             {isEditing && (
               <Button

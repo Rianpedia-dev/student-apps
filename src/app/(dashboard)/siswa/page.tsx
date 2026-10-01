@@ -9,7 +9,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getUserProfileImage } from "@/lib/utils";
-import { IslamicMosaicPattern, AlAzharSchoolBanner } from "@/components/shared/alazhar-patterns";
+import {
+  IslamicMosaicPattern,
+  IslamicStarGeometricPattern,
+  AlAzharColorfulMosqueHero,
+  AlAzharMosaicStrip,
+  AlAzharCornerMosaic,
+  AlAzharSchoolBanner,
+} from "@/components/shared/alazhar-patterns";
 
 export const dynamic = "force-dynamic";
 
@@ -164,10 +171,11 @@ export default async function SiswaDashboardPage() {
   // Fetch Jadwal Hari Ini & Tugas Siswa
   let todaySchedules: any[] = [];
   let pendingTasksCount = 0;
+  let totalMapelCount = 0;
 
   try {
     if (kelasInfo?.id) {
-      const [jadwalKelas, activeTasks] = await Promise.all([
+      const [jadwalKelas, activeTasks, countMapel] = await Promise.all([
         prisma.jadwalPelajaran.findMany({
           where: { kelas_id: kelasInfo.id },
           include: {
@@ -184,12 +192,23 @@ export default async function SiswaDashboardPage() {
             }
             : undefined,
         }).catch(() => []),
+        prisma.mataPelajaran.count({
+          where: {
+            OR: [
+              { jenjang: (kelasInfo as any)?.jenjang || "SD" },
+              { jenjang: "SEMUA" },
+            ],
+          },
+        }).catch(() => 0),
       ]);
 
       const tasksList = (activeTasks as any[]) || [];
       pendingTasksCount = tasksList.filter(
         (t) => !t.submissions || t.submissions.length === 0 || t.submissions[0]?.status === "perlu_revisi"
       ).length;
+
+      const uniqueInJadwal = new Set((jadwalKelas as any[]).map((j) => j.mapel_id).filter(Boolean)).size;
+      totalMapelCount = countMapel || uniqueInJadwal || 0;
 
       if (jadwalKelas && jadwalKelas.length > 0) {
         // Filter khusus jadwal untuk hari ini
@@ -222,29 +241,51 @@ export default async function SiswaDashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Premium Hero Banner Siswa — Bertema Hijau Zamrud Al-Azhar */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-slate-950 to-teal-950 p-5 sm:p-7 md:p-8 text-white shadow-xl border border-emerald-500/30">
-        {/* Decorative Ambient Lighting & Glows */}
-        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-emerald-400/22 blur-3xl pointer-events-none" />
-        <div className="absolute -left-16 -bottom-16 h-64 w-64 rounded-full bg-teal-400/18 blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 left-1/3 -translate-y-1/2 h-40 w-40 rounded-full bg-amber-500/12 blur-2xl pointer-events-none" />
+      {/* Premium Hero Banner Siswa — Gradasi Mewah, Motif Islami & Siluet Masjid Warna-Warni */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#064e3b] via-[#09574c] to-[#083344] p-6 sm:p-8 md:p-9 text-white shadow-2xl border border-emerald-400/35">
+        {/* Decorative Ambient Lighting & Color Glows */}
+        <div className="absolute -left-16 -top-16 h-72 w-72 rounded-full bg-emerald-400/30 blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 -top-10 h-64 w-64 rounded-full bg-teal-400/25 blur-3xl pointer-events-none" />
+        <div className="absolute right-1/4 -bottom-10 h-64 w-64 rounded-full bg-amber-400/25 blur-3xl pointer-events-none" />
+        <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-purple-500/25 blur-3xl pointer-events-none" />
 
-        {/* Geometric Mosaic Overlay from Logo */}
-        <div className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-screen">
+        {/* Motif Desain: Islamic Geometric Star Pattern Overlay */}
+        <div className="absolute inset-0 opacity-[0.16] pointer-events-none mix-blend-screen">
+          <IslamicStarGeometricPattern />
+        </div>
+        <div className="absolute inset-0 opacity-[0.12] pointer-events-none mix-blend-overlay">
           <IslamicMosaicPattern />
         </div>
 
-        <div className="relative z-10">
+        {/* Corner Mosaic Motif di Sudut Kanan Atas */}
+        <div className="absolute top-0 right-0 w-36 sm:w-44 h-28 opacity-40 pointer-events-none">
+          <AlAzharCornerMosaic className="w-full h-full" />
+        </div>
+
+        {/* Siluet Arsitektur Masjid Al-Azhar Berwarna-Warni */}
+        <div className="absolute right-0 bottom-0 top-0 w-full sm:w-[62%] lg:w-[50%] flex items-end justify-end pointer-events-none opacity-95 overflow-hidden">
+          <AlAzharColorfulMosqueHero className="h-[92%] sm:h-full w-auto max-w-none object-contain object-bottom drop-shadow-[0_10px_24px_rgba(0,0,0,0.5)]" />
+        </div>
+
+        {/* Pita Mozaik Segitiga Warna-Warni di Garis Bawah Card */}
+        <div className="absolute inset-x-0 bottom-0 h-1.5 opacity-90 overflow-hidden">
+          <AlAzharMosaicStrip className="h-full w-full object-cover" />
+        </div>
+
+        <div className="relative z-10 max-w-xl lg:max-w-2xl">
           {/* Greeting */}
-          <div className="space-y-2 max-w-3xl">
+          <div className="space-y-2.5">
             <h1 dir="ltr" className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              <span dir="rtl" className="inline-block">السَّلاَمُ عَلَيْكُمْ</span>,{" "}
-              <span className="bg-gradient-to-r from-emerald-200 via-teal-100 to-amber-200 bg-clip-text text-transparent">
+              <span dir="rtl" className="inline-block text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
+                السَّلاَمُ عَلَيْكُمْ
+              </span>
+              ,{" "}
+              <span className="bg-gradient-to-r from-emerald-200 via-yellow-200 to-amber-300 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                 {studentName}
               </span>
             </h1>
 
-            <p className="text-xs sm:text-sm text-emerald-100/85 font-normal leading-relaxed">
+            <p className="text-xs sm:text-sm text-emerald-50/90 font-normal leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
               Selamat datang kembali di portal pembelajaran Student Apps. Semangat belajar dan raih prestasi terbaik hari ini!
             </p>
           </div>
@@ -273,12 +314,12 @@ export default async function SiswaDashboardPage() {
           value={`${pendingTasksCount} Tugas`}
           description="Tugas perlu dikerjakan"
           variant="rose"
-          href="/siswa/tugas"
+          href="/siswa/mapel"
         />
         <StatCard
-          title="Jadwal Hari Ini"
-          value={`${todaySchedules.length} Sesi`}
-          description={`Hari ${todayDayName}`}
+          title="Mata Pelajaran"
+          value={`${totalMapelCount} Mapel`}
+          description="Total mata pelajaran"
           variant="primary"
           href="/siswa/mapel"
         />

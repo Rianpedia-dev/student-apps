@@ -24,8 +24,8 @@ export default async function AdminEditAnnouncementPage(props: {
     const [dbAnnounce, dbClasses] = await Promise.all([
       isNum
         ? prisma.pengumuman.findUnique({
-            where: { id: BigInt(id) },
-          })
+          where: { id: BigInt(id) },
+        })
         : null,
       prisma.kelas.findMany({
         orderBy: { nama_kelas: "asc" },

@@ -313,3 +313,71 @@ export function AlAzharPrismBadge({ className = "" }: { className?: string }) {
   );
 }
 
+/**
+ * IslamicStarGeometricPattern
+ * Motif geometris bintang 8 (Khatam / Rub el Hizb) Islami yang detail dan elegan.
+ */
+export function IslamicStarGeometricPattern({ className = "", style }: PatternProps) {
+  return (
+    <svg
+      className={`w-full h-full pointer-events-none select-none ${className}`}
+      style={style}
+      xmlns="http://www.w3.org/2000/svg"
+      width="100%"
+      height="100%"
+      aria-hidden="true"
+    >
+      <defs>
+        <pattern
+          id="islamic-star-tile"
+          width="80"
+          height="80"
+          patternUnits="userSpaceOnUse"
+        >
+          {/* Outer Octagram Wireframe */}
+          <polygon
+            points="40,5 48,22 66,14 62,32 79,40 62,48 66,66 48,58 40,75 32,58 14,66 18,48 1,40 18,32 14,14 32,22"
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="0.8"
+            opacity="0.3"
+          />
+          {/* Inner 8-point Star with subtle color fills */}
+          <polygon
+            points="40,15 45,26 57,21 54,33 65,40 54,47 57,59 45,54 40,65 35,54 23,59 26,47 15,40 26,33 23,21 35,26"
+            fill="#f59e0b"
+            opacity="0.12"
+          />
+          {/* Center Rosette */}
+          <circle cx="40" cy="40" r="6" fill="#0284c7" opacity="0.18" />
+          <circle cx="40" cy="40" r="3" fill="#e11d48" opacity="0.25" />
+          {/* Corner Connectors */}
+          <line x1="0" y1="0" x2="80" y2="80" stroke="#7c3aed" strokeWidth="0.5" opacity="0.15" />
+          <line x1="80" y1="0" x2="0" y2="80" stroke="#06b6d4" strokeWidth="0.5" opacity="0.15" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#islamic-star-tile)" />
+    </svg>
+  );
+}
+
+/**
+ * AlAzharColorfulMosqueHero
+ * Siluet arsitektur masjid Al-Azhar yang megah dan berwarna-warni
+ * menggunakan aset resmi m1.avif (dengan fallback m1.png).
+ */
+export function AlAzharColorfulMosqueHero({ className = "", style }: PatternProps) {
+  return (
+    <picture className={`pointer-events-none select-none inline-block ${className}`} style={style}>
+      <source srcSet="/m1.avif" type="image/avif" />
+      <source srcSet="/m1.png" type="image/png" />
+      <img
+        src="/m1.avif"
+        alt="Siluet Masjid Al-Azhar"
+        className="w-full h-full object-contain object-bottom"
+        draggable={false}
+      />
+    </picture>
+  );
+}
+

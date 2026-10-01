@@ -29,12 +29,14 @@ interface TeacherSubmissionsViewProps {
   tugasJudul: string;
   poinMaksimal: number;
   students: StudentSubmissionItem[];
+  fromOrigin?: string;
 }
 
 export function TeacherSubmissionsView({
   tugasId,
   poinMaksimal,
   students,
+  fromOrigin,
 }: TeacherSubmissionsViewProps) {
   const [activeTab, setActiveTab] = useState<"semua" | "perlu_koreksi" | "sudah_dinilai" | "belum">("semua");
 
@@ -63,59 +65,52 @@ export function TeacherSubmissionsView({
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-border">
         <button
           onClick={() => setActiveTab("semua")}
-          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-            activeTab === "semua"
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${activeTab === "semua"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
+            }`}
         >
           Semua Siswa ({students.length})
         </button>
 
         <button
           onClick={() => setActiveTab("perlu_koreksi")}
-          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-            activeTab === "perlu_koreksi"
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${activeTab === "perlu_koreksi"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
+            }`}
         >
           <span>Perlu Dikoreksi</span>
-          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-            activeTab === "perlu_koreksi" ? "bg-white/20" : "bg-amber-500/10 text-amber-600 font-bold"
-          }`}>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === "perlu_koreksi" ? "bg-white/20" : "bg-amber-500/10 text-amber-600 font-bold"
+            }`}>
             {waitingCount}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab("sudah_dinilai")}
-          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-            activeTab === "sudah_dinilai"
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${activeTab === "sudah_dinilai"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
+            }`}
         >
           <span>Sudah Dinilai</span>
-          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-            activeTab === "sudah_dinilai" ? "bg-white/20" : "bg-emerald-500/10 text-emerald-600 font-bold"
-          }`}>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === "sudah_dinilai" ? "bg-white/20" : "bg-emerald-500/10 text-emerald-600 font-bold"
+            }`}>
             {gradedCount}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab("belum")}
-          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-            activeTab === "belum"
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${activeTab === "belum"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
+            }`}
         >
           <span>Belum Mengumpulkan</span>
-          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-            activeTab === "belum" ? "bg-white/20" : "bg-muted text-muted-foreground"
-          }`}>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === "belum" ? "bg-white/20" : "bg-muted text-muted-foreground"
+            }`}>
             {unsubmittedCount}
           </span>
         </button>
@@ -196,7 +191,7 @@ export function TeacherSubmissionsView({
 
                   {/* Tombol Langsung Membuka Editor Tanpa Modal */}
                   {hasSubmitted ? (
-                    <Link href={`/guru/tugas/${tugasId}/review/${student.submissionId}`}>
+                    <Link href={`/guru/tugas/${tugasId}/review/${student.submissionId}${fromOrigin ? `?from=${fromOrigin}` : ""}`}>
                       <Button
                         size="sm"
                         variant={isGraded ? "outline" : "default"}

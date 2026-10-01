@@ -18,6 +18,8 @@ export async function createTugasAction(formData: FormData) {
   const mapel_id = BigInt(formData.get("mapel_id") as string);
   const deadlineStr = formData.get("deadline") as string;
   const poinMaksimal = parseInt(formData.get("poin_maksimal") as string) || 100;
+  const pertemuanIdStr = (formData.get("pertemuan_id") as string)?.trim();
+  const pertemuan_id = pertemuanIdStr && /^\d+$/.test(pertemuanIdStr) ? BigInt(pertemuanIdStr) : null;
   const filePetunjuk = formData.get("file_petunjuk") as File | null;
 
   if (!judul || !deskripsi || !kelas_id || !mapel_id || !deadlineStr) {
@@ -50,11 +52,14 @@ export async function createTugasAction(formData: FormData) {
         file_petunjuk: petunjukUrl,
         deadline: new Date(deadlineStr),
         poin_maksimal: poinMaksimal,
+        pertemuan_id: pertemuan_id,
         status: "aktif",
       },
     });
 
     revalidatePath("/guru/tugas");
+    revalidatePath("/guru/mapel");
+    revalidatePath(`/guru/mapel/${mapel_id.toString()}`);
     revalidatePath("/siswa/tugas");
     revalidatePath("/siswa");
     return { success: true, message: "Tugas berhasil dibuat!", data: { id: tugas.id.toString() } };

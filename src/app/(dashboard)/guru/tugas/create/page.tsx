@@ -2,16 +2,27 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft } from "lucide-react";
+import { BookOpen, FileCheck } from "lucide-react";
 import { CreateTaskForm } from "./_components/create-task-form";
+import { DashboardBreadcrumb } from "@/components/shared/dashboard-breadcrumb";
 
 export const dynamic = "force-dynamic";
 
-export default async function GuruCreateTugasPage() {
+interface PageProps {
+  searchParams: Promise<{
+    mapelId?: string;
+    kelasId?: string;
+    from?: string;
+  }>;
+}
+
+export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
   const session = await getSession();
   if (!session || (session.role !== "guru" && session.role !== "admin")) {
     redirect("/login");
   }
+
+  const { mapelId, kelasId, from } = await searchParams;
 
   const [classes, subjects] = await Promise.all([
     prisma.kelas.findMany({
@@ -22,21 +33,29 @@ export default async function GuruCreateTugasPage() {
     }),
   ]);
 
+  const isFromMapel = from === "mapel" && !!mapelId;
+  const backHref = isFromMapel
+    ? "/guru/mapel"
+    : mapelId
+      ? `/guru/tugas?mapelId=${mapelId}${kelasId ? `&kelasId=${kelasId}` : ""}`
+      : "/guru/tugas";
+  const backLabel = isFromMapel ? "Kembali ke Jadwal & Mapel" : "Kembali ke Daftar Tugas";
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      <div>
-        <Link
-          href="/guru/tugas"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Kembali ke Daftar Tugas</span>
-        </Link>
+      {/* Back Navigation */}
+      <DashboardBreadcrumb
+        backHref={backHref}
+        backLabel={backLabel}
+      />
+
+      {/* Header Info */}
+      <div className="bg-card/60 backdrop-blur-xs p-5 rounded-2xl border border-border">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">
           Buat Tugas Baru
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Tentukan kelas, mata pelajaran, tenggat pengumpulan, dan instruksi tugas.
+          Tentukan kelas, mata pelajaran, tenggat pengumpulan, dan instruksi tugas siswa.
         </p>
       </div>
 
@@ -54,6 +73,9 @@ export default async function GuruCreateTugasPage() {
           jenjang: s.jenjang,
         }))}
         defaultKelas={session.kelas || ""}
+        initialKelasId={kelasId}
+        initialMapelId={mapelId}
+        fromOrigin={from}
       />
     </div>
   );

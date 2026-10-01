@@ -42,7 +42,7 @@ import {
 import { toast } from "sonner";
 import { UserItem } from "@/types";
 
-interface StudentRow extends UserItem {}
+interface StudentRow extends UserItem { }
 
 interface MyClassTableProps {
   students: StudentRow[];
@@ -182,14 +182,13 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
               <TableHead className="font-bold">Nama Lengkap</TableHead>
               <TableHead className="font-bold">NIS</TableHead>
               <TableHead className="font-bold text-center">L/P</TableHead>
-              <TableHead className="font-bold text-center">Poin</TableHead>
               <TableHead className="w-36 text-center font-bold">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   Belum ada siswa di kelas {guruClass}. Klik tombol &quot;Tambah Siswa ke Kelas&quot; untuk mendaftarkan siswa.
                 </TableCell>
               </TableRow>
@@ -231,11 +230,6 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                       ) : (
                         <span className="text-muted-foreground/60">-</span>
                       )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="warning" size="sm" className="font-mono">
-                        {s.point || "0"} Poin
-                      </Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -283,9 +277,8 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
             return (
               <div
                 key={`m-card-${s.id}`}
-                className={`rounded-2xl border p-4 transition-all ${
-                  isSelected ? "border-emerald-500 bg-emerald-50/20" : "bg-card border-border shadow-xs"
-                }`}
+                className={`rounded-2xl border p-4 transition-all ${isSelected ? "border-emerald-500 bg-emerald-50/20" : "bg-card border-border shadow-xs"
+                  }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -305,10 +298,6 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                       <p className="text-xs text-muted-foreground font-mono mt-0.5">NIS: {s.nis || "-"}</p>
                     </div>
                   </div>
-
-                  <Badge variant="warning" size="sm" className="font-mono">
-                    {s.point || "0"} Poin
-                  </Badge>
                 </div>
 
                 {/* Action Buttons */}

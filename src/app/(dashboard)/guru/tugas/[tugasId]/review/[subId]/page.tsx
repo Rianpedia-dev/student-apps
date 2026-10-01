@@ -10,10 +10,14 @@ interface PageProps {
     tugasId: string;
     subId: string;
   }>;
+  searchParams: Promise<{
+    from?: string;
+  }>;
 }
 
-export default async function GuruReviewTugasPage({ params }: PageProps) {
+export default async function GuruReviewTugasPage({ params, searchParams }: PageProps) {
   const { tugasId, subId } = await params;
+  const { from } = await searchParams;
   const session = await getSession();
   if (!session || (session.role !== "guru" && session.role !== "admin")) {
     redirect("/login");
@@ -89,6 +93,7 @@ export default async function GuruReviewTugasPage({ params }: PageProps) {
       }}
       prevSubId={prevSubId}
       nextSubId={nextSubId}
+      fromOrigin={from}
     />
   );
 }

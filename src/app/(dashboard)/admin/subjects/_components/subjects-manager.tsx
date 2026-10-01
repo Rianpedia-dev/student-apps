@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  Plus, 
-  Search, 
-  Trash2, 
-  BookOpen, 
-  Check, 
-  X, 
+import {
+  Plus,
+  Search,
+  Trash2,
+  BookOpen,
+  Check,
+  X,
   Loader2,
   Calendar,
   FileCheck
@@ -22,12 +22,12 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { createMataPelajaranAction, deleteMataPelajaranAction } from "@/actions/subject";
 import { toast } from "sonner";
@@ -113,11 +113,10 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
               key={jenjang}
               type="button"
               onClick={() => setFilterJenjang(jenjang)}
-              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
-                filterJenjang === jenjang
+              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${filterJenjang === jenjang
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "bg-card border border-border text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               {jenjang === "SEMUA" ? "Semua Jenjang" : `Jenjang ${jenjang}`}
             </button>
@@ -232,8 +231,8 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
                         sub.jenjang === "SMP"
                           ? "indigo"
                           : sub.jenjang === "SD"
-                          ? "amber"
-                          : "teal"
+                            ? "amber"
+                            : "teal"
                       }
                       size="sm"
                     >

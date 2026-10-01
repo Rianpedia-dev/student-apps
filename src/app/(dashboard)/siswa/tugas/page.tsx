@@ -1,24 +1,38 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { DashboardBreadcrumb } from "@/components/shared/dashboard-breadcrumb";
 import { StudentTaskQuestList, StudentTaskItem } from "@/components/features/assignment/student-task-quest-list";
 
 export const dynamic = "force-dynamic";
 
-export default async function SiswaTugasListPage() {
+interface PageProps {
+  searchParams: Promise<{
+    mapelId?: string;
+  }>;
+}
+
+export default async function SiswaTugasListPage({ searchParams }: PageProps) {
   const session = await getSession();
   if (!session || session.role !== "siswa") {
     redirect("/login");
   }
+
+  const { mapelId } = await searchParams;
 
   const studentClass = session.kelas || "";
   const kelas = await prisma.kelas.findFirst({
     where: { nama_kelas: studentClass },
   });
 
+  // Filter tugas berdasarkan mapelId jika tersedia
   const rawTasks = kelas
     ? await prisma.tugas.findMany({
-        where: { kelas_id: kelas.id, status: "aktif" },
+        where: {
+          kelas_id: kelas.id,
+          status: "aktif",
+          ...(mapelId ? { mapel_id: BigInt(mapelId) } : {}),
+        },
         include: {
           mapel: true,
           guru: { select: { name: true } },
@@ -29,6 +43,11 @@ export default async function SiswaTugasListPage() {
         orderBy: { deadline: "asc" },
       })
     : [];
+
+  // Ambil nama mapel jika ada filter
+  const mapelName = mapelId && rawTasks.length > 0
+    ? rawTasks[0].mapel.nama_mapel
+    : null;
 
   const tasks: StudentTaskItem[] = rawTasks.map((t) => {
     const sub = t.submissions[0];
@@ -52,11 +71,17 @@ export default async function SiswaTugasListPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header Sederhana & Jelas */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-          Tugas Siswa
+    <div className="space-y-5 max-w-5xl mx-auto">
+      {/* Back Navigation */}
+      <DashboardBreadcrumb
+        backHref="/siswa/mapel"
+        backLabel="Jadwal & Mapel"
+      />
+
+      {/* Header */}
+      <div className="bg-card/60 backdrop-blur-xs p-5 rounded-2xl border border-border">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          {mapelName ? `Tugas: ${mapelName}` : "Tugas Kelas"}
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
           Lihat daftar tugas kelas, kumpulkan lembar tugas, dan periksa nilai dari guru.

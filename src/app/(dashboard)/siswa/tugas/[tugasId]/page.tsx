@@ -71,7 +71,7 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
           className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-card px-3 py-1.5 rounded-xl border border-transparent hover:border-border transition-all"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Kembali ke Papan Misi Tugas</span>
+          <span>Kembali ke Daftar Tugas</span>
         </Link>
       </div>
 

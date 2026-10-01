@@ -49,7 +49,7 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
     const matchesJenjang =
       filterJenjang === "all" ||
       (filterJenjang === "SMP" ? c.jenjang === "SMP" || c.nama_kelas.startsWith("7") || c.nama_kelas.startsWith("8") || c.nama_kelas.startsWith("9")
-                              : c.jenjang === "SD" || (!c.nama_kelas.startsWith("7") && !c.nama_kelas.startsWith("8") && !c.nama_kelas.startsWith("9")));
+        : c.jenjang === "SD" || (!c.nama_kelas.startsWith("7") && !c.nama_kelas.startsWith("8") && !c.nama_kelas.startsWith("9")));
     return matchesSearch && matchesJenjang;
   });
 
@@ -117,11 +117,10 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                 setFilterJenjang("all");
                 setPage(1);
               }}
-              className={`rounded-full px-3 py-1 transition-all ${
-                filterJenjang === "all"
+              className={`rounded-full px-3 py-1 transition-all ${filterJenjang === "all"
                   ? "bg-gradient-to-b from-slate-800 to-slate-900 text-white dark:from-slate-100 dark:to-slate-200 dark:text-slate-900 shadow-sm font-bold"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Semua ({classes.length})
             </button>
@@ -131,11 +130,10 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                 setFilterJenjang("SD");
                 setPage(1);
               }}
-              className={`rounded-full px-3 py-1 transition-all ${
-                filterJenjang === "SD"
+              className={`rounded-full px-3 py-1 transition-all ${filterJenjang === "SD"
                   ? "bg-gradient-to-b from-emerald-400 to-teal-500 text-white shadow-sm font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               SD ({classes.filter((c) => c.jenjang === "SD" || (!c.nama_kelas.startsWith("7") && !c.nama_kelas.startsWith("8") && !c.nama_kelas.startsWith("9"))).length})
             </button>
@@ -145,11 +143,10 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                 setFilterJenjang("SMP");
                 setPage(1);
               }}
-              className={`rounded-full px-3 py-1 transition-all ${
-                filterJenjang === "SMP"
+              className={`rounded-full px-3 py-1 transition-all ${filterJenjang === "SMP"
                   ? "bg-gradient-to-b from-indigo-400 to-indigo-600 text-white shadow-sm font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               SMP ({classes.filter((c) => c.jenjang === "SMP" || c.nama_kelas.startsWith("7") || c.nama_kelas.startsWith("8") || c.nama_kelas.startsWith("9")).length})
             </button>
@@ -204,47 +201,47 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                    {c.wali_kelas ? (
-                      <span className="font-medium text-sm text-foreground">{c.wali_kelas}</span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">Belum ditentukan</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="sky" size="sm" className="font-mono">
-                      {c.jumlah_siswa || "0"} Siswa
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {c.code_restrict ? (
-                      <Badge variant="amber" size="sm" className="font-mono">
-                        {c.code_restrict}
+                      {c.wali_kelas ? (
+                        <span className="font-medium text-sm text-foreground">{c.wali_kelas}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Belum ditentukan</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="sky" size="sm" className="font-mono">
+                        {c.jumlah_siswa || "0"} Siswa
                       </Badge>
-                    ) : (
-                      <span className="font-mono text-xs text-muted-foreground/60">
-                        -
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Link href={`/admin/classes/${c.id}`}>
-                        <Button variant="ghost" size="icon-sm" className="h-8 w-8" title="Detail Siswa Kelas">
-                          <Eye className="h-4 w-4 text-sky-600" />
+                    </TableCell>
+                    <TableCell>
+                      {c.code_restrict ? (
+                        <Badge variant="amber" size="sm" className="font-mono">
+                          {c.code_restrict}
+                        </Badge>
+                      ) : (
+                        <span className="font-mono text-xs text-muted-foreground/60">
+                          -
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Link href={`/admin/classes/${c.id}`}>
+                          <Button variant="ghost" size="icon-sm" className="h-8 w-8" title="Detail Siswa Kelas">
+                            <Eye className="h-4 w-4 text-sky-600" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="h-8 w-8 text-rose-500 hover:bg-rose-50"
+                          title="Hapus Kelas"
+                          onClick={() => setDeleteTarget(c)}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="h-8 w-8 text-rose-500 hover:bg-rose-50"
-                        title="Hapus Kelas"
-                        onClick={() => setDeleteTarget(c)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 );
               })
             )}

@@ -45,8 +45,8 @@ export default async function GuruStudentDetailPage(props: {
     const [dbStudent, dbViolations] = await Promise.all([
       isNum
         ? prisma.user.findUnique({
-            where: { id: BigInt(id) },
-          })
+          where: { id: BigInt(id) },
+        })
         : null,
       prisma.pelanggaran.findMany({
         where: { user_id: id },

@@ -120,16 +120,14 @@ export function InBrowserDocViewer({
   const viewerContent = (
     <div
       ref={containerRef}
-      className={`flex flex-col bg-background text-foreground overflow-hidden ${
-        inline
+      className={`flex flex-col bg-background text-foreground overflow-hidden ${inline
           ? "rounded-2xl border border-border shadow-xs w-full h-[520px] sm:h-[600px]"
           : "fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
-      }`}
+        }`}
     >
       <div
-        className={`flex flex-col w-full h-full bg-card rounded-2xl border border-border shadow-2xl overflow-hidden ${
-          !inline ? "max-w-6xl max-h-[94vh]" : ""
-        }`}
+        className={`flex flex-col w-full h-full bg-card rounded-2xl border border-border shadow-2xl overflow-hidden ${!inline ? "max-w-6xl max-h-[94vh]" : ""
+          }`}
       >
         {/* Top Header & Toolbar */}
         <div className="h-14 px-3 sm:px-5 border-b border-border bg-card flex items-center justify-between gap-2 shrink-0">
@@ -299,11 +297,10 @@ export function InBrowserDocViewer({
                   setZoom(1);
                   setRotation(0);
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                  currentIndex === idx
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${currentIndex === idx
                     ? "bg-primary text-primary-foreground shadow-2xs scale-102"
                     : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                }`}
+                  }`}
               >
                 <span>Halaman {idx + 1}</span>
               </button>

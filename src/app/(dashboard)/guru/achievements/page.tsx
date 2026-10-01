@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createAchievementAction, deleteAchievementAction } from "@/actions/guru";
 import { formatDateIndo } from "@/lib/utils";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,60 @@ export default async function GuruAchievementsPage() {
       }),
     ]);
     students = dbStudents;
-    achievements = dbPrestasi;
+
+    // Fetch student profile data (image & gender) for achievements
+    const userIds = dbPrestasi
+      .map((a) => {
+        try {
+          const n = BigInt(a.id_user);
+          return n > BigInt(0) ? n : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter((id): id is bigint => id !== null);
+
+    const studentNames = dbPrestasi.map((a) => a.nama).filter(Boolean);
+
+    const matchedUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          ...(userIds.length > 0 ? [{ id: { in: userIds } }] : []),
+          ...(studentNames.length > 0 ? [{ name: { in: studentNames } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        gender: true,
+        image: true,
+      },
+    });
+
+    const userById = new Map<string, (typeof matchedUsers)[0]>();
+    const userByName = new Map<string, (typeof matchedUsers)[0]>();
+    for (const u of matchedUsers) {
+      userById.set(u.id.toString(), u);
+      userByName.set(u.name.trim().toLowerCase(), u);
+    }
+
+    achievements = dbPrestasi.map((ach) => {
+      const studentUser = userById.get(ach.id_user) || userByName.get(ach.nama.trim().toLowerCase());
+      const studentImage =
+        studentUser?.image ||
+        (ach.fotoanak &&
+        !ach.fotoanak.includes("trophy") &&
+        !ach.fotoanak.includes("best-student") &&
+        !ach.fotoanak.includes("best-point")
+          ? ach.fotoanak
+          : null);
+
+      return {
+        ...ach,
+        studentImage,
+        studentGender: studentUser?.gender || null,
+      };
+    });
   } catch (e) {
     console.error("Database query error in achievements:", e);
   }
@@ -137,8 +191,20 @@ export default async function GuruAchievementsPage() {
                 <Card key={ach.id.toString()} className="border-amber-500/20 shadow-sm overflow-hidden rounded-xl">
                   <CardContent className="p-5 flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 text-xl font-bold dark:bg-amber-950 dark:text-amber-300">
-                        🏆
+                      <div className="relative shrink-0">
+                        <UserAvatar
+                          src={ach.studentImage}
+                          gender={ach.studentGender}
+                          name={ach.nama}
+                          className="h-12 w-12 rounded-xl object-cover border border-amber-500/30 shadow-xs ring-2 ring-amber-500/10"
+                          previewable={true}
+                        />
+                        <span
+                          className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] text-amber-950 font-bold shadow-xs ring-2 ring-background select-none"
+                          title="Prestasi Siswa"
+                        >
+                          🏆
+                        </span>
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-bold text-sm text-foreground leading-tight">{ach.prestasi}</h3>

@@ -14,7 +14,6 @@ import {
   Sparkles,
   BookOpen,
   MonitorPlay,
-  FileCheck,
   MessageSquare,
   CalendarClock,
 } from "lucide-react";
@@ -84,7 +83,6 @@ export function Sidebar({
   const guruMenu = [
     { label: "Dashboard", href: "/guru", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
     { label: "Profil Saya", href: "/guru/profile", icon: AccountIcon, iconColor: "text-amber-600" },
-    { label: "Tugas Siswa", href: "/guru/tugas", icon: FileCheck, iconColor: "text-emerald-600" },
     { label: "Jadwal & Mapel", href: "/guru/mapel", icon: BookOpen, iconColor: "text-teal-600" },
     { label: "Chat Siswa", href: "/guru/chat", icon: MessageSquare, iconColor: "text-cyan-600" },
     { label: "Kelas Saya", href: "/guru/my-class", icon: School, iconColor: "text-emerald-500" },
@@ -98,8 +96,7 @@ export function Sidebar({
   const siswaMenu = [
     { label: "Dashboard", href: "/siswa", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
     { label: "Profil Saya", href: "/siswa/profile", icon: AccountIcon, iconColor: "text-amber-600" },
-    { label: "Mata Pelajaran", href: "/siswa/mapel", icon: BookOpen, iconColor: "text-teal-600" },
-    { label: "Tugas Saya", href: "/siswa/tugas", icon: FileCheck, iconColor: "text-emerald-600" },
+    { label: "Jadwal & Mapel", href: "/siswa/mapel", icon: BookOpen, iconColor: "text-teal-600" },
     { label: "Chat Guru", href: "/siswa/chat", icon: MessageSquare, iconColor: "text-cyan-600" },
     { label: "Kalender Kegiatan", href: "/siswa/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
     { label: "Riwayat Absensi", href: "/siswa/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
@@ -142,15 +139,15 @@ export function Sidebar({
                 render={
                   <Link
                     href={`/${role}`}
-                    className="flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-105"
+                    className="flex h-12 w-12 items-center justify-center transition-transform hover:scale-105"
                   >
                     <Image
                       src="/images/logo-alazhar-cairo.avif"
                       alt="Logo SD - SMP Islam Al-Azhar Cairo Palembang"
-                      width={44}
-                      height={44}
+                      width={48}
+                      height={48}
                       priority
-                      className="h-10 w-10 object-contain drop-shadow-sm"
+                      className="h-11 w-11 object-contain drop-shadow-sm"
                     />
                   </Link>
                 }
@@ -169,14 +166,14 @@ export function Sidebar({
               onClick={onNavigate}
               className="flex flex-col items-center justify-center text-center overflow-hidden group py-0.5 z-10 w-full"
             >
-              <div className="relative h-16 w-16 sm:h-17 sm:w-17 shrink-0 rounded-full overflow-hidden p-1 border-2 border-amber-500/30 bg-white shadow-md transition-transform duration-300 group-hover:scale-105">
+              <div className="relative h-20 w-20 sm:h-[84px] sm:w-[84px] shrink-0 transition-transform duration-300 group-hover:scale-105 flex items-center justify-center">
                 <Image
                   src="/images/logo-alazhar-cairo.avif"
                   alt="Logo Al-Azhar Cairo Palembang"
-                  width={68}
-                  height={68}
+                  width={84}
+                  height={84}
                   priority
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-contain drop-shadow-sm"
                 />
               </div>
               <div className="flex flex-col items-center min-w-0 mt-2">

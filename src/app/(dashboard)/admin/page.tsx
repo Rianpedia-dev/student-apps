@@ -95,7 +95,7 @@ export default async function AdminDashboardPage() {
           countLabel="Akun"
           icon={UserCheck}
           description="Pengguna terverifikasi"
-          variant="secondary"
+          variant="purple"
           meta="Aktif"
           href="/admin/students"
         />

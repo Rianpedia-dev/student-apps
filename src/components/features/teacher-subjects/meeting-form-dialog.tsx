@@ -14,15 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { 
-  BookOpen, 
-  Upload, 
-  Video, 
-  Link as LinkIcon, 
-  FileCheck, 
-  Sparkles, 
-  Eye, 
-  EyeOff, 
+import {
+  BookOpen,
+  Upload,
+  Video,
+  Link as LinkIcon,
+  FileCheck,
+  Sparkles,
+  Eye,
+  EyeOff,
   FileText,
   Loader2,
   X
@@ -73,7 +73,7 @@ export function MeetingFormDialog({
       setVideoUrl(initialData.videoUrl || initialData.video_url || "");
       setLinkEksternal(initialData.linkEksternal || initialData.link_eksternal || "");
       setIsPublished(initialData.isPublished ?? initialData.is_published ?? true);
-      
+
       const currentLinkedTask = availableTasks.find(
         (t) => t.pertemuan_id === initialData.id || (initialData.tugas && initialData.tugas.some((it: any) => it.id === t.id))
       );
@@ -199,11 +199,10 @@ export function MeetingFormDialog({
               <button
                 type="button"
                 onClick={() => setIsPublished(!isPublished)}
-                className={`w-full h-8.5 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border ${
-                  isPublished
+                className={`w-full h-8.5 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border ${isPublished
                     ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/15"
                     : "bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/15"
-                }`}
+                  }`}
                 title={isPublished ? "Siswa dapat melihat materi" : "Hanya guru yang dapat melihat (Draft)"}
               >
                 {isPublished ? (

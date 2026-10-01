@@ -1322,6 +1322,145 @@ async function main() {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // 10. DATA PRESTASI SISWA
+  // ---------------------------------------------------------------------------
+  console.log("\n🏆 Menyiapkan data Prestasi Siswa...");
+  const allStudents = await prisma.user.findMany({
+    where: { status: "1" },
+    select: { id: true, name: true, kelas: true, email: true },
+  });
+
+  const prestasiTemplates = [
+    {
+      lookup: "siswa@gmail.com",
+      fallbackName: "Muhammad Rayhan Al-Fatih",
+      fallbackKelas: "Kelas 4 - Mehmed Al Fatih",
+      prestasi: "Juara 1 Olimpiade Sains & Matematika Nasional (OSMN) 2026",
+      fotoanak: "/images/best-student.avif",
+      daysAgo: 2,
+    },
+    {
+      lookup: "zahra",
+      fallbackName: "Zahra Amira Salsabila",
+      fallbackKelas: "Kelas 4 - Mehmed Al Fatih",
+      prestasi: "Juara 1 Musabaqah Hifdzil Qur'an (MHQ) 3 Juz Antar SD Islam Se-Sumatera",
+      fotoanak: "/images/best-point.avif",
+      daysAgo: 4,
+    },
+    {
+      lookup: "khalid",
+      fallbackName: "Khalid bin Walid Al-Ghazi",
+      fallbackKelas: "Kelas 4 - Mehmed Al Fatih",
+      prestasi: "Juara 1 Turnamen Panahan Tradisional Pelajar Al-Azhar Se-Sumbagsel",
+      fotoanak: "/images/best-student.avif",
+      daysAgo: 7,
+    },
+    {
+      lookup: "siswa@gmail.com",
+      fallbackName: "Muhammad Rayhan Al-Fatih",
+      fallbackKelas: "Kelas 4 - Mehmed Al Fatih",
+      prestasi: "Medali Emas Islamic Science Olympiad Tingkat Nasional",
+      fotoanak: "/images/best-student.avif",
+      daysAgo: 10,
+    },
+    {
+      lookup: "umar",
+      fallbackName: "Umar Al-Faruq Pratama",
+      fallbackKelas: "Kelas 4 - Mehmed Al Fatih",
+      prestasi: "Juara 1 Olimpiade Bahasa Arab (OBA) Tingkat Provinsi Sumatera Selatan",
+      fotoanak: "/images/best-point.avif",
+      daysAgo: 12,
+    },
+    {
+      lookup: "naira",
+      fallbackName: "Naira Syakira Azzahra",
+      fallbackKelas: "Kelas 4 - Mehmed Al Fatih",
+      prestasi: "Juara 1 Lomba Cipta & Baca Puisi Islami FASI Kota Palembang",
+      fotoanak: "/images/best-point.avif",
+      daysAgo: 15,
+    },
+    {
+      lookup: "fatimah",
+      fallbackName: "Siti Fatimah Azzahra",
+      fallbackKelas: "Kelas 4 - Mehmed Al Fatih",
+      prestasi: "Juara 1 Lomba Kaligrafi Kontemporer Tingkat SD Se-Kota Palembang",
+      fotoanak: "/images/best-point.avif",
+      daysAgo: 18,
+    },
+    {
+      lookup: "hamzah",
+      fallbackName: "Hamzah Asadullah Al-Qudsi",
+      fallbackKelas: "Kelas 4 - Sayfuddin Al Quthuz",
+      prestasi: "Juara 1 English Speech & Story Telling Contest Al-Azhar Cup 2026",
+      fotoanak: "/images/best-student.avif",
+      daysAgo: 22,
+    },
+    {
+      lookup: "alyssa",
+      fallbackName: "Alyssa Khansa Nabila",
+      fallbackKelas: "Kelas 4 - Sayfuddin Al Quthuz",
+      prestasi: "Juara 2 Festival Seni Nasyid & Da'i Cilik Ramadhan 1447 H",
+      fotoanak: "/images/best-point.avif",
+      daysAgo: 25,
+    },
+    {
+      lookup: "hafidz",
+      fallbackName: "Hafidz Al-Hasan Ar-Rasyid",
+      fallbackKelas: "Kelas 5 - Al Bukhari",
+      prestasi: "Juara 1 MHQ 5 Juz Festival Anak Sholeh Indonesia (FASI) Provinsi Sumsel",
+      fotoanak: "/images/best-student.avif",
+      daysAgo: 30,
+    },
+    {
+      lookup: "thariq",
+      fallbackName: "Thariq Ziyad Ramadhan",
+      fallbackKelas: "Kelas 4 - Sholahuddin Al Ayubi",
+      prestasi: "Medali Emas Kejuaraan Taekwondo Pelajar Antar Dojang Se-Sumatera",
+      fotoanak: "/images/best-student.avif",
+      daysAgo: 35,
+    },
+    {
+      lookup: "syifa",
+      fallbackName: "Syifa Nur Marwah",
+      fallbackKelas: "Kelas 4 - Sholahuddin Al Ayubi",
+      prestasi: "Juara 1 Lomba Cerdas Cermat PAI Tingkat SD Se-Kota Palembang",
+      fotoanak: "/images/best-point.avif",
+      daysAgo: 40,
+    },
+  ];
+
+  for (const item of prestasiTemplates) {
+    const student = allStudents.find(
+      (s) =>
+        s.email.toLowerCase() === item.lookup.toLowerCase() ||
+        s.name.toLowerCase().includes(item.lookup.toLowerCase())
+    );
+    const userId = student ? student.id.toString() : "19";
+    const nama = student ? student.name : item.fallbackName;
+    const kelas = (student && student.kelas) ? student.kelas : item.fallbackKelas;
+
+    const existing = await prisma.prestasi.findFirst({
+      where: { id_user: userId, prestasi: item.prestasi },
+    });
+
+    if (!existing) {
+      const createdAtDate = new Date(Date.now() - item.daysAgo * 24 * 60 * 60 * 1000);
+      await prisma.prestasi.create({
+        data: {
+          id_user: userId,
+          nama: nama,
+          kelas: kelas,
+          fotoanak: item.fotoanak,
+          prestasi: item.prestasi,
+          created_at: createdAtDate,
+          updated_at: createdAtDate,
+        },
+      });
+    }
+  }
+  console.log(`✅ ${prestasiTemplates.length} data Prestasi Siswa berhasil disiapkan.`);
+
   console.log("\n=========================================");
   console.log("🎉 Seeding Database Selesai dengan Sukses!");
   console.log("=========================================");
