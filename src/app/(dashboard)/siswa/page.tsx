@@ -158,15 +158,36 @@ export default async function SiswaDashboardPage() {
     }
   }
 
-  const formattedAnnouncements = (announcements || []).map((p) => ({
-    id: p.id ? p.id.toString() : Math.random().toString(),
-    from: p.from || "IT",
-    title: p.title || "Pengumuman",
-    file: p.file || null,
-    pengumuman: p.pengumuman || "",
-    like: p.like || "0",
-    created_at: p.created_at || null,
-  }));
+  const announcementIds = (announcements || []).map((p) => (p.id ? p.id.toString() : "")).filter(Boolean);
+  let likedPostIds = new Set<string>();
+  if (announcementIds.length > 0 && session?.id) {
+    try {
+      const userLikes = await prisma.like.findMany({
+        where: {
+          user_id: String(session.id),
+          post_id: { in: announcementIds },
+        },
+        select: { post_id: true },
+      });
+      likedPostIds = new Set(userLikes.map((l) => l.post_id));
+    } catch (e) {
+      console.error("Error fetching user announcement likes:", e);
+    }
+  }
+
+  const formattedAnnouncements = (announcements || []).map((p) => {
+    const pId = p.id ? p.id.toString() : Math.random().toString();
+    return {
+      id: pId,
+      from: p.from || "IT",
+      title: p.title || "Pengumuman",
+      file: p.file || null,
+      pengumuman: p.pengumuman || "",
+      like: p.like || "0",
+      isLiked: likedPostIds.has(pId),
+      created_at: p.created_at || null,
+    };
+  });
 
   // Fetch Jadwal Hari Ini & Tugas Siswa
   let todaySchedules: any[] = [];
@@ -333,9 +354,6 @@ export default async function SiswaDashboardPage() {
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Jadwal Hari Ini
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Jadwal pelajaran aktif untuk kelas {studentClass || "Anda"} hari ini
-            </p>
           </div>
           <Link
             href="/siswa/mapel"

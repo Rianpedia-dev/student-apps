@@ -141,15 +141,36 @@ export default async function GuruDashboardPage() {
     console.error("Database query error in guru dashboard:", e);
   }
 
-  const formattedAnnouncements = announcements.map((p) => ({
-    id: p.id.toString(),
-    from: p.from,
-    title: p.title,
-    file: p.file,
-    pengumuman: p.pengumuman,
-    like: p.like,
-    created_at: p.created_at,
-  }));
+  const announcementIds = (announcements || []).map((p) => p.id.toString()).filter(Boolean);
+  let likedPostIds = new Set<string>();
+  if (announcementIds.length > 0 && session?.id) {
+    try {
+      const userLikes = await prisma.like.findMany({
+        where: {
+          user_id: String(session.id),
+          post_id: { in: announcementIds },
+        },
+        select: { post_id: true },
+      });
+      likedPostIds = new Set(userLikes.map((l) => l.post_id));
+    } catch (e) {
+      console.error("Error fetching guru announcement likes:", e);
+    }
+  }
+
+  const formattedAnnouncements = (announcements || []).map((p) => {
+    const pId = p.id.toString();
+    return {
+      id: pId,
+      from: p.from,
+      title: p.title,
+      file: p.file,
+      pengumuman: p.pengumuman,
+      like: p.like,
+      isLiked: likedPostIds.has(pId),
+      created_at: p.created_at,
+    };
+  });
 
   const todayFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 

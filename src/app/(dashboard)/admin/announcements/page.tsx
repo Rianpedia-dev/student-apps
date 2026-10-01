@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createAnnouncementAction, deleteAnnouncementAction } from "@/actions/admin";
 import { formatDateIndo } from "@/lib/utils";
+import { AnnouncementAttachment } from "@/components/shared/announcement-attachment";
 
 export const dynamic = "force-dynamic";
 
@@ -170,16 +171,18 @@ export default async function AdminAnnouncementsPage() {
                   </div>
 
                   <h3 className="font-bold text-sm text-foreground">{item.title}</h3>
-                  <div
-                    className="text-xs text-muted-foreground leading-relaxed prose dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: item.pengumuman }}
-                  />
 
                   {item.file && (
-                    <div className="pt-1 text-xs text-emerald-600">
-                      Lampiran: <a href={item.file} target="_blank" rel="noreferrer" className="underline">{item.file}</a>
-                    </div>
+                    <AnnouncementAttachment
+                      fileUrl={item.file}
+                      title={item.title}
+                    />
                   )}
+
+                  <div
+                    className="text-xs text-muted-foreground leading-relaxed prose dark:prose-invert max-w-none mt-2.5"
+                    dangerouslySetInnerHTML={{ __html: item.pengumuman }}
+                  />
                 </CardContent>
               </Card>
             ))

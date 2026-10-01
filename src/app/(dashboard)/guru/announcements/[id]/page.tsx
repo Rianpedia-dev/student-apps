@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { updateAnnouncementAction } from "@/actions/admin";
+import { AnnouncementAttachment } from "@/components/shared/announcement-attachment";
 
 export const dynamic = "force-dynamic";
 
@@ -79,15 +80,38 @@ export default async function GuruEditAnnouncementPage(props: {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="file">Link File Lampiran (Opsional)</Label>
-              <Input
-                id="file"
-                name="file"
-                defaultValue={announcement.file || ""}
-                placeholder="https://... atau /uploads/file.pdf"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="file_upload">Upload File Baru (PDF / JPG / PNG)</Label>
+                <Input
+                  id="file_upload"
+                  name="file_upload"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="cursor-pointer file:text-emerald-700 file:font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="file">Atau Link URL Lampiran</Label>
+                <Input
+                  id="file"
+                  name="file"
+                  defaultValue={announcement.file || ""}
+                  placeholder="https://... atau /uploads/file.pdf"
+                />
+              </div>
             </div>
+
+            {announcement.file && (
+              <div className="space-y-1.5 pt-1">
+                <Label className="text-xs text-muted-foreground font-medium">Lampiran Saat Ini:</Label>
+                <AnnouncementAttachment
+                  fileUrl={announcement.file}
+                  title={announcement.title}
+                />
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="pengumuman">Konten Pengumuman</Label>
@@ -99,7 +123,6 @@ export default async function GuruEditAnnouncementPage(props: {
                 required
               />
             </div>
-
             <div className="flex justify-end pt-2">
               <Button type="submit" size="lg">
                 <Save className="h-4 w-4" /> Simpan Perubahan
