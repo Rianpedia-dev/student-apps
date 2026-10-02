@@ -143,7 +143,7 @@ export default async function GuruAnnouncementsPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className="h-7 w-7 text-rose-500 hover:bg-rose-50"
+                          className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

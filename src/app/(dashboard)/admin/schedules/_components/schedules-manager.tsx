@@ -834,7 +834,7 @@ export function SchedulesManager({
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-red-600">Hapus Jadwal Pelajaran</DialogTitle>
+            <DialogTitle className="text-sm font-bold text-red-600 dark:text-red-400">Hapus Jadwal Pelajaran</DialogTitle>
           </DialogHeader>
           <p className="text-xs text-muted-foreground">
             Apakah Anda yakin ingin menghapus jadwal <strong>{deleteTarget?.mapelNama}</strong> di kelas{" "}

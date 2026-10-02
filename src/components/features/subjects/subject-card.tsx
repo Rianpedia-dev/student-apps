@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface SubjectCardProps {
   id: string;
@@ -51,9 +52,9 @@ export function SubjectCard({
 
           <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
             {activeTasksCount > 0 && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <Badge variant="amber" size="xs">
                 {activeTasksCount} Tugas
-              </span>
+              </Badge>
             )}
             <ArrowRight className="h-4 w-4 text-muted-foreground/60 transition-transform group-hover:text-primary group-hover:translate-x-0.5" />
           </div>

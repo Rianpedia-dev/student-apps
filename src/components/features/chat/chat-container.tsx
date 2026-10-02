@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "@/components/shared/user-avatar";
@@ -1007,15 +1008,15 @@ export function ChatContainer({
               Chats
             </h1>
             {totalUnreadCount > 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs">
+              <Badge variant="success" size="xs">
                 {totalUnreadCount}
-              </span>
+              </Badge>
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-medium text-muted-foreground px-2 py-0.5 rounded-md bg-muted/50 border border-border/40">
+            <Badge variant="secondary" size="xs">
               {currentUserRole === "siswa" ? "Santri" : "Ustadz"}
-            </span>
+            </Badge>
           </div>
         </div>
 
@@ -1139,9 +1140,9 @@ export function ChatContainer({
                           {formatChatListTime(item.lastMessageAt)}
                         </span>
                       ) : item.badge ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 shrink-0">
+                        <Badge variant="emerald" size="xs" className="shrink-0 font-bold">
                           {item.badge}
-                        </span>
+                        </Badge>
                       ) : null}
                     </div>
 

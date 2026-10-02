@@ -237,7 +237,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 cursor-pointer"
+                          className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
                           title="Info Singkat Siswa"
                           onClick={() => setProfileModalStudent(s)}
                         >
@@ -248,7 +248,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            className="h-8 w-8 text-sky-600 hover:bg-sky-50 cursor-pointer"
+                            className="h-8 w-8 text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 cursor-pointer"
                             title="Detail Lengkap & Catatan"
                           >
                             <ChevronRight className="h-4 w-4" />
@@ -308,7 +308,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                     className="text-xs gap-1 h-9 cursor-pointer"
                     onClick={() => setProfileModalStudent(s)}
                   >
-                    <Eye className="h-3.5 w-3.5 text-emerald-600" />
+                    <Eye className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span>Info</span>
                   </Button>
                   <Link href={`/guru/my-class/${s.id}`}>
@@ -317,7 +317,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                       size="sm"
                       className="text-xs gap-1 h-9 w-full cursor-pointer"
                     >
-                      <ChevronRight className="h-3.5 w-3.5 text-sky-600" />
+                      <ChevronRight className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
                       <span>Detail</span>
                     </Button>
                   </Link>

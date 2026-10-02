@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft, User, Clock, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { StudentMeetingView } from "@/components/features/subjects/student-meeting-view";
 import { UserAvatar } from "@/components/shared/user-avatar";
 
@@ -158,68 +159,49 @@ export default async function SiswaMapelDetailPage({ params }: PageProps) {
       </div>
 
       {/* Hero Banner Mata Pelajaran */}
-      <div className="rounded-3xl bg-gradient-to-br from-card via-card/95 to-primary/5 border border-border/80 p-6 sm:p-8 shadow-sm relative overflow-hidden">
+      <div className="rounded-2xl sm:rounded-3xl bg-card/90 backdrop-blur-xs border border-border p-5 sm:p-6 shadow-xs relative overflow-hidden">
         {/* Glow Accent */}
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -right-20 -top-20 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-black px-3 py-1 rounded-xl bg-primary/15 text-primary border border-primary/25 uppercase tracking-wider">
-                {mapel.kode_mapel}
-              </span>
-              <span className="text-xs font-bold text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-xl border border-border/60">
-                {studentClass ? (studentClass.startsWith("Kelas") ? studentClass : `Kelas ${studentClass}`) : "Semua Rombel"}
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground tracking-tight">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
+          {/* Info Mapel */}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
               {mapel.nama_mapel}
             </h1>
-
-            <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl leading-relaxed font-normal">
-              {mapel.deskripsi ||
-                "Silabus pembelajaran kurikulum Al-Azhar Cairo terpadu dengan integrasi adab dan nilai keislaman."}
-            </p>
           </div>
 
-          {/* Teacher Card & Direct Chat Button */}
-          <div className="p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/80 shrink-0 sm:min-w-[280px] space-y-3.5 shadow-xs">
+          {/* Teacher Card & Quick Chat Button */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-2xl bg-muted/40 border border-border/70 shrink-0">
             <div className="flex items-center gap-3">
               <UserAvatar
                 src={targetGuru?.image}
                 gender={targetGuru?.gender}
                 name={targetGuru?.name || "Guru Pengampu"}
-                className="h-12 w-12 rounded-2xl object-cover ring-2 ring-primary/20 shrink-0 shadow-xs border border-border/60"
+                className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl object-cover ring-1 ring-border shrink-0 shadow-2xs border border-border/60"
                 previewable={true}
               />
-              <div className="min-w-0">
-                <p className="text-xs sm:text-sm font-black text-foreground truncate">
+              <div className="min-w-0 pr-1">
+                <p className="text-xs sm:text-sm font-bold text-foreground truncate max-w-[190px]">
                   {targetGuru?.name || "Guru Pengampu"}
                 </p>
-                <p className="text-[11px] font-semibold text-muted-foreground">
-                  {targetGuru?.guru_bidang || "Guru Pengampu"}
+                <p className="text-[11px] font-medium text-muted-foreground truncate">
+                  {targetGuru?.guru_bidang || mapel.nama_mapel || "Guru Pengampu"}
                 </p>
               </div>
             </div>
 
-            {jadwal && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1.5 pt-2 border-t border-border/60 font-medium">
-                <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span>
-                  {jadwal.hari}, {jadwal.jam_mulai} - {jadwal.jam_selesai}{" "}
-                  {jadwal.ruang ? `(${jadwal.ruang})` : ""}
-                </span>
-              </div>
-            )}
-
-            <Link href={chatHref} className="block w-full">
-              <Button size="sm" className="w-full h-9 text-xs font-bold gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs">
-                <MessageSquare className="h-3.5 w-3.5" />
-                <span>Tanya Ustadz / Chat Guru</span>
-              </Button>
-            </Link>
+            <div className="sm:border-l sm:border-border/70 sm:pl-3">
+              <Link href={chatHref} className="block w-full sm:w-auto">
+                <Button
+                  size="sm"
+                  className="w-full sm:w-auto h-9 px-4 text-xs font-semibold gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span>Tanya Ustadz / Chat Guru</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

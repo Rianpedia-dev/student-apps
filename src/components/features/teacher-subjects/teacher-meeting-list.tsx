@@ -361,10 +361,10 @@ export function TeacherMeetingList({
                         </div>
 
                         {/* Date */}
-                        <span className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium shrink-0 bg-muted/50 px-3 py-1.5 rounded-xl">
+                        <Badge variant="outline" size="sm" className="gap-1.5 font-medium text-muted-foreground shrink-0">
                           <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
                           <span>{dateFormatted}</span>
-                        </span>
+                        </Badge>
                       </div>
 
                       {/* Title */}

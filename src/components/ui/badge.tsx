@@ -54,7 +54,7 @@ const badgeVariants = cva(
         fuchsia:
           "bg-gradient-to-b from-fuchsia-300 to-pink-400 text-slate-800 border-fuchsia-300/60 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)] hover:from-fuchsia-400 hover:to-pink-500",
         ghost:
-          "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50 shadow-none hover:shadow-none hover:translate-y-0",
+          "text-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted/50 shadow-none hover:shadow-none hover:translate-y-0",
         link:
           "text-primary underline-offset-4 hover:underline shadow-none hover:shadow-none hover:translate-y-0",
       },

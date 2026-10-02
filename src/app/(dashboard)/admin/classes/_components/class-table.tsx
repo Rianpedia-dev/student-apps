@@ -227,13 +227,13 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                       <div className="flex items-center justify-center gap-1">
                         <Link href={`/admin/classes/${c.id}`}>
                           <Button variant="ghost" size="icon-sm" className="h-8 w-8" title="Detail Siswa Kelas">
-                            <Eye className="h-4 w-4 text-sky-600" />
+                            <Eye className="h-4 w-4 text-sky-600 dark:text-sky-400" />
                           </Button>
                         </Link>
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className="h-8 w-8 text-rose-500 hover:bg-rose-50"
+                          className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
                           title="Hapus Kelas"
                           onClick={() => setDeleteTarget(c)}
                         >

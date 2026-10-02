@@ -123,7 +123,7 @@ export default async function GuruStudentDetailPage(props: {
             <div className="flex items-center gap-2">
               <div className="rounded-lg border bg-muted/30 p-2.5 text-center text-xs min-w-[100px]">
                 <p className="text-muted-foreground">Pelanggaran</p>
-                <p className="text-base font-bold text-rose-600">{violationsList.length}</p>
+                <p className="text-base font-bold text-rose-600 dark:text-rose-400">{violationsList.length}</p>
               </div>
             </div>
           </div>
@@ -261,7 +261,7 @@ export default async function GuruStudentDetailPage(props: {
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                className="h-7 w-7 text-rose-500 hover:bg-rose-50"
+                                className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>

@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { InBrowserGrader } from "@/components/features/assignment/in-browser-grader";
+import { TeacherInteractiveTaskReview } from "@/components/features/assignment/teacher/teacher-interactive-task-review";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +33,14 @@ export default async function GuruReviewTugasPage({ params, searchParams }: Page
         include: {
           mapel: true,
           kelas: true,
+          soal: {
+            include: {
+              opsi: {
+                orderBy: { nomor_urut: "asc" },
+              },
+            },
+            orderBy: { nomor_urut: "asc" },
+          },
         },
       },
       siswa: {
@@ -44,6 +52,7 @@ export default async function GuruReviewTugasPage({ params, searchParams }: Page
           gender: true,
         },
       },
+      jawaban: true,
     },
   });
 
@@ -63,25 +72,52 @@ export default async function GuruReviewTugasPage({ params, searchParams }: Page
       ? allSubs[currentIndex + 1].id.toString()
       : null;
 
+  const jawabanMap = new Map(
+    (submission.jawaban || []).map((j) => [j.soal_id.toString(), j])
+  );
+
+  const questionsList = submission.tugas.soal.map((s, idx) => {
+    const studentAns = jawabanMap.get(s.id.toString());
+    return {
+      id: s.id.toString(),
+      nomor_urut: idx + 1,
+      tipe_soal: s.tipe_soal,
+      pertanyaan: s.pertanyaan,
+      gambar_soal: s.gambar_soal,
+      bobot_poin: s.bobot_poin,
+      kunci_jawaban: s.kunci_jawaban,
+      pembahasan: s.pembahasan,
+      opsi: s.opsi.map((o) => ({
+        id: o.id.toString(),
+        label: o.label,
+        teks_opsi: o.teks_opsi,
+        gambar_opsi: o.gambar_opsi,
+        is_benar: o.is_benar,
+      })),
+      jawabanSiswa: studentAns
+        ? {
+            jawaban_siswa: studentAns.jawaban_siswa,
+            is_benar: studentAns.is_benar,
+            poin_didapat: studentAns.poin_didapat,
+            catatan_koreksi: studentAns.catatan_koreksi,
+          }
+        : null,
+    };
+  });
+
   return (
-    <InBrowserGrader
+    <TeacherInteractiveTaskReview
+      tugasId={submission.tugas_id.toString()}
+      tugasJudul={submission.tugas.judul}
+      mapelNama={submission.tugas.mapel.nama_mapel}
+      kelasNama={submission.tugas.kelas.nama_kelas}
+      poinMaksimal={submission.tugas.poin_maksimal}
       submission={{
         id: submission.id.toString(),
-        tugasId: submission.tugas_id.toString(),
-        tugasJudul: submission.tugas.judul,
-        mapelNama: submission.tugas.mapel.nama_mapel,
-        kelasNama: submission.tugas.kelas.nama_kelas,
-        deadline: submission.tugas.deadline.toISOString(),
-        fileUrl: submission.file_url,
-        fileName: submission.file_name,
-        fileType: submission.file_type,
-        attachments: submission.attachments,
-        catatanSiswa: submission.catatan_siswa,
-        status: submission.status,
         nilai: submission.nilai,
+        status: submission.status,
         catatanGuru: submission.catatan_guru,
-        annotatedFileUrl: submission.annotated_file_url,
-        annotatedData: submission.annotated_data,
+        durasiDetik: submission.durasi_detik,
         submittedAt: submission.submitted_at.toISOString(),
         siswa: {
           id: submission.siswa.id.toString(),
@@ -91,6 +127,7 @@ export default async function GuruReviewTugasPage({ params, searchParams }: Page
           gender: submission.siswa.gender,
         },
       }}
+      questions={questionsList}
       prevSubId={prevSubId}
       nextSubId={nextSubId}
       fromOrigin={from}

@@ -2,8 +2,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Users, FileCheck, Sparkles, School } from "lucide-react";
-import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -193,10 +191,7 @@ export default async function GuruDashboardPage() {
         <StatCard
           title="Kelas Saya"
           value={`${students.length} Siswa`}
-          icon={Users}
-          description="Wali kelas & murid"
           variant="amber"
-          meta="Aktif"
           href="/guru/my-class"
         />
         <StatCard
@@ -204,28 +199,19 @@ export default async function GuruDashboardPage() {
           value={totalAbsenToday > 0 ? `${attendanceToday} Hadir` : "0 Hadir"}
           count={totalAbsenToday > 0 ? attendanceToday : "—"}
           countLabel={totalAbsenToday > 0 ? "Hadir" : "Belum diisi"}
-          icon={ClipboardListIcon}
-          description={totalAbsenToday > 0 ? `Dari ${students.length} siswa` : "Buka form absen"}
           variant="accent"
-          meta="Presensi"
           href={`/guru/attendance/${todayFormatted}`}
         />
         <StatCard
           title="Tugas Kelas"
           value={`${totalTugas} Tugas`}
-          icon={FileCheck}
-          description="Tugas aktif berjalan"
           variant="primary"
-          meta="Penugasan"
           href="/guru/tugas"
         />
         <StatCard
           title="Perlu Dinilai"
           value={`${pendingReview} Submisi`}
-          icon={Sparkles}
-          description="Koreksi lembar tugas"
           variant="rose"
-          meta="Evaluasi"
           href="/guru/tugas?status=need_grading"
         />
       </div>
@@ -255,7 +241,7 @@ export default async function GuruDashboardPage() {
                 </CardTitle>
                 <Link
                   href="/guru/achievements"
-                  className="text-xs font-semibold text-amber-600 hover:underline"
+                  className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline"
                 >
                   Lihat Semua
                 </Link>
@@ -272,19 +258,14 @@ export default async function GuruDashboardPage() {
                     key={ach.id.toString()}
                     className="flex items-center gap-3 rounded-lg border p-2.5 text-xs transition-colors hover:bg-muted/30"
                   >
-                    <div className="relative shrink-0">
+                    <div className="shrink-0">
                       <UserAvatar
                         src={ach.studentImage}
                         gender={ach.studentGender}
                         name={ach.nama}
-                        className="h-9 w-9 rounded-lg object-cover border border-amber-500/30 shadow-xs ring-1 ring-border/50"
+                        className="h-9 w-9 rounded-lg object-cover border border-border shadow-xs"
                         previewable={true}
                       />
-                      <span
-                        className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[8px] text-amber-950 font-bold shadow-xs ring-1.5 ring-background select-none"
-                        title="Prestasi Siswa"
-                      >
-                      </span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-foreground truncate">{ach.prestasi}</p>

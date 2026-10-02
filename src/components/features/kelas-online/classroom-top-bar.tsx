@@ -112,14 +112,14 @@ export function ClassroomTopBar({
               </div>
 
               {/* Live Indicator */}
-              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold shrink-0">
+              <Badge variant="outline" size="sm" className="gap-1.5 shrink-0">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <Users className="h-3 w-3" />
                 <span>{activeSession.activeParticipants || 1}</span>
-              </div>
+              </Badge>
             </div>
           </div>
 
@@ -210,7 +210,7 @@ export function ClassroomTopBar({
               className="h-8.5 sm:h-9 px-2.5 sm:px-3 text-xs font-medium border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl cursor-pointer shrink-0"
               title="Perkecil ke pojok layar (Bisa sambil membuka menu lain)"
             >
-              <Minimize2 className="h-3.5 w-3.5 sm:mr-1.5 text-slate-500" />
+              <Minimize2 className="h-3.5 w-3.5 sm:mr-1.5 text-muted-foreground" />
               <span className="hidden sm:inline">Perkecil</span>
             </Button>
 
@@ -226,7 +226,7 @@ export function ClassroomTopBar({
               }`}
               title="Mode Fokus / Teater (Tampilan luas di browser)"
             >
-              <Tv className="h-3.5 w-3.5 sm:mr-1.5 text-slate-500" />
+              <Tv className="h-3.5 w-3.5 sm:mr-1.5 text-muted-foreground" />
               <span className="hidden sm:inline">{viewState === "theater" ? "Normal" : "Fokus"}</span>
             </Button>
 
@@ -242,7 +242,7 @@ export function ClassroomTopBar({
               }`}
               title="Layar Penuh (100% monitor)"
             >
-              <Maximize2 className="h-3.5 w-3.5 sm:mr-1.5 text-slate-500" />
+              <Maximize2 className="h-3.5 w-3.5 sm:mr-1.5 text-muted-foreground" />
               <span className="hidden sm:inline">
                 {viewState === "fullscreen" ? "Keluar Layar" : "Layar Penuh"}
               </span>

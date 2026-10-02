@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { getAcademicYear } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 const DAY_NAMES = [
   "Minggu",
@@ -104,9 +105,9 @@ export function NavbarLiveClock({ academic: academicProp }: NavbarLiveClockProps
       <div className="flex items-center gap-2 sm:gap-2.5 text-xs sm:text-[13px] font-bold text-foreground leading-tight tracking-tight">
         <span>TP {academic.tahunPelajaran}</span>
         <span className="inline-block h-3 w-px bg-border" />
-        <span className="font-semibold text-primary">
+        <Badge variant="emerald" size="xs" className="font-bold">
           {academic.semester}
-        </span>
+        </Badge>
       </div>
 
       {/* Baris 2 (Bawah): Hari, Tanggal, Bulan, Tahun & Jam:Menit:Detik */}
@@ -139,9 +140,9 @@ export function NavbarLiveClock({ academic: academicProp }: NavbarLiveClockProps
         </span>
 
         {/* WIB suffix on large desktop */}
-        <span className="hidden xl:inline text-[10px] font-extrabold text-primary tracking-wider uppercase">
+        <Badge variant="outline" size="xs" className="hidden xl:inline-flex text-[9px] font-bold uppercase tracking-wider text-primary">
           WIB
-        </span>
+        </Badge>
       </div>
     </motion.div>
   );

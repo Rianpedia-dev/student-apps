@@ -355,24 +355,30 @@ model JadwalPelajaran {
 }
 
 model Tugas {
-  id            BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
-  kelas_id      BigInt            @db.UnsignedBigInt
-  mapel_id      BigInt            @db.UnsignedBigInt
-  guru_id       BigInt            @db.UnsignedBigInt
-  judul         String            @db.VarChar(255)
-  deskripsi     String            @db.Text
-  file_petunjuk String?           @db.VarChar(500)
-  deadline      DateTime          @db.Timestamp(0)
-  poin_maksimal Int               @default(100)
-  status        String            @default("aktif") @db.VarChar(30)
-  pertemuan_id  BigInt?           @db.UnsignedBigInt
-  created_at    DateTime?         @default(now()) @db.Timestamp(0)
-  updated_at    DateTime?         @updatedAt @db.Timestamp(0)
-  kelas         Kelas             @relation(fields: [kelas_id], references: [id], onDelete: Cascade)
-  mapel         MataPelajaran     @relation(fields: [mapel_id], references: [id], onDelete: Cascade)
-  guru          User              @relation(fields: [guru_id], references: [id], onDelete: Cascade)
-  pertemuan     Pertemuan?        @relation(fields: [pertemuan_id], references: [id], onDelete: SetNull)
-  submissions   TugasSubmission[]
+  id                    BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  kelas_id              BigInt            @db.UnsignedBigInt
+  mapel_id              BigInt            @db.UnsignedBigInt
+  guru_id               BigInt            @db.UnsignedBigInt
+  judul                 String            @db.VarChar(255)
+  deskripsi             String            @db.Text
+  file_petunjuk         String?           @db.VarChar(500)
+  deadline              DateTime          @db.Timestamp(0)
+  poin_maksimal         Int               @default(100)
+  status                String            @default("aktif") @db.VarChar(30)
+  tipe_pengerjaan       String            @default("INTERAKTIF") @db.VarChar(30)
+  durasi_menit          Int?
+  acak_soal             Boolean           @default(false)
+  acak_opsi             Boolean           @default(false)
+  tampilkan_nilai_instan Boolean          @default(true)
+  pertemuan_id          BigInt?           @db.UnsignedBigInt
+  created_at            DateTime?         @default(now()) @db.Timestamp(0)
+  updated_at            DateTime?         @updatedAt @db.Timestamp(0)
+  kelas                 Kelas             @relation(fields: [kelas_id], references: [id], onDelete: Cascade)
+  mapel                 MataPelajaran     @relation(fields: [mapel_id], references: [id], onDelete: Cascade)
+  guru                  User              @relation(fields: [guru_id], references: [id], onDelete: Cascade)
+  pertemuan             Pertemuan?        @relation(fields: [pertemuan_id], references: [id], onDelete: SetNull)
+  submissions           TugasSubmission[]
+  soal                  TugasSoal[]
 
   @@index([kelas_id, status])
   @@index([guru_id])
@@ -380,31 +386,94 @@ model Tugas {
   @@map("tbl_tugas")
 }
 
+model TugasSoal {
+  id            BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  tugas_id      BigInt             @db.UnsignedBigInt
+  nomor_urut    Int
+  tipe_soal     String             @default("PILIHAN_GANDA") @db.VarChar(50) // PILIHAN_GANDA, PILIHAN_GAMBAR, ISIAN_SINGKAT, ESAI
+  pertanyaan    String             @db.Text
+  gambar_soal   String?            @db.VarChar(500)
+  bobot_poin    Float              @default(10)
+  kunci_jawaban String?            @db.Text
+  pembahasan    String?            @db.Text
+  created_at    DateTime?          @default(now()) @db.Timestamp(0)
+  updated_at    DateTime?          @updatedAt @db.Timestamp(0)
+  tugas         Tugas              @relation(fields: [tugas_id], references: [id], onDelete: Cascade)
+  opsi          TugasSoalOpsi[]
+  jawaban_siswa TugasJawabanSiswa[]
+
+  @@index([tugas_id, nomor_urut])
+  @@map("tbl_tugas_soal")
+}
+
+model TugasSoalOpsi {
+  id          BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  soal_id     BigInt     @db.UnsignedBigInt
+  label       String     @db.VarChar(10) // A, B, C, D, E
+  teks_opsi   String?    @db.Text
+  gambar_opsi String?    @db.VarChar(500)
+  is_benar    Boolean    @default(false)
+  nomor_urut  Int        @default(1)
+  soal        TugasSoal  @relation(fields: [soal_id], references: [id], onDelete: Cascade)
+
+  @@index([soal_id])
+  @@map("tbl_tugas_soal_opsi")
+}
+
 model TugasSubmission {
-  id                 BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  tugas_id           BigInt    @db.UnsignedBigInt
-  siswa_id           BigInt    @db.UnsignedBigInt
-  file_url           String    @db.VarChar(500)
-  file_name          String    @db.VarChar(255)
-  file_type          String    @db.VarChar(50)
-  file_size          Int?
-  catatan_siswa      String?   @db.Text
-  attachments        String?   @db.Text
-  status             String    @default("menunggu_penilaian") @db.VarChar(50)
-  nilai              Float?
-  catatan_guru       String?   @db.Text
-  annotated_file_url String?   @db.VarChar(500)
-  annotated_data     String?   @db.Text
-  submitted_at       DateTime  @default(now()) @db.Timestamp(0)
-  graded_at          DateTime? @db.Timestamp(0)
-  graded_by          BigInt?   @db.UnsignedBigInt
-  tugas              Tugas     @relation(fields: [tugas_id], references: [id], onDelete: Cascade)
-  siswa              User      @relation(fields: [siswa_id], references: [id], onDelete: Cascade)
+  id                     BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  tugas_id               BigInt              @db.UnsignedBigInt
+  siswa_id               BigInt              @db.UnsignedBigInt
+  file_url               String?             @db.VarChar(500)
+  file_name              String?             @db.VarChar(255)
+  file_type              String?             @db.VarChar(50)
+  file_size              Int?
+  catatan_siswa          String?             @db.Text
+  attachments            String?             @db.Text
+  status                 String              @default("menunggu_penilaian") @db.VarChar(50)
+  nilai                  Float?
+  nilai_otomatis         Float?
+  nilai_manual           Float?
+  catatan_guru           String?             @db.Text
+  annotated_file_url     String?             @db.VarChar(500)
+  annotated_data         String?             @db.Text
+  mulai_mengerjakan_at   DateTime?           @db.Timestamp(0)
+  selesai_mengerjakan_at DateTime?           @db.Timestamp(0)
+  durasi_detik           Int?
+  total_soal             Int?                @default(0)
+  total_benar            Int?                @default(0)
+  total_salah            Int?                @default(0)
+  submitted_at           DateTime            @default(now()) @db.Timestamp(0)
+  graded_at              DateTime?           @db.Timestamp(0)
+  graded_by              BigInt?             @db.UnsignedBigInt
+  tugas                  Tugas               @relation(fields: [tugas_id], references: [id], onDelete: Cascade)
+  siswa                  User                @relation(fields: [siswa_id], references: [id], onDelete: Cascade)
+  jawaban                TugasJawabanSiswa[]
 
   @@unique([tugas_id, siswa_id], map: "unique_submission_per_siswa")
   @@index([tugas_id, status])
   @@index([siswa_id])
   @@map("tbl_tugas_submission")
+}
+
+model TugasJawabanSiswa {
+  id              BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  submission_id   BigInt          @db.UnsignedBigInt
+  soal_id         BigInt          @db.UnsignedBigInt
+  jawaban_siswa   String?         @db.Text
+  is_ragu         Boolean         @default(false)
+  is_benar        Boolean?
+  poin_didapat    Float?          @default(0)
+  catatan_koreksi String?         @db.Text
+  created_at      DateTime?       @default(now()) @db.Timestamp(0)
+  updated_at      DateTime?       @updatedAt @db.Timestamp(0)
+  submission      TugasSubmission @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+  soal            TugasSoal       @relation(fields: [soal_id], references: [id], onDelete: Cascade)
+
+  @@unique([submission_id, soal_id], map: "unique_jawaban_per_soal")
+  @@index([submission_id])
+  @@index([soal_id])
+  @@map("tbl_tugas_jawaban_siswa")
 }
 
 model ChatRoom {

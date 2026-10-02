@@ -59,24 +59,24 @@ function createPrismaClient() {
   }
 }
 
-const PRISMA_SCHEMA_BUILD = "2026-09-30-chat-v2";
+const PRISMA_SCHEMA_BUILD = "2026-10-02-interactive-tasks-v2";
 
 // Pastikan instansiasi ulang jika schema berubah atau belum memiliki build version saat ini
-const existingPrisma =
-  globalForPrisma.prismaBuild === PRISMA_SCHEMA_BUILD
-    ? globalForPrisma.prisma
-    : undefined;
+const isPrismaValid =
+  globalForPrisma.prisma &&
+  globalForPrisma.prismaBuild === PRISMA_SCHEMA_BUILD &&
+  "tugasSoal" in globalForPrisma.prisma;
 
-if (globalForPrisma.prisma && globalForPrisma.prismaBuild !== PRISMA_SCHEMA_BUILD) {
+if (globalForPrisma.prisma && !isPrismaValid) {
   try {
     globalForPrisma.prisma.$disconnect().catch(() => {});
   } catch {}
+  globalForPrisma.prisma = undefined;
 }
 
-export const prisma =
-  existingPrisma && "pertemuan" in existingPrisma
-    ? existingPrisma
-    : createPrismaClient();
+export const prisma = isPrismaValid
+  ? (globalForPrisma.prisma as PrismaClient)
+  : createPrismaClient();
 
 // Selalu simpan di globalThis agar tidak membuat pool baru pada re-evaluasi server actions
 globalForPrisma.prisma = prisma;

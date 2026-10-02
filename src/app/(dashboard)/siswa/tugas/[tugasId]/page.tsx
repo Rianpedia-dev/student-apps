@@ -3,8 +3,7 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft } from "lucide-react";
-import { StudentTaskQuestionCard } from "@/components/features/assignment/student-task-question-card";
-import { KidsSubmissionZone } from "@/components/features/assignment/kids-submission-zone";
+import { StudentTaskLobbyCard } from "@/components/features/assignment/student-task-lobby-card";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +27,7 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
       mapel: true,
       kelas: true,
       guru: { select: { name: true, image: true, email: true } },
+      soal: { select: { id: true } },
       submissions: {
         where: { siswa_id: BigInt(session.id) },
       },
@@ -39,20 +39,17 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
   const sub = tugas.submissions[0];
   const existingSubmission = sub
     ? {
-        fileUrl: sub.file_url,
-        fileName: sub.file_name,
-        fileType: sub.file_type,
-        fileSize: sub.file_size,
-        attachments: sub.attachments,
-        catatanSiswa: sub.catatan_siswa,
+        id: sub.id.toString(),
         status: sub.status,
         nilai: sub.nilai,
         catatanGuru: sub.catatan_guru,
-        annotatedFileUrl: sub.annotated_file_url,
-        annotatedData: sub.annotated_data,
+        totalBenar: sub.total_benar ?? 0,
+        totalSalah: sub.total_salah ?? 0,
         submittedAt: sub.submitted_at.toISOString(),
       }
     : null;
+
+  const isLate = new Date() > new Date(tugas.deadline);
 
   const deadlineFormatted = new Date(tugas.deadline).toLocaleDateString("id-ID", {
     day: "numeric",
@@ -75,22 +72,18 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* Task Information & Zero-Download Question Viewer */}
-      <StudentTaskQuestionCard
+      {/* Task Lobby Card */}
+      <StudentTaskLobbyCard
+        tugasId={tugas.id.toString()}
+        judul={tugas.judul}
+        deskripsi={tugas.deskripsi}
         mapelNama={tugas.mapel.nama_mapel}
         kelasNama={tugas.kelas.nama_kelas}
         guruNama={tugas.guru.name}
-        judul={tugas.judul}
-        deskripsi={tugas.deskripsi}
         deadlineFormatted={deadlineFormatted}
-        poinMaksimal={tugas.poin_maksimal}
-        filePetunjuk={tugas.file_petunjuk}
-      />
-
-      {/* Kids-Friendly Multi-Attachment Submission & Correction Zone */}
-      <KidsSubmissionZone
-        tugasId={tugas.id.toString()}
-        tugasJudul={tugas.judul}
+        isLate={isLate}
+        totalSoal={tugas.soal.length}
+        durasiMenit={tugas.durasi_menit}
         poinMaksimal={tugas.poin_maksimal}
         existingSubmission={existingSubmission}
       />

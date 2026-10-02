@@ -163,7 +163,7 @@ export function TeacherTable({ initialTeachers }: { initialTeachers: UserItem[] 
                     <div className="flex items-center justify-center gap-1">
                       <Link href={`/admin/teachers/${t.id}`}>
                         <Button variant="ghost" size="icon-sm" className="h-8 w-8" title="Detail Guru">
-                          <Eye className="h-4 w-4 text-sky-600" />
+                          <Eye className="h-4 w-4 text-sky-600 dark:text-sky-400" />
                         </Button>
                       </Link>
 
@@ -171,7 +171,7 @@ export function TeacherTable({ initialTeachers }: { initialTeachers: UserItem[] 
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
+                        className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
                         title="Verifikasi Akun Guru"
                         onClick={() => {
                           setVerifyTarget(t);
@@ -184,7 +184,7 @@ export function TeacherTable({ initialTeachers }: { initialTeachers: UserItem[] 
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        className="h-8 w-8 text-rose-500 hover:bg-rose-50"
+                        className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
                         title="Hapus Akun"
                         onClick={() => setDeleteTarget(t)}
                       >

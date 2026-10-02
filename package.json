@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "postinstall": "prisma generate",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "seed:tugas": "tsx seed_tugas.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

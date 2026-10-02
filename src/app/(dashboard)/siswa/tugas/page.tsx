@@ -75,16 +75,16 @@ export default async function SiswaTugasListPage({ searchParams }: PageProps) {
       {/* Back Navigation */}
       <DashboardBreadcrumb
         backHref="/siswa/mapel"
-        backLabel="Jadwal & Mapel"
+        backLabel="Mapel & Tugas"
       />
 
       {/* Header */}
-      <div className="bg-card/60 backdrop-blur-xs p-5 rounded-2xl border border-border">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-          {mapelName ? `Tugas: ${mapelName}` : "Tugas Kelas"}
+      <div className="bg-card p-5 rounded-2xl border border-border shadow-2xs">
+        <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+          {mapelName ? `Tugas: ${mapelName}` : "Tugas & Evaluasi Belajar"}
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Lihat daftar tugas kelas, kumpulkan lembar tugas, dan periksa nilai dari guru.
+          Pantau seluruh penugasan kelas, kerjakan kuis interaktif, dan tinjau nilai hasil evaluasi belajarmu.
         </p>
       </div>
 

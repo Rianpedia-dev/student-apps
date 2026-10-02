@@ -144,7 +144,7 @@ export default async function GuruAttendanceTablePage(props: {
 
       {/* Scroll Hint on Mobile */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground sm:hidden px-1 bg-muted/40 py-1.5 rounded-lg border">
-        <span className="text-emerald-600 font-semibold px-1">↔</span>
+        <span className="text-emerald-600 dark:text-emerald-400 font-semibold px-1">↔</span>
         <span>Geser tabel ke samping untuk melihat seluruh tanggal & rekap</span>
       </div>
 

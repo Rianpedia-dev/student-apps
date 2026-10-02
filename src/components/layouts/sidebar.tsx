@@ -83,7 +83,7 @@ export function Sidebar({
   const guruMenu = [
     { label: "Dashboard", href: "/guru", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
     { label: "Profil Saya", href: "/guru/profile", icon: AccountIcon, iconColor: "text-amber-600" },
-    { label: "Jadwal & Mapel", href: "/guru/mapel", icon: BookOpen, iconColor: "text-teal-600" },
+    { label: "Mapel & Tugas", href: "/guru/mapel", icon: BookOpen, iconColor: "text-teal-600" },
     { label: "Chat Siswa", href: "/guru/chat", icon: MessageSquare, iconColor: "text-cyan-600" },
     { label: "Kelas Saya", href: "/guru/my-class", icon: School, iconColor: "text-emerald-500" },
     { label: "Absensi Kelas", href: "/guru/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
@@ -96,7 +96,7 @@ export function Sidebar({
   const siswaMenu = [
     { label: "Dashboard", href: "/siswa", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
     { label: "Profil Saya", href: "/siswa/profile", icon: AccountIcon, iconColor: "text-amber-600" },
-    { label: "Jadwal & Mapel", href: "/siswa/mapel", icon: BookOpen, iconColor: "text-teal-600" },
+    { label: "Mapel & Tugas", href: "/siswa/mapel", icon: BookOpen, iconColor: "text-teal-600" },
     { label: "Chat Guru", href: "/siswa/chat", icon: MessageSquare, iconColor: "text-cyan-600" },
     { label: "Kalender Kegiatan", href: "/siswa/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
     { label: "Riwayat Absensi", href: "/siswa/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },

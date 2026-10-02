@@ -215,98 +215,142 @@ export function StudentMeetingView({
             </div>
           ) : (
             /* DAFTAR PERTEMUAN MATERI */
-            <div className="space-y-3">
-              {filteredMeetings.map((meeting, index) => {
-                const isExpanded = expandedIds.has(meeting.id);
-                const isLatest = index === filteredMeetings.length - 1;
-                const youtubeEmbed = getYouTubeEmbedUrl(meeting.videoUrl);
+            <div className="relative">
+              {/* Timeline Connector Line */}
+              <div
+                className="absolute left-[25px] top-8 bottom-8 w-0.5 hidden md:block rounded-full pointer-events-none"
+                style={{
+                  background: "linear-gradient(180deg, #059669 0%, #10b981 50%, #059669 100%)",
+                }}
+              />
 
-                const dateFormatted = new Date(meeting.tanggal).toLocaleDateString("id-ID", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                });
+              <div className="space-y-4">
+                {filteredMeetings.map((meeting, index) => {
+                  const isExpanded = expandedIds.has(meeting.id);
+                  const isLatest = index === filteredMeetings.length - 1;
+                  const youtubeEmbed = getYouTubeEmbedUrl(meeting.videoUrl);
 
-                const hasFile = !!meeting.fileUrl;
-                const hasVideo = !!meeting.videoUrl;
-                const hasTasks = meeting.tugas.length > 0;
+                  const dateFormatted = new Date(meeting.tanggal).toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  });
 
-                return (
-                  <div
-                    key={meeting.id}
-                    className={`
-                      rounded-2xl border bg-card transition-all duration-200 shadow-2xs overflow-hidden
-                      ${
-                        isLatest
-                          ? "border-primary/40 ring-1 ring-primary/20"
-                          : "border-border/80 hover:border-primary/30"
-                      }
-                    `}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    {/* CARD HEADER (Clickable to Expand / Collapse) */}
+                  const hasFile = !!meeting.fileUrl;
+                  const hasVideo = !!meeting.videoUrl;
+                  const hasTasks = meeting.tugas.length > 0;
+
+                  return (
                     <div
-                      onClick={() => toggleExpand(meeting.id)}
-                      className="p-3.5 sm:p-4 cursor-pointer select-none transition-colors hover:bg-muted/15"
+                      key={meeting.id}
+                      className="relative group"
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                        {/* Left: Session badge, Date, Title */}
-                        <div className="space-y-1.5 flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-primary/10 text-primary border border-primary/20 shrink-0">
-                              Pertemuan {meeting.pertemuanKe}
-                            </span>
-
-                            <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 bg-muted/40 px-2 py-0.5 rounded-md">
-                              <Calendar className="h-3 w-3 text-primary shrink-0" />
-                              <span>{dateFormatted}</span>
-                            </span>
-
-                            {isLatest && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">
-                                <Sparkles className="h-3 w-3 animate-pulse" />
-                                <span>Materi Pekan Ini</span>
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 className="text-sm sm:text-base font-bold text-foreground leading-snug tracking-tight">
-                            {meeting.judul}
-                          </h3>
+                      {/* Session Number Squircle - Desktop Timeline */}
+                      <div className="absolute left-0 top-4 hidden md:flex items-center justify-center z-10">
+                        <div
+                          className={`
+                            h-[52px] w-[52px] rounded-2xl flex items-center justify-center
+                            text-xl font-black shadow-md shadow-emerald-700/20
+                            transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg select-none
+                            ${
+                              isLatest
+                                ? "bg-emerald-600 text-white ring-2 ring-emerald-400/40"
+                                : "bg-emerald-600 text-white"
+                            }
+                          `}
+                        >
+                          {String(meeting.pertemuanKe).padStart(2, "0")}
                         </div>
+                      </div>
+
+                      {/* Card */}
+                      <div
+                        className={`
+                          relative ml-0 md:ml-[72px] rounded-2xl border bg-card transition-all duration-200 shadow-2xs overflow-hidden
+                          ${
+                            isLatest
+                              ? "border-primary/40 ring-1 ring-primary/20"
+                              : "border-border/80 hover:border-primary/30"
+                          }
+                        `}
+                      >
+                        {/* CARD HEADER (Clickable to Expand / Collapse) */}
+                        <div
+                          onClick={() => toggleExpand(meeting.id)}
+                          className="p-3.5 sm:p-4 cursor-pointer select-none transition-colors hover:bg-muted/15"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            {/* Left: Mobile Session Number, Session badge, Date, Title */}
+                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                              {/* Mobile session number */}
+                              <div className="md:hidden h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs select-none mt-0.5">
+                                {String(meeting.pertemuanKe).padStart(2, "0")}
+                              </div>
+
+                              <div className="space-y-1.5 flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Badge variant="emerald" size="sm" className="font-bold">
+                                    Pertemuan {meeting.pertemuanKe}
+                                  </Badge>
+
+                                  <Badge variant="outline" size="sm" className="gap-1 font-medium text-muted-foreground">
+                                    <Calendar className="h-3 w-3 text-primary shrink-0" />
+                                    <span>{dateFormatted}</span>
+                                  </Badge>
+
+                                  {isLatest && (
+                                    <Badge variant="sky" size="sm" className="gap-1">
+                                      <Sparkles className="h-3 w-3 animate-pulse" />
+                                      <span>Materi Pekan Ini</span>
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                <h3 className="text-sm sm:text-base font-bold text-foreground leading-snug tracking-tight">
+                                  {meeting.judul}
+                                </h3>
+                              </div>
+                            </div>
 
                         {/* Right: Media & Task Badges + Chevron */}
                         <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                           <div className="flex items-center gap-1.5 text-xs">
                             {hasFile && (
-                              <span
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 font-bold text-[11px] border border-emerald-500/20"
+                              <Badge
+                                variant="teal"
+                                size="xs"
+                                className="gap-1"
                                 title="Modul Dokumen Ajar Tersedia"
                               >
                                 <FileText className="h-3 w-3" />
                                 <span>Modul</span>
-                              </span>
+                              </Badge>
                             )}
 
                             {hasVideo && (
-                              <span
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-red-500/10 text-red-500 font-bold text-[11px] border border-red-500/20"
+                              <Badge
+                                variant="rose"
+                                size="xs"
+                                className="gap-1"
                                 title="Video Penjelasan Tersedia"
                               >
                                 <Video className="h-3 w-3" />
                                 <span>Video</span>
-                              </span>
+                              </Badge>
                             )}
 
                             {hasTasks && (
-                              <span
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 font-bold text-[11px] border border-amber-500/20"
+                              <Badge
+                                variant="amber"
+                                size="xs"
+                                className="gap-1"
                                 title="Terdapat Latihan Soal/Tugas"
                               >
                                 <FileCheck className="h-3 w-3" />
                                 <span>{meeting.tugas.length} Tugas</span>
-                              </span>
+                              </Badge>
                             )}
                           </div>
 
@@ -481,21 +525,22 @@ export function StudentMeetingView({
                                 >
                                   <div className="space-y-1 min-w-0 flex-1">
                                     <div className="flex items-center flex-wrap gap-2">
-                                      <span
-                                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${
+                                      <Badge
+                                        variant={
                                           t.isGraded
-                                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/25"
+                                            ? "success"
                                             : t.isPending
-                                            ? "bg-blue-500/10 text-blue-600 border-blue-500/25"
-                                            : "bg-amber-500/10 text-amber-600 border-amber-500/25"
-                                        }`}
+                                            ? "sky"
+                                            : "amber"
+                                        }
+                                        size="xs"
                                       >
                                         {t.isGraded
                                           ? `Nilai: ${t.nilai} / ${t.poinMaksimal} ⭐`
                                           : t.isPending
                                           ? "Sedang Dinilai ⏳"
                                           : "Belum Dikerjakan 🚀"}
-                                      </span>
+                                      </Badge>
 
                                       <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
                                         <Clock className="h-3 w-3" />
@@ -538,10 +583,12 @@ export function StudentMeetingView({
                       </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
         </div>
       )}
 

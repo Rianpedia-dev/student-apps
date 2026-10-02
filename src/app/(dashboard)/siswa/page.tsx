@@ -2,13 +2,14 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Trophy } from "lucide-react";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getUserProfileImage } from "@/lib/utils";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import {
   IslamicMosaicPattern,
   IslamicStarGeometricPattern,
@@ -35,6 +36,7 @@ export default async function SiswaDashboardPage() {
   let totalEventsMonth = 0;
   let classmates: any[] = [];
   let announcements: any[] = [];
+  let achievements: any[] = [];
   let studentImage: string | null = session.image || null;
   let studentNis = session.nis || "-";
   let studentName = session.name || "Siswa";
@@ -53,7 +55,7 @@ export default async function SiswaDashboardPage() {
   const todayDayName = DAY_NAMES[now.getDay()];
 
   try {
-    const [dbUser, dbKelas, dbHadirMonth, dbEventsMonth, dbClassmates, dbAnnounce] =
+    const [dbUser, dbKelas, dbHadirMonth, dbEventsMonth, dbClassmates, dbAnnounce, dbAchieve] =
       await Promise.all([
         userIdBigInt
           ? prisma.user.findUnique({
@@ -110,6 +112,10 @@ export default async function SiswaDashboardPage() {
           orderBy: { id: "desc" },
           take: 10,
         }).catch(() => []),
+        prisma.prestasi.findMany({
+          orderBy: { created_at: "desc" },
+          take: 5,
+        }).catch(() => []),
       ]);
 
     const normalizeName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -127,6 +133,60 @@ export default async function SiswaDashboardPage() {
     totalEventsMonth = dbEventsMonth || 0;
     classmates = dbClassmates || [];
     announcements = dbAnnounce || [];
+
+    // Fetch student profile data for dashboard achievements
+    const achieveUserIds = (dbAchieve || [])
+      .map((a: any) => {
+        try {
+          const n = BigInt(a.id_user);
+          return n > BigInt(0) ? n : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter((id: any): id is bigint => id !== null);
+
+    const achieveNames = (dbAchieve || []).map((a: any) => a.nama).filter(Boolean);
+
+    const matchedAchieveUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          ...(achieveUserIds.length > 0 ? [{ id: { in: achieveUserIds } }] : []),
+          ...(achieveNames.length > 0 ? [{ name: { in: achieveNames } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        gender: true,
+        image: true,
+      },
+    }).catch(() => []);
+
+    const achieveUserById = new Map<string, (typeof matchedAchieveUsers)[0]>();
+    const achieveUserByName = new Map<string, (typeof matchedAchieveUsers)[0]>();
+    for (const u of matchedAchieveUsers) {
+      achieveUserById.set(u.id.toString(), u);
+      achieveUserByName.set(u.name.trim().toLowerCase(), u);
+    }
+
+    achievements = (dbAchieve || []).map((ach: any) => {
+      const studentUser = achieveUserById.get(ach.id_user) || achieveUserByName.get(ach.nama.trim().toLowerCase());
+      const studentImg =
+        studentUser?.image ||
+        (ach.fotoanak &&
+        !ach.fotoanak.includes("trophy") &&
+        !ach.fotoanak.includes("best-student") &&
+        !ach.fotoanak.includes("best-point")
+          ? ach.fotoanak
+          : null);
+
+      return {
+        ...ach,
+        studentImage: studentImg,
+        studentGender: studentUser?.gender || null,
+      };
+    });
 
     // Student identity info
     studentImage = getUserProfileImage(dbUser?.image || session.image, dbUser?.gender || (session as any).gender);
@@ -319,28 +379,24 @@ export default async function SiswaDashboardPage() {
         <StatCard
           title="Hadir Bulan Ini"
           value={`${totalHadirMonth} Hari`}
-          description="Total kehadiran bulan ini"
           variant="amber"
           href="/siswa/attendance"
         />
         <StatCard
           title="Kegiatan Bulan Ini"
           value={`${totalEventsMonth} Kegiatan`}
-          description="Agenda kalender sekolah"
           variant="accent"
           href="/siswa/calendar"
         />
         <StatCard
           title="Tugas Aktif"
           value={`${pendingTasksCount} Tugas`}
-          description="Tugas perlu dikerjakan"
           variant="rose"
           href="/siswa/mapel"
         />
         <StatCard
           title="Mata Pelajaran"
           value={`${totalMapelCount} Mapel`}
-          description="Total mata pelajaran"
           variant="primary"
           href="/siswa/mapel"
         />
@@ -374,9 +430,9 @@ export default async function SiswaDashboardPage() {
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-xs tracking-tight">
+                    <Badge variant="outline" size="xs">
                       {subj.waktu}
-                    </span>
+                    </Badge>
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {subj.activeTasksCount > 0 && (
@@ -427,10 +483,10 @@ export default async function SiswaDashboardPage() {
         )}
       </div>
 
-      {/* 2 Columns: Announcements + Banner Sekolah */}
+      {/* 2 Columns: Announcements + Prestasi Terkini & Banner Sekolah */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Timeline Pengumuman */}
-        <div className="space-y-3.5 lg:col-span-8">
+        <div className="space-y-3.5 lg:col-span-7">
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Pengumuman Sekolah & Kelas</h2>
           </div>
@@ -441,8 +497,52 @@ export default async function SiswaDashboardPage() {
           />
         </div>
 
-        {/* Official Al-Azhar School Motto Banner */}
-        <div className="space-y-6 lg:col-span-4">
+        {/* Right side: Prestasi Siswa & Banner Motto */}
+        <div className="space-y-6 lg:col-span-5">
+          {/* Prestasi Terkini Section */}
+          <Card className="border border-amber-500/20 rounded-xl shadow-xs">
+            <CardHeader className="pb-3 border-b border-border/50">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-amber-500" />
+                  <span>Prestasi Terkini</span>
+                </CardTitle>
+                <Badge variant="outline" size="xs">
+                  Siswa Berprestasi
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {achievements.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4 italic">
+                  Belum ada prestasi siswa dicatat.
+                </p>
+              ) : (
+                achievements.map((ach) => (
+                  <div
+                    key={ach.id.toString()}
+                    className="flex items-center gap-3 rounded-lg border p-2.5 text-xs transition-colors hover:bg-muted/30"
+                  >
+                    <div className="shrink-0">
+                      <UserAvatar
+                        src={ach.studentImage}
+                        gender={ach.studentGender}
+                        name={ach.nama}
+                        className="h-9 w-9 rounded-lg object-cover border border-border shadow-xs"
+                        previewable={true}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-foreground truncate">{ach.prestasi}</p>
+                      <p className="text-muted-foreground truncate">{ach.nama} • {ach.kelas}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Official Al-Azhar School Motto Banner */}
           <Card className="border border-border/80 bg-white/95 dark:bg-card/95 rounded-2xl shadow-xs overflow-hidden">
             <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-amber-500 to-sky-500" />
             <CardContent className="p-4 flex flex-col items-center justify-center">

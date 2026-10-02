@@ -2,9 +2,11 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Clock, FileCheck, FileText, Download } from "lucide-react";
+import { Clock, Edit3, HelpCircle, Award, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { TeacherSubmissionsView, StudentSubmissionItem } from "@/components/features/assignment/teacher-submissions-view";
 import { DashboardBreadcrumb } from "@/components/shared/dashboard-breadcrumb";
 
@@ -41,6 +43,15 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
           pertemuan_ke: true,
           judul: true,
         },
+      },
+      soal: {
+        select: {
+          id: true,
+          nomor_urut: true,
+          tipe_soal: true,
+          bobot_poin: true,
+        },
+        orderBy: { nomor_urut: "asc" },
       },
       submissions: {
         include: {
@@ -116,81 +127,77 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
   const backHref = isFromMapel
     ? "/guru/mapel"
     : `/guru/tugas?mapelId=${tugas.mapel_id}&kelasId=${tugas.kelas_id}`;
-  const backLabel = isFromMapel ? "Kembali ke Jadwal & Mapel" : "Kembali ke Daftar Tugas";
+  const backLabel = isFromMapel ? "Kembali ke Mapel & Tugas" : "Kembali ke Daftar Tugas";
+
+  const deadlineFormatted = new Date(tugas.deadline).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
-      {/* Back Navigation */}
-      <DashboardBreadcrumb
-        backHref={backHref}
-        backLabel={backLabel}
-      />
+      <DashboardBreadcrumb backHref={backHref} backLabel={backLabel} />
 
-      {/* Header Info Banner */}
-      <div className="bg-card/70 backdrop-blur-xs border border-border rounded-2xl p-5 sm:p-6 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
-                {tugas.mapel.nama_mapel}
-              </span>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-lg bg-muted text-foreground border border-border">
-                {tugas.kelas.nama_kelas}
-              </span>
-              {tugas.pertemuan && (
-                <Badge variant="sky" size="xs">
-                  Pertemuan {tugas.pertemuan.pertemuan_ke}: {tugas.pertemuan.judul}
-                </Badge>
-              )}
+      {/* Header Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary" size="sm">{tugas.mapel.nama_mapel}</Badge>
+                <Badge variant="outline" size="sm">{tugas.kelas.nama_kelas}</Badge>
+              </div>
+              <CardTitle className="text-xl sm:text-2xl">{tugas.judul}</CardTitle>
             </div>
-
-            <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">
-              {tugas.judul}
-            </h1>
+            <Link href={`/guru/tugas/${tugasId}/edit`}>
+              <Button variant="outline" size="sm" className="text-xs gap-1.5">
+                <Edit3 className="h-3.5 w-3.5" />
+                Edit Soal
+              </Button>
+            </Link>
           </div>
-
-          <div className="text-xs text-muted-foreground flex items-center gap-1.5 bg-muted/40 px-3 py-1.5 rounded-xl border border-border/50 shrink-0">
-            <Clock className="h-4 w-4 text-primary" />
-            <span>
-              Tenggat:{" "}
-              <strong className="text-foreground">
-                {new Date(tugas.deadline).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+          {tugas.deskripsi && (
+            <CardDescription className="whitespace-pre-line mt-2">
+              {tugas.deskripsi}
+            </CardDescription>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <HelpCircle className="h-3 w-3" /> Soal
+              </span>
+              <strong className="text-foreground block">{tugas.soal.length} Butir</strong>
+            </div>
+            <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" /> Durasi
+              </span>
+              <strong className="text-foreground block">
+                {tugas.durasi_menit ? `${tugas.durasi_menit} Menit` : "Tanpa Batas"}
               </strong>
-            </span>
+            </div>
+            <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Award className="h-3 w-3" /> Skor Maks
+              </span>
+              <strong className="text-foreground block">{tugas.poin_maksimal} Poin</strong>
+            </div>
+            <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Layers className="h-3 w-3" /> Deadline
+              </span>
+              <strong className="text-foreground block truncate">{deadlineFormatted}</strong>
+            </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Deskripsi / Instruksi Tugas */}
-        {tugas.deskripsi && (
-          <div className="text-xs sm:text-sm text-muted-foreground bg-muted/20 p-3.5 rounded-xl border border-border/40 whitespace-pre-line leading-relaxed">
-            {tugas.deskripsi}
-          </div>
-        )}
-
-        {/* Lampiran File Petunjuk Guru (jika ada) */}
-        {tugas.file_petunjuk && (
-          <div className="flex items-center gap-2 pt-1">
-            <a
-              href={tugas.file_petunjuk}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/25 text-primary text-xs font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span>Unduh File Petunjuk / Lembar Kerja</span>
-              <Download className="h-3 w-3 ml-0.5" />
-            </a>
-          </div>
-        )}
-      </div>
-
-      {/* Daftar Pengumpulan Siswa & Modal Koreksi Langsung */}
+      {/* Submissions */}
       <TeacherSubmissionsView
         tugasId={tugas.id.toString()}
         tugasJudul={tugas.judul}

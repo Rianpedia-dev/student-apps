@@ -372,7 +372,7 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-red-600">Konfirmasi Hapus</DialogTitle>
+            <DialogTitle className="text-sm font-bold text-red-600 dark:text-red-400">Konfirmasi Hapus</DialogTitle>
           </DialogHeader>
           <p className="text-xs text-muted-foreground">
             Apakah Anda yakin ingin menghapus mata pelajaran <strong>{deleteTarget?.nama}</strong>? Jadwal yang terhubung akan ikut terhapus.

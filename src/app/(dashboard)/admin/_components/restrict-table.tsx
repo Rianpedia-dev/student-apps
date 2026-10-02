@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Edit2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -91,9 +92,13 @@ export function AdminRestrictTable({ initialData }: { initialData: RestrictRow[]
                     <span>{item.nama_kelas}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-block rounded-md bg-emerald-50 px-2.5 py-1 font-mono text-xs font-bold text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-                      {item.code_restrict || "-"}
-                    </span>
+                    {item.code_restrict ? (
+                      <Badge variant="amber" size="sm" className="font-mono">
+                        {item.code_restrict}
+                      </Badge>
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground/60">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     <Button

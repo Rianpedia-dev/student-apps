@@ -162,7 +162,7 @@ export default async function AdminClassDetailPage(props: {
                       <TableCell className="text-center">
                         <Link
                           href={`/admin/students/${s.id}`}
-                          className="text-xs text-sky-600 hover:underline font-medium"
+                          className="text-xs text-sky-600 dark:text-sky-400 hover:underline font-medium"
                         >
                           Detail
                         </Link>

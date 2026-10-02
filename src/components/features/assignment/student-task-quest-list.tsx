@@ -1,20 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import {
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  FileText,
-  ArrowRight,
-  Sparkles,
-  Trophy,
-  BookOpen,
-  Calendar,
-  Compass,
-} from "lucide-react";
+import { Clock, Search, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { getStatusConfig, getDeadlineInfo } from "@/lib/task-status";
 
 export interface StudentTaskItem {
   id: string;
@@ -34,235 +29,199 @@ export interface StudentTaskItem {
 
 interface StudentTaskQuestListProps {
   tasks: StudentTaskItem[];
-  studentName?: string;
 }
 
-export function StudentTaskQuestList({ tasks, studentName }: StudentTaskQuestListProps) {
-  const [activeTab, setActiveTab] = useState<"belum" | "menunggu" | "dinilai">(() => {
-    if (tasks.some((t) => !t.submission || t.submission.status === "perlu_revisi")) return "belum";
-    if (tasks.some((t) => t.submission && (t.submission.status === "menunggu_penilaian" || t.submission.status === "terlambat"))) return "menunggu";
-    if (tasks.some((t) => t.submission && t.submission.status === "sudah_dinilai")) return "dinilai";
-    return "belum";
-  });
+/** Maps a submission record to the appropriate status string */
+function resolveStatus(task: StudentTaskItem): string {
+  if (!task.submission) return "belum_mengumpulkan";
+  return task.submission.status;
+}
 
-  const pendingTasks = tasks.filter((t) => !t.submission || t.submission.status === "perlu_revisi");
-  const waitingTasks = tasks.filter(
-    (t) => t.submission && (t.submission.status === "menunggu_penilaian" || t.submission.status === "terlambat")
-  );
-  const gradedTasks = tasks.filter((t) => t.submission && t.submission.status === "sudah_dinilai");
+/** Determines the correct CTA link based on task status */
+function getTaskHref(task: StudentTaskItem): string {
+  const status = resolveStatus(task);
+  if (status === "sudah_dinilai" || status === "selesai") {
+    return `/siswa/tugas/${task.id}/hasil`;
+  }
+  return `/siswa/tugas/${task.id}`;
+}
 
-  const filteredTasks = tasks.filter((task) => {
-    if (activeTab === "belum") return !task.submission || task.submission.status === "perlu_revisi";
-    if (activeTab === "menunggu") {
-      return task.submission && (task.submission.status === "menunggu_penilaian" || task.submission.status === "terlambat");
+/** Returns the CTA button label */
+function getCtaLabel(status: string): string {
+  switch (status) {
+    case "sudah_dinilai":
+    case "selesai":
+      return "Lihat Nilai";
+    case "sedang_mengerjakan":
+      return "Lanjutkan";
+    case "menunggu_penilaian":
+    case "terlambat":
+      return "Lihat Jawaban";
+    case "perlu_revisi":
+      return "Perbaiki";
+    default:
+      return "Kerjakan";
+  }
+}
+
+export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const counts = useMemo(() => {
+    let belum = 0;
+    let menunggu = 0;
+    let dinilai = 0;
+    for (const t of tasks) {
+      const s = resolveStatus(t);
+      if (!t.submission || s === "sedang_mengerjakan" || s === "perlu_revisi") belum++;
+      else if (s === "menunggu_penilaian" || s === "terlambat") menunggu++;
+      else if (s === "sudah_dinilai" || s === "selesai") dinilai++;
     }
-    if (activeTab === "dinilai") return task.submission && task.submission.status === "sudah_dinilai";
-    return false;
-  });
+    return { belum, menunggu, dinilai };
+  }, [tasks]);
 
-  const getMapelIcon = (name: string) => {
-    const lower = name.toLowerCase();
-    if (lower.includes("matematika") || lower.includes("math")) return "📐";
-    if (lower.includes("agama") || lower.includes("pai") || lower.includes("qur'an") || lower.includes("tahfidz")) return "🕌";
-    if (lower.includes("ipa") || lower.includes("sains") || lower.includes("biologi") || lower.includes("fisika")) return "🔬";
-    if (lower.includes("ips") || lower.includes("sejarah") || lower.includes("geografi")) return "🌍";
-    if (lower.includes("arab")) return "📖";
-    if (lower.includes("inggris") || lower.includes("english")) return "💬";
-    if (lower.includes("indonesia")) return "📝";
-    if (lower.includes("pjok") || lower.includes("olahraga")) return "⚽";
-    if (lower.includes("seni") || lower.includes("budaya") || lower.includes("prakarya")) return "🎨";
-    if (lower.includes("tik") || lower.includes("komputer") || lower.includes("informatika")) return "💻";
-    return "📚";
+  const filterTasks = (tab: string) => {
+    return tasks.filter((task) => {
+      // Tab filter
+      const s = resolveStatus(task);
+      if (tab === "belum") {
+        if (task.submission && s !== "sedang_mengerjakan" && s !== "perlu_revisi") return false;
+      }
+      if (tab === "menunggu") {
+        if (s !== "menunggu_penilaian" && s !== "terlambat") return false;
+      }
+      if (tab === "dinilai") {
+        if (s !== "sudah_dinilai" && s !== "selesai") return false;
+      }
+
+      // Search filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          task.judul.toLowerCase().includes(q) ||
+          task.mapelNama.toLowerCase().includes(q) ||
+          task.guruNama.toLowerCase().includes(q)
+        );
+      }
+
+      return true;
+    });
   };
 
-  const formatDeadline = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr);
-      const now = new Date();
-      const isToday = d.toDateString() === now.toDateString();
+  const renderTaskList = (tab: string) => {
+    const filtered = filterTasks(tab);
 
-      const timeStr = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-      if (isToday) return `Hari ini, pukul ${timeStr}`;
-
-      return d.toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* FILTER TABS */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar -mx-1 px-1 touch-pan-x">
-        <button
-          type="button"
-          onClick={() => setActiveTab("belum")}
-          className={`px-3.5 py-2 text-xs font-bold rounded-2xl transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${activeTab === "belum"
-              ? "bg-amber-500 text-white shadow-sm scale-102"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-        >
-          <span>🎯 Dikerjakan</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === "belum" ? "bg-white/30 text-white" : "bg-amber-500/10 text-amber-600"
-            }`}>
-            {pendingTasks.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("menunggu")}
-          className={`px-3.5 py-2 text-xs font-bold rounded-2xl transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${activeTab === "menunggu"
-              ? "bg-sky-600 text-white shadow-sm scale-102"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-        >
-          <span>⏳ Diperiksa</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === "menunggu" ? "bg-white/30 text-white" : "bg-sky-500/10 text-sky-600"
-            }`}>
-            {waitingTasks.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("dinilai")}
-          className={`px-3.5 py-2 text-xs font-bold rounded-2xl transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${activeTab === "dinilai"
-              ? "bg-emerald-600 text-white shadow-sm scale-102"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-        >
-          <span>⭐ Selesai</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === "dinilai" ? "bg-white/30 text-white" : "bg-emerald-500/10 text-emerald-600"
-            }`}>
-            {gradedTasks.length}
-          </span>
-        </button>
-      </div>
-
-      {/* 3. QUEST CARDS GRID */}
-      {filteredTasks.length === 0 ? (
-        <div className="py-14 text-center rounded-3xl card-elevation space-y-3">
-          <div className="w-16 h-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl">
-            {activeTab === "belum" ? "🎉" : activeTab === "dinilai" ? "📝" : "✨"}
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-foreground">
-              {activeTab === "belum"
-                ? "Hebat! Semua tugas sudah dikerjakan!"
-                : activeTab === "menunggu"
-                  ? "Tidak ada tugas yang sedang menunggu nilai."
-                  : activeTab === "dinilai"
-                    ? "Belum ada tugas yang dinilai oleh guru."
-                    : "Belum ada tugas yang aktif saat ini."}
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-              {activeTab === "belum"
-                ? "Pertahankan prestasimu dan nikmati waktu belajarmu dengan gembira!"
-                : "Periksa kembali secara berkala untuk misi belajar terbaru dari sekolah."}
+    if (filtered.length === 0) {
+      return (
+        <Card>
+          <CardContent className="py-14 text-center space-y-2">
+            <BookOpen className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+            <p className="text-sm font-semibold text-foreground">
+              {tab === "belum" ? "Semua tugas sudah selesai!" : "Tidak ada tugas di kategori ini."}
             </p>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
-          {filteredTasks.map((task) => {
-            const sub = task.submission;
-            const isGraded = sub?.status === "sudah_dinilai";
-            const isRevision = sub?.status === "perlu_revisi";
-            const isWaiting = sub?.status === "menunggu_penilaian" || sub?.status === "terlambat";
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+              {tab === "belum"
+                ? "Alhamdulillah, tidak ada tugas yang perlu dikerjakan."
+                : "Coba ubah kata kunci pencarian atau pilih tab lain."}
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
 
-            const icon = getMapelIcon(task.mapelNama);
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {filtered.map((task) => {
+          const status = resolveStatus(task);
+          const config = getStatusConfig(status);
+          const { label: deadlineLabel, isLate } = getDeadlineInfo(task.deadline);
+          const href = getTaskHref(task);
+          const StatusIcon = config.icon;
 
-            return (
-              <div
-                key={task.id}
-                className="card-elevation card-elevation-hover rounded-3xl p-4 sm:p-5 flex flex-col justify-between gap-4 transition-all duration-200 group relative overflow-hidden"
-              >
-                <div className="space-y-3">
-                  {/* Top Bar: Subject Badge + Status Badge */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-muted/80 text-foreground font-bold text-xs min-w-0">
-                      <span className="shrink-0">{icon}</span>
-                      <span className="truncate">{task.mapelNama}</span>
-                    </div>
+          return (
+            <Card key={task.id} enableHover className="flex flex-col justify-between">
+              <CardContent className="p-4 sm:p-5 space-y-3 flex-1 flex flex-col">
+                {/* Top: Subject + Status */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-muted-foreground truncate flex items-center gap-1.5">
+                    <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                    {task.mapelNama}
+                  </span>
 
-                    {!isGraded && (
-                      <div className="shrink-0">
-                        {isRevision ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/30 whitespace-nowrap">
-                            <span>✏️</span>
-                            <span>Perlu Revisi</span>
-                          </span>
-                        ) : isWaiting ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 whitespace-nowrap">
-                            <span>⏳</span>
-                            <span>Diperiksa</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
-                            <span>🎯</span>
-                            <span>Misi Baru</span>
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Title */}
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">
-                      {task.judul}
-                    </h3>
-                  </div>
+                  <Badge variant={config.variant} size="sm" className="gap-1 shrink-0">
+                    <StatusIcon className="h-3 w-3" />
+                    <span>
+                      {status === "sudah_dinilai" && task.submission?.nilai != null
+                        ? `Nilai: ${task.submission.nilai}`
+                        : config.label}
+                    </span>
+                  </Badge>
                 </div>
 
-                {/* Footer Info & Action (Button Underneath) */}
-                <div className="pt-3 border-t border-border/70 flex flex-col gap-3">
-                  <div className="space-y-1.5 text-xs min-w-0">
-                    <div className="flex items-center gap-1.5 text-foreground/85 font-medium">
-                      <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="truncate">{formatDeadline(task.deadline)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
-                      <span className="shrink-0 text-muted-foreground/75">Guru:</span>
-                      <span className="font-semibold text-foreground truncate">{task.guruNama}</span>
-                    </div>
-                  </div>
+                {/* Title */}
+                <Link href={href} className="block flex-1">
+                  <h3 className="text-sm sm:text-base font-bold text-foreground line-clamp-2 leading-snug hover:text-primary transition-colors">
+                    {task.judul}
+                  </h3>
+                </Link>
 
-                  <Link href={`/siswa/tugas/${task.id}`} className="w-full">
-                    <Button
-                      size="sm"
-                      className={`w-full text-xs h-9 px-4 rounded-xl font-bold shadow-2xs transition-all active:scale-95 ${isGraded
-                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                          : isRevision
-                            ? "bg-orange-500 hover:bg-orange-600 text-white"
-                            : isWaiting
-                              ? "bg-muted text-foreground hover:bg-muted/80 border border-border"
-                              : "bg-primary hover:bg-primary/90 text-white"
-                        }`}
-                    >
-                      <span className="whitespace-nowrap">
-                        {isGraded
-                          ? "Bintang & Nilai"
-                          : isRevision
-                            ? "Poles & Kirim Ulang"
-                            : isWaiting
-                              ? "Cek Lembar Tugas"
-                              : "Mulai Kerjakan"}
-                      </span>
+                {/* Bottom: Deadline + CTA */}
+                <Separator />
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`text-xs flex items-center gap-1.5 truncate ${isLate ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    {deadlineLabel}
+                  </span>
+
+                  <Link href={href} className="shrink-0">
+                    <Button size="sm" variant={status === "sudah_dinilai" || status === "selesai" ? "outline" : "default"} className="text-xs h-8 rounded-lg font-semibold">
+                      {getCtaLabel(status)}
                     </Button>
                   </Link>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Cari tugas atau mata pelajaran..."
+          className="pl-9 pr-8 h-10 text-sm rounded-lg"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Tabs + Content */}
+      <Tabs defaultValue="semua">
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="semua">Semua ({tasks.length})</TabsTrigger>
+          <TabsTrigger value="belum">Belum ({counts.belum})</TabsTrigger>
+          <TabsTrigger value="menunggu">Diperiksa ({counts.menunggu})</TabsTrigger>
+          <TabsTrigger value="dinilai">Tuntas ({counts.dinilai})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="semua">{renderTaskList("semua")}</TabsContent>
+        <TabsContent value="belum">{renderTaskList("belum")}</TabsContent>
+        <TabsContent value="menunggu">{renderTaskList("menunggu")}</TabsContent>
+        <TabsContent value="dinilai">{renderTaskList("dinilai")}</TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -154,7 +154,7 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
   function FolderCard(
     {
       title = "Card Title",
-      subtitle = "Deskripsi",
+      subtitle = "",
       count = "0",
       countLabel = "",
       meta = "",
@@ -256,8 +256,22 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
                 </svg>
 
                 {/* Title & Subtitle inside the tab */}
-                <div className="absolute left-[5.2cqw] top-[30cqw] max-w-[65%] leading-tight pointer-events-auto">
-                  <h3 className="m-0 text-[clamp(11px,4.5cqw,17px)] font-bold tracking-[0.01em] text-[var(--folder-card-title)] line-clamp-1">
+                <div
+                  className={cn(
+                    "absolute max-w-[72%] leading-tight pointer-events-auto",
+                    subtitle
+                      ? "left-[5.2cqw] top-[30cqw]"
+                      : "left-[6.8cqw] top-[32.5cqw]"
+                  )}
+                >
+                  <h3
+                    className={cn(
+                      "m-0 font-bold tracking-[0.01em] text-[var(--folder-card-title)]",
+                      subtitle
+                        ? "text-[clamp(11px,4.5cqw,17px)] line-clamp-1"
+                        : "text-[clamp(13px,5.6cqw,20px)] font-extrabold line-clamp-2"
+                    )}
+                  >
                     {title}
                   </h3>
                   {subtitle && (
@@ -270,13 +284,34 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
             </div>
 
             {/* footer stays put while the folder front slides */}
-            <div className="absolute inset-x-[5.2cqw] bottom-[4.8cqw] flex items-baseline justify-between leading-none text-[var(--folder-card-title)]">
-              <div className="m-0 flex items-baseline gap-[1.5cqw]">
-                <span className="text-[clamp(18px,9.2cqw,36px)] font-extrabold tracking-[-0.02em]">
+            <div
+              className={cn(
+                "absolute flex items-baseline justify-between leading-none text-[var(--folder-card-title)]",
+                subtitle
+                  ? "inset-x-[5.2cqw] bottom-[4.8cqw]"
+                  : "inset-x-[6.8cqw] bottom-[6.5cqw]"
+              )}
+            >
+              <div className="m-0 flex items-baseline gap-[1.8cqw]">
+                <span
+                  className={cn(
+                    "font-extrabold tracking-[-0.02em]",
+                    subtitle
+                      ? "text-[clamp(18px,9.2cqw,36px)]"
+                      : "text-[clamp(21px,10.6cqw,40px)]"
+                  )}
+                >
                   {count}
                 </span>
                 {countLabel && (
-                  <span className="text-[clamp(10px,4.2cqw,14px)] font-medium text-[var(--folder-card-subtitle)]">
+                  <span
+                    className={cn(
+                      "font-semibold text-[var(--folder-card-subtitle)]",
+                      subtitle
+                        ? "text-[clamp(10px,4.2cqw,14px)] font-medium"
+                        : "text-[clamp(11.5px,4.6cqw,16px)]"
+                    )}
+                  >
                     {countLabel}
                   </span>
                 )}

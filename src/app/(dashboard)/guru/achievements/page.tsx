@@ -231,7 +231,7 @@ export default async function GuruAchievementsPage() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        className="h-8 w-8 text-rose-500 hover:bg-rose-50 shrink-0"
+                        className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20 shrink-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

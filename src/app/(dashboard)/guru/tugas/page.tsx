@@ -89,7 +89,7 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
   const tasks: TeacherTaskItem[] = rawTasks.map((task) => {
     const totalSubs = task.submissions.length;
     const waiting = task.submissions.filter(
-      (s) => s.status === "menunggu_penilaian" || s.status === "terlambat"
+      (s) => s.status === "menunggu_penilaian" || s.status === "terlambat" || s.status === "perlu_revisi"
     ).length;
     const graded = task.submissions.filter((s) => s.status === "sudah_dinilai").length;
 
@@ -118,7 +118,7 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
       {/* Back Navigation */}
       <DashboardBreadcrumb
         backHref="/guru/mapel"
-        backLabel="Jadwal & Mapel"
+        backLabel="Mapel & Tugas"
       />
 
       {/* Header Banner */}

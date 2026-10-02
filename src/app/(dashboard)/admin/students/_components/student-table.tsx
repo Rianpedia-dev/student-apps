@@ -271,14 +271,14 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
                     <div className="flex items-center justify-center gap-1">
                       <Link href={`/admin/students/${s.id}`}>
                         <Button variant="ghost" size="icon-sm" className="h-8 w-8" title="Detail Siswa">
-                          <Eye className="h-4 w-4 text-sky-600" />
+                          <Eye className="h-4 w-4 text-sky-600 dark:text-sky-400" />
                         </Button>
                       </Link>
                       {s.status === "0" && (
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
+                          className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
                           title="Verifikasi Siswa"
                           onClick={() => handleVerify(s.id)}
                         >
@@ -288,7 +288,7 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        className="h-8 w-8 text-rose-500 hover:bg-rose-50"
+                        className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
                         title="Hapus Siswa"
                         onClick={() => setDeleteTarget(s)}
                       >
@@ -423,7 +423,7 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
           <form onSubmit={handleImportExcel} className="space-y-4">
             <div className="rounded-lg border-2 border-dashed p-6 text-center">
               <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-              <Label htmlFor="excelFile" className="cursor-pointer font-medium text-emerald-600 hover:underline">
+              <Label htmlFor="excelFile" className="cursor-pointer font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
                 Pilih file Excel (.xlsx)
               </Label>
               <Input

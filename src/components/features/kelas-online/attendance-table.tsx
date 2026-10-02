@@ -3,6 +3,7 @@
 import { Clock, ArrowRightLeft } from "lucide-react";
 import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface AttendanceRecord {
   id: string;
@@ -73,9 +74,9 @@ export function AttendanceTable({ records, title = "Daftar Hadir" }: AttendanceT
                 >
                   <td className="py-2.5 px-3 font-medium">{r.user_name}</td>
                   <td className="py-2.5 px-3">
-                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                    <Badge variant="success" size="sm">
                       Guru
-                    </span>
+                    </Badge>
                   </td>
                   <td className="py-2.5 px-3 text-muted-foreground">{formatTime(r.joined_at)}</td>
                   <td className="py-2.5 px-3 text-muted-foreground">{formatTime(r.left_at)}</td>
@@ -89,9 +90,9 @@ export function AttendanceTable({ records, title = "Daftar Hadir" }: AttendanceT
                 >
                   <td className="py-2.5 px-3 font-medium">{r.user_name}</td>
                   <td className="py-2.5 px-3">
-                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                    <Badge variant="blue" size="sm">
                       Siswa
-                    </span>
+                    </Badge>
                   </td>
                   <td className="py-2.5 px-3 text-muted-foreground">{formatTime(r.joined_at)}</td>
                   <td className="py-2.5 px-3 text-muted-foreground">{formatTime(r.left_at)}</td>
