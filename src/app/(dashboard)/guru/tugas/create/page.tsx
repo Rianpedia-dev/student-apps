@@ -66,7 +66,7 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
           Buat Tugas Interaktif Baru
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Susun butir-butir soal interaktif (pilihan ganda, gambar stimulus, isian, dan esai) yang dikerjakan langsung oleh murid di sistem.
+          Susun butir-butir soal interaktif (pilihan ganda dan esai/uraian) yang dikerjakan langsung oleh murid di sistem.
         </p>
       </div>
 

@@ -24,6 +24,7 @@ import {
   deleteViolationAction,
 } from "@/actions/guru";
 import { formatDateIndo } from "@/lib/utils";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,7 @@ export default async function GuruStudentDetailPage(props: {
       nis: "20260401",
       email: "siswa@gmail.com",
       gender: "L",
+      image: null,
       kelas: session.kelas || "Kelas 4 - Mehmed Al Fatih",
       status: "1",
       point: "125",
@@ -106,8 +108,15 @@ export default async function GuruStudentDetailPage(props: {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 text-xl font-bold dark:bg-emerald-950 dark:text-emerald-300">
-                {student.name.substring(0, 2).toUpperCase()}
+              <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-2xl overflow-hidden border border-emerald-500/30 bg-muted shadow-sm ring-2 ring-emerald-500/10">
+                <UserAvatar
+                  src={student.image}
+                  gender={student.gender}
+                  name={student.name}
+                  alt={student.name}
+                  className="h-full w-full object-cover"
+                  previewable={true}
+                />
               </div>
               <div>
                 <h1 className="text-xl font-bold">{student.name}</h1>

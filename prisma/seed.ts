@@ -43,10 +43,17 @@ async function main() {
   const hashSiswa = await bcrypt.hash("siswa123", 10);
 
   // ---------------------------------------------------------------------------
-  // 1. DATA KELAS (15 Rombongan Belajar Kelas 4, 5, 6)
+  // 1. DATA KELAS (20 Rombongan Belajar SD: Kelas 3-6 & SMP: Kelas 7-9)
   // ---------------------------------------------------------------------------
   console.log("\n📦 Menyiapkan data kelas (SD & SMP)...");
   const classesData = [
+    // SD - Kelas 3
+    { nama_kelas: "Kelas 3 - Ibnu Hayyan", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadzah Siti Aminah, S.Pd.I", jumlah_siswa: "28", code_restrict: "3101" },
+    { nama_kelas: "Kelas 3 - Ibnu Rusyd", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadzah Ruqayyah, S.Pd", jumlah_siswa: "27", code_restrict: "3102" },
+    { nama_kelas: "Kelas 3 - Ibnu Nafis", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadz Salman, S.Pd", jumlah_siswa: "26", code_restrict: "3103" },
+    { nama_kelas: "Kelas 3 - Ibnu Kholdun", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadz Hamzah, S.Pd.I", jumlah_siswa: "28", code_restrict: "3104" },
+    { nama_kelas: "Kelas 3 - Ibnu Batutah", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadzah Hana, S.Pd", jumlah_siswa: "25", code_restrict: "3105" },
+
     // SD - Kelas 4
     { nama_kelas: "Kelas 4 - Mehmed Al Fatih", jenjang: "SD", tingkat: 4, wali_kelas: "Ustadzah Fatimah, S.Pd", jumlah_siswa: "28", code_restrict: "2739" },
     { nama_kelas: "Kelas 4 - Sayfuddin Al Quthuz", jenjang: "SD", tingkat: 4, wali_kelas: "Ustadz Ahmad, S.Pd.I", jumlah_siswa: "26", code_restrict: "2957" },
@@ -1124,6 +1131,24 @@ async function main() {
     },
   });
 
+  const guru2 = await prisma.user.upsert({
+    where: { email: "guru2@gmail.com" },
+    update: { password: hashGuru, password1: "guru123" },
+    create: {
+      name: "Ustadz Farhan, S.Pd",
+      email: "guru2@gmail.com",
+      password: hashGuru,
+      password1: "guru123",
+      status: "4",
+      gender: "L",
+      nip: "198703122011011005",
+      guru_bidang: "Matematika & Sains",
+      kelas: "Kelas 7 - Ibnu Sina",
+      address: "Jl. Basuki Rahmat No. 88, Palembang",
+      notes: "Wali Kelas 7 Ibnu Sina & Guru Matematika SMP (Akun Demo Guru 2)",
+    },
+  });
+
   const siswaSmp = await prisma.user.upsert({
     where: { email: "siswa.smp@gmail.com" },
     update: { password: hashSiswa, password1: "siswa123" },
@@ -1465,11 +1490,11 @@ async function main() {
   console.log("🎉 Seeding Database Selesai dengan Sukses!");
   console.log("=========================================");
   console.log("Akun Demo yang Siap Digunakan:");
-  console.log("👑 Admin     : admin@gmail.com / admin123");
-  console.log("👩‍🏫 Guru SD  : guru@gmail.com / guru123 (Ustadzah Fatimah - Wali Kelas 4)");
-  console.log("👨‍🏫 Guru SMP : guru.smp@gmail.com / guru123 (Ustadz Farhan - Wali Kelas 7 Ibnu Sina)");
-  console.log("🎓 Siswa SD  : siswa@gmail.com / siswa123 (Muhammad Rayhan - Kelas 4)");
-  console.log("🎓 Siswa SMP : siswa.smp@gmail.com / siswa123 (Ahmad Fathan - Kelas 7 Ibnu Sina)");
+  console.log("👑 Admin         : admin@gmail.com / admin123");
+  console.log("👩‍🏫 Guru 1 (SD)  : guru@gmail.com / guru123 (Ustadzah Fatimah - Wali Kelas 4)");
+  console.log("👨‍🏫 Guru 2 (SMP) : guru2@gmail.com / guru.smp@gmail.com / guru123 (Ustadz Farhan - Wali Kelas 7 Ibnu Sina)");
+  console.log("🎓 Siswa SD      : siswa@gmail.com / siswa123 (Muhammad Rayhan - Kelas 4)");
+  console.log("🎓 Siswa SMP     : siswa.smp@gmail.com / siswa123 (Ahmad Fathan - Kelas 7 Ibnu Sina)");
   console.log("=========================================\n");
 }
 

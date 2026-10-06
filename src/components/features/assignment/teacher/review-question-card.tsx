@@ -128,7 +128,9 @@ export function ReviewQuestionCard({
           question.tipe_soal === "PILIHAN_GAMBAR") && (
           <div className="space-y-2 pt-1">
             {question.opsi.map((op) => {
-              const isStudentPick = chosen === op.label.toUpperCase();
+              const isStudentPick =
+                (op.id && chosen === op.id.toString()) ||
+                (op.label && chosen.toUpperCase() === op.label.toUpperCase());
               const isKey = op.is_benar;
 
               let style = "bg-background border-border text-foreground";
@@ -155,7 +157,20 @@ export function ReviewQuestionCard({
                     >
                       {op.label}
                     </span>
-                    <span>{op.teks_opsi || "Pilihan Gambar"}</span>
+                    <div className="flex flex-col gap-1 py-0.5">
+                      {op.teks_opsi && <span>{op.teks_opsi}</span>}
+                      {op.gambar_opsi && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={op.gambar_opsi}
+                          alt={`Opsi ${op.label}`}
+                          className="h-16 object-contain rounded border border-border bg-card p-1"
+                        />
+                      )}
+                      {!op.teks_opsi && !op.gambar_opsi && (
+                        <span className="text-muted-foreground italic">(Pilihan kosong)</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">

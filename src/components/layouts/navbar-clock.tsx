@@ -5,50 +5,10 @@ import { motion } from "framer-motion";
 import { getAcademicYear } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
-const DAY_NAMES = [
-  "Minggu",
-  "Senin",
-  "Selasa",
-  "Rabu",
-  "Kamis",
-  "Jumat",
-  "Sabtu",
-];
-
-const MONTH_NAMES = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
-];
-
-const MONTH_SHORT = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "Mei",
-  "Jun",
-  "Jul",
-  "Agu",
-  "Sep",
-  "Okt",
-  "Nov",
-  "Des",
-];
-
 interface NavbarLiveClockProps {
   academic?: {
     tahunPelajaran: string;
-    semester: string;
+    semester?: string;
   };
 }
 
@@ -75,18 +35,12 @@ export function NavbarLiveClock({ academic: academicProp }: NavbarLiveClockProps
         style={{ boxShadow: baseShadow }}
         className="inline-flex flex-col justify-center rounded-[var(--radius)] border border-border bg-card px-3.5 sm:px-4 py-1.5 text-xs select-none shrink-0 w-fit"
       >
-        <span className="inline-block h-3.5 w-28 animate-pulse rounded-[var(--radius)] bg-muted" />
-        <span className="inline-block h-3 w-40 animate-pulse rounded-[var(--radius)] bg-muted/70 mt-1" />
+        <span className="inline-block h-3.5 w-20 animate-pulse rounded-[var(--radius)] bg-muted" />
+        <span className="inline-block h-3 w-16 animate-pulse rounded-[var(--radius)] bg-muted/70 mt-1" />
       </div>
     );
   }
 
-  const dayName = DAY_NAMES[now.getDay()];
-  const dateNum = now.getDate();
-  const monthName = MONTH_NAMES[now.getMonth()];
-  const monthShort = MONTH_SHORT[now.getMonth()];
-  const monthNumber = String(now.getMonth() + 1).padStart(2, "0");
-  const year = now.getFullYear();
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const seconds = String(now.getSeconds()).padStart(2, "0");
@@ -101,46 +55,20 @@ export function NavbarLiveClock({ academic: academicProp }: NavbarLiveClockProps
       transition={{ type: "spring", stiffness: 360, damping: 24, mass: 0.6 }}
       className="inline-flex flex-col justify-center rounded-[var(--radius)] border border-border bg-card px-3.5 sm:px-4 py-1.5 select-none backdrop-blur-sm shrink-0 w-fit cursor-default"
     >
-      {/* Baris 1 (Atas): Tahun Pelajaran & Semester */}
-      <div className="flex items-center gap-2 sm:gap-2.5 text-xs sm:text-[13px] font-bold text-foreground leading-tight tracking-tight">
+      {/* Baris 1 (Atas): Tahun Pelajaran */}
+      <div className="flex items-center text-xs sm:text-[13px] font-bold text-foreground leading-tight tracking-tight">
         <span>TP {academic.tahunPelajaran}</span>
-        <span className="inline-block h-3 w-px bg-border" />
-        <Badge variant="emerald" size="xs" className="font-bold">
-          {academic.semester}
-        </Badge>
       </div>
 
-      {/* Baris 2 (Bawah): Hari, Tanggal, Bulan, Tahun & Jam:Menit:Detik */}
-      <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs leading-tight text-muted-foreground tabular-nums mt-1 tracking-tight font-medium">
-        {/* Full Day & Date on Desktop (lg+) */}
-        <span className="hidden lg:inline">
-          {dayName}, {dateNum} {monthName} {year}
-        </span>
-
-        {/* Short Day & Date on Tablet (md to lg) */}
-        <span className="hidden md:inline lg:hidden">
-          {dayName}, {dateNum} {monthShort} {year}
-        </span>
-
-        {/* Date & Month on small screen (sm to md) */}
-        <span className="hidden sm:inline md:hidden">
-          {dateNum} {monthShort} {year}
-        </span>
-
-        {/* Compact Date on Mobile (min 420px to 640px) */}
-        <span className="hidden min-[420px]:inline sm:hidden text-[10.5px]">
-          {dateNum}/{monthNumber}
-        </span>
-
-        <span className="inline-block h-3 w-px bg-border" />
-
+      {/* Baris 2 (Bawah): Jam:Menit:Detik & WIB */}
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs leading-tight text-muted-foreground tabular-nums mt-0.5 sm:mt-1 tracking-tight font-medium">
         {/* Live Time with seconds */}
         <span className="font-mono font-bold text-xs sm:text-[13px] text-foreground tracking-tight">
           {timeStr}
         </span>
 
-        {/* WIB suffix on large desktop */}
-        <Badge variant="outline" size="xs" className="hidden xl:inline-flex text-[9px] font-bold uppercase tracking-wider text-primary">
+        {/* WIB suffix */}
+        <Badge variant="outline" size="xs" className="text-[9px] font-bold uppercase tracking-wider text-primary">
           WIB
         </Badge>
       </div>

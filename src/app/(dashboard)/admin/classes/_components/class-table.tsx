@@ -335,8 +335,8 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
               >
                 <option value="">-- Pilih Guru Wali Kelas --</option>
-                {teachersList.map((t) => (
-                  <option key={t} value={t}>
+                {teachersList.map((t, idx) => (
+                  <option key={`${t}-${idx}`} value={t}>
                     {t}
                   </option>
                 ))}

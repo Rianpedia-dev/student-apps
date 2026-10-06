@@ -32,6 +32,11 @@ const DEFAULT_OPTIONS: QuestionOptionInput[] = [
   { label: "D", teks_opsi: "", gambar_opsi: null, is_benar: false },
 ];
 
+const QUESTION_TYPE_OPTIONS = [
+  { value: "PILIHAN_GANDA", label: "Pilihan Ganda" },
+  { value: "ESAI", label: "Esai / Uraian" },
+];
+
 interface BuilderQuestionEditorProps {
   question: QuestionItemInput;
   questionIndex: number;
@@ -69,12 +74,12 @@ export function BuilderQuestionEditor({
     onUpdateQuestion({
       tipe_soal: type as QuestionItemInput["tipe_soal"],
       opsi:
-        type === "ESAI" || type === "ISIAN_SINGKAT"
+        type === "ESAI"
           ? []
           : question.opsi.length > 0
           ? question.opsi
           : DEFAULT_OPTIONS.map((o) => ({ ...o })),
-      kunci_jawaban: type === "ISIAN_SINGKAT" ? "" : "A",
+      kunci_jawaban: type === "ESAI" ? null : "A",
     });
   };
 
@@ -89,7 +94,8 @@ export function BuilderQuestionEditor({
             </Badge>
 
             <Select
-              value={question.tipe_soal}
+              items={QUESTION_TYPE_OPTIONS}
+              value={question.tipe_soal === "PILIHAN_GAMBAR" ? "PILIHAN_GANDA" : question.tipe_soal}
               onValueChange={(val) => val && handleTypeChange(val)}
             >
               <SelectTrigger className="text-xs h-8">
@@ -97,8 +103,6 @@ export function BuilderQuestionEditor({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="PILIHAN_GANDA">Pilihan Ganda</SelectItem>
-                <SelectItem value="PILIHAN_GAMBAR">Pilihan Bergambar</SelectItem>
-                <SelectItem value="ISIAN_SINGKAT">Isian Singkat</SelectItem>
                 <SelectItem value="ESAI">Esai / Uraian</SelectItem>
               </SelectContent>
             </Select>
@@ -210,7 +214,7 @@ export function BuilderQuestionEditor({
           )}
         </div>
 
-        {/* ── Pilihan Ganda / Bergambar ── */}
+        {/* ── Pilihan Ganda (Teks & Gambar) ── */}
         {(question.tipe_soal === "PILIHAN_GANDA" ||
           question.tipe_soal === "PILIHAN_GAMBAR") && (
           <div className="space-y-2.5 pt-2 border-t border-border">
@@ -248,94 +252,83 @@ export function BuilderQuestionEditor({
                       {op.is_benar ? <Check className="h-3.5 w-3.5 stroke-[3]" /> : op.label}
                     </button>
 
-                    <div className="flex-1 space-y-1.5">
+                    <div className="flex-1 space-y-2">
                       <Input
                         type="text"
                         value={op.teks_opsi || ""}
                         onChange={(e) =>
                           onUpdateOption(opIdx, { teks_opsi: e.target.value })
                         }
-                        placeholder={`Teks pilihan ${op.label}...`}
+                        placeholder={`Teks pilihan ${op.label} (opsional jika menggunakan gambar)...`}
                         className="text-xs h-8"
                       />
 
-                      {question.tipe_soal === "PILIHAN_GAMBAR" && (
-                        <div>
-                          {op.gambar_opsi ? (
-                            <div className="relative inline-block border border-border rounded-md p-1 bg-muted/20">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={op.gambar_opsi}
-                                alt={`Opsi ${op.label}`}
-                                className="h-16 rounded object-contain"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  onUpdateOption(opIdx, { gambar_opsi: null })
-                                }
-                                className="absolute -top-1 -right-1 p-0.5 rounded-full bg-destructive text-destructive-foreground hover:opacity-90"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div>
-                              <input
-                                type="file"
-                                id={`opt-img-${questionIndex}-${opIdx}`}
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) =>
-                                  onUploadImage(
-                                    e,
-                                    `opt-${questionIndex}-${opIdx}`,
-                                    (url) => onUpdateOption(opIdx, { gambar_opsi: url })
-                                  )
-                                }
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  document
-                                    .getElementById(`opt-img-${questionIndex}-${opIdx}`)
-                                    ?.click()
-                                }
-                                className="text-[11px] font-medium text-primary hover:underline inline-flex items-center gap-1"
-                              >
-                                <ImageIcon className="h-3 w-3" />
-                                <span>Lampirkan Foto Opsi {op.label}</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      {/* Lampiran Gambar Opsi (Mendukung pilihan gambar pada Pilihan Ganda) */}
+                      <div>
+                        {op.gambar_opsi ? (
+                          <div className="relative inline-block border border-border rounded-md p-1 bg-muted/20">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={op.gambar_opsi}
+                              alt={`Opsi ${op.label}`}
+                              className="h-16 rounded object-contain"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onUpdateOption(opIdx, { gambar_opsi: null })
+                              }
+                              className="absolute -top-1 -right-1 p-0.5 rounded-full bg-destructive text-destructive-foreground hover:opacity-90"
+                              title="Hapus gambar opsi"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <input
+                              type="file"
+                              id={`opt-img-${questionIndex}-${opIdx}`}
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) =>
+                                onUploadImage(
+                                  e,
+                                  `opt-${questionIndex}-${opIdx}`,
+                                  (url) => onUpdateOption(opIdx, { gambar_opsi: url })
+                                )
+                              }
+                            />
+                            <button
+                              type="button"
+                              disabled={uploadingImageKey === `opt-${questionIndex}-${opIdx}`}
+                              onClick={() =>
+                                document
+                                  .getElementById(`opt-img-${questionIndex}-${opIdx}`)
+                                  ?.click()
+                              }
+                              className="text-[11px] font-medium text-primary hover:underline inline-flex items-center gap-1 disabled:opacity-50"
+                            >
+                              {uploadingImageKey === `opt-${questionIndex}-${opIdx}` ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  <span>Mengunggah...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ImageIcon className="h-3 w-3" />
+                                  <span>+ Lampirkan Gambar Opsi {op.label} (Opsional)</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* ── Isian Singkat ── */}
-        {question.tipe_soal === "ISIAN_SINGKAT" && (
-          <div className="p-3.5 rounded-lg bg-muted/30 border border-border space-y-1.5">
-            <label className="text-xs font-semibold text-foreground block">
-              Kunci Jawaban Tepat (Auto-Check):
-            </label>
-            <Input
-              type="text"
-              value={question.kunci_jawaban || ""}
-              onChange={(e) =>
-                onUpdateQuestion({ kunci_jawaban: e.target.value })
-              }
-              placeholder="Contoh: Fotosintesis (huruf besar/kecil tidak sensitif)"
-              className="text-xs h-9"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Siswa akan mendapat poin otomatis bila mengetikkan kata kunci yang sama.
-            </p>
           </div>
         )}
 

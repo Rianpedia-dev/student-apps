@@ -139,7 +139,7 @@ export async function loginDirectAction(
 }
 
 export async function demoLoginDirectAction(
-  role: "admin" | "guru" | "siswa" | "siswa1" | "siswa2" | "siswa3"
+  role: "admin" | "guru" | "guru1" | "guru2" | "siswa" | "siswa1" | "siswa2" | "siswa3"
 ): Promise<AuthResult> {
   if (process.env.ENABLE_DEMO_MODE === "false") {
     return {

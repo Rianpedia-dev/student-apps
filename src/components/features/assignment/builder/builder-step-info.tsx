@@ -74,6 +74,37 @@ export function BuilderStepInfo({
   const sdClasses = classes.filter((c) => c.jenjang === "SD");
   const smpClasses = classes.filter((c) => c.jenjang === "SMP");
 
+  const classItems = React.useMemo(
+    () =>
+      classes.map((c) => ({
+        value: c.id,
+        label: c.nama,
+      })),
+    [classes]
+  );
+
+  const subjectItems = React.useMemo(
+    () =>
+      subjects.map((s) => ({
+        value: s.id,
+        label: s.jenjang ? `${s.nama} (${s.jenjang})` : s.nama,
+      })),
+    [subjects]
+  );
+
+  const pertemuanItems = React.useMemo(() => {
+    const list: Array<{ value: string; label: string }> = [
+      { value: "none", label: "Tidak ditautkan" },
+    ];
+    pertemuanList.forEach((p) => {
+      list.push({
+        value: p.id,
+        label: `Pertemuan ${p.pertemuan_ke}: ${p.judul}`,
+      });
+    });
+    return list;
+  }, [pertemuanList]);
+
   return (
     <Card className="max-w-3xl mx-auto">
       <CardHeader>
@@ -104,6 +135,7 @@ export function BuilderStepInfo({
               Kelas Tujuan <span className="text-destructive">*</span>
             </label>
             <Select
+              items={classItems}
               value={kelasId}
               onValueChange={(val) => setKelasId(val || "")}
             >
@@ -144,6 +176,7 @@ export function BuilderStepInfo({
               Mata Pelajaran <span className="text-destructive">*</span>
             </label>
             <Select
+              items={subjectItems}
               value={mapelId}
               onValueChange={(val) => setMapelId(val || "")}
             >
@@ -169,6 +202,7 @@ export function BuilderStepInfo({
                 Tautkan ke Pertemuan (Opsional)
               </label>
               <Select
+                items={pertemuanItems}
                 value={pertemuanId || "none"}
                 onValueChange={(val) => setPertemuanId(val === "none" ? "" : val || "")}
               >

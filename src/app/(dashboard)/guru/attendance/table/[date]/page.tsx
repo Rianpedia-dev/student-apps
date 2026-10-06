@@ -3,7 +3,6 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft, Table as TableIcon, Download, ChevronLeft, ChevronRight, School } from "lucide-react";
-import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -103,16 +102,11 @@ export default async function GuruAttendanceTablePage(props: {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-              <ClipboardListIcon className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Tabel Presensi Bulanan</h1>
-              <p className="text-xs text-muted-foreground">
-                Kelas: <strong>{guruClass}</strong> • {monthNames[month]} {year}
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Tabel Presensi Bulanan</h1>
+            <p className="text-xs text-muted-foreground">
+              Kelas: <strong>{guruClass}</strong> • {monthNames[month]} {year}
+            </p>
           </div>
         </div>
 

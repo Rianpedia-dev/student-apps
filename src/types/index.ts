@@ -88,3 +88,9 @@ export interface RestrictItem {
   nama_kelas: string;
   code_restrict: string;
 }
+
+// Re-export modular domain types
+export * from "./assignment";
+export * from "./meeting";
+export * from "./schedule";
+export * from "./dashboard";

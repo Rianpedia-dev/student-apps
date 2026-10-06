@@ -119,14 +119,7 @@ export default async function GuruDashboardPage() {
 
     achievements = dbAchieve.map((ach) => {
       const studentUser = achieveUserById.get(ach.id_user) || achieveUserByName.get(ach.nama.trim().toLowerCase());
-      const studentImage =
-        studentUser?.image ||
-        (ach.fotoanak &&
-        !ach.fotoanak.includes("trophy") &&
-        !ach.fotoanak.includes("best-student") &&
-        !ach.fotoanak.includes("best-point")
-          ? ach.fotoanak
-          : null);
+      const studentImage = studentUser?.image || null;
 
       return {
         ...ach,

@@ -2,20 +2,9 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
-import {
-  Trophy,
-  CheckCircle2,
-  XCircle,
-  ArrowLeft,
-  Sparkles,
-  BookOpen,
-  Check,
-  X,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import confetti from "canvas-confetti";
 
 export interface ResultOption {
@@ -75,11 +64,10 @@ export function TaskResultView({
   questions,
 }: TaskResultViewProps) {
   const finalScore = submission.nilai ?? 0;
-  const isPassing = finalScore >= 75;
 
   useEffect(() => {
     if (finalScore >= 75) {
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
     }
   }, [finalScore]);
 
@@ -91,80 +79,85 @@ export function TaskResultView({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5 pb-12">
-      {/* Back */}
-      <div>
-        <Link
-          href="/siswa/tugas"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-transparent hover:border-border transition-all"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Kembali ke Daftar Tugas
-        </Link>
-      </div>
-
-      {/* Score Card */}
-      <Card>
-        <CardContent className="p-6 sm:p-8 text-center space-y-5">
-          <Trophy className="h-10 w-10 text-primary mx-auto" />
-
+    <div className="max-w-2xl mx-auto space-y-6 pb-12">
+      {/* Kartu Hasil Nilai */}
+      <Card className="border border-border/80 shadow-xs">
+        <CardContent className="p-6 sm:p-8 text-center space-y-4">
           <div className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">
+            <p className="text-xs text-muted-foreground font-medium">
               {mapelNama} • {kelasNama}
-            </span>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">{tugasJudul}</h1>
+            </p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+              {tugasJudul}
+            </h1>
           </div>
 
-          {/* Score Display */}
+          {/* Tampilan Skor / Nilai */}
           {submission.status === "menunggu_penilaian" ? (
-            <div className="p-4 rounded-lg bg-muted/50 border border-border inline-block">
-              <p className="text-sm font-semibold text-foreground">Menunggu Koreksi Soal Esai</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Skor akhir diperbarui setelah guru mengoreksi esai.
+            <div className="py-2">
+              <p className="text-sm font-semibold text-foreground">Menunggu Penilaian Esai</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Nilai akhir akan diperbarui setelah guru selesai mengoreksi soal esai.
+              </p>
+            </div>
+          ) : !tampilkanNilaiInstan ? (
+            <div className="py-3 px-4 rounded-xl bg-muted/40 border border-border/80 max-w-md mx-auto space-y-1">
+              <p className="text-sm font-semibold text-foreground">
+                Tugas Berhasil Dikumpulkan
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Skor dan pembahasan soal akan diumumkan oleh guru setelah seluruh siswa menyelesaikan tugas ini.
               </p>
             </div>
           ) : (
-            <div>
-              <div className="flex items-baseline justify-center gap-1 text-primary">
-                <span className="text-5xl sm:text-6xl font-bold tracking-tight">{finalScore}</span>
-                <span className="text-xl font-medium text-muted-foreground">/{poinMaksimal}</span>
+            <div className="py-2">
+              <div className="flex items-baseline justify-center gap-1 text-foreground">
+                <span className="text-5xl sm:text-6xl font-extrabold tracking-tight">
+                  {finalScore}
+                </span>
+                <span className="text-xl font-medium text-muted-foreground">
+                  /{poinMaksimal}
+                </span>
               </div>
-              <Badge variant={isPassing ? "default" : "secondary"} className="mt-2">
-                {finalScore >= 90 ? "Sempurna!" : finalScore >= 75 ? "Tuntas" : "Tetap Semangat"}
-              </Badge>
             </div>
           )}
 
-          {/* Stats Row */}
-          <Separator />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto">
-            <StatPill label="Total Soal" value={`${questions.length}`} />
-            <StatPill label="Benar" value={`${submission.totalBenar}`} highlight="primary" />
-            <StatPill label="Salah" value={`${submission.totalSalah}`} highlight="destructive" />
-            <StatPill label="Durasi" value={formatDuration(submission.durasiDetik)} />
-          </div>
+          {/* Rincian Statistik Simpel */}
+          {tampilkanNilaiInstan && submission.status !== "menunggu_penilaian" && (
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground pt-3 border-t border-border/60">
+              <span>Total Soal: <strong className="text-foreground">{questions.length}</strong></span>
+              <span>•</span>
+              <span>Benar: <strong className="text-emerald-600 dark:text-emerald-400">{submission.totalBenar}</strong></span>
+              <span>•</span>
+              <span>Salah: <strong className="text-rose-600 dark:text-rose-400">{submission.totalSalah}</strong></span>
+              <span>•</span>
+              <span>Durasi: <strong className="text-foreground">{formatDuration(submission.durasiDetik)}</strong></span>
+            </div>
+          )}
 
-          {/* Teacher Note */}
+          {/* Catatan Guru */}
           {submission.catatanGuru && (
-            <div className="p-3 rounded-lg bg-muted/50 border border-border text-left max-w-lg mx-auto">
-              <span className="text-xs font-semibold text-muted-foreground block mb-1">
-                Catatan Guru:
-              </span>
-              <p className="text-xs text-foreground leading-relaxed">
-                &quot;{submission.catatanGuru}&quot;
-              </p>
+            <div className="p-3 rounded-xl bg-muted/40 text-xs text-left max-w-md mx-auto">
+              <span className="font-semibold text-muted-foreground block mb-0.5">Catatan Guru:</span>
+              <p className="text-foreground">{submission.catatanGuru}</p>
             </div>
           )}
+
+          {/* Tombol Navigasi Tunggal */}
+          <div className="pt-2">
+            <Link href="/siswa/tugas">
+              <Button className="rounded-xl px-6 text-xs font-semibold">
+                Kembali ke Daftar Tugas
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Question Review */}
-      {tampilkanNilaiInstan && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-2">
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-bold text-foreground">Pembahasan Soal</h2>
-          </div>
+      {/* Pembahasan Soal jika diizinkan */}
+      {tampilkanNilaiInstan && questions.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-bold text-foreground px-1">Pembahasan Soal</h2>
 
           {questions.map((q, idx) => {
             const ans = q.jawabanSiswa;
@@ -173,23 +166,20 @@ export function TaskResultView({
             const isEssay = q.tipe_soal === "ESAI";
 
             return (
-              <Card key={q.id}>
+              <Card key={q.id} className="border border-border/80">
                 <CardContent className="p-4 sm:p-5 space-y-3">
-                  {/* Header */}
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" size="sm">Soal {idx + 1}</Badge>
-                      <span className="text-xs text-muted-foreground">{ans?.poin_didapat ?? 0}/{q.bobot_poin} poin</span>
+                      <span className="text-xs font-semibold text-muted-foreground">Soal {idx + 1}</span>
+                      <span className="text-xs text-muted-foreground">({ans?.poin_didapat ?? 0}/{q.bobot_poin} poin)</span>
                     </div>
                     {!isEssay && (
-                      <span className={`text-xs font-semibold flex items-center gap-1 ${isCorrect ? "text-primary" : "text-destructive"}`}>
-                        {isCorrect ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                      <span className={`text-xs font-semibold ${isCorrect ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                         {isCorrect ? "Benar" : "Salah"}
                       </span>
                     )}
                   </div>
 
-                  {/* Stimulus image */}
                   {q.gambar_soal && (
                     <div className="rounded-lg border border-border overflow-hidden bg-muted/20 p-1 inline-block">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -197,38 +187,49 @@ export function TaskResultView({
                     </div>
                   )}
 
-                  {/* Question text */}
                   <p className="text-sm font-medium text-foreground leading-relaxed whitespace-pre-line">
                     {q.pertanyaan}
                   </p>
 
-                  {/* MC Options */}
+                  {/* Pilihan Ganda */}
                   {(q.tipe_soal === "PILIHAN_GANDA" || q.tipe_soal === "PILIHAN_GAMBAR") && (
                     <div className="space-y-1.5">
                       {q.opsi.map((op) => {
-                        const isStudentPick = chosen === op.label.toUpperCase();
+                        const isStudentPick =
+                          (op.id && chosen === op.id.toString()) ||
+                          (op.label && chosen.toUpperCase() === op.label.toUpperCase());
                         const isKey = op.is_benar;
                         return (
                           <div
                             key={op.id || op.label}
                             className={`p-2.5 rounded-lg border flex items-center justify-between gap-2 text-xs ${
                               isKey
-                                ? "bg-primary/5 border-primary/30 font-medium"
+                                ? "bg-emerald-500/10 border-emerald-500/30 font-medium"
                                 : isStudentPick && !isKey
-                                ? "bg-destructive/5 border-destructive/30"
+                                ? "bg-rose-500/10 border-rose-500/30"
                                 : "bg-background border-border"
                             }`}
                           >
                             <div className="flex items-center gap-2">
-                              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                                isKey ? "bg-primary text-primary-foreground" : isStudentPick ? "bg-destructive text-white" : "bg-muted text-muted-foreground"
+                              <span className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[11px] ${
+                                isKey ? "bg-emerald-600 text-white" : isStudentPick ? "bg-rose-600 text-white" : "bg-muted text-muted-foreground"
                               }`}>
                                 {op.label}
                               </span>
-                              <span>{op.teks_opsi || "Pilihan Gambar"}</span>
+                              <div className="flex flex-col gap-1 py-0.5">
+                                {op.teks_opsi && <span>{op.teks_opsi}</span>}
+                                {op.gambar_opsi && (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img
+                                    src={op.gambar_opsi}
+                                    alt={`Opsi ${op.label}`}
+                                    className="h-14 object-contain rounded border border-border bg-card p-0.5"
+                                  />
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {isStudentPick && <Badge variant="secondary" size="sm">Pilihanmu</Badge>}
+                              {isStudentPick && <Badge variant="secondary" size="sm">Jawabanmu</Badge>}
                               {isKey && <Badge variant="outline" size="sm">Kunci</Badge>}
                             </div>
                           </div>
@@ -237,23 +238,23 @@ export function TaskResultView({
                     </div>
                   )}
 
-                  {/* Short answer */}
+                  {/* Isian Singkat */}
                   {q.tipe_soal === "ISIAN_SINGKAT" && (
                     <div className="p-3 rounded-lg bg-muted/40 border border-border text-xs space-y-1">
                       <div>
                         <span className="text-muted-foreground">Jawabanmu: </span>
-                        <strong className={isCorrect ? "text-primary" : "text-destructive"}>
+                        <strong className={isCorrect ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>
                           {ans?.jawaban_siswa || "(Tidak dijawab)"}
                         </strong>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Kunci: </span>
-                        <strong className="text-primary">{q.kunci_jawaban}</strong>
+                        <strong className="text-foreground">{q.kunci_jawaban}</strong>
                       </div>
                     </div>
                   )}
 
-                  {/* Essay */}
+                  {/* Esai */}
                   {q.tipe_soal === "ESAI" && (
                     <div className="p-3 rounded-lg bg-muted/40 border border-border text-xs space-y-2">
                       <div>
@@ -273,11 +274,10 @@ export function TaskResultView({
                   {/* Pembahasan */}
                   {q.pembahasan && (
                     <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-1">
-                      <span className="font-semibold text-muted-foreground flex items-center gap-1.5">
-                        <Sparkles className="h-3.5 w-3.5" />
+                      <span className="font-semibold text-muted-foreground block">
                         Pembahasan:
                       </span>
-                      <p className="text-muted-foreground leading-relaxed pl-5">{q.pembahasan}</p>
+                      <p className="text-muted-foreground leading-relaxed">{q.pembahasan}</p>
                     </div>
                   )}
                 </CardContent>
@@ -286,24 +286,6 @@ export function TaskResultView({
           })}
         </div>
       )}
-
-      {/* Bottom return */}
-      <div className="pt-4 flex justify-center">
-        <Link href="/siswa/tugas">
-          <Button variant="outline" className="font-semibold">Kembali ke Daftar Tugas</Button>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function StatPill({ label, value, highlight }: { label: string; value: string; highlight?: "primary" | "destructive" }) {
-  return (
-    <div className="p-2.5 rounded-lg bg-muted/40 border border-border text-center">
-      <span className="text-[11px] font-medium text-muted-foreground block">{label}</span>
-      <strong className={`text-sm font-bold ${highlight === "primary" ? "text-primary" : highlight === "destructive" ? "text-destructive" : "text-foreground"}`}>
-        {value}
-      </strong>
     </div>
   );
 }

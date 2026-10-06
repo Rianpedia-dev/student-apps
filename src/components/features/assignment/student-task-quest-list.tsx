@@ -1,15 +1,19 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
-import { Clock, Search, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { getStatusConfig, getDeadlineInfo } from "@/lib/task-status";
+import { getDeadlineInfo } from "@/lib/task-status";
 
 export interface StudentTaskItem {
   id: string;
@@ -19,6 +23,7 @@ export interface StudentTaskItem {
   guruNama: string;
   deadline: string;
   poinMaksimal: number;
+  tampilkanNilaiInstan?: boolean;
   submission?: {
     status: string;
     nilai: number | null;
@@ -31,13 +36,13 @@ interface StudentTaskQuestListProps {
   tasks: StudentTaskItem[];
 }
 
-/** Maps a submission record to the appropriate status string */
+/** Maps a submission record to status string */
 function resolveStatus(task: StudentTaskItem): string {
   if (!task.submission) return "belum_mengumpulkan";
   return task.submission.status;
 }
 
-/** Determines the correct CTA link based on task status */
+/** Determines CTA target URL */
 function getTaskHref(task: StudentTaskItem): string {
   const status = resolveStatus(task);
   if (status === "sudah_dinilai" || status === "selesai") {
@@ -64,9 +69,66 @@ function getCtaLabel(status: string): string {
   }
 }
 
-export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+/** Render status badge cleanly without visual noise */
+function renderStatusBadge(task: StudentTaskItem, isLate: boolean) {
+  const status = resolveStatus(task);
 
+  if (status === "sudah_dinilai" || status === "selesai") {
+    const nilai = task.submission?.nilai;
+    const hideScore = task.tampilkanNilaiInstan === false;
+    return (
+      <Badge
+        variant="outline"
+        className="font-bold text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+      >
+        {!hideScore && nilai != null ? `Nilai: ${nilai}` : "Selesai"}
+      </Badge>
+    );
+  }
+
+  if (status === "menunggu_penilaian") {
+    return (
+      <Badge variant="secondary" className="text-xs font-medium">
+        Diperiksa
+      </Badge>
+    );
+  }
+
+  if (status === "sedang_mengerjakan") {
+    return (
+      <Badge
+        variant="outline"
+        className="text-xs font-medium border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+      >
+        Sedang Dikerjakan
+      </Badge>
+    );
+  }
+
+  if (status === "perlu_revisi") {
+    return (
+      <Badge variant="destructive" className="text-xs font-medium">
+        Perlu Revisi
+      </Badge>
+    );
+  }
+
+  if (isLate) {
+    return (
+      <Badge variant="destructive" className="text-xs font-medium">
+        Terlambat
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge variant="secondary" className="text-xs font-medium text-muted-foreground">
+      Belum Dikerjakan
+    </Badge>
+  );
+}
+
+export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
   const counts = useMemo(() => {
     let belum = 0;
     let menunggu = 0;
@@ -82,7 +144,6 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
 
   const filterTasks = (tab: string) => {
     return tasks.filter((task) => {
-      // Tab filter
       const s = resolveStatus(task);
       if (tab === "belum") {
         if (task.submission && s !== "sedang_mengerjakan" && s !== "perlu_revisi") return false;
@@ -93,134 +154,158 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
       if (tab === "dinilai") {
         if (s !== "sudah_dinilai" && s !== "selesai") return false;
       }
-
-      // Search filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        return (
-          task.judul.toLowerCase().includes(q) ||
-          task.mapelNama.toLowerCase().includes(q) ||
-          task.guruNama.toLowerCase().includes(q)
-        );
-      }
-
       return true;
     });
   };
 
-  const renderTaskList = (tab: string) => {
+  const renderTaskTable = (tab: string) => {
     const filtered = filterTasks(tab);
 
-    if (filtered.length === 0) {
-      return (
-        <Card>
-          <CardContent className="py-14 text-center space-y-2">
-            <BookOpen className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-            <p className="text-sm font-semibold text-foreground">
-              {tab === "belum" ? "Semua tugas sudah selesai!" : "Tidak ada tugas di kategori ini."}
-            </p>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-              {tab === "belum"
-                ? "Alhamdulillah, tidak ada tugas yang perlu dikerjakan."
-                : "Coba ubah kata kunci pencarian atau pilih tab lain."}
-            </p>
-          </CardContent>
-        </Card>
-      );
-    }
-
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {filtered.map((task) => {
-          const status = resolveStatus(task);
-          const config = getStatusConfig(status);
-          const { label: deadlineLabel, isLate } = getDeadlineInfo(task.deadline);
-          const href = getTaskHref(task);
-          const StatusIcon = config.icon;
+      <div className="rounded-2xl border border-border bg-card shadow-2xs overflow-hidden">
+        <Table className="w-full">
+          <TableHeader className="bg-muted/40 border-b border-border">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-12 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                No
+              </TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[160px]">
+                Mata Pelajaran
+              </TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[220px]">
+                Judul Tugas
+              </TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[140px]">
+                Batas Waktu
+              </TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground text-center min-w-[130px]">
+                Status
+              </TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground text-center min-w-[120px]">
+                Aksi
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-36 text-center text-muted-foreground">
+                  <p className="text-sm font-semibold text-foreground">
+                    {tab === "belum"
+                      ? "Alhamdulillah, tidak ada tugas yang belum selesai!"
+                      : "Tidak ada tugas pada kategori ini."}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {tab === "belum"
+                      ? "Semua tugas telah dikerjakan dengan baik."
+                      : "Silakan pilih tab kategori lainnya untuk melihat tugas Anda."}
+                  </p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((task, index) => {
+                const status = resolveStatus(task);
+                const { label: deadlineLabel, isLate } = getDeadlineInfo(task.deadline);
+                const href = getTaskHref(task);
+                const isPendingWork =
+                  status === "belum_mengumpulkan" ||
+                  status === "sedang_mengerjakan" ||
+                  status === "perlu_revisi";
 
-          return (
-            <Card key={task.id} enableHover className="flex flex-col justify-between">
-              <CardContent className="p-4 sm:p-5 space-y-3 flex-1 flex flex-col">
-                {/* Top: Subject + Status */}
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-muted-foreground truncate flex items-center gap-1.5">
-                    <BookOpen className="h-3.5 w-3.5 shrink-0" />
-                    {task.mapelNama}
-                  </span>
+                return (
+                  <TableRow
+                    key={task.id}
+                    className="hover:bg-muted/30 transition-colors border-b border-border/60"
+                  >
+                    {/* Nomor Urut */}
+                    <TableCell className="text-center font-mono text-xs text-muted-foreground">
+                      {index + 1}
+                    </TableCell>
 
-                  <Badge variant={config.variant} size="sm" className="gap-1 shrink-0">
-                    <StatusIcon className="h-3 w-3" />
-                    <span>
-                      {status === "sudah_dinilai" && task.submission?.nilai != null
-                        ? `Nilai: ${task.submission.nilai}`
-                        : config.label}
-                    </span>
-                  </Badge>
-                </div>
+                    {/* Mata Pelajaran */}
+                    <TableCell>
+                      <span className="font-semibold text-xs sm:text-sm text-foreground">
+                        {task.mapelNama}
+                      </span>
+                    </TableCell>
 
-                {/* Title */}
-                <Link href={href} className="block flex-1">
-                  <h3 className="text-sm sm:text-base font-bold text-foreground line-clamp-2 leading-snug hover:text-primary transition-colors">
-                    {task.judul}
-                  </h3>
-                </Link>
+                    {/* Judul Tugas */}
+                    <TableCell>
+                      <Link
+                        href={href}
+                        className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors block leading-snug"
+                      >
+                        {task.judul}
+                      </Link>
+                    </TableCell>
 
-                {/* Bottom: Deadline + CTA */}
-                <Separator />
-                <div className="flex items-center justify-between gap-3">
-                  <span className={`text-xs flex items-center gap-1.5 truncate ${isLate ? "text-destructive font-medium" : "text-muted-foreground"}`}>
-                    <Clock className="h-3.5 w-3.5 shrink-0" />
-                    {deadlineLabel}
-                  </span>
+                    {/* Batas Waktu */}
+                    <TableCell>
+                      <span
+                        className={`text-xs font-medium ${
+                          isLate && isPendingWork
+                            ? "text-rose-600 dark:text-rose-400 font-semibold"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {deadlineLabel}
+                      </span>
+                    </TableCell>
 
-                  <Link href={href} className="shrink-0">
-                    <Button size="sm" variant={status === "sudah_dinilai" || status === "selesai" ? "outline" : "default"} className="text-xs h-8 rounded-lg font-semibold">
-                      {getCtaLabel(status)}
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                    {/* Status / Nilai */}
+                    <TableCell className="text-center">
+                      {renderStatusBadge(task, isLate)}
+                    </TableCell>
+
+                    {/* Aksi */}
+                    <TableCell className="text-center">
+                      <Link href={href}>
+                        <Button
+                          size="sm"
+                          variant={isPendingWork ? "default" : "outline"}
+                          className={`text-xs h-8 px-3.5 rounded-xl font-bold transition-all shadow-2xs ${
+                            isPendingWork
+                              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                              : "border-border/80 hover:bg-muted hover:text-primary"
+                          }`}
+                        >
+                          {getCtaLabel(status)}
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
     );
   };
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cari tugas atau mata pelajaran..."
-          className="pl-9 pr-8 h-10 text-sm rounded-lg"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Tabs + Content */}
-      <Tabs defaultValue="semua">
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="semua">Semua ({tasks.length})</TabsTrigger>
-          <TabsTrigger value="belum">Belum ({counts.belum})</TabsTrigger>
-          <TabsTrigger value="menunggu">Diperiksa ({counts.menunggu})</TabsTrigger>
-          <TabsTrigger value="dinilai">Tuntas ({counts.dinilai})</TabsTrigger>
+      {/* Tabs Kategori Tugas */}
+      <Tabs defaultValue="semua" className="space-y-4">
+        <TabsList className="w-full sm:w-auto p-1 bg-muted/60 rounded-xl">
+          <TabsTrigger value="semua" className="rounded-lg text-xs font-semibold">
+            Semua ({tasks.length})
+          </TabsTrigger>
+          <TabsTrigger value="belum" className="rounded-lg text-xs font-semibold">
+            Belum ({counts.belum})
+          </TabsTrigger>
+          <TabsTrigger value="menunggu" className="rounded-lg text-xs font-semibold">
+            Diperiksa ({counts.menunggu})
+          </TabsTrigger>
+          <TabsTrigger value="dinilai" className="rounded-lg text-xs font-semibold">
+            Selesai ({counts.dinilai})
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="semua">{renderTaskList("semua")}</TabsContent>
-        <TabsContent value="belum">{renderTaskList("belum")}</TabsContent>
-        <TabsContent value="menunggu">{renderTaskList("menunggu")}</TabsContent>
-        <TabsContent value="dinilai">{renderTaskList("dinilai")}</TabsContent>
+        <TabsContent value="semua">{renderTaskTable("semua")}</TabsContent>
+        <TabsContent value="belum">{renderTaskTable("belum")}</TabsContent>
+        <TabsContent value="menunggu">{renderTaskTable("menunggu")}</TabsContent>
+        <TabsContent value="dinilai">{renderTaskTable("dinilai")}</TabsContent>
       </Tabs>
     </div>
   );

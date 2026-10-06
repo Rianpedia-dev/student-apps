@@ -59,6 +59,7 @@ export default async function SiswaTugasListPage({ searchParams }: PageProps) {
       guruNama: t.guru.name,
       deadline: t.deadline.toISOString(),
       poinMaksimal: t.poin_maksimal,
+      tampilkanNilaiInstan: t.tampilkan_nilai_instan,
       submission: sub
         ? {
             status: sub.status,
@@ -79,13 +80,10 @@ export default async function SiswaTugasListPage({ searchParams }: PageProps) {
       />
 
       {/* Header */}
-      <div className="bg-card p-5 rounded-2xl border border-border shadow-2xs">
+      <div className="bg-card p-4 sm:p-5 rounded-2xl border border-border shadow-2xs">
         <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
           {mapelName ? `Tugas: ${mapelName}` : "Tugas & Evaluasi Belajar"}
         </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Pantau seluruh penugasan kelas, kerjakan kuis interaktif, dan tinjau nilai hasil evaluasi belajarmu.
-        </p>
       </div>
 
       {/* Daftar Tugas Siswa */}

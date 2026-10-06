@@ -76,13 +76,18 @@ const LayoutDashboardIcon = forwardRef<
       };
     });
 
+    const triggerAnimate = useCallback(() => {
+      if (!isAnimated || reduced) return;
+      controls.start("normal").then(() => controls.start("animate"));
+    }, [controls, isAnimated, reduced]);
+
     const handleEnter = useCallback(
       (e?: React.MouseEvent<HTMLDivElement>) => {
         if (!isAnimated || reduced) return;
-        if (!isControlled.current) controls.start("animate");
+        if (!isControlled.current) triggerAnimate();
         else onMouseEnter?.(e as any);
       },
-      [controls, reduced, isAnimated, onMouseEnter]
+      [triggerAnimate, isAnimated, reduced, onMouseEnter]
     );
 
     const handleLeave = useCallback(
@@ -96,9 +101,9 @@ const LayoutDashboardIcon = forwardRef<
     // Trigger animation when parent menu item is hovered
     useEffect(() => {
       if (isHovered && isAnimated && !reduced) {
-        controls.start("animate");
+        triggerAnimate();
       }
-    }, [isHovered, isAnimated, reduced, controls]);
+    }, [isHovered, isAnimated, reduced, triggerAnimate]);
 
     // Auto-animate every 2 minutes (120,000ms)
     useEffect(() => {

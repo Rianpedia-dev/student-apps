@@ -70,3 +70,70 @@ export const achievementSchema = z.object({
   fotoanak: z.string().min(1, "Foto prestasi wajib diisi"),
   prestasi: z.string().min(1, "Deskripsi prestasi wajib diisi"),
 });
+
+export const questionOptionSchema = z.object({
+  label: z.string().min(1, "Label opsi wajib diisi"),
+  teks_opsi: z.string().optional().nullable(),
+  gambar_opsi: z.string().optional().nullable(),
+  is_benar: z.boolean().default(false),
+});
+
+export const questionItemSchema = z.object({
+  id: z.string().optional(),
+  nomor_urut: z.number().int().min(1),
+  tipe_soal: z.enum(["PILIHAN_GANDA", "PILIHAN_GAMBAR", "ISIAN_SINGKAT", "ESAI"]),
+  pertanyaan: z.string().min(1, "Pertanyaan wajib diisi"),
+  gambar_soal: z.string().optional().nullable(),
+  bobot_poin: z.number().min(1),
+  kunci_jawaban: z.string().optional().nullable(),
+  pembahasan: z.string().optional().nullable(),
+  opsi: z.array(questionOptionSchema).default([]),
+});
+
+export const createInteractiveTaskSchema = z.object({
+  judul: z.string().min(3, "Judul tugas minimal 3 karakter"),
+  deskripsi: z.string().min(5, "Deskripsi tugas minimal 5 karakter"),
+  kelas_id: z.string().min(1, "Kelas wajib dipilih"),
+  mapel_id: z.string().min(1, "Mata pelajaran wajib dipilih"),
+  pertemuan_id: z.string().optional().nullable(),
+  deadline: z.string().min(1, "Batas waktu (deadline) wajib diisi"),
+  durasi_menit: z.number().int().positive().optional().nullable(),
+  acak_soal: z.boolean().optional().default(false),
+  acak_opsi: z.boolean().optional().default(false),
+  tampilkan_nilai_instan: z.boolean().optional().default(true),
+  poin_maksimal: z.number().optional().default(100),
+  soal: z.array(questionItemSchema).min(1, "Tugas interaktif minimal memiliki 1 butir soal"),
+});
+
+export const createPertemuanSchema = z.object({
+  kelas_id: z.string().min(1, "Pilih kelas"),
+  mapel_id: z.string().min(1, "Pilih mata pelajaran"),
+  pertemuan_ke: z.number().int().min(1, "Pertemuan ke- harus berupa angka positif"),
+  judul: z.string().min(3, "Judul materi / topik minimal 3 karakter"),
+  deskripsi: z.string().optional(),
+  tanggal: z.string().min(1, "Tanggal pertemuan wajib diisi"),
+  jam_mulai: z.string().optional(),
+  jam_selesai: z.string().optional(),
+  is_published: z.boolean().optional().default(true),
+});
+
+export const createMateriSchema = z.object({
+  pertemuan_id: z.string().min(1, "ID pertemuan wajib diisi"),
+  judul: z.string().min(3, "Judul materi minimal 3 karakter"),
+  tipe: z.enum(["DOKUMEN", "VIDEO", "LINK", "CATATAN"]),
+  url_file: z.string().optional().nullable(),
+  teks_konten: z.string().optional().nullable(),
+  urutan: z.number().int().optional().default(1),
+});
+
+export const attendanceRecordSchema = z.object({
+  date: z.string().min(1, "Tanggal absensi wajib diisi"),
+  kelas: z.string().min(1, "Kelas wajib diisi"),
+  records: z.array(
+    z.object({
+      userId: z.string().min(1),
+      keterangan: z.enum(["Hadir", "Sakit", "Izin", "Alpha"]),
+    })
+  ),
+});
+

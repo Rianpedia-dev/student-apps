@@ -146,12 +146,12 @@ export function InteractiveTaskBuilder({
       pertanyaan: "",
       gambar_soal: null,
       bobot_poin: 10,
-      kunci_jawaban: type === "ISIAN_SINGKAT" ? "" : "A",
+      kunci_jawaban: type === "ESAI" ? null : "A",
       pembahasan: "",
       opsi:
-        type === "PILIHAN_GANDA" || type === "PILIHAN_GAMBAR"
-          ? DEFAULT_OPTIONS.map((o) => ({ ...o }))
-          : [],
+        type === "ESAI"
+          ? []
+          : DEFAULT_OPTIONS.map((o) => ({ ...o })),
     };
     setQuestions([...questions, newQ]);
     setActiveQuestionIndex(questions.length);
@@ -285,7 +285,17 @@ export function InteractiveTaskBuilder({
   };
 
   const handleFinalSubmit = async () => {
+    if (hasDurationLimit) {
+      const parsedDur = parseInt(durasiMenit, 10);
+      if (isNaN(parsedDur) || parsedDur < 5 || parsedDur > 180) {
+        toast.error("Batas waktu (timer) kuis harus antara 5 hingga 180 menit.");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
+    const parsedDuration = hasDurationLimit && durasiMenit ? Math.max(5, Math.min(180, parseInt(durasiMenit, 10))) : null;
+
     const payload = {
       judul: judul.trim(),
       deskripsi: deskripsi.trim(),
@@ -293,8 +303,7 @@ export function InteractiveTaskBuilder({
       mapel_id: mapelId,
       pertemuan_id: pertemuanId || null,
       deadline,
-      durasi_menit:
-        hasDurationLimit && durasiMenit ? parseInt(durasiMenit, 10) : null,
+      durasi_menit: parsedDuration,
       acak_soal: acakSoal,
       acak_opsi: acakOpsi,
       tampilkan_nilai_instan: tampilkanNilai,

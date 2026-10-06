@@ -6,6 +6,8 @@ import {
   announcementSchema,
   eventSchema,
   violationSchema,
+  createInteractiveTaskSchema,
+  createPertemuanSchema,
 } from "@/lib/validators";
 
 describe("Zod Validation Contracts", () => {
@@ -105,4 +107,44 @@ describe("Zod Validation Contracts", () => {
       expect(res.success).toBe(true);
     });
   });
+
+  describe("createInteractiveTaskSchema", () => {
+    it("should validate complete interactive quiz task input", () => {
+      const res = createInteractiveTaskSchema.safeParse({
+        judul: "Kuis Pilihan Ganda Sirah Nabawiyah",
+        deskripsi: "Evaluasi pemahaman sejarah dakwah periode Madinah.",
+        kelas_id: "1",
+        mapel_id: "4",
+        deadline: "2026-10-15T23:59:00",
+        durasi_menit: 45,
+        soal: [
+          {
+            nomor_urut: 1,
+            tipe_soal: "PILIHAN_GANDA",
+            pertanyaan: "Di manakah masjid pertama yang dibangun Rasulullah SAW?",
+            bobot_poin: 20,
+            opsi: [
+              { label: "A", teks_opsi: "Kuba", is_benar: true },
+              { label: "B", teks_opsi: "Madinah", is_benar: false },
+            ],
+          },
+        ],
+      });
+      expect(res.success).toBe(true);
+    });
+  });
+
+  describe("createPertemuanSchema", () => {
+    it("should validate meeting creation payload", () => {
+      const res = createPertemuanSchema.safeParse({
+        kelas_id: "1",
+        mapel_id: "2",
+        pertemuan_ke: 3,
+        judul: "Materi Fikih Shalat Sunnah Rawatib",
+        tanggal: "2026-10-10",
+      });
+      expect(res.success).toBe(true);
+    });
+  });
 });
+

@@ -38,14 +38,9 @@ export default async function GuruAttendancePage() {
   return (
     <div className="space-y-6">
       {/* Header Info */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-          <ClipboardListIcon className="h-6 w-6" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Presensi Absensi Kelas</h1>
-          <p className="text-xs text-muted-foreground">Kelola kehadiran harian dan rekap kelas {guruClass}</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Presensi Absensi Kelas</h1>
+        <p className="text-xs text-muted-foreground mt-1">Kelola kehadiran harian dan rekap kelas {guruClass}</p>
       </div>
 
       {/* Quick Navigation Cards */}

@@ -246,17 +246,18 @@ export async function createAnnouncementAction(formData: FormData) {
     const from = (formData.get("from") as string) || (session.role === "admin" ? "IT" : session.kelas || "Guru");
     const pengumuman = formData.get("pengumuman") as string;
 
-    let filePath: string | null = null;
-    const rawFile = formData.get("file_upload") || formData.get("file");
+    const fileUpload = formData.get("file_upload") as File | null;
+    const fileUrl = formData.get("file") as string | null;
 
-    if (rawFile && typeof rawFile === "object" && "size" in rawFile && (rawFile as Blob).size > 0) {
-      const uploadRes = await saveUploadedFile(rawFile as Blob, { category: "attachment" });
+    let filePath: string | null = null;
+    if (fileUpload && typeof fileUpload === "object" && fileUpload.size > 0) {
+      const uploadRes = await saveUploadedFile(fileUpload, { category: "attachment" });
       if (!uploadRes.success) {
         return { error: uploadRes.error };
       }
       filePath = uploadRes.filePath || null;
-    } else if (typeof rawFile === "string" && rawFile.trim().length > 0) {
-      filePath = rawFile.trim();
+    } else if (typeof fileUrl === "string" && fileUrl.trim().length > 0) {
+      filePath = fileUrl.trim();
     }
 
     if (!title || !pengumuman) {
@@ -298,15 +299,17 @@ export async function updateAnnouncementAction(id: string, formData: FormData) {
     if (from) dataToUpdate.from = from;
     if (pengumuman) dataToUpdate.pengumuman = pengumuman;
 
-    const rawFile = formData.get("file_upload") || formData.get("file");
-    if (rawFile && typeof rawFile === "object" && "size" in rawFile && (rawFile as Blob).size > 0) {
-      const uploadRes = await saveUploadedFile(rawFile as Blob, { category: "attachment" });
+    const fileUpload = formData.get("file_upload") as File | null;
+    const fileUrl = formData.get("file") as string | null;
+
+    if (fileUpload && typeof fileUpload === "object" && fileUpload.size > 0) {
+      const uploadRes = await saveUploadedFile(fileUpload, { category: "attachment" });
       if (!uploadRes.success) {
         return { error: uploadRes.error };
       }
       dataToUpdate.file = uploadRes.filePath;
-    } else if (typeof rawFile === "string" && rawFile.trim().length > 0) {
-      dataToUpdate.file = rawFile.trim();
+    } else if (typeof fileUrl === "string") {
+      dataToUpdate.file = fileUrl.trim() || null;
     }
 
     await AnnouncementService.updateAnnouncement({
@@ -318,7 +321,9 @@ export async function updateAnnouncementAction(id: string, formData: FormData) {
     revalidatePath("/guru");
     revalidatePath("/siswa");
     revalidatePath("/admin/announcements");
+    revalidatePath(`/admin/announcements/${id}`);
     revalidatePath("/guru/announcements");
+    revalidatePath(`/guru/announcements/${id}`);
     return { success: true, message: "Pengumuman berhasil diperbarui." };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal memperbarui pengumuman.";

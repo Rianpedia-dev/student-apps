@@ -65,9 +65,9 @@ const VideoIcon = forwardRef<VideoIconHandle, VideoIconProps>(
     const isControlled = useRef(false);
 
     const start = useCallback(() => {
-      if (reduced) return;
-      controls.start("pan");
-    }, [controls, reduced]);
+      if (reduced || !isAnimated) return;
+      controls.start("rest").then(() => controls.start("pan"));
+    }, [controls, reduced, isAnimated]);
 
     const stop = useCallback(() => {
       controls.start("rest");

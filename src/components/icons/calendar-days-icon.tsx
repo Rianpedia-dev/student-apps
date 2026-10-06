@@ -1,49 +1,47 @@
-// calendar days - from AnimateIcons / Lucide (https://animateicons.in)
-// Author: Avijit Dey (@avijit07x)
-// License: MIT. Source: https://github.com/Avijit07x/animateicons
-// Requires: framer-motion, a `cn` helper at @/lib/utils (clsx + tailwind-merge)
 "use client";
 
-import { cn } from "@/lib/utils";
 import type { Variants } from "framer-motion";
-import {
-  LazyMotion,
-  domMin,
-  m,
-  useAnimation,
-  useReducedMotion,
-} from "framer-motion";
-import {
-  forwardRef,
-  useCallback,
-  useImperativeHandle,
-  useRef,
-  useEffect,
-  type HTMLAttributes,
-} from "react";
+import { AnimatePresence, motion, useAnimation } from "framer-motion";
+import type { HTMLAttributes } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 export interface CalendarDaysIconHandle {
   startAnimation: () => void;
   stopAnimation: () => void;
 }
 
-export interface CalendarDaysIconProps
-  extends Omit<
-    HTMLAttributes<HTMLDivElement>,
-    | "color"
-    | "onDrag"
-    | "onDragStart"
-    | "onDragEnd"
-    | "onAnimationStart"
-    | "onAnimationEnd"
-    | "onAnimationIteration"
-  > {
+interface CalendarDaysIconProps extends HTMLAttributes<HTMLDivElement> {
   size?: number;
-  duration?: number;
-  isAnimated?: boolean;
-  color?: string;
   isHovered?: boolean;
+  isAnimated?: boolean;
 }
+
+const DOTS = [
+  { cx: 8, cy: 14 },
+  { cx: 12, cy: 14 },
+  { cx: 16, cy: 14 },
+  { cx: 8, cy: 18 },
+  { cx: 12, cy: 18 },
+  { cx: 16, cy: 18 },
+];
+
+const VARIANTS: Variants = {
+  normal: {
+    opacity: 1,
+    transition: {
+      duration: 0.2,
+    },
+  },
+  animate: (i: number) => ({
+    opacity: [1, 0.3, 1],
+    transition: {
+      delay: i * 0.1,
+      duration: 0.4,
+      times: [0, 0.5, 1],
+    },
+  }),
+};
 
 const CalendarDaysIcon = forwardRef<
   CalendarDaysIconHandle,
@@ -55,183 +53,101 @@ const CalendarDaysIcon = forwardRef<
       onMouseLeave,
       className,
       size = 24,
-      duration = 1,
-      isAnimated = true,
-      color,
       isHovered,
+      isAnimated = true,
       ...props
     },
     ref
   ) => {
     const controls = useAnimation();
-    const reduced = useReducedMotion();
-    const isControlled = useRef(false);
+    const isControlledRef = useRef(false);
 
     useImperativeHandle(ref, () => {
-      isControlled.current = true;
+      isControlledRef.current = true;
       return {
-        startAnimation: () =>
-          reduced ? controls.start("normal") : controls.start("animate"),
+        startAnimation: () => controls.start("animate"),
         stopAnimation: () => controls.start("normal"),
       };
     });
 
-    const handleEnter = useCallback(
-      (e?: React.MouseEvent<HTMLDivElement>) => {
-        if (!isAnimated || reduced) return;
-        if (!isControlled.current) controls.start("animate");
-        else onMouseEnter?.(e as any);
+    const triggerAnimate = useCallback(() => {
+      if (!isAnimated) return;
+      controls.start("normal").then(() => controls.start("animate"));
+    }, [controls, isAnimated]);
+
+    useEffect(() => {
+      if (isHovered && isAnimated) {
+        triggerAnimate();
+      }
+    }, [isHovered, isAnimated, triggerAnimate]);
+
+    const handleMouseEnter = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isControlledRef.current) {
+          onMouseEnter?.(e);
+        } else {
+          triggerAnimate();
+        }
       },
-      [controls, reduced, isAnimated, onMouseEnter]
+      [triggerAnimate, onMouseEnter]
     );
 
-    const handleLeave = useCallback(
+    const handleMouseLeave = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!isControlled.current) {
-          controls.start("normal");
+        if (isControlledRef.current) {
+          onMouseLeave?.(e);
         } else {
-          onMouseLeave?.(e as any);
+          controls.start("normal");
         }
       },
       [controls, onMouseLeave]
     );
 
-    // Trigger animation when parent menu item is hovered
-    useEffect(() => {
-      if (isHovered && isAnimated && !reduced) {
-        controls.start("animate");
-      }
-    }, [isHovered, isAnimated, reduced, controls]);
-
-    const bodyVariants: Variants = {
-      normal: { pathLength: 1, opacity: 1 },
-      animate: {
-        pathLength: [0, 1],
-        opacity: [0, 1],
-        transition: { duration: 0.5 * duration, ease: [0.16, 1, 0.3, 1] },
-      },
-    };
-
-    const hangerVariants: Variants = {
-      normal: { pathLength: 1, opacity: 1 },
-      animate: (i: number) => ({
-        pathLength: [0, 1],
-        opacity: [0, 1],
-        transition: {
-          duration: 0.3 * duration,
-          delay: i * 0.08 * duration,
-          ease: [0.16, 1, 0.3, 1],
-        },
-      }),
-    };
-
-    const headerVariants: Variants = {
-      normal: { scaleX: 1, opacity: 1 },
-      animate: {
-        scaleX: [0, 1],
-        opacity: [0, 1],
-        transition: {
-          duration: 0.4 * duration,
-          delay: 0.28 * duration,
-          ease: [0.16, 1, 0.3, 1],
-        },
-      },
-    };
-
-    const dotVariants: Variants = {
-      normal: { scale: 1, opacity: 1 },
-      animate: (i: number) => ({
-        scale: [0, 1.25, 1],
-        opacity: [0, 1, 1],
-        transition: {
-          duration: 0.35 * duration,
-          delay: (0.38 + i * 0.06) * duration,
-          times: [0, 0.6, 1],
-          ease: [0.34, 1.4, 0.64, 1],
-        },
-      }),
-    };
-
     return (
-      <LazyMotion features={domMin} strict>
-        <m.div
-          className={cn("inline-flex items-center justify-center", className)}
-          onMouseEnter={handleEnter}
-          onMouseLeave={handleLeave}
-          {...props}
-          style={{ color, ...props.style }}
+      <div
+        className={cn("inline-flex items-center justify-center", className)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        {...props}
+      >
+        <svg
+          fill="none"
+          height={size}
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+          width={size}
+          className="h-full w-full"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <m.svg
-            xmlns="http://www.w3.org/2000/svg"
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-full w-full"
-            animate={controls}
-            initial="normal"
-          >
-            <m.path d="M8 2v4" custom={0} variants={hangerVariants} />
-            <m.path d="M16 2v4" custom={1} variants={hangerVariants} />
-            <m.rect
-              width="18"
-              height="18"
-              x="3"
-              y="4"
-              rx="2"
-              variants={bodyVariants}
-            />
-            <m.path
-              d="M3 10h18"
-              variants={headerVariants}
-              style={{ transformBox: "view-box", originX: "3px", originY: "10px" }}
-            />
-            <m.path
-              d="M8 14h.01"
-              custom={0}
-              variants={dotVariants}
-              style={{ transformBox: "view-box", originX: "8px", originY: "14px" }}
-            />
-            <m.path
-              d="M12 14h.01"
-              custom={1}
-              variants={dotVariants}
-              style={{ transformBox: "view-box", originX: "12px", originY: "14px" }}
-            />
-            <m.path
-              d="M16 14h.01"
-              custom={2}
-              variants={dotVariants}
-              style={{ transformBox: "view-box", originX: "16px", originY: "14px" }}
-            />
-            <m.path
-              d="M8 18h.01"
-              custom={3}
-              variants={dotVariants}
-              style={{ transformBox: "view-box", originX: "8px", originY: "18px" }}
-            />
-            <m.path
-              d="M12 18h.01"
-              custom={4}
-              variants={dotVariants}
-              style={{ transformBox: "view-box", originX: "12px", originY: "18px" }}
-            />
-            <m.path
-              d="M16 18h.01"
-              custom={5}
-              variants={dotVariants}
-              style={{ transformBox: "view-box", originX: "16px", originY: "18px" }}
-            />
-          </m.svg>
-        </m.div>
-      </LazyMotion>
+          <path d="M8 2v4" />
+          <path d="M16 2v4" />
+          <rect height="18" rx="2" width="18" x="3" y="4" />
+          <path d="M3 10h18" />
+          <AnimatePresence>
+            {DOTS.map((dot, index) => (
+              <motion.circle
+                animate={controls}
+                custom={index}
+                cx={dot.cx}
+                cy={dot.cy}
+                fill="currentColor"
+                initial="normal"
+                key={`${dot.cx}-${dot.cy}`}
+                r="1"
+                stroke="none"
+                variants={VARIANTS}
+              />
+            ))}
+          </AnimatePresence>
+        </svg>
+      </div>
     );
   }
 );
 
 CalendarDaysIcon.displayName = "CalendarDaysIcon";
+
 export { CalendarDaysIcon };

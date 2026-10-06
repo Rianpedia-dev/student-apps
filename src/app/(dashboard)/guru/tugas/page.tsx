@@ -26,14 +26,38 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
   const { mapelId, kelasId, status } = await searchParams;
   const guruId = BigInt(session.id);
 
+  const parsedMapelId = mapelId && /^\d+$/.test(mapelId) ? BigInt(mapelId) : null;
+  const parsedKelasId = kelasId && /^\d+$/.test(kelasId) ? BigInt(kelasId) : null;
+  const isSpecificView = Boolean(parsedMapelId);
+
+  // Ambil informasi mapel dan kelas aktif jika ada
+  const [activeMapel, activeKelas] = await Promise.all([
+    parsedMapelId
+      ? prisma.mataPelajaran.findUnique({ where: { id: parsedMapelId } })
+      : null,
+    parsedKelasId
+      ? prisma.kelas.findUnique({ where: { id: parsedKelasId } })
+      : null,
+  ]);
+
+  // Query filter tugas
+  const whereClause: any = {
+    OR: [
+      { guru_id: guruId },
+      ...(session.kelas ? [{ kelas: { nama_kelas: session.kelas } }] : []),
+    ],
+  };
+
+  if (parsedMapelId) {
+    whereClause.mapel_id = parsedMapelId;
+  }
+  if (parsedKelasId) {
+    whereClause.kelas_id = parsedKelasId;
+  }
+
   // Ambil data tugas lengkap dengan kelas, mapel, pertemuan, dan submissions
   const rawTasks = await prisma.tugas.findMany({
-    where: {
-      OR: [
-        { guru_id: guruId },
-        ...(session.kelas ? [{ kelas: { nama_kelas: session.kelas } }] : []),
-      ],
-    },
+    where: whereClause,
     include: {
       kelas: true,
       mapel: true,
@@ -54,23 +78,23 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
     orderBy: { created_at: "desc" },
   });
 
-  // Ambil data jadwal mengajar untuk melengkapi daftar kelas & mapel di filter dropdown
-  const teacherSchedules = await prisma.jadwalPelajaran.findMany({
-    where: session.role === "guru" ? { guru_id: guruId } : {},
-    include: { kelas: true, mapel: true },
-  });
+  // Ambil data jadwal mengajar untuk melengkapi daftar kelas & mapel di filter dropdown jika view umum
+  const teacherSchedules = isSpecificView
+    ? []
+    : await prisma.jadwalPelajaran.findMany({
+        where: session.role === "guru" ? { guru_id: guruId } : {},
+        include: { kelas: true, mapel: true },
+      });
 
   // Extract unique classes and subjects for filter dropdowns
   const classMap = new Map<string, string>();
   const subjectMap = new Map<string, string>();
 
-  // Masukkan dari jadwal mengajar
   teacherSchedules.forEach((sch) => {
     classMap.set(sch.kelas_id.toString(), sch.kelas.nama_kelas);
     subjectMap.set(sch.mapel_id.toString(), sch.mapel.nama_mapel);
   });
 
-  // Masukkan dari rawTasks
   rawTasks.forEach((t) => {
     classMap.set(t.kelas_id.toString(), t.kelas.nama_kelas);
     subjectMap.set(t.mapel_id.toString(), t.mapel.nama_mapel);
@@ -118,17 +142,21 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
       {/* Back Navigation */}
       <DashboardBreadcrumb
         backHref="/guru/mapel"
-        backLabel="Mapel & Tugas"
+        backLabel={isSpecificView ? "Kembali ke Jadwal & Mapel" : "Jadwal & Mapel"}
       />
 
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5 bg-card/60 backdrop-blur-xs p-5 rounded-2xl border border-border">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            Daftar Tugas & Penilaian
+            {activeMapel ? `Tugas: ${activeMapel.nama_mapel}` : "Daftar Tugas & Penilaian"}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Kelola penugasan kelas, periksa lembar kerja siswa, dan evaluasi hasil belajar secara langsung.
+            {activeKelas
+              ? `${activeKelas.nama_kelas} • Kelola penugasan dan periksa hasil belajar siswa.`
+              : activeMapel
+              ? `Kelola penugasan untuk mata pelajaran ${activeMapel.nama_mapel}.`
+              : "Kelola penugasan kelas, periksa lembar kerja siswa, dan evaluasi hasil belajar secara langsung."}
           </p>
         </div>
 
@@ -143,7 +171,7 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      {/* Daftar Tugas Siswa dengan Filter Dinamis */}
+      {/* Daftar Tugas Siswa */}
       <TeacherTaskList
         tasks={tasks}
         availableClasses={availableClasses}
@@ -151,6 +179,9 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
         initialMapelId={mapelId}
         initialKelasId={kelasId}
         initialStatus={status}
+        isSpecificView={isSpecificView}
+        activeMapelNama={activeMapel?.nama_mapel}
+        activeKelasNama={activeKelas?.nama_kelas}
       />
     </div>
   );

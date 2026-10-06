@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { InteractiveTaskRunner } from "@/components/features/assignment/runner/interactive-task-runner";
+import { seededShuffle } from "@/lib/shuffle";
 
 export const dynamic = "force-dynamic";
 
@@ -108,16 +109,27 @@ export default async function SiswaKerjakanTugasPage({ params }: PageProps) {
     })),
   }));
 
-  // Jika acak opsi diaktifkan
+  const seedKey = `${submission.id}-${studentId}`;
+
+  // 1. Acak urutan nomor soal jika diaktifkan
+  if (tugas.acak_soal) {
+    questionsList = seededShuffle(questionsList, seedKey);
+    // Normalisasi nomor urut visual di layar siswa menjadi 1..N
+    questionsList = questionsList.map((q, idx) => ({
+      ...q,
+      nomor_urut: idx + 1,
+    }));
+  }
+
+  // 2. Acak opsi pilihan jawaban jika diaktifkan (menjaga ID opsi tetap terhubung)
   if (tugas.acak_opsi) {
     questionsList = questionsList.map((q) => {
       if (q.opsi.length > 1) {
-        // Pertahankan label A, B, C, D tetapi acak urutan teksnya
-        const shuffledTeks = [...q.opsi].sort(() => Math.random() - 0.5);
-        const remapped = q.opsi.map((orig, i) => ({
-          ...orig,
-          teks_opsi: shuffledTeks[i].teks_opsi,
-          gambar_opsi: shuffledTeks[i].gambar_opsi,
+        const shuffledOpsi = seededShuffle(q.opsi, `${seedKey}-${q.id}`);
+        // Beri label visual baru A, B, C, D sesuai urutan tampilan, namun ID opsi tetap asli
+        const remapped = shuffledOpsi.map((op, i) => ({
+          ...op,
+          label: String.fromCharCode(65 + i),
         }));
         return { ...q, opsi: remapped };
       }

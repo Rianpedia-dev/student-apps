@@ -120,12 +120,13 @@ export function RunnerQuestionCard({
           <div className="space-y-2.5">
             {question.opsi.map((op) => {
               const isSelected =
-                currentAnswer.toUpperCase() === op.label.toUpperCase();
+                (op.id && currentAnswer === op.id) ||
+                (op.label && currentAnswer.toUpperCase() === op.label.toUpperCase());
               return (
                 <button
                   key={op.id || op.label}
                   type="button"
-                  onClick={() => onSelectAnswer(question.id, op.label)}
+                  onClick={() => onSelectAnswer(question.id, op.id || op.label)}
                   className={`w-full text-left p-3 sm:p-3.5 rounded-lg border transition-all flex items-start gap-3 cursor-pointer ${
                     isSelected
                       ? "bg-primary/5 border-primary ring-1 ring-primary/30"
@@ -158,13 +159,26 @@ export function RunnerQuestionCard({
                       </span>
                     )}
                     {op.gambar_opsi && (
-                      <div className="inline-block border border-border rounded-lg overflow-hidden p-1 bg-card">
+                      <div
+                        className="relative group/optimg inline-block border border-border rounded-lg overflow-hidden p-1 bg-card"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectAnswer(question.id, op.id || op.label);
+                          onZoomImage(op.gambar_opsi!);
+                        }}
+                        title="Klik untuk perbesar gambar opsi"
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={op.gambar_opsi}
                           alt={`Pilihan ${op.label}`}
-                          className="h-24 sm:h-28 object-contain rounded"
+                          className="h-24 sm:h-28 object-contain rounded cursor-zoom-in"
                         />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/optimg:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                          <span className="text-[10px] bg-background/90 text-foreground px-1.5 py-0.5 rounded shadow-xs">
+                            Perbesar
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>

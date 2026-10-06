@@ -2,30 +2,18 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import {
-  Clock,
-  Users,
-  ArrowRight,
-  Trash2,
-  Loader2,
-  Search,
-  X,
-  FileText,
-  Plus,
-} from "lucide-react";
+import { Trash2, Loader2, Plus, FileText, Clock, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +53,9 @@ interface TeacherTaskListProps {
   initialMapelId?: string;
   initialKelasId?: string;
   initialStatus?: string;
+  isSpecificView?: boolean;
+  activeMapelNama?: string;
+  activeKelasNama?: string;
 }
 
 export function TeacherTaskList({
@@ -74,26 +65,34 @@ export function TeacherTaskList({
   initialMapelId,
   initialKelasId,
   initialStatus,
+  isSpecificView = false,
+  activeMapelNama,
+  activeKelasNama,
 }: TeacherTaskListProps) {
   const router = useRouter();
   const [taskToDelete, setTaskToDelete] = useState<TeacherTaskItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedMapelId, setSelectedMapelId] = useState<string>(initialMapelId || "all");
   const [selectedKelasId, setSelectedKelasId] = useState<string>(initialKelasId || "all");
 
-  const waitingTotalCount = useMemo(() => tasks.filter((t) => t.waitingCount > 0).length, [tasks]);
-  const completedTotalCount = useMemo(() => tasks.filter((t) => t.waitingCount === 0 && t.totalSubmissions > 0).length, [tasks]);
+  const waitingTotalCount = useMemo(
+    () => tasks.filter((t) => t.waitingCount > 0).length,
+    [tasks]
+  );
+  const completedTotalCount = useMemo(
+    () => tasks.filter((t) => t.waitingCount === 0 && t.totalSubmissions > 0).length,
+    [tasks]
+  );
 
   const filterTasks = (statusTab: string) => {
     return tasks.filter((task) => {
       if (statusTab === "need_grading" && task.waitingCount === 0) return false;
-      if (statusTab === "completed" && !(task.waitingCount === 0 && task.totalSubmissions > 0)) return false;
-      if (selectedMapelId !== "all" && task.mapelId !== selectedMapelId) return false;
-      if (selectedKelasId !== "all" && task.kelasId !== selectedKelasId) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        return task.judul.toLowerCase().includes(q) || task.mapelNama.toLowerCase().includes(q) || task.kelasNama.toLowerCase().includes(q);
+      if (statusTab === "completed" && !(task.waitingCount === 0 && task.totalSubmissions > 0)) {
+        return false;
+      }
+      if (!isSpecificView) {
+        if (selectedMapelId !== "all" && task.mapelId !== selectedMapelId) return false;
+        if (selectedKelasId !== "all" && task.kelasId !== selectedKelasId) return false;
       }
       return true;
     });
@@ -112,7 +111,7 @@ export function TeacherTaskList({
         toast.error(res.error || "Gagal menghapus tugas.");
       }
     } catch {
-      toast.error("Terjadi kesalahan saat menghapus.");
+      toast.error("Terjadi kesalahan saat menghapus tugas.");
     } finally {
       setIsDeleting(false);
     }
@@ -120,198 +119,340 @@ export function TeacherTaskList({
 
   if (tasks.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-16 text-center space-y-4">
-          <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-          <div>
-            <h3 className="text-sm font-bold text-foreground">Belum ada tugas</h3>
-            <p className="text-xs text-muted-foreground mt-1">Buat penugasan pertama untuk kelas Anda.</p>
-          </div>
+      <div className="rounded-2xl border border-border bg-card p-12 text-center space-y-3">
+        <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+        <h3 className="text-base font-bold text-foreground">Belum Ada Tugas yang Dibuat</h3>
+        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+          Bapak/Ibu Guru belum membuat penugasan. Klik tombol di bawah untuk membuat tugas pertama.
+        </p>
+        <div className="pt-2">
           <Link href="/guru/tugas/create">
-            <Button size="sm" className="gap-1.5 text-xs font-semibold">
-              <Plus className="h-3.5 w-3.5" /> Buat Tugas
+            <Button size="sm" className="gap-1.5 text-xs font-bold rounded-xl">
+              <Plus className="h-4 w-4" /> Buat Tugas Baru
             </Button>
           </Link>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
-  const renderTaskGrid = (statusTab: string) => {
+  const renderTable = (statusTab: string) => {
     const filtered = filterTasks(statusTab);
-    if (filtered.length === 0) {
-      return (
-        <Card>
-          <CardContent className="py-12 text-center space-y-3">
-            <Search className="h-8 w-8 text-muted-foreground/40 mx-auto" />
-            <p className="text-sm font-semibold text-foreground">Tidak ada tugas yang cocok</p>
-            <p className="text-xs text-muted-foreground">Coba ubah kata kunci atau reset filter.</p>
-          </CardContent>
-        </Card>
-      );
-    }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {filtered.map((task) => {
-          const { label: deadlineLabel, isLate } = getDeadlineInfo(task.deadline);
-          return (
-            <Card key={task.id} enableHover className="flex flex-col justify-between">
-              <CardContent className="p-4 sm:p-5 space-y-3 flex-1 flex flex-col">
-                {/* Top: Subject + Class */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="font-medium truncate">{task.mapelNama}</span>
-                  <span>•</span>
-                  <span>{task.kelasNama}</span>
-                </div>
+      <div className="rounded-2xl border border-border bg-card shadow-2xs overflow-hidden">
+        <Table className="w-full">
+          <TableHeader className="bg-muted/40 border-b border-border">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-12 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                No
+              </TableHead>
+              {!isSpecificView && (
+                <>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[160px]">
+                    Mata Pelajaran
+                  </TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[140px]">
+                    Kelas
+                  </TableHead>
+                </>
+              )}
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[220px]">
+                Judul Tugas
+              </TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[130px]">
+                Batas Waktu
+              </TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground text-center min-w-[130px]">
+                Jawaban Siswa
+              </TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground text-center min-w-[150px]">
+                Aksi
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={isSpecificView ? 5 : 7}
+                  className="h-36 text-center text-muted-foreground"
+                >
+                  <p className="text-sm font-semibold text-foreground">
+                    {isSpecificView
+                      ? `Belum ada tugas untuk mata pelajaran ${activeMapelNama || ""}${activeKelasNama ? ` di ${activeKelasNama}` : ""}`
+                      : "Tidak ada tugas yang sesuai"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {isSpecificView
+                      ? "Bapak/Ibu dapat membuat tugas baru dengan mengklik tombol di atas."
+                      : "Coba sesuaikan kata kunci pencarian atau klik tombol Reset Filter."}
+                  </p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((task, index) => {
+                const { label: deadlineLabel, isLate } = getDeadlineInfo(task.deadline);
 
-                {/* Title */}
-                <Link href={`/guru/tugas/${task.id}`} className="block flex-1">
-                  <h3 className="text-sm sm:text-base font-bold text-foreground line-clamp-2 leading-snug hover:text-primary transition-colors">
-                    {task.judul}
-                  </h3>
-                </Link>
-
-                {/* Info Row */}
-                <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 border border-border text-xs">
-                  <div className="space-y-0.5">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Users className="h-3 w-3" /> Pengumpulan
-                    </span>
-                    <p className="font-semibold text-foreground">
-                      {task.totalSubmissions} siswa
-                      {task.waitingCount > 0 && (
-                        <span className="text-[10px] font-medium text-muted-foreground ml-1">
-                          ({task.waitingCount} baru)
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> Deadline
-                    </span>
-                    <p className={`font-semibold truncate ${isLate ? "text-destructive" : "text-foreground"}`}>
-                      {deadlineLabel}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <Separator />
-                <div className="flex items-center gap-2">
-                  <Link href={`/guru/tugas/${task.id}`} className="flex-1">
-                    <Button size="sm" className="w-full text-xs font-semibold gap-1.5 h-9">
-                      Periksa & Nilai
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setTaskToDelete(task)}
-                    className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
-                    title="Hapus"
+                return (
+                  <TableRow
+                    key={task.id}
+                    className="hover:bg-muted/30 transition-colors border-b border-border/60"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                    {/* Nomor Urut */}
+                    <TableCell className="text-center font-mono text-xs text-muted-foreground">
+                      {index + 1}
+                    </TableCell>
+
+                    {/* Mata Pelajaran & Kelas hanya jika view umum */}
+                    {!isSpecificView && (
+                      <>
+                        <TableCell>
+                          <span className="font-semibold text-xs sm:text-sm text-foreground">
+                            {task.mapelNama}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs sm:text-sm text-foreground">
+                            {task.kelasNama}
+                          </span>
+                        </TableCell>
+                      </>
+                    )}
+
+                    {/* Judul Tugas */}
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <Link
+                          href={`/guru/tugas/${task.id}`}
+                          className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors block leading-snug"
+                        >
+                          {task.judul}
+                        </Link>
+                        {task.pertemuanJudul && (
+                          <span className="text-[11px] text-muted-foreground block">
+                            Pertemuan {task.pertemuanKe || ""}: {task.pertemuanJudul}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* Batas Waktu */}
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className={`h-3.5 w-3.5 shrink-0 ${isLate ? "text-rose-500" : "text-muted-foreground"}`} />
+                        <span
+                          className={`text-xs font-medium ${
+                            isLate ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-muted-foreground"
+                          }`}
+                        >
+                          {deadlineLabel}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    {/* Pengumpulan / Jawaban Siswa */}
+                    <TableCell className="text-center">
+                      {task.totalSubmissions === 0 ? (
+                        <span className="text-xs text-muted-foreground font-medium">
+                          Belum ada
+                        </span>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <span className="text-xs font-bold text-foreground">
+                            {task.totalSubmissions} Siswa
+                          </span>
+                          {task.waitingCount > 0 ? (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                            >
+                              {task.waitingCount} perlu dinilai
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                            >
+                              Semua dinilai
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
+
+                    {/* Aksi & Pengelolaan */}
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Link href={`/guru/tugas/${task.id}`}>
+                          <Button
+                            size="sm"
+                            className="h-8 px-3 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs gap-1.5"
+                            title="Buka daftar jawaban siswa untuk dinilai"
+                          >
+                            <ClipboardCheck className="h-3.5 w-3.5" />
+                            <span>Periksa & Nilai</span>
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setTaskToDelete(task)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 rounded-xl"
+                          title="Hapus Tugas"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
     );
   };
 
   return (
-    <div className="space-y-4">
-      {/* Search + Filters */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari tugas, mapel, atau kelas..."
-            className="pl-9 pr-8 h-10 text-sm rounded-lg"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
+    <div className="space-y-3.5">
+      {/* Tabs Kategori Tugas */}
+      <Tabs
+        defaultValue={
+          initialStatus === "need_grading" || initialStatus === "completed"
+            ? initialStatus
+            : "all"
+        }
+        className="space-y-3.5"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <TabsList className="inline-flex h-9 p-1 bg-card/80 border border-border/80 rounded-xl shadow-2xs gap-1 w-fit">
+            <TabsTrigger
+              value="all"
+              className="rounded-lg text-xs font-semibold px-3 py-1 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all gap-1.5"
+            >
+              <span>Semua</span>
+              <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-md bg-muted-foreground/15">
+                {tasks.length}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="need_grading"
+              className="rounded-lg text-xs font-semibold px-3 py-1 data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-400 transition-all gap-1.5"
+            >
+              <span>Perlu Dinilai</span>
+              <span
+                className={`px-1.5 py-0.2 text-[10px] font-bold rounded-md ${
+                  waitingTotalCount > 0
+                    ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                    : "bg-muted-foreground/15 text-muted-foreground"
+                }`}
+              >
+                {waitingTotalCount}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="completed"
+              className="rounded-lg text-xs font-semibold px-3 py-1 data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald-400 transition-all gap-1.5"
+            >
+              <span>Selesai</span>
+              <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-md bg-muted-foreground/15 text-muted-foreground">
+                {completedTotalCount}
+              </span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Filter dropdowns hanya jika BUKAN mode mapel spesifik */}
+          {!isSpecificView && (availableClasses.length > 0 || availableSubjects.length > 0) && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {availableClasses.length > 0 && (
+                <select
+                  value={selectedKelasId}
+                  onChange={(e) => setSelectedKelasId(e.target.value)}
+                  className="h-8 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground cursor-pointer"
+                >
+                  <option value="all">Semua Kelas</option>
+                  {availableClasses.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {availableSubjects.length > 0 && (
+                <select
+                  value={selectedMapelId}
+                  onChange={(e) => setSelectedMapelId(e.target.value)}
+                  className="h-8 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground cursor-pointer"
+                >
+                  <option value="all">Semua Mapel</option>
+                  {availableSubjects.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {(selectedKelasId !== "all" || selectedMapelId !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedKelasId("all");
+                    setSelectedMapelId("all");
+                  }}
+                  className="h-8 text-xs text-muted-foreground hover:text-foreground rounded-lg px-2"
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Dropdown Filters */}
-        {(availableClasses.length > 0 || availableSubjects.length > 0) && (
-          <div className="flex items-center gap-2 flex-wrap">
-            {availableClasses.length > 0 && (
-              <Select value={selectedKelasId} onValueChange={(val) => setSelectedKelasId(val || "all")}>
-                <SelectTrigger className="text-xs h-8">
-                  <SelectValue placeholder="Semua Kelas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Kelas</SelectItem>
-                  {availableClasses.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {availableSubjects.length > 0 && (
-              <Select value={selectedMapelId} onValueChange={(val) => setSelectedMapelId(val || "all")}>
-                <SelectTrigger className="text-xs h-8">
-                  <SelectValue placeholder="Semua Mapel" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Mapel</SelectItem>
-                  {availableSubjects.map((sub) => (
-                    <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {(selectedKelasId !== "all" || selectedMapelId !== "all") && (
-              <button
-                onClick={() => { setSelectedKelasId("all"); setSelectedMapelId("all"); }}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Reset Filter
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Tabs + Content */}
-      <Tabs defaultValue={initialStatus === "need_grading" || initialStatus === "completed" ? initialStatus : "all"}>
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="all">Semua ({tasks.length})</TabsTrigger>
-          <TabsTrigger value="need_grading">Perlu Dikoreksi ({waitingTotalCount})</TabsTrigger>
-          <TabsTrigger value="completed">Selesai ({completedTotalCount})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all">{renderTaskGrid("all")}</TabsContent>
-        <TabsContent value="need_grading">{renderTaskGrid("need_grading")}</TabsContent>
-        <TabsContent value="completed">{renderTaskGrid("completed")}</TabsContent>
+        <TabsContent value="all" className="mt-0">{renderTable("all")}</TabsContent>
+        <TabsContent value="need_grading" className="mt-0">{renderTable("need_grading")}</TabsContent>
+        <TabsContent value="completed" className="mt-0">{renderTable("completed")}</TabsContent>
       </Tabs>
 
-      {/* Delete Dialog */}
+      {/* Konfirmasi Hapus Tugas Dialog */}
       <Dialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
             <DialogTitle>Hapus Tugas?</DialogTitle>
-            <DialogDescription>
-              Tugas <strong>&quot;{taskToDelete?.judul}&quot;</strong> dan seluruh data siswa terkait akan dihapus permanen.
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed pt-1">
+              Apakah Bapak/Ibu yakin ingin menghapus tugas{" "}
+              <strong className="text-foreground">&quot;{taskToDelete?.judul}&quot;</strong>?
+              Seluruh lembar kerja dan jawaban siswa pada tugas ini akan terhapus.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 pt-2">
-            <Button variant="outline" size="sm" disabled={isDeleting} onClick={() => setTaskToDelete(null)} className="text-xs">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => setTaskToDelete(null)}
+              className="text-xs rounded-xl"
+            >
               Batal
             </Button>
-            <Button variant="destructive" size="sm" disabled={isDeleting} onClick={handleExecuteDelete} className="text-xs font-semibold gap-1.5">
-              {isDeleting ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Menghapus...</> : "Ya, Hapus"}
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isDeleting}
+              onClick={handleExecuteDelete}
+              className="text-xs font-bold rounded-xl gap-1.5"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Menghapus...
+                </>
+              ) : (
+                "Ya, Hapus"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

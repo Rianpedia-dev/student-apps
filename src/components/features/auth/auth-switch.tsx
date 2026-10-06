@@ -96,7 +96,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
   };
 
   const handleDemoLogin = async (
-    role: "admin" | "guru" | "siswa" | "siswa1" | "siswa2" | "siswa3"
+    role: "admin" | "guru" | "guru1" | "guru2" | "siswa" | "siswa1" | "siswa2" | "siswa3"
   ) => {
     setLoadingDemoRole(role);
     setLoginError("");
@@ -109,7 +109,8 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
         return;
       }
       window.location.href =
-        result.redirectPath || (role.startsWith("siswa") ? "/siswa" : `/${role}`);
+        result.redirectPath ||
+        (role.startsWith("siswa") ? "/siswa" : role.startsWith("guru") ? "/guru" : `/${role}`);
     } catch (e: any) {
       setLoginError(e?.message || "Terjadi kesalahan saat masuk demo.");
       setLoadingDemoRole(null);
@@ -120,6 +121,11 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
   const [registerState, formAction, isRegisterPending] = useActionState(registerTeacherAction, null);
 
   const classListSD = [
+    "Kelas 3 - Ibnu Hayyan",
+    "Kelas 3 - Ibnu Rusyd",
+    "Kelas 3 - Ibnu Nafis",
+    "Kelas 3 - Ibnu Kholdun",
+    "Kelas 3 - Ibnu Batutah",
     "Kelas 4 - Mehmed Al Fatih",
     "Kelas 4 - Sayfuddin Al Quthuz",
     "Kelas 4 - Sholahuddin Al Ayubi",
@@ -790,6 +796,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                     disabled={isAnyLoginBusy}
                     onClick={() => handleDemoLogin("admin")}
                     className="demo-badge"
+                    title="Masuk sebagai Administrator SDIA"
                   >
                     <ShieldCheck size={13} className="text-emerald-700" />
                     {loadingDemoRole === "admin" ? "..." : "Admin"}
@@ -799,16 +806,27 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                     disabled={isAnyLoginBusy}
                     onClick={() => handleDemoLogin("guru")}
                     className="demo-badge"
+                    title="Masuk sebagai Guru 1: Ustadzah Fatimah, S.Pd (Wali Kelas 4 SD)"
                   >
                     <GraduationCap size={13} className="text-emerald-700" />
-                    {loadingDemoRole === "guru" ? "..." : "Guru"}
+                    {loadingDemoRole === "guru" || loadingDemoRole === "guru1" ? "..." : "Guru 1"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isAnyLoginBusy}
+                    onClick={() => handleDemoLogin("guru2")}
+                    className="demo-badge"
+                    title="Masuk sebagai Guru 2: Ustadz Farhan, S.Pd (Wali Kelas 7 SMP)"
+                  >
+                    <GraduationCap size={13} className="text-emerald-700" />
+                    {loadingDemoRole === "guru2" ? "..." : "Guru 2"}
                   </button>
                   <button
                     type="button"
                     disabled={isAnyLoginBusy}
                     onClick={() => handleDemoLogin("siswa1")}
                     className="demo-badge"
-                    title="Masuk sebagai Muhammad Rayhan"
+                    title="Masuk sebagai Siswa: Muhammad Rayhan (Kelas 4 SD)"
                   >
                     <BookOpen size={13} className="text-emerald-700" />
                     {loadingDemoRole === "siswa1" ? "..." : "Rayhan"}
@@ -818,7 +836,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                     disabled={isAnyLoginBusy}
                     onClick={() => handleDemoLogin("siswa2")}
                     className="demo-badge"
-                    title="Masuk sebagai Khalid Al-Ghazi"
+                    title="Masuk sebagai Siswa: Khalid Al-Ghazi (Kelas 4 SD)"
                   >
                     <BookOpen size={13} className="text-emerald-700" />
                     {loadingDemoRole === "siswa2" ? "..." : "Khalid"}
@@ -828,7 +846,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                     disabled={isAnyLoginBusy}
                     onClick={() => handleDemoLogin("siswa3")}
                     className="demo-badge"
-                    title="Masuk sebagai Zahra Salsabila"
+                    title="Masuk sebagai Siswi: Zahra Salsabila (Kelas 4 SD)"
                   >
                     <BookOpen size={13} className="text-emerald-700" />
                     {loadingDemoRole === "siswa3" ? "..." : "Zahra"}

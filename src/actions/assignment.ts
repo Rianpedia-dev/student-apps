@@ -545,7 +545,18 @@ export async function submitInteractiveTaskAction({
       if (soal.tipe_soal === "PILIHAN_GANDA" || soal.tipe_soal === "PILIHAN_GAMBAR") {
         const correctOpsi = soal.opsi.find((o) => o.is_benar);
         const correctLabel = correctOpsi?.label?.trim().toUpperCase() || soal.kunci_jawaban?.trim().toUpperCase();
-        const isBenar = chosen.toUpperCase() === correctLabel;
+        const correctId = correctOpsi?.id?.toString();
+
+        // Cari opsi yang dipilih siswa (bisa berupa ID opsi atau label A/B/C/D)
+        const matchedOpsi = soal.opsi.find(
+          (o) => o.id.toString() === chosen || (o.label && o.label.toUpperCase() === chosen.toUpperCase())
+        );
+        const isBenar = matchedOpsi
+          ? Boolean(matchedOpsi.is_benar)
+          : Boolean(
+              (correctLabel && chosen.toUpperCase() === correctLabel) ||
+              (correctId && chosen === correctId)
+            );
 
         if (isBenar) {
           totalBenar++;

@@ -3,8 +3,6 @@
 import React from "react";
 import {
   Plus,
-  ImageIcon,
-  FileQuestion,
   HelpCircle,
   Sparkles,
 } from "lucide-react";
@@ -91,7 +89,6 @@ export function BuilderStepQuestions({
                 const isComplete =
                   q.pertanyaan.trim().length > 0 &&
                   (q.tipe_soal === "ESAI" ||
-                    q.tipe_soal === "ISIAN_SINGKAT" ||
                     q.opsi.some((o) => o.is_benar));
 
                 return (
@@ -124,39 +121,19 @@ export function BuilderStepQuestions({
                 variant="outline"
                 size="sm"
                 onClick={() => onAddQuestion("PILIHAN_GANDA")}
-                className="w-full text-xs h-8 justify-start gap-2"
+                className="w-full text-xs h-8 justify-start gap-2 font-medium"
               >
-                <Plus className="h-3.5 w-3.5" />
-                <span>+ Pilihan Ganda (Teks)</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onAddQuestion("PILIHAN_GAMBAR")}
-                className="w-full text-xs h-8 justify-start gap-2"
-              >
-                <ImageIcon className="h-3.5 w-3.5" />
-                <span>+ Pilihan Bergambar</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onAddQuestion("ISIAN_SINGKAT")}
-                className="w-full text-xs h-8 justify-start gap-2"
-              >
-                <FileQuestion className="h-3.5 w-3.5" />
-                <span>+ Isian Singkat</span>
+                <Plus className="h-3.5 w-3.5 text-primary" />
+                <span>+ Pilihan Ganda</span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => onAddQuestion("ESAI")}
-                className="w-full text-xs h-8 justify-start gap-2"
+                className="w-full text-xs h-8 justify-start gap-2 font-medium"
               >
-                <HelpCircle className="h-3.5 w-3.5" />
+                <HelpCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                 <span>+ Esai / Uraian</span>
               </Button>
             </div>

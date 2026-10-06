@@ -100,7 +100,7 @@ export function BuilderStepSettings({
                   ))}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Siswa akan melihat timer hitung mundur saat pengerjaan.
+                  Durasi antara 5 hingga 180 menit. Siswa akan melihat timer hitung mundur saat pengerjaan.
                 </p>
               </div>
             ) : (
@@ -163,11 +163,31 @@ export function BuilderStepSettings({
         </div>
 
         {/* Ringkasan Akhir */}
-        <div className="p-4 rounded-lg bg-muted/40 border border-border space-y-2">
-          <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-            <Award className="h-4 w-4 text-primary" />
-            <span>Ringkasan Tugas Interaktif:</span>
-          </span>
+        <div className="p-4 rounded-lg bg-muted/40 border border-border space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <Award className="h-4 w-4 text-primary" />
+              <span>Ringkasan Tugas Interaktif:</span>
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                acakSoal ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"
+              }`}>
+                {acakSoal ? "Soal Diacak" : "Soal Urut"}
+              </span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                acakOpsi ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"
+              }`}>
+                {acakOpsi ? "Opsi Diacak" : "Opsi Tetap"}
+              </span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                tampilkanNilai ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+              }`}>
+                {tampilkanNilai ? "Nilai Langsung" : "Nilai Dirahasiakan"}
+              </span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
             <div>
               <span className="text-muted-foreground block text-[11px]">Judul:</span>
@@ -184,7 +204,7 @@ export function BuilderStepSettings({
             <div>
               <span className="text-muted-foreground block text-[11px]">Durasi:</span>
               <strong className="text-foreground">
-                {hasDurationLimit ? `${durasiMenit} Menit` : "Tanpa Batas"}
+                {hasDurationLimit ? `${durasiMenit || 30} Menit` : "Tanpa Batas"}
               </strong>
             </div>
           </div>

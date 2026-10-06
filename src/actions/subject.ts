@@ -5,15 +5,11 @@ import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { compareScheduleTime } from "@/lib/utils";
 
+import { SubjectService } from "@/services/subject.service";
+
 export async function getMataPelajaranList(jenjang?: string) {
   try {
-    const where = jenjang && jenjang !== "SEMUA" 
-      ? { OR: [{ jenjang }, { jenjang: "SEMUA" }] } 
-      : {};
-    const list = await prisma.mataPelajaran.findMany({
-      where,
-      orderBy: { nama_mapel: "asc" },
-    });
+    const list = await SubjectService.getMataPelajaranList(jenjang);
     return { success: true, data: list };
   } catch (err: any) {
     return { success: false, error: err.message, data: [] };
@@ -22,12 +18,8 @@ export async function getMataPelajaranList(jenjang?: string) {
 
 export async function getMataPelajaranById(id: bigint | string) {
   try {
-    const isNum = /^\d+$/.test(String(id));
-    if (!isNum) return { success: false, error: "ID tidak valid", data: null };
-
-    const mapel = await prisma.mataPelajaran.findUnique({
-      where: { id: BigInt(id) },
-    });
+    const mapel = await SubjectService.getMataPelajaranById(id);
+    if (!mapel) return { success: false, error: "Mata pelajaran tidak ditemukan", data: null };
     return { success: true, data: mapel };
   } catch (err: any) {
     return { success: false, error: err.message, data: null };
@@ -36,34 +28,7 @@ export async function getMataPelajaranById(id: bigint | string) {
 
 export async function getJadwalByKelas(namaKelas: string) {
   try {
-    const kelas = await prisma.kelas.findFirst({
-      where: { nama_kelas: namaKelas },
-    });
-    if (!kelas) return { success: false, data: [] };
-
-    const jadwal = await prisma.jadwalPelajaran.findMany({
-      where: { kelas_id: kelas.id },
-      include: {
-        mapel: true,
-        guru: {
-          select: { id: true, name: true, image: true, email: true, guru_bidang: true },
-        },
-      },
-    });
-
-    const sorted = [...jadwal].sort((a, b) => {
-      const comp = compareScheduleTime(
-        a.hari,
-        a.jam_mulai,
-        a.jam_selesai,
-        b.hari,
-        b.jam_mulai,
-        b.jam_selesai
-      );
-      if (comp !== 0) return comp;
-      return (a.mapel?.nama_mapel || "").localeCompare(b.mapel?.nama_mapel || "");
-    });
-
+    const sorted = await SubjectService.getJadwalByKelas(namaKelas);
     return { success: true, data: sorted };
   } catch (err: any) {
     return { success: false, error: err.message, data: [] };
@@ -72,30 +37,7 @@ export async function getJadwalByKelas(namaKelas: string) {
 
 export async function getJadwalByGuru(guruId: bigint | string) {
   try {
-    const isNum = /^\d+$/.test(String(guruId));
-    if (!isNum) return { success: false, data: [] };
-
-    const jadwal = await prisma.jadwalPelajaran.findMany({
-      where: { guru_id: BigInt(guruId) },
-      include: {
-        kelas: true,
-        mapel: true,
-      },
-    });
-
-    const sorted = [...jadwal].sort((a, b) => {
-      const comp = compareScheduleTime(
-        a.hari,
-        a.jam_mulai,
-        a.jam_selesai,
-        b.hari,
-        b.jam_mulai,
-        b.jam_selesai
-      );
-      if (comp !== 0) return comp;
-      return (a.kelas?.nama_kelas || "").localeCompare(b.kelas?.nama_kelas || "");
-    });
-
+    const sorted = await SubjectService.getJadwalByGuru(guruId);
     return { success: true, data: sorted };
   } catch (err: any) {
     return { success: false, error: err.message, data: [] };

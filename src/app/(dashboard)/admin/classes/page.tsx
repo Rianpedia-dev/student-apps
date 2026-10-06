@@ -40,7 +40,9 @@ export default async function AdminClassesPage() {
       code_restrict: c.code_restrict || "-",
     }));
 
-    teachersList = teachers.map((t) => t.name);
+    teachersList = Array.from(
+      new Set(teachers.map((t) => t.name?.trim()).filter((name): name is string => Boolean(name)))
+    );
   } catch (e) {
     console.error("Database query error in Admin Classes page:", e);
   }

@@ -122,6 +122,33 @@ export async function authenticateUser(
           gender: "P",
           nip: "198501152010012001",
         },
+        "guru1@gmail.com": {
+          pw: "guru123",
+          name: "Ustadzah Fatimah, S.Pd",
+          role: "guru",
+          status: "4",
+          kelas: "Kelas 4 - Mehmed Al Fatih",
+          gender: "P",
+          nip: "198501152010012001",
+        },
+        "guru2@gmail.com": {
+          pw: "guru123",
+          name: "Ustadz Farhan, S.Pd",
+          role: "guru",
+          status: "4",
+          kelas: "Kelas 7 - Ibnu Sina",
+          gender: "L",
+          nip: "198703122011011005",
+        },
+        "guru.smp@gmail.com": {
+          pw: "guru123",
+          name: "Ustadz Farhan, S.Pd",
+          role: "guru",
+          status: "4",
+          kelas: "Kelas 7 - Ibnu Sina",
+          gender: "L",
+          nip: "198703122011011005",
+        },
         "siswa@gmail.com": {
           pw: "siswa123",
           name: "Muhammad Rayhan Al-Fatih",
@@ -237,6 +264,9 @@ export async function authenticateUser(
   if (!isMatch && process.env.ENABLE_DEMO_MODE !== "false") {
     if (email === "admin@gmail.com" && passwordPlain === "admin123") isMatch = true;
     if (email === "guru@gmail.com" && passwordPlain === "guru123") isMatch = true;
+    if (email === "guru1@gmail.com" && passwordPlain === "guru123") isMatch = true;
+    if (email === "guru2@gmail.com" && passwordPlain === "guru123") isMatch = true;
+    if (email === "guru.smp@gmail.com" && passwordPlain === "guru123") isMatch = true;
     if (email === "siswa@gmail.com" && passwordPlain === "siswa123") isMatch = true;
     if (email === "siswa1@gmail.com" && passwordPlain === "siswa123") isMatch = true;
     if (email === "siswa2@gmail.com" && passwordPlain === "siswa123") isMatch = true;
@@ -279,7 +309,7 @@ export async function authenticateUser(
   return { success: true, redirectPath, user: sessionUser };
 }
 
-export type DemoRole = "admin" | "guru" | "siswa" | "siswa1" | "siswa2" | "siswa3";
+export type DemoRole = "admin" | "guru" | "guru1" | "guru2" | "siswa" | "siswa1" | "siswa2" | "siswa3";
 
 export async function loginAsDemoRole(
   role: DemoRole
@@ -294,6 +324,8 @@ export async function loginAsDemoRole(
   const credentials: Record<string, { email: string; pw: string }> = {
     admin: { email: "admin@gmail.com", pw: "admin123" },
     guru: { email: "guru@gmail.com", pw: "guru123" },
+    guru1: { email: "guru@gmail.com", pw: "guru123" },
+    guru2: { email: "guru2@gmail.com", pw: "guru123" },
     siswa: { email: "siswa1@gmail.com", pw: "siswa123" },
     siswa1: { email: "siswa1@gmail.com", pw: "siswa123" },
     siswa2: { email: "siswa2@gmail.com", pw: "siswa123" },

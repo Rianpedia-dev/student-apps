@@ -83,6 +83,11 @@ export interface MockPrestasi {
 }
 
 export const MOCK_CLASSES: MockClass[] = [
+  { id: "16", nama_kelas: "Kelas 3 - Ibnu Hayyan", wali_kelas: "Ustadzah Siti Aminah, S.Pd.I", jumlah_siswa: "28", code_restrict: "3101" },
+  { id: "17", nama_kelas: "Kelas 3 - Ibnu Rusyd", wali_kelas: "Ustadzah Ruqayyah, S.Pd", jumlah_siswa: "27", code_restrict: "3102" },
+  { id: "18", nama_kelas: "Kelas 3 - Ibnu Nafis", wali_kelas: "Ustadz Salman, S.Pd", jumlah_siswa: "26", code_restrict: "3103" },
+  { id: "19", nama_kelas: "Kelas 3 - Ibnu Kholdun", wali_kelas: "Ustadz Hamzah, S.Pd.I", jumlah_siswa: "28", code_restrict: "3104" },
+  { id: "20", nama_kelas: "Kelas 3 - Ibnu Batutah", wali_kelas: "Ustadzah Hana, S.Pd", jumlah_siswa: "25", code_restrict: "3105" },
   { id: "1", nama_kelas: "Kelas 4 - Mehmed Al Fatih", wali_kelas: "Ustadz Ahmad, S.Pd", jumlah_siswa: "28", code_restrict: "2739" },
   { id: "2", nama_kelas: "Kelas 4 - Sayfuddin Al Quthuz", wali_kelas: "Ustadzah Siti Aminah, S.Pd.I", jumlah_siswa: "27", code_restrict: "2957" },
   { id: "3", nama_kelas: "Kelas 4 - Sholahuddin Al Ayubi", wali_kelas: "Ustadz Faisal, S.Pd", jumlah_siswa: "26", code_restrict: "3419" },
@@ -119,10 +124,11 @@ export const MOCK_RESTRICTS: MockRestrict[] = [
 ];
 
 export const MOCK_TEACHERS: MockTeacher[] = [
-  { id: "1", name: "Ustadz Ahmad, S.Pd", email: "guru@gmail.com", nip: "198501012010011001", guru_bidang: "Tematik & Agama", kelas: "Kelas 4 - Mehmed Al Fatih", status: "4", gender: "L" },
+  { id: "1", name: "Ustadzah Fatimah, S.Pd", email: "guru@gmail.com", nip: "198501152010012001", guru_bidang: "Pendidikan Agama Islam", kelas: "Kelas 4 - Mehmed Al Fatih", status: "4", gender: "P" },
+  { id: "2", name: "Ustadz Farhan, S.Pd", email: "guru2@gmail.com", nip: "198703122011011005", guru_bidang: "Matematika & Sains", kelas: "Kelas 7 - Ibnu Sina", status: "4", gender: "L" },
   { id: "4", name: "Ustadzah Siti Aminah, S.Pd.I", email: "siti.aminah@gmail.com", nip: "198803122011012002", guru_bidang: "Pendidikan Agama Islam", kelas: "Kelas 4 - Sayfuddin Al Quthuz", status: "4", gender: "P" },
   { id: "5", name: "Ustadz Faisal, S.Pd", email: "faisal.it@gmail.com", nip: "199005152015011003", guru_bidang: "IT & Digital Literacy", kelas: "Kelas 4 - Sholahuddin Al Ayubi", status: "4", gender: "L" },
-  { id: "6", name: "Ustadzah Fatimah, S.Pd", email: "fatimah.math@gmail.com", nip: "199207202016022004", guru_bidang: "Matematika", kelas: null, status: "2", gender: "P" },
+  { id: "6", name: "Ustadz Ahmad, S.Pd.I", email: "ahmad.math@gmail.com", nip: "199207202016022004", guru_bidang: "Bahasa Arab", kelas: null, status: "2", gender: "L" },
   { id: "7", name: "Ustadz Ridwan, S.Pd", email: "ridwan.science@gmail.com", nip: "199411082019011005", guru_bidang: "Ilmu Pengetahuan Alam", kelas: null, status: "0", gender: "L" },
 ];
 
