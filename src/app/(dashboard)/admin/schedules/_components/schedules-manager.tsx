@@ -37,6 +37,7 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { compareScheduleTime } from "@/lib/utils";
+import { TeacherSearchSelect } from "./teacher-search-select";
 
 export interface ScheduleItem {
   id: string;
@@ -518,7 +519,7 @@ export function SchedulesManager({
                         {/* Kelas & Jenjang */}
                         <td className="p-3 font-bold text-foreground">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <Badge variant={s.jenjang === "SMP" ? "indigo" : "emerald"} size="sm">
+                            <Badge variant={s.jenjang === "SMP" ? "smp" : "emerald"} size="sm">
                               {s.jenjang}
                             </Badge>
                             <span>{s.kelasNama}</span>
@@ -714,22 +715,15 @@ export function SchedulesManager({
               </select>
             </div>
 
-            {/* Guru Pengampu Selector */}
+            {/* Guru Pengampu Selector with Search */}
             <div>
               <label className="text-xs font-bold block mb-1">Guru Pengampu *</label>
-              <select
-                name="guru_id"
+              <TeacherSearchSelect
+                teachers={teachers}
                 value={formGuruId}
-                onChange={(e) => setFormGuruId(e.target.value)}
-                className="w-full text-xs rounded-xl border border-input bg-background p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                onChange={(newId) => setFormGuruId(newId)}
                 required
-              >
-                {teachers.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.nama} {t.bidang ? `(${t.bidang})` : ""}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Hari & Jam */}

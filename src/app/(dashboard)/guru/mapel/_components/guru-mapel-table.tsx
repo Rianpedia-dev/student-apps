@@ -258,7 +258,7 @@ export function GuruMapelTable({ schedules }: GuruMapelTableProps) {
                           </span>
                           <div>
                             <Badge
-                              variant={sch.jenjang === "SMP" ? "indigo" : "amber"}
+                              variant={sch.jenjang === "SMP" ? "smp" : "amber"}
                               size="sm"
                               className="text-[10px] font-bold"
                             >

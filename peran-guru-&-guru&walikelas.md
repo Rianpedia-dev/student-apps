@@ -93,15 +93,16 @@ Guru & Wali Kelas adalah guru mata pelajaran yang juga diberikan Surat Keputusan
 
 ## 🔐 4. Aturan & Kebijakan Pengaturan Status
 
-### Kenapa Guru Tidak Bisa Mengatur Status Sendiri di Profil?
-1. **Mencegah Klaim Kelas Sepihak**: Agar tidak ada guru yang secara tidak sengaja atau mandiri mengubah rombelnya tanpa penetapan resmi sekolah.
-2. **Integritas Database Sekolah**: Setiap rombel hanya boleh memiliki satu wali kelas aktif agar data siswa dan laporan raport tidak tumpang-tindih.
-3. **Tampilan Kolom Wali Kelas di Profil Guru Bersifat Read-Only**:
-   * Guru hanya dapat melihat status peran dan nama kelas binaannya saat ini.
-   * Kolom tidak dapat diedit atau dipilih sendiri oleh guru.
+### Kenapa Guru Tidak Bisa Mengatur Status & Bidang Studi Sendiri di Profil?
+1. **Mencegah Klaim Kelas & Penugasan Sepihak**: Agar tidak ada guru yang secara mandiri mengubah rombel binaan atau bidang studi pengampu tanpa penetapan resmi kurikulum sekolah.
+2. **Integritas Database Sekolah**: Setiap rombel hanya boleh memiliki satu wali kelas aktif, dan bidang studi guru diselaraskan langsung dengan master mata pelajaran yang terdaftar.
+3. **Tampilan Kolom di Profil Guru Bersifat Read-Only**:
+   * **Bidang Studi (Mapel)**: Bersifat *Read-Only* (badge info). Guru dapat melihat mata pelajaran yang diampunya, namun pengaturannya dilakukan oleh Admin melalui menu master Mata Pelajaran & Kelola Guru.
+   * **Wali Kelas**: Bersifat *Read-Only* (badge info). Guru hanya dapat melihat status peran dan nama kelas binaannya saat ini.
+   * Keduanya tidak dapat diedit atau dimanipulasi secara mandiri oleh akun guru.
 
-### Cara Administrator Mengatur Status Guru:
-Pengaturan status sepenuhnya berada di tangan **Administrator** melalui menu **Admin > Kelola Guru (`/admin/teachers`)**:
+### Cara Administrator Mengatur Status & Mapel Guru:
+Pengaturan penugasan sepenuhnya berada di tangan **Administrator** melalui menu **Admin > Kelola Guru (`/admin/teachers`)**:
 
 1. **Tambah Akun Guru Baru**:
    * Admin memilih opsi peran: *Guru Mata Pelajaran* atau *Guru & Wali Kelas*.

@@ -31,12 +31,11 @@ describe("Role and Permission Separation: Guru vs Guru & Wali Kelas", () => {
     expect(isWaliKelas("admin", "3", null)).toBe(false);
   });
 
-  it("should ensure profile update sanitize policy strips role and class fields", () => {
+  it("should ensure profile update sanitize policy strips role, class, and guru_bidang fields", () => {
     // Only safe profile attributes are allowed to be updated by teacher directly
     const allowedTeacherProfileKeys = new Set([
       "name",
       "address",
-      "guru_bidang",
       "notes",
       "skills",
       "nip",
@@ -47,6 +46,7 @@ describe("Role and Permission Separation: Guru vs Guru & Wali Kelas", () => {
 
     expect(allowedTeacherProfileKeys.has("kelas")).toBe(false);
     expect(allowedTeacherProfileKeys.has("status")).toBe(false);
+    expect(allowedTeacherProfileKeys.has("guru_bidang")).toBe(false);
     expect(allowedTeacherProfileKeys.has("role")).toBe(false);
   });
 });

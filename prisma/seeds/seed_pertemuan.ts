@@ -1,26 +1,116 @@
 import prisma from "@/lib/prisma";
 
 async function main() {
-  console.log("=== SEEDING PERTEMUAN & MATERI KBM ===");
+  console.log("=========================================");
+  console.log("📚 Memulai Seeding Data Materi & Pertemuan KBM...");
+  console.log("=========================================");
 
-  const kelas4 = BigInt(1); // Kelas 4 - Mehmed Al Fatih
-  const guruFatimah = BigInt(2); // Ustadzah Fatimah, S.Pd
-  const guruMaryam = BigInt(4); // Ustadzah Maryam
-  const guruIbrahim = BigInt(5); // Ustadz Ibrahim
-  const guruAisyah = BigInt(6); // Ustadzah Aisyah
-  const guruHasan = BigInt(7); // Ustadz Hasan
-  const guruRidwan = BigInt(9); // Ustadz Ridwan
-  const guruFaisal = BigInt(11); // Ustadz Faisal
-  const guruAhmad = BigInt(3); // Ustadz Ahmad
+  // 1. Ambil Kelas Target (SD & SMP)
+  const kelasSD = await prisma.kelas.findFirst({
+    where: { nama_kelas: { contains: "Mehmed Al Fatih" } },
+  });
+  const kelasSMP = await prisma.kelas.findFirst({
+    where: { nama_kelas: { contains: "Ibnu Sina" } },
+  });
 
-  const newPertemuanData = [
+  if (!kelasSD) {
+    console.error("❌ Kelas 4 - Mehmed Al Fatih tidak ditemukan. Jalankan seed utama terlebih dahulu.");
+    return;
+  }
+
+  // 2. Ambil Data Guru
+  const guruSD = (await prisma.user.findFirst({ where: { email: "guru@gmail.com" } }))!;
+  const guruSMP =
+    (await prisma.user.findFirst({ where: { email: "guru2@gmail.com" } })) ||
+    (await prisma.user.findFirst({ where: { email: "guru.smp@gmail.com" } })) ||
+    guruSD;
+  const guruAhmad = (await prisma.user.findFirst({ where: { email: "ahmad.guru@alazhar.sch.id" } })) || guruSD;
+  const guruMaryam = (await prisma.user.findFirst({ where: { email: "maryam.guru@alazhar.sch.id" } })) || guruSD;
+  const guruIbrahim = (await prisma.user.findFirst({ where: { email: "ibrahim.guru@alazhar.sch.id" } })) || guruSD;
+  const guruAisyah = (await prisma.user.findFirst({ where: { email: "aisyah.guru@alazhar.sch.id" } })) || guruSD;
+  const guruHasan = (await prisma.user.findFirst({ where: { email: "hasan.guru@alazhar.sch.id" } })) || guruSD;
+  const guruRidwan = (await prisma.user.findFirst({ where: { email: "ridwan.guru@alazhar.sch.id" } })) || guruSD;
+  const guruFaisal = (await prisma.user.findFirst({ where: { email: "faisal.guru@alazhar.sch.id" } })) || guruSD;
+
+  // 3. Ambil Master Mata Pelajaran berdasarkan kode_mapel
+  const mapelPAI = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "PAI" } });
+  const mapelTAHFIDZ = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "TAHFIDZ" } });
+  const mapelBARAB = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "BARAB" } });
+  const mapelBING = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "BING" } });
+  const mapelBIND = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "BIND" } });
+  const mapelMTK = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "MTK" } });
+  const mapelIPA = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "IPA" } });
+  const mapelIPS = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "IPS" } });
+  const mapelINFOR = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "INFOR" } });
+  const mapelPJOK = await prisma.mataPelajaran.findUnique({ where: { kode_mapel: "PJOK" } });
+
+  const rawPertemuanData: Array<{
+    kelas_id: bigint;
+    mapel_id?: bigint | null;
+    guru_id: bigint;
+    pertemuan_ke: number;
+    judul: string;
+    deskripsi: string;
+    tanggal: Date;
+    file_url?: string | null;
+    file_name?: string | null;
+    file_size?: number | null;
+    file_type?: string | null;
+    video_url?: string | null;
+    link_eksternal?: string | null;
+    is_published: boolean;
+  }> = [
     // -------------------------------------------------------------
-    // MAPEL 5: BAHASA INDONESIA (BIND) - Guru: Ustadzah Fatimah (ID 2)
+    // MAPEL 1: PAI & ADAB - Guru: Ustadzah Fatimah
     // -------------------------------------------------------------
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(5),
-      guru_id: guruFatimah,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelPAI?.id,
+      guru_id: guruSD.id,
+      pertemuan_ke: 1,
+      judul: "Bab 1: Adab Islami Harian dan Tata Cara Thaharah Sesuai Sunnah",
+      deskripsi: `Assalamu'alaikum Ananda sholeh dan sholehah Kelas 4.
+
+Pada pertemuan perdana Pendidikan Agama Islam ini, kita mendalami:
+1. Rukun wudhu dan kesempurnaan membasuh anggota thaharah.
+2. Adab makan, minum, dan adab memasuki masjid sesuai teladan Rasulullah SAW.
+3. Praktik doa harian sebelum dan sesudah beraktivitas.`,
+      tanggal: new Date("2026-07-21"),
+      file_url: "/uploads/materials/Modul_PAI_Thaharah_P1.pdf",
+      file_name: "Modul_PAI_Thaharah_P1.pdf",
+      file_size: 3200,
+      file_type: "pdf",
+      video_url: "https://www.youtube.com/watch?v=kYJqB3N_U38",
+      link_eksternal: "https://quran.com/",
+      is_published: true,
+    },
+    {
+      kelas_id: kelasSD.id,
+      mapel_id: mapelPAI?.id,
+      guru_id: guruSD.id,
+      pertemuan_ke: 2,
+      judul: "Bab 2: Sholat Berjamaah & Meneladani Sifat Amanah Rasulullah SAW",
+      deskripsi: `Materi pertemuan kedua PAI:
+- Keutamaan sholat berjamaah di awal waktu (27 derajat pahala).
+- Meneladani kejujuran dan sifat Al-Amin (dapat dipercaya) Rasulullah SAW sejak masa belia.
+- Pembiasaan sholat dhuha dan dzuhur berjamaah di sekolah.`,
+      tanggal: new Date("2026-07-28"),
+      file_url: "/uploads/materials/Modul_PAI_Sholat_P2.pdf",
+      file_name: "Modul_PAI_Sholat_P2.pdf",
+      file_size: 4100,
+      file_type: "pdf",
+      video_url: "https://www.youtube.com/watch?v=52Zkxm21u6I",
+      link_eksternal: null,
+      is_published: true,
+    },
+
+    // -------------------------------------------------------------
+    // MAPEL 2: BAHASA INDONESIA (BIND) - Guru: Ustadzah Fatimah
+    // -------------------------------------------------------------
+    {
+      kelas_id: kelasSD.id,
+      mapel_id: mapelBIND?.id,
+      guru_id: guruSD.id,
       pertemuan_ke: 1,
       judul: "Bab 1: Menemukan Ide Pokok dan Gagasan Pendukung dalam Teks Deskripsi",
       deskripsi: `Assalamu'alaikum Ananda sholeh dan sholehah Kelas 4.
@@ -41,9 +131,9 @@ Silakan unduh dokumen modul KBM terlampir untuk rangkuman intisari materi dan pe
       is_published: true,
     },
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(5),
-      guru_id: guruFatimah,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelBIND?.id,
+      guru_id: guruSD.id,
       pertemuan_ke: 2,
       judul: "Bab 1: Mengidentifikasi Paragraf Narasi dan Penggunaan Kata Hubung (Konjungsi)",
       deskripsi: `Pada pertemuan kedua, kita belajar:
@@ -60,9 +150,9 @@ Silakan unduh dokumen modul KBM terlampir untuk rangkuman intisari materi dan pe
       is_published: true,
     },
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(5),
-      guru_id: guruFatimah,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelBIND?.id,
+      guru_id: guruSD.id,
       pertemuan_ke: 3,
       judul: "Bab 2: Menyimak Cerita Rakyat & Menyampaikan Nilai-Nilai Budi Pekerti",
       deskripsi: `Materi pekan ketiga berfokus pada kemampuan literasi menyimak:
@@ -80,12 +170,54 @@ Silakan unduh dokumen modul KBM terlampir untuk rangkuman intisari materi dan pe
     },
 
     // -------------------------------------------------------------
-    // MAPEL 8: ILMU PENGETAHUAN SOSIAL (IPS) - Guru: Ustadzah Fatimah (ID 2)
+    // MAPEL 3: MATEMATIKA (MTK) - Guru: Ustadzah Maryam
     // -------------------------------------------------------------
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(8),
-      guru_id: guruFatimah,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelMTK?.id,
+      guru_id: guruMaryam.id,
+      pertemuan_ke: 1,
+      judul: "Bab 1: Konsep Pecahan Senilai & Menyederhanakan Pecahan",
+      deskripsi: `Materi KBM Matematika Kelas 4:
+1. Memahami pecahan senilai menggunakan model gambar visual dan garis bilangan.
+2. Menyederhanakan pecahan dengan mencari FPB (Faktor Persekutuan Terbesar).
+3. Latihan soal cerita terapan dalam kehidupan sehari-hari.`,
+      tanggal: new Date("2026-07-22"),
+      file_url: "/uploads/materials/Modul_Matematika_Pecahan_P1.pdf",
+      file_name: "Modul_Matematika_Pecahan_P1.pdf",
+      file_size: 4500,
+      file_type: "pdf",
+      video_url: "https://www.youtube.com/watch?v=kYJqB3N_U38",
+      link_eksternal: null,
+      is_published: true,
+    },
+    {
+      kelas_id: kelasSD.id,
+      mapel_id: mapelMTK?.id,
+      guru_id: guruMaryam.id,
+      pertemuan_ke: 2,
+      judul: "Bab 1: Operasi Penjumlahan & Pengurangan Pecahan Berpenyebut Sama dan Berbeda",
+      deskripsi: `Pertemuan kedua Matematika:
+- Mengoperasikan penjumlahan dan pengurangan pecahan biasa dan pecahan campuran.
+- Menyamakan penyebut menggunakan KPK (Kelipatan Persekutuan Terkecil).
+- Trik cepat auto-grading latihan interaktif di iPad.`,
+      tanggal: new Date("2026-07-29"),
+      file_url: null,
+      file_name: null,
+      file_size: null,
+      file_type: null,
+      video_url: "https://www.youtube.com/watch?v=52Zkxm21u6I",
+      link_eksternal: null,
+      is_published: true,
+    },
+
+    // -------------------------------------------------------------
+    // MAPEL 4: ILMU PENGETAHUAN SOSIAL (IPS) - Guru: Ustadzah Fatimah
+    // -------------------------------------------------------------
+    {
+      kelas_id: kelasSD.id,
+      mapel_id: mapelIPS?.id,
+      guru_id: guruSD.id,
       pertemuan_ke: 1,
       judul: "Bab 1: Kenampakan Alam (Daratan & Perairan) serta Pemanfaatan Sumber Daya Alam",
       deskripsi: `Assalamu'alaikum Ananda sekalian.
@@ -103,9 +235,9 @@ Pada bab pertama IPS ini, kita mempelajari:
       is_published: true,
     },
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(8),
-      guru_id: guruFatimah,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelIPS?.id,
+      guru_id: guruSD.id,
       pertemuan_ke: 2,
       judul: "Bab 1: Keragaman Budaya, Adat Istiadat, dan Kearifan Lokal di Nusantara",
       deskripsi: `Pekan ini kita mengenal kekayaan ragam budaya nusantara:
@@ -123,12 +255,12 @@ Pada bab pertama IPS ini, kita mempelajari:
     },
 
     // -------------------------------------------------------------
-    // MAPEL 7: IPA (SAINS) - Guru: Ustadz Ibrahim (ID 5)
+    // MAPEL 5: IPA (SAINS) - Guru: Ustadz Ibrahim
     // -------------------------------------------------------------
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(7),
-      guru_id: guruIbrahim,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelIPA?.id,
+      guru_id: guruIbrahim.id,
       pertemuan_ke: 1,
       judul: "Bab 1: Morfologi Tumbuhan: Bagian Tubuh dan Fungsinya bagi Kehidupan",
       deskripsi: `Eksplorasi sains seru pekan ini:
@@ -145,9 +277,9 @@ Pada bab pertama IPS ini, kita mempelajari:
       is_published: true,
     },
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(7),
-      guru_id: guruIbrahim,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelIPA?.id,
+      guru_id: guruIbrahim.id,
       pertemuan_ke: 2,
       judul: "Bab 2: Metamorfosis Hewan: Siklus Hidup Sempurna vs Tidak Sempurna",
       deskripsi: `Materi sains pekan ini membahas tahapan hidup makhluk hidup:
@@ -164,12 +296,12 @@ Pada bab pertama IPS ini, kita mempelajari:
     },
 
     // -------------------------------------------------------------
-    // MAPEL 4: ENGLISH BILINGUAL / CAMBRIDGE - Guru: Ustadzah Aisyah (ID 6)
+    // MAPEL 6: ENGLISH CAMBRIDGE - Guru: Ustadzah Aisyah
     // -------------------------------------------------------------
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(4),
-      guru_id: guruAisyah,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelBING?.id,
+      guru_id: guruAisyah.id,
       pertemuan_ke: 1,
       judul: "Unit 1: Welcoming Session & Self Introduction in Cambridge English",
       deskripsi: `Hello Smart Kids of Grade 4!
@@ -187,9 +319,9 @@ In this first session of Cambridge English:
       is_published: true,
     },
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(4),
-      guru_id: guruAisyah,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelBING?.id,
+      guru_id: guruAisyah.id,
       pertemuan_ke: 2,
       judul: "Unit 2: My Daily Routine & Telling the Time with Simple Present Tense",
       deskripsi: `Continuing Unit 2:
@@ -207,12 +339,12 @@ In this first session of Cambridge English:
     },
 
     // -------------------------------------------------------------
-    // MAPEL 9: INFORMATIKA & CODING - Guru: Ustadz Ridwan (ID 9)
+    // MAPEL 7: INFORMATIKA & CODING - Guru: Ustadz Ridwan
     // -------------------------------------------------------------
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(9),
-      guru_id: guruRidwan,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelINFOR?.id,
+      guru_id: guruRidwan.id,
       pertemuan_ke: 1,
       judul: "Modul 1: Literasi Digital iPad & Tata Tertib Penggunaan Perangkat Pembelajaran",
       deskripsi: `Bismillahirrohmanirrohim.
@@ -230,9 +362,9 @@ Pertemuan pertama Informatika:
       is_published: true,
     },
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(9),
-      guru_id: guruRidwan,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelINFOR?.id,
+      guru_id: guruRidwan.id,
       pertemuan_ke: 2,
       judul: "Modul 2: Berpikir Komputasional (Algoritma & Pemrograman Visual Sederhana)",
       deskripsi: `Sesi kedua coding dasar:
@@ -249,12 +381,12 @@ Pertemuan pertama Informatika:
     },
 
     // -------------------------------------------------------------
-    // MAPEL 3: BAHASA ARAB - Guru: Ustadz Ahmad (ID 3)
+    // MAPEL 8: BAHASA ARAB - Guru: Ustadz Ahmad
     // -------------------------------------------------------------
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(3),
-      guru_id: guruAhmad,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelBARAB?.id,
+      guru_id: guruAhmad.id,
       pertemuan_ke: 1,
       judul: "Ad-Darsul Awwal: Fil Fashli (Kosa Kata & Percakapan di Dalam Kelas)",
       deskripsi: `Ahlan wa sahlan ya tholabah!
@@ -273,12 +405,12 @@ Materi pekan pertama Bahasa Arab:
     },
 
     // -------------------------------------------------------------
-    // MAPEL 2: TAHFIDZ & TAHSIN - Guru: Ustadz Hasan (ID 7)
+    // MAPEL 9: TAHFIDZ & TAHSIN - Guru: Ustadz Hasan
     // -------------------------------------------------------------
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(2),
-      guru_id: guruHasan,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelTAHFIDZ?.id,
+      guru_id: guruHasan.id,
       pertemuan_ke: 1,
       judul: "Tahsin Surat Al-Fajr (Ayat 1-15): Makharijul Huruf dan Penerapan Mad Thabi'i",
       deskripsi: `Assalamu'alaikum ananda penghafal Al-Qur'an.
@@ -297,12 +429,12 @@ Fokus materi KBM Tahfidz pekan ini:
     },
 
     // -------------------------------------------------------------
-    // MAPEL 10: PJOK - Guru: Ustadz Faisal (ID 11)
+    // MAPEL 10: PJOK - Guru: Ustadz Faisal
     // -------------------------------------------------------------
     {
-      kelas_id: kelas4,
-      mapel_id: BigInt(10),
-      guru_id: guruFaisal,
+      kelas_id: kelasSD.id,
+      mapel_id: mapelPJOK?.id,
+      guru_id: guruFaisal.id,
       pertemuan_ke: 1,
       judul: "Unit 1: Kombinasi Gerak Dasar Lokomotor, Non-Lokomotor, dan Manipulatif",
       deskripsi: `Materi KBM PJOK:
@@ -320,10 +452,59 @@ Fokus materi KBM Tahfidz pekan ini:
     },
   ];
 
+  // Tambahkan materi untuk SMP jika kelas 7 ada
+  if (kelasSMP) {
+    if (mapelMTK) {
+      rawPertemuanData.push({
+        kelas_id: kelasSMP.id,
+        mapel_id: mapelMTK.id,
+        guru_id: guruSMP.id,
+        pertemuan_ke: 1,
+        judul: "Bab 1: Bilangan Bulat dan Bilangan Rasional dalam Kehidupan Nyata",
+        deskripsi: `KBM Matematika Kelas 7 SMP:
+1. Memahami konsep bilangan bulat positif dan negatif pada garis bilangan.
+2. Aturan operasi hitung campuran (tanda kurung, perkalian/pembagian, penjumlahan/pengurangan).
+3. Pemodelan masalah kontekstual: perubahan suhu dan pergerakan ketinggian kapal selam.`,
+        tanggal: new Date("2026-07-21"),
+        file_url: "/uploads/materials/Modul_SMP_MTK_Bilangan_P1.pdf",
+        file_name: "Modul_SMP_MTK_Bilangan_P1.pdf",
+        file_size: 4200,
+        file_type: "pdf",
+        video_url: "https://www.youtube.com/watch?v=kYJqB3N_U38",
+        link_eksternal: null,
+        is_published: true,
+      });
+    }
+
+    if (mapelBING) {
+      rawPertemuanData.push({
+        kelas_id: kelasSMP.id,
+        mapel_id: mapelBING.id,
+        guru_id: guruAisyah.id,
+        pertemuan_ke: 1,
+        judul: "Unit 1: Teen Life & Hobbies (Present Simple vs Continuous)",
+        deskripsi: `English Grade 7 Cambridge:
+- Distinguishing between regular daily routines and actions happening now.
+- Paragraph writing about personal interests and extracurricular activities.`,
+        tanggal: new Date("2026-07-22"),
+        file_url: "/uploads/materials/Cambridge_SMP_Grade7_Unit1.pdf",
+        file_name: "Cambridge_SMP_Grade7_Unit1.pdf",
+        file_size: 4800,
+        file_type: "pdf",
+        video_url: "https://www.youtube.com/watch?v=52Zkxm21u6I",
+        link_eksternal: null,
+        is_published: true,
+      });
+    }
+  }
+
   let addedCount = 0;
-  for (const item of newPertemuanData) {
-    // Periksa apakah pertemuan untuk kelas, mapel, dan pertemuan_ke ini sudah ada
-    const existing = await (prisma as any).pertemuan.findFirst({
+  let updatedCount = 0;
+
+  for (const item of rawPertemuanData) {
+    if (!item.mapel_id) continue;
+
+    const existing = await prisma.pertemuan.findFirst({
       where: {
         kelas_id: item.kelas_id,
         mapel_id: item.mapel_id,
@@ -332,22 +513,59 @@ Fokus materi KBM Tahfidz pekan ini:
     });
 
     if (!existing) {
-      await (prisma as any).pertemuan.create({
-        data: item,
+      await prisma.pertemuan.create({
+        data: {
+          kelas_id: item.kelas_id,
+          mapel_id: item.mapel_id,
+          guru_id: item.guru_id,
+          pertemuan_ke: item.pertemuan_ke,
+          judul: item.judul,
+          deskripsi: item.deskripsi,
+          tanggal: item.tanggal,
+          file_url: item.file_url,
+          file_name: item.file_name,
+          file_size: item.file_size,
+          file_type: item.file_type,
+          video_url: item.video_url,
+          link_eksternal: item.link_eksternal,
+          is_published: item.is_published,
+        },
       });
       addedCount++;
-      console.log(`[SUCCESS] Dibuat: Mapel ID ${item.mapel_id} - Pertemuan ${item.pertemuan_ke}: ${item.judul}`);
+      console.log(`[BARU] Pertemuan ${item.pertemuan_ke}: ${item.judul}`);
     } else {
-      console.log(`[SKIP] Sudah ada: Mapel ID ${item.mapel_id} - Pertemuan ${item.pertemuan_ke}`);
+      await prisma.pertemuan.update({
+        where: { id: existing.id },
+        data: {
+          guru_id: item.guru_id,
+          judul: item.judul,
+          deskripsi: item.deskripsi,
+          tanggal: item.tanggal,
+          file_url: item.file_url ?? existing.file_url,
+          file_name: item.file_name ?? existing.file_name,
+          video_url: item.video_url ?? existing.video_url,
+          link_eksternal: item.link_eksternal ?? existing.link_eksternal,
+        },
+      });
+      updatedCount++;
+      console.log(`[UPDATE] Pertemuan ${item.pertemuan_ke}: ${item.judul}`);
     }
   }
 
-  const totalNow = await (prisma as any).pertemuan.count();
-  console.log(`\n=== SEED SELESAI ===`);
-  console.log(`Berhasil menambahkan ${addedCount} pertemuan baru.`);
-  console.log(`Total pertemuan di DB sekarang: ${totalNow}`);
+  const totalNow = await prisma.pertemuan.count();
+  console.log(`\n=========================================`);
+  console.log(`🎉 Seeding Materi & Pertemuan Selesai!`);
+  console.log(`- Berhasil ditambahkan: ${addedCount}`);
+  console.log(`- Berhasil diperbarui : ${updatedCount}`);
+  console.log(`- Total materi di DB  : ${totalNow}`);
+  console.log(`=========================================`);
 }
 
 main()
-  .catch(console.error)
-  .finally(() => (prisma as any).$disconnect());
+  .catch((e) => {
+    console.error("❌ Error saat menjalankan seed materi:", e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

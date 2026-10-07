@@ -34,7 +34,9 @@ const badgeVariants = cva(
         rose:
           "bg-gradient-to-b from-pink-400 to-rose-500 text-white border-rose-300/50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)] hover:from-pink-500 hover:to-rose-600",
         blue:
-          "bg-gradient-to-b from-blue-400 to-blue-500 text-white border-blue-300/50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)] hover:from-blue-500 hover:to-blue-600",
+          "bg-gradient-to-b from-blue-300 to-blue-500 text-black font-bold border-blue-300/60 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)] hover:from-blue-400 hover:to-blue-600",
+        smp:
+          "bg-gradient-to-b from-blue-300 to-blue-500 text-black font-bold border-blue-300/60 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)] hover:from-blue-400 hover:to-blue-600",
         sky:
           "bg-gradient-to-b from-sky-300 to-sky-400 text-slate-800 border-sky-300/60 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)] hover:from-sky-400 hover:to-sky-500",
         cyan:

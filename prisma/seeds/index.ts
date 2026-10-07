@@ -8,5 +8,6 @@ export const SEED_MODULES = [
   { name: "Tugas Interaktif", path: "prisma/seeds/seed_tugas.ts" },
   { name: "Tugas Interaktif In-App", path: "prisma/seeds/seed_tugas_interaktif.ts" },
   { name: "Pertemuan & KBM", path: "prisma/seeds/seed_pertemuan.ts" },
+  { name: "Jadwal Pelajaran", path: "prisma/seeds/seed_jadwal.ts" },
   { name: "Prestasi Siswa", path: "prisma/seeds/seed_prestasi.ts" },
 ];

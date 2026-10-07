@@ -60,9 +60,14 @@ import { getRoleLabel } from "@/lib/utils";
 interface TeacherTableProps {
   initialTeachers: UserItem[];
   classList?: string[];
+  subjectList?: string[];
 }
 
-export function TeacherTable({ initialTeachers, classList = [] }: TeacherTableProps) {
+export function TeacherTable({
+  initialTeachers,
+  classList = [],
+  subjectList = [],
+}: TeacherTableProps) {
   const [teachers, setTeachers] = useState<UserItem[]>(initialTeachers);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -706,11 +711,18 @@ export function TeacherTable({ initialTeachers, classList = [] }: TeacherTablePr
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="add-bidang">Bidang Studi (Mapel)</Label>
-                <Input
+                <select
                   id="add-bidang"
                   name="guru_bidang"
-                  placeholder="Matematika, PAI, dll."
-                />
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">-- Pilih Mata Pelajaran --</option>
+                  {subjectList.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="add-kelas">
@@ -1001,12 +1013,24 @@ export function TeacherTable({ initialTeachers, classList = [] }: TeacherTablePr
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="edit-bidang">Bidang Studi (Mapel)</Label>
-                  <Input
+                  <select
                     id="edit-bidang"
                     name="guru_bidang"
                     defaultValue={editTarget.guru_bidang || ""}
-                    placeholder="Matematika, PAI, dll."
-                  />
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="">-- Pilih Mata Pelajaran --</option>
+                    {editTarget.guru_bidang && !subjectList.includes(editTarget.guru_bidang) && (
+                      <option value={editTarget.guru_bidang}>
+                        {editTarget.guru_bidang}
+                      </option>
+                    )}
+                    {subjectList.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="edit-kelas">

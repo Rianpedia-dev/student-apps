@@ -157,7 +157,7 @@ export function TeacherMeetingList({
             <Badge variant="purple" size="sm" className="font-bold font-mono uppercase">
               {mapel.kodeMapel}
             </Badge>
-            <Badge variant={currentKelas.jenjang === "SMP" ? "indigo" : "amber"} size="sm">
+            <Badge variant={currentKelas.jenjang === "SMP" ? "smp" : "amber"} size="sm">
               {currentKelas.namaKelas} ({currentKelas.jenjang})
             </Badge>
           </div>

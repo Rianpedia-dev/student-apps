@@ -144,7 +144,7 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                 setPage(1);
               }}
               className={`rounded-full px-3 py-1 transition-all ${filterJenjang === "SMP"
-                  ? "bg-gradient-to-b from-indigo-400 to-indigo-600 text-white shadow-sm font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
+                  ? "bg-gradient-to-b from-blue-300 to-blue-500 text-black shadow-sm font-bold border border-blue-300/60 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]"
                   : "text-muted-foreground hover:text-foreground"
                 }`}
             >
@@ -194,7 +194,7 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={isSMP ? "indigo" : "emerald"}
+                        variant={isSMP ? "smp" : "emerald"}
                         size="sm"
                       >
                         {isSMP ? "SMP" : "SD"}

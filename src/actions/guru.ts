@@ -300,7 +300,6 @@ export async function updateProfileAction(formData: FormData) {
 
     const name = formData.get("name") as string;
     const address = formData.get("address") as string;
-    const guru_bidang = formData.get("guru_bidang") as string;
     const notes = formData.get("notes") as string;
     const skills = formData.get("skills") as string;
     const nip = formData.get("nip") as string;
@@ -308,12 +307,11 @@ export async function updateProfileAction(formData: FormData) {
     const appleid = formData.get("appleid") as string;
     const removeImage = formData.get("remove_image") === "true";
 
-    // CATATAN KEAMANAN: 'kelas' dan 'status' sengaja TIDAK DIPERBOLEHKAN diubah oleh guru
-    // melalui form profil. Hak pengaturan status & kelas wali eksklusif milik Administrator.
+    // CATATAN KEAMANAN: 'kelas', 'status', dan 'guru_bidang' sengaja TIDAK DIPERBOLEHKAN diubah oleh guru
+    // melalui form profil. Hak pengaturan status, kelas wali binaan, dan bidang studi (mapel) eksklusif milik Administrator.
     const dataToUpdate: Record<string, unknown> = {};
     if (name) dataToUpdate.name = name;
     if (address !== undefined) dataToUpdate.address = address || null;
-    if (guru_bidang !== undefined) dataToUpdate.guru_bidang = guru_bidang || null;
     if (notes !== undefined) dataToUpdate.notes = notes || null;
     if (skills !== undefined) dataToUpdate.skills = skills || null;
     if (nip !== undefined) dataToUpdate.nip = nip ? nip.trim() : null;

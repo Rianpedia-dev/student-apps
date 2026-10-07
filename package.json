@@ -12,9 +12,12 @@
     "test:watch": "vitest",
     "postinstall": "prisma generate",
     "seed": "tsx prisma/seed.ts",
-    "seed:tugas": "tsx prisma/seeds/seed_tugas.ts",
+    "seed:materi": "tsx prisma/seeds/seed_pertemuan.ts",
     "seed:pertemuan": "tsx prisma/seeds/seed_pertemuan.ts",
-    "seed:prestasi": "tsx prisma/seeds/seed_prestasi.ts"
+    "seed:tugas": "tsx prisma/seeds/seed_tugas.ts",
+    "seed:jadwal": "tsx prisma/seeds/seed_jadwal.ts",
+    "seed:prestasi": "tsx prisma/seeds/seed_prestasi.ts",
+    "seed:academic": "tsx prisma/seeds/seed_pertemuan.ts && tsx prisma/seeds/seed_tugas.ts && tsx prisma/seeds/seed_jadwal.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

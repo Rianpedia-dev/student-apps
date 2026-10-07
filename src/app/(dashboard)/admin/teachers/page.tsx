@@ -6,9 +6,10 @@ export const dynamic = "force-dynamic";
 export default async function AdminTeachersPage() {
   let formattedTeachers: any[] = [];
   let classNames: string[] = [];
+  let subjectNames: string[] = [];
 
   try {
-    const [teachers, classes] = await Promise.all([
+    const [teachers, classes, subjects] = await Promise.all([
       prisma.user.findMany({
         where: {
           status: { in: ["0", "2", "4"] },
@@ -19,9 +20,14 @@ export default async function AdminTeachersPage() {
         select: { nama_kelas: true },
         orderBy: { nama_kelas: "asc" },
       }),
+      prisma.mataPelajaran.findMany({
+        select: { nama_mapel: true },
+        orderBy: { nama_mapel: "asc" },
+      }),
     ]);
 
     classNames = classes.map((c) => c.nama_kelas).filter(Boolean);
+    subjectNames = Array.from(new Set(subjects.map((s) => s.nama_mapel).filter(Boolean)));
 
     formattedTeachers = teachers.map((t) => ({
       id: t.id.toString(),
@@ -48,7 +54,11 @@ export default async function AdminTeachersPage() {
         </p>
       </div>
 
-      <TeacherTable initialTeachers={formattedTeachers} classList={classNames} />
+      <TeacherTable
+        initialTeachers={formattedTeachers}
+        classList={classNames}
+        subjectList={subjectNames}
+      />
     </div>
   );
 }

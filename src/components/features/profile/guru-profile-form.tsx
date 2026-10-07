@@ -259,13 +259,23 @@ export function GuruProfileForm({ teacher, classes }: GuruProfileFormProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="guru_bidang">Bidang Studi / Mata Pelajaran</Label>
-            <Input
-              id="guru_bidang"
-              name="guru_bidang"
-              defaultValue={teacher.guru_bidang || ""}
-              placeholder="Contoh: Pendidikan Agama Islam & Budi Pekerti"
-            />
+            <Label>Bidang Studi / Mata Pelajaran</Label>
+            <div className="flex items-center gap-2 rounded-[var(--radius)] border border-input bg-muted/40 px-3 py-2 text-sm text-foreground shadow-xs select-none min-h-[38px]">
+              {teacher.guru_bidang ? (
+                <>
+                  <Badge variant="secondary" size="sm" className="font-semibold shrink-0">
+                    Mapel
+                  </Badge>
+                  <span className="font-medium truncate text-foreground">
+                    {teacher.guru_bidang}
+                  </span>
+                </>
+              ) : (
+                <span className="text-muted-foreground text-xs italic">
+                  Belum ditentukan oleh Admin
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="space-y-1.5">

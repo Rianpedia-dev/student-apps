@@ -229,7 +229,7 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
                     <Badge
                       variant={
                         sub.jenjang === "SMP"
-                          ? "indigo"
+                          ? "smp"
                           : sub.jenjang === "SD"
                             ? "amber"
                             : "teal"

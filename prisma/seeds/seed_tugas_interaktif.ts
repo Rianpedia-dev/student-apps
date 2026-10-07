@@ -3,9 +3,20 @@ import prisma from "@/lib/prisma";
 async function main() {
   console.log("=== SEEDING TUGAS INTERAKTIF IN-APP ===");
 
-  const kelas4 = BigInt(1); // Kelas 4
-  const guruFatimah = BigInt(2); // Ustadzah Fatimah
-  const mapelMTK = BigInt(6); // Matematika
+  const kelasTarget = await prisma.kelas.findFirst({
+    where: { nama_kelas: { contains: "Mehmed Al Fatih" } },
+  });
+  const guruTarget = (await prisma.user.findFirst({ where: { email: "guru@gmail.com" } }))!;
+  const mapelTarget = await prisma.mataPelajaran.findFirst({ where: { kode_mapel: "MTK" } });
+
+  if (!kelasTarget || !guruTarget || !mapelTarget) {
+    console.error("❌ Data master kelas, guru, atau mapel tidak ditemukan.");
+    return;
+  }
+
+  const kelas4 = kelasTarget.id;
+  const guruFatimah = guruTarget.id;
+  const mapelMTK = mapelTarget.id;
 
   // Bersihkan tugas lama pada mapel ini jika ada untuk testing bersih
   const existing = await prisma.tugas.findFirst({
