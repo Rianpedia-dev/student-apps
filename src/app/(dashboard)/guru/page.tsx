@@ -16,7 +16,18 @@ export default async function GuruDashboardPage() {
     redirect("/login");
   }
 
-  const guruClass = session.kelas || "";
+  const dbUser = /^\d+$/.test(session.id)
+    ? await prisma.user.findUnique({
+        where: { id: BigInt(session.id) },
+        select: { status: true, kelas: true, guru_bidang: true },
+      })
+    : null;
+
+  const currentStatus = dbUser?.status || session.status;
+  const isWaliKelas = currentStatus === "4";
+  const guruClass = isWaliKelas ? (dbUser?.kelas || session.kelas || "") : "";
+  const guruBidang = dbUser?.guru_bidang || "";
+
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const isNum = /^\d+$/.test(session.id);
@@ -27,11 +38,13 @@ export default async function GuruDashboardPage() {
   let totalAbsenToday = 0;
   let totalTugas = 0;
   let pendingReview = 0;
+  let totalMateri = 0;
+  let totalJadwal = 0;
   let achievements: any[] = [];
   let announcements: any[] = [];
 
   try {
-    const [dbStudents, dbAttHadir, dbAttTotal, dbTugas, dbReview, dbAchieve, dbAnnounce] =
+    const [dbStudents, dbAttHadir, dbAttTotal, dbTugas, dbReview, dbMateri, dbJadwal, dbAchieve, dbAnnounce] =
       await Promise.all([
         guruClass
           ? prisma.user.findMany({
@@ -63,13 +76,26 @@ export default async function GuruDashboardPage() {
               where: { tugas: { guru_id: guruIdBigInt }, status: "dikumpulkan" },
             })
           : 0,
+        guruIdBigInt
+          ? prisma.pertemuan.count({
+              where: { guru_id: guruIdBigInt },
+            })
+          : 0,
+        guruIdBigInt
+          ? prisma.jadwalPelajaran.count({
+              where: { guru_id: guruIdBigInt },
+            })
+          : 0,
         prisma.prestasi.findMany({
           orderBy: { created_at: "desc" },
           take: 5,
         }),
         prisma.pengumuman.findMany({
           where: {
-            OR: [{ from: "IT" }, { from: guruClass }],
+            OR: [
+              { from: "IT" },
+              ...(guruClass ? [{ from: guruClass }] : []),
+            ],
           },
           orderBy: { id: "desc" },
           take: 10,
@@ -81,6 +107,8 @@ export default async function GuruDashboardPage() {
     totalAbsenToday = dbAttTotal;
     totalTugas = dbTugas;
     pendingReview = dbReview;
+    totalMateri = dbMateri;
+    totalJadwal = dbJadwal;
     // Fetch student profile data for dashboard achievements
     const achieveUserIds = dbAchieve
       .map((a) => {
@@ -173,30 +201,76 @@ export default async function GuruDashboardPage() {
           <h1 dir="ltr" className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
             <span dir="rtl" className="inline-block">السَّلاَمُ عَلَيْكُمْ</span>, {session.name}
           </h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1 font-normal">
-            <span>Wali Kelas: <strong className="text-foreground font-medium">{guruClass || "Belum ditentukan"}</strong></span>
-          </p>
+          <div className="text-xs sm:text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-2">
+            {isWaliKelas ? (
+              <>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                  Guru & Wali Kelas
+                </span>
+                <span>
+                  Kelas Binaan: <strong className="text-foreground font-semibold">{guruClass || "Belum ditentukan"}</strong>
+                </span>
+                {guruBidang && (
+                  <span className="text-muted-foreground">
+                    • Mapel: <strong className="text-foreground font-medium">{guruBidang}</strong>
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                  Guru Mata Pelajaran
+                </span>
+                {guruBidang ? (
+                  <span>
+                    Bidang Studi: <strong className="text-foreground font-semibold">{guruBidang}</strong>
+                  </span>
+                ) : (
+                  <span>Pengampu Mata Pelajaran</span>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {/* 4 Stat Cards Bertema Al-Azhar */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {isWaliKelas ? (
+          <>
+            <StatCard
+              title="Kelas Saya"
+              value={`${students.length} Siswa`}
+              variant="amber"
+              href="/guru/my-class"
+            />
+            <StatCard
+              title="Absensi Hari Ini"
+              value={totalAbsenToday > 0 ? `${attendanceToday} Hadir` : "0 Hadir"}
+              count={totalAbsenToday > 0 ? attendanceToday : "—"}
+              countLabel={totalAbsenToday > 0 ? "Hadir" : "Belum diisi"}
+              variant="accent"
+              href={`/guru/attendance/${todayFormatted}`}
+            />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Materi & Modul"
+              value={`${totalMateri} Pertemuan`}
+              variant="amber"
+              href="/guru/mapel"
+            />
+            <StatCard
+              title="Jadwal Mengajar"
+              value={`${totalJadwal} Jadwal`}
+              variant="accent"
+              href="/guru/calendar"
+            />
+          </>
+        )}
         <StatCard
-          title="Kelas Saya"
-          value={`${students.length} Siswa`}
-          variant="amber"
-          href="/guru/my-class"
-        />
-        <StatCard
-          title="Absensi Hari Ini"
-          value={totalAbsenToday > 0 ? `${attendanceToday} Hadir` : "0 Hadir"}
-          count={totalAbsenToday > 0 ? attendanceToday : "—"}
-          countLabel={totalAbsenToday > 0 ? "Hadir" : "Belum diisi"}
-          variant="accent"
-          href={`/guru/attendance/${todayFormatted}`}
-        />
-        <StatCard
-          title="Tugas Kelas"
+          title="Tugas Aktif"
           value={`${totalTugas} Tugas`}
           variant="primary"
           href="/guru/tugas"

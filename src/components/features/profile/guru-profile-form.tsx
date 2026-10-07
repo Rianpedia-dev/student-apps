@@ -25,8 +25,9 @@ interface GuruProfileFormProps {
     gender?: string | null;
     address?: string | null;
     image?: string | null;
+    appleid?: string | null;
   };
-  classes: Array<{ id: string | bigint; nama_kelas: string }>;
+  classes?: Array<{ id: string | bigint; nama_kelas: string }>;
 }
 
 export function GuruProfileForm({ teacher, classes }: GuruProfileFormProps) {
@@ -214,9 +215,46 @@ export function GuruProfileForm({ teacher, classes }: GuruProfileFormProps) {
 
       {/* Form Fields Directly Below (NO duplicate avatar box!) */}
       <div className="p-6 space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Nama Lengkap & Gelar</Label>
-          <Input id="name" name="name" defaultValue={teacher.name} required />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Nama Lengkap & Gelar</Label>
+            <Input id="name" name="name" defaultValue={teacher.name} required />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="nip">NIP (Nomor Induk Pegawai)</Label>
+            <Input
+              id="nip"
+              name="nip"
+              defaultValue={teacher.nip || ""}
+              placeholder="Contoh: 198501152010011002"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="gender">Jenis Kelamin</Label>
+            <select
+              id="gender"
+              name="gender"
+              defaultValue={teacher.gender || "L"}
+              className="w-full rounded-[var(--radius)] border border-input bg-background px-3 py-2 text-sm shadow-xs focus:ring-2 focus:ring-ring focus:outline-hidden"
+            >
+              <option value="L">Laki-laki (L)</option>
+              <option value="P">Perempuan (P)</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="appleid">Apple ID (Opsional)</Label>
+            <Input
+              id="appleid"
+              name="appleid"
+              defaultValue={teacher.appleid || ""}
+              placeholder="guru@icloud.com"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -231,20 +269,28 @@ export function GuruProfileForm({ teacher, classes }: GuruProfileFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="kelas">Wali Kelas</Label>
-            <select
-              id="kelas"
-              name="kelas"
-              defaultValue={teacher.kelas || ""}
-              className="w-full rounded-[var(--radius)] border border-input bg-background px-3 py-2 text-sm shadow-xs focus:ring-2 focus:ring-ring focus:outline-hidden"
-            >
-              <option value="">-- Tidak Membina Kelas --</option>
-              {classes.map((c) => (
-                <option key={c.id.toString()} value={c.nama_kelas}>
-                  {c.nama_kelas}
-                </option>
-              ))}
-            </select>
+            <Label>Wali Kelas</Label>
+            <div className="flex items-center gap-2 rounded-[var(--radius)] border border-input bg-muted/40 px-3 py-2 text-sm text-foreground shadow-xs select-none min-h-[38px]">
+              {String(teacher.status) === "4" ? (
+                <>
+                  <Badge variant="success" size="sm" className="font-semibold shrink-0">
+                    Wali Kelas
+                  </Badge>
+                  <span className="font-medium truncate text-foreground">
+                    {teacher.kelas || "Belum ada kelas binaan"}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Badge variant="outline" size="sm" className="font-semibold shrink-0 text-muted-foreground border-border/80">
+                    Guru Mapel
+                  </Badge>
+                  <span className="text-muted-foreground text-xs truncate">
+                    Bukan Wali Kelas
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 

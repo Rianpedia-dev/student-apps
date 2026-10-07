@@ -142,6 +142,7 @@ interface SidebarProps {
   userName?: string;
   userEmail?: string;
   kelas?: string | null;
+  status?: string | null;
   onNavigate?: () => void;
   forceExpanded?: boolean;
   className?: string;
@@ -153,6 +154,7 @@ export function Sidebar({
   userName,
   userEmail,
   kelas,
+  status,
   onNavigate,
   forceExpanded = false,
   className,
@@ -161,6 +163,9 @@ export function Sidebar({
   const pathname = usePathname();
   const { isCollapsed } = useSidebar();
   const collapsed = forceExpanded ? false : isCollapsed;
+
+  // Status "4" adalah Guru & Wali Kelas. Jika status "2", Guru Mapel (tanpa perwalian).
+  const isWaliKelas = status === "4" || (role === "guru" && Boolean(kelas && status !== "2"));
 
   const adminMenu: MenuItemType[] = [
     { label: "Dashboard", href: "/admin", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
@@ -179,8 +184,12 @@ export function Sidebar({
     { label: "Profil Saya", href: "/guru/profile", icon: ContactIcon, iconColor: "text-amber-600" },
     { label: "Mapel & Tugas", href: "/guru/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
     { label: "Chat Siswa", href: "/guru/chat", icon: ChatIcon, iconColor: "text-cyan-600" },
-    { label: "Kelas Saya", href: "/guru/my-class", icon: BuildingLibraryIcon, iconColor: "text-emerald-500" },
-    { label: "Absensi Kelas", href: "/guru/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
+    ...(isWaliKelas
+      ? [
+          { label: "Kelas Saya", href: "/guru/my-class", icon: BuildingLibraryIcon, iconColor: "text-emerald-500" },
+          { label: "Absensi Kelas", href: "/guru/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
+        ]
+      : []),
     { label: "Pengumuman", href: "/guru/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500" },
     { label: "Kalender Kegiatan", href: "/guru/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
     { label: "Prestasi Siswa", href: "/guru/achievements", icon: TrophyIcon, iconColor: "text-amber-500" },

@@ -94,10 +94,23 @@ export async function updateUserAction(id: string, formData: FormData) {
 export async function deleteUserAction(id: string) {
   try {
     await checkAdmin();
+
+    const user = await prisma.user.findUnique({
+      where: { id: BigInt(id) },
+      select: { name: true, kelas: true },
+    });
+    if (user?.kelas) {
+      await prisma.kelas.updateMany({
+        where: { nama_kelas: user.kelas, wali_kelas: user.name },
+        data: { wali_kelas: null },
+      });
+    }
+
     await UserService.deleteUser(id);
 
     revalidatePath("/admin/students");
     revalidatePath("/admin/teachers");
+    revalidatePath("/admin/classes");
     return { success: true, message: "Pengguna berhasil dihapus." };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal menghapus pengguna.";
@@ -105,13 +118,65 @@ export async function deleteUserAction(id: string) {
   }
 }
 
+export async function deleteUsersAction(ids: string[]) {
+  try {
+    await checkAdmin();
+    if (!ids || ids.length === 0) {
+      return { error: "Tidak ada akun yang dipilih untuk dihapus." };
+    }
+
+    const users = await prisma.user.findMany({
+      where: { id: { in: ids.map((id) => BigInt(id)) } },
+      select: { name: true, kelas: true },
+    });
+    for (const u of users) {
+      if (u.kelas) {
+        await prisma.kelas.updateMany({
+          where: { nama_kelas: u.kelas, wali_kelas: u.name },
+          data: { wali_kelas: null },
+        });
+      }
+    }
+
+    const count = await UserService.deleteUsers(ids);
+
+    revalidatePath("/admin/students");
+    revalidatePath("/admin/teachers");
+    revalidatePath("/admin/classes");
+    return { success: true, count, message: `Berhasil menghapus ${count} akun guru.` };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal menghapus akun terpilih.";
+    return { error: errorMsg };
+  }
+}
+
 export async function verifyUserAction(id: string, status: string) {
   try {
     await checkAdmin();
+
+    const teacher = await prisma.user.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (teacher?.kelas) {
+      if (status === "4") {
+        await prisma.kelas.updateMany({
+          where: { nama_kelas: teacher.kelas },
+          data: { wali_kelas: teacher.name },
+        });
+      } else if (status === "2") {
+        await prisma.kelas.updateMany({
+          where: { nama_kelas: teacher.kelas, wali_kelas: teacher.name },
+          data: { wali_kelas: null },
+        });
+      }
+    }
+
     await UserService.verifyUser(id, status);
 
     revalidatePath("/admin/teachers");
     revalidatePath("/admin/students");
+    revalidatePath("/admin/classes");
     return { success: true, message: "Status pengguna berhasil diperbarui." };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal memperbarui status pengguna.";
@@ -133,6 +198,171 @@ export async function importStudentsAction(fileBufferBase64: string) {
 }
 
 export const importUsersAction = importStudentsAction;
+
+export async function createTeacherAction(formData: FormData) {
+  try {
+    await checkAdmin();
+
+    const name = (formData.get("name") as string)?.trim();
+    const email = (formData.get("email") as string)?.trim().toLowerCase();
+    const password = (formData.get("password") as string)?.trim();
+    const role = (formData.get("role") as string) || "2"; // 2 = Guru, 4 = Wali Kelas
+    const nip = (formData.get("nip") as string)?.trim() || null;
+    const guru_bidang = (formData.get("guru_bidang") as string)?.trim() || null;
+    const kelas = (formData.get("kelas") as string)?.trim() || null;
+    const gender = (formData.get("gender") as string) || "L";
+    const appleid = (formData.get("appleid") as string)?.trim() || null;
+    const passwordappleid = (formData.get("passwordappleid") as string)?.trim() || null;
+
+    if (!name || !email || !password) {
+      return { error: "Nama lengkap, email login, dan password wajib diisi." };
+    }
+
+    if (password.length < 6) {
+      return { error: "Password minimal 6 karakter." };
+    }
+
+    if (role === "4" && !kelas) {
+      return { error: "Untuk peran Guru & Wali Kelas, wajib memilih Kelas Wali binaan." };
+    }
+
+    await UserService.createUser({
+      name,
+      email,
+      password,
+      role,
+      nip,
+      guru_bidang,
+      kelas: role === "4" ? kelas : (kelas || null),
+      gender,
+      appleid,
+      passwordappleid,
+    });
+
+    if (role === "4" && kelas) {
+      await prisma.kelas.updateMany({
+        where: { nama_kelas: kelas },
+        data: { wali_kelas: name },
+      });
+    }
+
+    revalidatePath("/admin/teachers");
+    revalidatePath("/admin/classes");
+    return { success: true, message: `Akun guru ${name} berhasil ditambahkan.` };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal menambahkan data guru.";
+    return { error: errorMsg };
+  }
+}
+
+export async function importTeachersAction(fileBufferBase64: string) {
+  try {
+    await checkAdmin();
+    const importedCount = await UserService.importTeachersFromBase64(fileBufferBase64);
+
+    revalidatePath("/admin/teachers");
+    return { success: true, count: importedCount, message: `Berhasil mengimpor ${importedCount} data guru.` };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal mengimpor file Excel dewan guru.";
+    return { error: errorMsg };
+  }
+}
+
+export async function updateTeacherAction(id: string, formData: FormData) {
+  try {
+    await checkAdmin();
+
+    const name = (formData.get("name") as string)?.trim();
+    const email = (formData.get("email") as string)?.trim().toLowerCase();
+    const nip = (formData.get("nip") as string)?.trim() || null;
+    const gender = (formData.get("gender") as string) || "L";
+    const guru_bidang = (formData.get("guru_bidang") as string)?.trim() || null;
+    const role = (formData.get("role") as string) || "2";
+    const kelas = (formData.get("kelas") as string)?.trim() || null;
+    const appleid = (formData.get("appleid") as string)?.trim() || null;
+    const passwordappleid = (formData.get("passwordappleid") as string)?.trim() || null;
+    const password = (formData.get("password") as string)?.trim();
+
+    if (!name || !email) {
+      return { error: "Nama lengkap dan email wajib diisi." };
+    }
+
+    if (password && password.length < 6) {
+      return { error: "Password minimal 6 karakter jika ingin diubah." };
+    }
+
+    if (role === "4" && !kelas) {
+      return { error: "Untuk peran Guru & Wali Kelas, wajib memilih Kelas Wali binaan." };
+    }
+
+    // Cek apakah email sudah dipakai pengguna lain
+    const existing = await prisma.user.findFirst({
+      where: {
+        email,
+        NOT: { id: BigInt(id) },
+      },
+    });
+
+    if (existing) {
+      return { error: "Email sudah digunakan oleh pengguna lain." };
+    }
+
+    const currentTeacher = await prisma.user.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    // Sinkronisasi wali kelas di database rombel (tbl_kelas)
+    if (role === "4" && kelas) {
+      if (currentTeacher?.kelas && currentTeacher.kelas !== kelas) {
+        await prisma.kelas.updateMany({
+          where: {
+            nama_kelas: currentTeacher.kelas,
+            wali_kelas: currentTeacher.name,
+          },
+          data: { wali_kelas: null },
+        });
+      }
+      await prisma.kelas.updateMany({
+        where: { nama_kelas: kelas },
+        data: { wali_kelas: name },
+      });
+    } else {
+      if (currentTeacher?.kelas) {
+        await prisma.kelas.updateMany({
+          where: {
+            nama_kelas: currentTeacher.kelas,
+            wali_kelas: currentTeacher.name,
+          },
+          data: { wali_kelas: null },
+        });
+      }
+    }
+
+    await UserService.updateUser({
+      id,
+      name,
+      email,
+      nip,
+      gender,
+      guru_bidang,
+      status: role,
+      kelas: role === "4" ? kelas : (kelas || null),
+      appleid,
+      passwordappleid,
+      password: password || undefined,
+    });
+
+    revalidatePath("/admin/teachers");
+    revalidatePath(`/admin/teachers/${id}`);
+    revalidatePath("/admin/classes");
+    return { success: true, message: `Data guru ${name} berhasil diperbarui.` };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal memperbarui data guru.";
+    return { error: errorMsg };
+  }
+}
+
+
 
 export async function createClassAction(formData: FormData) {
   try {

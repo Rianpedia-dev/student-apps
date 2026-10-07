@@ -18,10 +18,11 @@ interface NavbarProps {
   userName: string;
   userEmail: string;
   kelas?: string | null;
+  status?: string | null;
   userImage?: string | null;
 }
 
-export function Navbar({ role, userName, userEmail, kelas, userImage }: NavbarProps) {
+export function Navbar({ role, userName, userEmail, kelas, status, userImage }: NavbarProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [openMobile, setOpenMobile] = useState(false);
   const [isBellHovered, setIsBellHovered] = useState(false);
@@ -53,11 +54,13 @@ export function Navbar({ role, userName, userEmail, kelas, userImage }: NavbarPr
         ? "/siswa/profile"
         : "/admin";
 
+  const effectiveStatus = role === "admin" ? "3" : role === "guru" ? (status || "2") : "1";
+
   const profileAvatar = (
     <Link
       href={profileHref}
       className="group relative flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border overflow-hidden font-bold text-xs shadow-xs transition-all duration-200 hover:scale-105 hover:ring-primary/50 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
-      title={`Lihat Profil • ${userName} (${getRoleLabel(role === "admin" ? "3" : role === "guru" ? "4" : "1")})`}
+      title={`Lihat Profil • ${userName} (${getRoleLabel(effectiveStatus)})`}
     >
       {userImage ? (
         <>
@@ -198,6 +201,7 @@ export function Navbar({ role, userName, userEmail, kelas, userImage }: NavbarPr
                 userName={userName}
                 userEmail={userEmail}
                 kelas={kelas}
+                status={status}
                 onNavigate={() => setOpenMobile(false)}
                 forceExpanded={true}
                 className="w-full h-full border-none shadow-none bg-transparent"

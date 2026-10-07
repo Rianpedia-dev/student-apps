@@ -18,17 +18,21 @@ export default async function DashboardLayout({
   let userImage = session.image;
   let userName = session.name;
   let userGender = session.gender;
+  let userStatus = session.status;
+  let userKelas = session.kelas;
 
   try {
     if (/^\d+$/.test(session.id)) {
       const dbUser = await prisma.user.findUnique({
         where: { id: BigInt(session.id) },
-        select: { image: true, name: true, gender: true },
+        select: { image: true, name: true, gender: true, status: true, kelas: true },
       });
       if (dbUser) {
         userImage = dbUser.image;
         userName = dbUser.name || userName;
         userGender = dbUser.gender || userGender;
+        userStatus = dbUser.status || userStatus;
+        userKelas = dbUser.kelas || userKelas;
       }
     }
   } catch (e) {
@@ -42,7 +46,8 @@ export default async function DashboardLayout({
       role={session.role}
       userName={userName}
       userEmail={session.email}
-      kelas={session.kelas}
+      kelas={userKelas}
+      status={userStatus}
       userImage={finalUserImage}
     >
       {children}

@@ -13,22 +13,15 @@ export default async function GuruProfilePage() {
   }
 
   let teacher: any = null;
-  let classes: any[] = [];
 
   try {
     const isNum = /^\d+$/.test(session.id);
-    const [dbTeacher, dbClasses] = await Promise.all([
-      isNum
-        ? prisma.user.findUnique({
-            where: { id: BigInt(session.id) },
-          })
-        : null,
-      prisma.kelas.findMany({
-        orderBy: { nama_kelas: "asc" },
-      }),
-    ]);
+    const dbTeacher = isNum
+      ? await prisma.user.findUnique({
+          where: { id: BigInt(session.id) },
+        })
+      : null;
     teacher = dbTeacher;
-    classes = dbClasses;
   } catch (e) {
     console.error("Database query error in guru profile:", e);
   }
@@ -58,12 +51,8 @@ export default async function GuruProfilePage() {
     address: teacher.address || null,
     gender: teacher.gender || (session as any).gender || null,
     image: teacher.image || null,
+    appleid: teacher.appleid || null,
   };
-
-  const formattedClasses = classes.map((c) => ({
-    id: c.id.toString(),
-    nama_kelas: c.nama_kelas,
-  }));
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -72,7 +61,7 @@ export default async function GuruProfilePage() {
       </div>
 
       <Card className="shadow-sm overflow-hidden">
-        <GuruProfileForm teacher={formattedTeacher} classes={formattedClasses} />
+        <GuruProfileForm teacher={formattedTeacher} />
       </Card>
     </div>
   );

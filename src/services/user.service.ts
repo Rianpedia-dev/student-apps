@@ -22,6 +22,9 @@ export interface UpdateUserInput {
   id: string;
   name?: string;
   email?: string;
+  nip?: string | null;
+  gender?: string | null;
+  status?: string;
   kelas?: string | null;
   appleid?: string | null;
   passwordappleid?: string | null;
@@ -86,6 +89,9 @@ export class UserService {
     const dataToUpdate: Record<string, unknown> = {};
     if (data.name !== undefined) dataToUpdate.name = data.name;
     if (data.email !== undefined) dataToUpdate.email = data.email;
+    if (data.nip !== undefined) dataToUpdate.nip = data.nip;
+    if (data.gender !== undefined) dataToUpdate.gender = data.gender;
+    if (data.status !== undefined) dataToUpdate.status = data.status;
     if (data.kelas !== undefined) dataToUpdate.kelas = data.kelas;
     if (data.appleid !== undefined) dataToUpdate.appleid = data.appleid;
     if (data.passwordappleid !== undefined) dataToUpdate.passwordappleid = data.passwordappleid;
@@ -126,6 +132,27 @@ export class UserService {
     });
 
     return true;
+  }
+
+  /**
+   * Menghapus beberapa pengguna secara massal (bulk delete)
+   */
+  static async deleteUsers(ids: string[]) {
+    if (!ids || ids.length === 0) return 0;
+    const bigIntIds = ids.map((id) => BigInt(id));
+    try {
+      const res = await prisma.user.deleteMany({
+        where: {
+          id: { in: bigIntIds },
+        },
+      });
+      return res.count;
+    } catch {
+      const results = await prisma.$transaction(
+        bigIntIds.map((id) => prisma.user.delete({ where: { id } }))
+      );
+      return results.length;
+    }
   }
 
   /**
@@ -254,4 +281,206 @@ export class UserService {
 
     return importedCount;
   }
+
+  /**
+   * Mengimpor data guru secara massal dari file Excel (base64 buffer)
+   * Fleksibel terhadap kolom kosong, urutan kolom berbeda, dan membuat akun tetap berhasil diimpor.
+   */
+  static async importTeachersFromBase64(base64Data: string): Promise<number> {
+    const buffer = Buffer.from(base64Data, "base64");
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new AppError("File Excel tidak memiliki lembar kerja (sheet).");
+    }
+
+    const worksheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, defval: "" });
+    if (!rows || rows.length === 0) return 0;
+
+    // 1. Deteksi letak baris header dan pemetaan nama kolom
+    let headerRowIdx = -1;
+    const colMap: Record<string, number> = {};
+
+    for (let r = 0; r < Math.min(rows.length, 5); r++) {
+      const row = rows[r];
+      if (!Array.isArray(row)) continue;
+      const joined = row.map((c) => String(c ?? "").trim().toLowerCase()).join(" ");
+
+      if (
+        joined.includes("nama") ||
+        joined.includes("email") ||
+        joined.includes("nip") ||
+        joined.includes("guru") ||
+        joined.includes("mapel")
+      ) {
+        headerRowIdx = r;
+        row.forEach((col, idx) => {
+          const norm = String(col ?? "").trim().toLowerCase();
+          if (norm.includes("nip") || norm.includes("nomor induk") || norm.includes("no induk")) {
+            colMap["nip"] = idx;
+          } else if (norm.includes("nama") || norm.includes("name")) {
+            colMap["name"] = idx;
+          } else if (norm.includes("email") || norm.includes("surel") || norm.includes("e-mail")) {
+            colMap["email"] = idx;
+          } else if (norm.includes("apple") && (norm.includes("pass") || norm.includes("sandi") || norm.includes("pwd"))) {
+            colMap["passwordappleid"] = idx;
+          } else if (norm.includes("apple")) {
+            colMap["appleid"] = idx;
+          } else if (norm.includes("pass") || norm.includes("sandi") || norm.includes("pwd")) {
+            colMap["password"] = idx;
+          } else if (norm.includes("kelamin") || norm.includes("gender") || norm === "jk") {
+            colMap["gender"] = idx;
+          } else if (
+            norm.includes("bidang") ||
+            norm.includes("mapel") ||
+            norm.includes("studi") ||
+            norm.includes("pelajaran")
+          ) {
+            colMap["guru_bidang"] = idx;
+          } else if (norm.includes("peran") || norm.includes("role") || norm.includes("status") || norm.includes("jabatan")) {
+            colMap["role"] = idx;
+          } else if (norm.includes("kelas") || norm.includes("wali")) {
+            colMap["kelas"] = idx;
+          }
+        });
+        break;
+      }
+    }
+
+    const getVal = (row: any[], key: string, fallbackIdx: number): string => {
+      const idx = colMap[key] !== undefined ? colMap[key] : fallbackIdx;
+      return idx >= 0 && idx < row.length ? String(row[idx] ?? "").trim() : "";
+    };
+
+    const dataRows = headerRowIdx >= 0 ? rows.slice(headerRowIdx + 1) : rows;
+    let importedCount = 0;
+
+    const CHUNK_SIZE = 10;
+    for (let i = 0; i < dataRows.length; i += CHUNK_SIZE) {
+      const chunk = dataRows.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        chunk.map(async (row) => {
+          if (!row || !Array.isArray(row)) return;
+
+          // Cek jika seluruh baris kosong
+          const hasAnyContent = row.some((c) => String(c ?? "").trim().length > 0);
+          if (!hasAnyContent) return;
+
+          const rawNip = getVal(row, "nip", 0);
+          const rawName = getVal(row, "name", 1);
+          const rawEmail = getVal(row, "email", 2).toLowerCase();
+          const rawPassword = getVal(row, "password", 3);
+          const rawGender = getVal(row, "gender", 4).toUpperCase();
+          const rawBidang = getVal(row, "guru_bidang", 5);
+          const rawRole = getVal(row, "role", 6).toLowerCase();
+          const rawKelas = getVal(row, "kelas", 7);
+          const rawAppleId = getVal(row, "appleid", 8);
+          const rawPasswordApple = getVal(row, "passwordappleid", 9);
+
+          // Jika tidak ada data pengenal sama sekali pada baris ini, lewati
+          if (!rawName && !rawEmail && !rawNip) return;
+
+          // Nama: toleran jika kosong
+          let name = rawName;
+          if (!name) {
+            if (rawEmail) {
+              const prefix = rawEmail.split("@")[0] || "Guru";
+              name = prefix
+                .split(/[._-]/)
+                .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+                .join(" ");
+            } else if (rawNip) {
+              name = `Guru ${rawNip}`;
+            } else {
+              name = "Dewan Guru";
+            }
+          }
+
+          // Email: jika kosong, generate email default berbasis NIP atau Nama
+          let email = rawEmail;
+          if (!email) {
+            const cleanSlug = name
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, ".")
+              .replace(/\.+/g, ".")
+              .replace(/^\.|\.$/g, "")
+              .slice(0, 25) || (rawNip ? `guru.${rawNip}` : `guru.${Date.now()}`);
+
+            let candidate = `${cleanSlug}@alazhar.sch.id`;
+            let counter = 1;
+            while (await prisma.user.findUnique({ where: { email: candidate } })) {
+              candidate = `${cleanSlug}${counter}@alazhar.sch.id`;
+              counter++;
+            }
+            email = candidate;
+          }
+
+          // Fallback nilai jika kolom kosong
+          const nip = rawNip || null;
+          const passwordPlain = rawPassword || "123456";
+          const gender = rawGender.startsWith("P") || rawGender.startsWith("W") ? "P" : "L";
+          const guru_bidang = rawBidang || null;
+          const roleStatus = rawRole.includes("wali") || rawRole === "4" ? "4" : "2";
+          const kelas = rawKelas || null;
+          const appleid = rawAppleId || null;
+          const passwordappleid = rawPasswordApple || null;
+
+          const hashedPassword = await bcrypt.hash(passwordPlain, 10);
+
+          try {
+            const existingUser = await prisma.user.findUnique({ where: { email } });
+
+            if (existingUser) {
+              // Jika user sudah ada, hanya perbarui kolom yang memiliki nilai di Excel
+              // agar data yang sudah diisi manual oleh guru/admin tidak hilang terhapus null
+              const updateData: Record<string, any> = {
+                name,
+              };
+              if (nip) updateData.nip = nip;
+              if (guru_bidang) updateData.guru_bidang = guru_bidang;
+              if (kelas) updateData.kelas = kelas;
+              if (rawGender) updateData.gender = gender;
+              if (rawRole) updateData.status = roleStatus;
+              if (appleid) updateData.appleid = appleid;
+              if (passwordappleid) updateData.passwordappleid = passwordappleid;
+              if (rawPassword) {
+                updateData.password = hashedPassword;
+                updateData.password1 = passwordPlain;
+              }
+
+              await prisma.user.update({
+                where: { email },
+                data: updateData,
+              });
+            } else {
+              // Akun baru dibuat dengan nilai default untuk kolom yang kosong
+              await prisma.user.create({
+                data: {
+                  email,
+                  name,
+                  nip,
+                  guru_bidang,
+                  kelas,
+                  status: roleStatus,
+                  gender,
+                  password: hashedPassword,
+                  password1: passwordPlain,
+                  appleid,
+                  passwordappleid,
+                },
+              });
+            }
+
+            importedCount++;
+          } catch (rowErr) {
+            console.error(`Gagal memproses baris guru ${name} (${email}):`, rowErr);
+          }
+        })
+      );
+    }
+
+    return importedCount;
+  }
 }
+

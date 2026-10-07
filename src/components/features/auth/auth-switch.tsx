@@ -1016,7 +1016,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
               {/* Logo Resmi Al-Azhar Cairo Palembang */}
               <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-2xl border-2 border-amber-400/50 mb-3.5 bg-white p-2 backdrop-blur-md group transition-transform duration-300 hover:scale-105 flex items-center justify-center">
                 <Image
-                  src="/logo-alazhar-cairo.avif"
+                  src="/images/logo-alazhar-cairo.avif"
                   alt="Logo Al-Azhar Cairo Palembang"
                   width={96}
                   height={96}
@@ -1045,7 +1045,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
               {/* Logo Resmi Al-Azhar Cairo Palembang */}
               <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-2xl border-2 border-amber-400/50 mb-3.5 bg-white p-2 backdrop-blur-md group transition-transform duration-300 hover:scale-105 flex items-center justify-center">
                 <Image
-                  src="/logo-alazhar-cairo.avif"
+                  src="/images/logo-alazhar-cairo.avif"
                   alt="Logo Al-Azhar Cairo Palembang"
                   width={96}
                   height={96}

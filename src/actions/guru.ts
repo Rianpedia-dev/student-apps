@@ -15,9 +15,24 @@ async function checkGuruOrAdmin() {
   return session;
 }
 
+async function checkWaliKelasOrAdmin(targetKelas?: string) {
+  const session = await checkGuruOrAdmin();
+  if (session.role === "admin") return session;
+
+  if (session.status !== "4") {
+    throw new Error("Akses ditolak: Fitur ini khusus untuk Guru & Wali Kelas.");
+  }
+
+  if (targetKelas && session.kelas && session.kelas.trim().toLowerCase() !== targetKelas.trim().toLowerCase()) {
+    throw new Error(`Akses ditolak: Anda hanya berwenang mengelola kelas binaan Anda (${session.kelas}).`);
+  }
+
+  return session;
+}
+
 export async function enrollStudentAction(studentId: string, kelas: string) {
   try {
-    await checkGuruOrAdmin();
+    await checkWaliKelasOrAdmin(kelas);
     await UserService.enrollStudentToClass(studentId, kelas);
 
     revalidatePath("/guru/my-class");
@@ -30,7 +45,20 @@ export async function enrollStudentAction(studentId: string, kelas: string) {
 
 export async function removeStudentsAction(studentIds: string[]) {
   try {
-    await checkGuruOrAdmin();
+    const session = await checkWaliKelasOrAdmin();
+
+    if (session.role !== "admin" && session.kelas) {
+      const countMismatch = await prisma.user.count({
+        where: {
+          id: { in: studentIds.map((id) => BigInt(id)) },
+          NOT: { kelas: session.kelas },
+        },
+      });
+      if (countMismatch > 0) {
+        return { error: "Akses ditolak: Anda hanya dapat mengeluarkan siswa dari kelas binaan Anda." };
+      }
+    }
+
     const count = await UserService.removeStudentsFromClass(studentIds);
 
     revalidatePath("/guru/my-class");
@@ -47,7 +75,7 @@ export async function createAttendanceAction(
   records: { userId: string; keterangan: string }[]
 ) {
   try {
-    await checkGuruOrAdmin();
+    await checkWaliKelasOrAdmin(kelas);
     await AttendanceService.recordAttendance(date, kelas, records);
 
     revalidatePath("/guru/attendance");
@@ -62,7 +90,7 @@ export async function createAttendanceAction(
 
 export async function deleteAttendanceAction(date: string, kelas: string) {
   try {
-    await checkGuruOrAdmin();
+    await checkWaliKelasOrAdmin(kelas);
     await AttendanceService.deleteAttendanceByDate(date, kelas);
 
     revalidatePath("/guru/attendance");
@@ -125,7 +153,20 @@ export async function deleteViolationAction(id: string, studentId: string) {
 
 export async function updateNotesAction(studentId: string, notes: string) {
   try {
-    await checkGuruOrAdmin();
+    const session = await checkGuruOrAdmin();
+
+    if (session.role !== "admin") {
+      if (session.status !== "4" || !session.kelas) {
+        return { error: "Akses ditolak: Catatan siswa binaan hanya dapat diedit oleh Wali Kelas." };
+      }
+      const student = await prisma.user.findUnique({
+        where: { id: BigInt(studentId) },
+        select: { kelas: true },
+      });
+      if (student?.kelas !== session.kelas) {
+        return { error: "Akses ditolak: Anda hanya dapat mengedit catatan siswa di kelas binaan Anda." };
+      }
+    }
 
     await prisma.user.update({
       where: { id: BigInt(studentId) },
@@ -259,19 +300,25 @@ export async function updateProfileAction(formData: FormData) {
 
     const name = formData.get("name") as string;
     const address = formData.get("address") as string;
-    const kelas = formData.get("kelas") as string;
     const guru_bidang = formData.get("guru_bidang") as string;
     const notes = formData.get("notes") as string;
     const skills = formData.get("skills") as string;
+    const nip = formData.get("nip") as string;
+    const gender = formData.get("gender") as string;
+    const appleid = formData.get("appleid") as string;
     const removeImage = formData.get("remove_image") === "true";
 
+    // CATATAN KEAMANAN: 'kelas' dan 'status' sengaja TIDAK DIPERBOLEHKAN diubah oleh guru
+    // melalui form profil. Hak pengaturan status & kelas wali eksklusif milik Administrator.
     const dataToUpdate: Record<string, unknown> = {};
     if (name) dataToUpdate.name = name;
     if (address !== undefined) dataToUpdate.address = address || null;
-    if (kelas !== undefined) dataToUpdate.kelas = kelas || null;
     if (guru_bidang !== undefined) dataToUpdate.guru_bidang = guru_bidang || null;
     if (notes !== undefined) dataToUpdate.notes = notes || null;
     if (skills !== undefined) dataToUpdate.skills = skills || null;
+    if (nip !== undefined) dataToUpdate.nip = nip ? nip.trim() : null;
+    if (gender && (gender === "L" || gender === "P")) dataToUpdate.gender = gender;
+    if (appleid !== undefined) dataToUpdate.appleid = appleid ? appleid.trim() : null;
 
     if (removeImage) {
       dataToUpdate.image = null;
@@ -298,17 +345,16 @@ export async function updateProfileAction(formData: FormData) {
 
     const newImage = dataToUpdate.image !== undefined ? (dataToUpdate.image as string | null) : session.image;
     const newName = dataToUpdate.name ? (dataToUpdate.name as string) : session.name;
-    const newKelas = dataToUpdate.kelas !== undefined ? (dataToUpdate.kelas as string | null) : session.kelas;
 
-    // Sync wali_kelas in tbl_kelas jika guru membina kelas ini
-    if (newKelas) {
+    // Jika guru mengganti namanya dan saat ini berstatus Wali Kelas, sinkronkan nama baru ke tbl_kelas
+    if (newName && session.status === "4" && session.kelas) {
       try {
         await prisma.kelas.updateMany({
-          where: { nama_kelas: newKelas },
+          where: { nama_kelas: session.kelas },
           data: { wali_kelas: newName },
         });
       } catch (err) {
-        console.error("Gagal sinkronisasi wali_kelas ke tbl_kelas:", err);
+        console.error("Gagal sinkronisasi nama wali_kelas ke tbl_kelas:", err);
       }
     }
 
@@ -316,7 +362,6 @@ export async function updateProfileAction(formData: FormData) {
       ...session,
       name: newName,
       image: newImage,
-      kelas: newKelas,
     });
 
     revalidatePath("/", "layout");

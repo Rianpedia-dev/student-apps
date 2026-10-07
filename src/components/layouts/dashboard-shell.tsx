@@ -15,6 +15,7 @@ interface DashboardShellProps {
   userName: string;
   userEmail: string;
   kelas?: string | null;
+  status?: string | null;
   userImage?: string | null;
   children: React.ReactNode;
 }
@@ -24,6 +25,7 @@ function DashboardLayoutContent({
   userName,
   userEmail,
   kelas,
+  status,
   userImage,
   children,
 }: DashboardShellProps) {
@@ -56,6 +58,7 @@ function DashboardLayoutContent({
             userName={userName}
             userEmail={userEmail}
             kelas={kelas}
+            status={status}
           />
         </div>
       </div>
@@ -72,6 +75,7 @@ function DashboardLayoutContent({
           userName={userName}
           userEmail={userEmail}
           kelas={kelas}
+          status={status}
           userImage={userImage}
         />
         <main
