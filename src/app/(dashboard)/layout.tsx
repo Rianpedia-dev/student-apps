@@ -39,6 +39,11 @@ export default async function DashboardLayout({
     console.error("DashboardLayout user query error:", e);
   }
 
+  // Akun berstatus 0 (belum diverifikasi admin) dilarang mengakses dashboard
+  if (userStatus === "0" || session.status === "0") {
+    redirect("/login");
+  }
+
   const finalUserImage = getUserProfileImage(userImage, userGender);
 
   return (

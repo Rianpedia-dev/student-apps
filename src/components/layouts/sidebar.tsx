@@ -182,7 +182,7 @@ export function Sidebar({
   const guruMenu: MenuItemType[] = [
     { label: "Dashboard", href: "/guru", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
     { label: "Profil Saya", href: "/guru/profile", icon: ContactIcon, iconColor: "text-amber-600" },
-    { label: "Mapel & Tugas", href: "/guru/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
+    { label: "Mata Pelajaran", href: "/guru/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
     { label: "Chat Siswa", href: "/guru/chat", icon: ChatIcon, iconColor: "text-cyan-600" },
     ...(isWaliKelas
       ? [
@@ -199,7 +199,7 @@ export function Sidebar({
   const siswaMenu: MenuItemType[] = [
     { label: "Dashboard", href: "/siswa", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
     { label: "Profil Saya", href: "/siswa/profile", icon: ContactIcon, iconColor: "text-amber-600" },
-    { label: "Mapel & Tugas", href: "/siswa/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
+    { label: "Mata Pelajaran", href: "/siswa/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
     { label: "Chat Guru", href: "/siswa/chat", icon: ChatIcon, iconColor: "text-cyan-600" },
     { label: "Kalender Kegiatan", href: "/siswa/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
     { label: "Riwayat Absensi", href: "/siswa/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },

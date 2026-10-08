@@ -17,7 +17,11 @@ import {
   Pencil,
   EyeOff,
   MoreVertical,
+  Clock,
+  AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
+import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -95,13 +99,23 @@ export function TeacherTable({
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [showEditApplePassword, setShowEditApplePassword] = useState(false);
 
-  const filtered = teachers.filter(
-    (t) =>
+  // Status Filter State: ALL, 0 (pending verifikasi), 2 (guru mapel), 4 (wali kelas)
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "0" | "2" | "4">("ALL");
+
+  const countAll = teachers.length;
+  const countPending = teachers.filter((t) => t.status === "0").length;
+  const countMapel = teachers.filter((t) => t.status === "2").length;
+  const countWali = teachers.filter((t) => t.status === "4").length;
+
+  const filtered = teachers.filter((t) => {
+    const matchSearch =
       t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.email.toLowerCase().includes(search.toLowerCase()) ||
       (t.guru_bidang && t.guru_bidang.toLowerCase().includes(search.toLowerCase())) ||
-      (t.nip && t.nip.includes(search))
-  );
+      (t.nip && t.nip.includes(search));
+    const matchStatus = statusFilter === "ALL" ? true : t.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -370,6 +384,78 @@ export function TeacherTable({
 
   return (
     <div className="space-y-4">
+      {/* Alert banner if there are new unverified registrations */}
+      {countPending > 0 && statusFilter !== "0" && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs animate-in fade-in-50 duration-200">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <p>
+              <strong>Perhatian:</strong> Terdapat <strong>{countPending}</strong> akun guru baru yang baru mendaftar dan menunggu verifikasi Admin sebelum bisa login ke sistem.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setStatusFilter("0");
+              setPage(1);
+            }}
+            className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white shrink-0 font-bold rounded-lg shadow-xs"
+          >
+            Lihat Akun Pending ({countPending})
+          </Button>
+        </div>
+      )}
+
+      {/* Filter Tabs / Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+        {[
+          { id: "ALL" as const, label: "Semua Guru", count: countAll, isPending: false },
+          {
+            id: "0" as const,
+            label: "Menunggu Verifikasi",
+            count: countPending,
+            isPending: true,
+          },
+          { id: "2" as const, label: "Guru Mapel", count: countMapel, isPending: false },
+          { id: "4" as const, label: "Guru & Wali Kelas", count: countWali, isPending: false },
+        ].map((tab) => {
+          const isActive = statusFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setStatusFilter(tab.id);
+                setPage(1);
+              }}
+              className={cn(
+                "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer",
+                isActive
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : tab.isPending && countPending > 0
+                  ? "bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              <span>{tab.label}</span>
+              <span
+                className={cn(
+                  "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : tab.isPending && countPending > 0
+                    ? "bg-amber-500 text-white animate-pulse"
+                    : "bg-muted text-muted-foreground"
+                )}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Top action toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-sm w-full">
@@ -503,8 +589,9 @@ export function TeacherTable({
                   </TableCell>
                   <TableCell className="text-center">
                     {t.status === "0" ? (
-                      <Badge variant="warning" size="sm">
-                        Pending Verifikasi
+                      <Badge variant="warning" size="sm" className="gap-1 inline-flex items-center">
+                        <Clock className="h-3 w-3" />
+                        <span>Pending Verifikasi</span>
                       </Badge>
                     ) : (
                       <Badge variant="success" size="sm">
@@ -513,58 +600,66 @@ export function TeacherTable({
                     )}
                   </TableCell>
                   <TableCell className="text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        className="h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center justify-center transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                        title="Pilihan Aksi"
-                        aria-label={`Menu aksi ${t.name}`}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44 p-1">
-                        <Link href={`/admin/teachers/${t.id}`} className="w-full">
-                          <DropdownMenuItem className="cursor-pointer gap-2">
-                            <Eye className="h-4 w-4 text-sky-600 dark:text-sky-400" />
-                            <span>Detail Guru</span>
-                          </DropdownMenuItem>
-                        </Link>
-
-                        <DropdownMenuItem
-                          className="cursor-pointer gap-2"
-                          onClick={() => {
-                            setEditTarget(t);
-                            setEditRoleChoice(t.status === "4" ? "4" : "2");
-                            setShowEditPassword(false);
-                            setShowEditApplePassword(false);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                          <span>Edit Data</span>
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          className="cursor-pointer gap-2"
+                    <div className="flex items-center justify-center gap-1.5">
+                      {/* Tombol aksi langsung verifikasi khusus akun pending */}
+                      {t.status === "0" && (
+                        <Button
+                          type="button"
+                          size="sm"
                           onClick={() => {
                             setVerifyTarget(t);
-                            setVerifyStatusChoice(t.status === "4" ? "4" : "2");
+                            setVerifyStatusChoice(t.kelas ? "4" : "2");
                           }}
+                          className="h-7 px-2.5 text-xs font-semibold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs transition-all"
+                          title="Verifikasi Akun Guru Baru"
                         >
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                          <span>Verifikasi Status</span>
-                        </DropdownMenuItem>
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>Verifikasi</span>
+                        </Button>
+                      )}
 
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem
-                          variant="destructive"
-                          className="cursor-pointer gap-2 text-rose-600 dark:text-rose-400 focus:text-rose-600"
-                          onClick={() => setDeleteTarget(t)}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          className="h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center justify-center transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                          title="Pilihan Aksi"
+                          aria-label={`Menu aksi ${t.name}`}
                         >
-                          <Trash2 className="h-4 w-4" />
-                          <span>Hapus Akun</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          <MoreVertical className="h-4 w-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44 p-1">
+                          <Link href={`/admin/teachers/${t.id}`} className="w-full">
+                            <DropdownMenuItem className="cursor-pointer gap-2">
+                              <Eye className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                              <span>Detail Guru</span>
+                            </DropdownMenuItem>
+                          </Link>
+
+                          <DropdownMenuItem
+                            className="cursor-pointer gap-2"
+                            onClick={() => {
+                              setEditTarget(t);
+                              setEditRoleChoice(t.status === "4" ? "4" : "2");
+                              setShowEditPassword(false);
+                              setShowEditApplePassword(false);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                            <span>Edit Data</span>
+                          </DropdownMenuItem>
+
+                          <DropdownMenuSeparator />
+
+                          <DropdownMenuItem
+                            variant="destructive"
+                            className="cursor-pointer gap-2 text-rose-600 dark:text-rose-400 focus:text-rose-600"
+                            onClick={() => setDeleteTarget(t)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span>Hapus Akun</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

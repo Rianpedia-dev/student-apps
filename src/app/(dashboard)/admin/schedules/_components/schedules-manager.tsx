@@ -38,6 +38,8 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { compareScheduleTime } from "@/lib/utils";
 import { TeacherSearchSelect } from "./teacher-search-select";
+import { ClassSearchSelect } from "./class-search-select";
+import { SubjectSearchSelect } from "./subject-search-select";
 
 export interface ScheduleItem {
   id: string;
@@ -648,7 +650,7 @@ export function SchedulesManager({
 
       {/* Add / Edit Schedule Dialog */}
       <Dialog open={openModal} onOpenChange={(open) => !open && handleCloseModal()}>
-        <DialogContent className="max-w-md rounded-2xl">
+        <DialogContent className="sm:max-w-xl max-w-[calc(100%-2rem)] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-bold flex items-center gap-2">
               {editTarget ? (
@@ -665,54 +667,27 @@ export function SchedulesManager({
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5 pt-2">
-            {/* Kelas Selector */}
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            {/* Kelas Selector with Search */}
             <div>
               <label className="text-xs font-bold block mb-1">Rombongan Belajar (Kelas) *</label>
-              <select
-                name="kelas_id"
+              <ClassSearchSelect
+                classes={classes}
                 value={formKelasId}
-                onChange={(e) => setFormKelasId(e.target.value)}
-                className="w-full text-xs rounded-xl border border-input bg-background p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                onChange={(newId) => setFormKelasId(newId)}
                 required
-              >
-                <optgroup label="── Sekolah Dasar (SD) ──">
-                  {classes
-                    .filter((c) => c.jenjang === "SD")
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nama}
-                      </option>
-                    ))}
-                </optgroup>
-                <optgroup label="── Sekolah Menengah Pertama (SMP) ──">
-                  {classes
-                    .filter((c) => c.jenjang === "SMP")
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nama}
-                      </option>
-                    ))}
-                </optgroup>
-              </select>
+              />
             </div>
 
-            {/* Mata Pelajaran Selector */}
+            {/* Mata Pelajaran Selector with Search */}
             <div>
               <label className="text-xs font-bold block mb-1">Mata Pelajaran *</label>
-              <select
-                name="mapel_id"
+              <SubjectSearchSelect
+                subjects={subjects}
                 value={formMapelId}
-                onChange={(e) => setFormMapelId(e.target.value)}
-                className="w-full text-xs rounded-xl border border-input bg-background p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                onChange={(newId) => setFormMapelId(newId)}
                 required
-              >
-                {subjects.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nama} ({s.kode})
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Guru Pengampu Selector with Search */}

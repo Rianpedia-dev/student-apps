@@ -1,46 +1,46 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Search, ChevronDown, Check, User, X } from "lucide-react";
+import { Search, ChevronDown, Check, BookOpen, X } from "lucide-react";
 import { cn } from "cn";
 
-export interface TeacherOption {
+export interface SubjectOption {
   id: string;
   nama: string;
-  bidang?: string | null;
+  kode: string;
 }
 
-interface TeacherSearchSelectProps {
-  teachers: TeacherOption[];
+interface SubjectSearchSelectProps {
+  subjects: SubjectOption[];
   value: string;
-  onChange: (teacherId: string) => void;
+  onChange: (subjectId: string) => void;
   required?: boolean;
 }
 
-export function TeacherSearchSelect({
-  teachers,
+export function SubjectSearchSelect({
+  subjects,
   value,
   onChange,
   required = false,
-}: TeacherSearchSelectProps) {
+}: SubjectSearchSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedTeacher = useMemo(() => {
-    return teachers.find((t) => t.id === value) || null;
-  }, [teachers, value]);
+  const selectedSubject = useMemo(() => {
+    return subjects.find((s) => s.id === value) || null;
+  }, [subjects, value]);
 
-  const filteredTeachers = useMemo(() => {
-    if (!searchQuery.trim()) return teachers;
+  const filteredSubjects = useMemo(() => {
+    if (!searchQuery.trim()) return subjects;
     const q = searchQuery.toLowerCase().trim();
-    return teachers.filter(
-      (t) =>
-        t.nama.toLowerCase().includes(q) ||
-        (t.bidang && t.bidang.toLowerCase().includes(q))
+    return subjects.filter(
+      (s) =>
+        s.nama.toLowerCase().includes(q) ||
+        s.kode.toLowerCase().includes(q)
     );
-  }, [teachers, searchQuery]);
+  }, [subjects, searchQuery]);
 
   // Click outside to close
   useEffect(() => {
@@ -81,16 +81,16 @@ export function TeacherSearchSelect({
     }
   }, [isOpen]);
 
-  const handleSelect = (teacherId: string) => {
-    onChange(teacherId);
+  const handleSelect = (subjectId: string) => {
+    onChange(subjectId);
     setIsOpen(false);
     setSearchQuery("");
   };
 
   return (
     <div className={cn("relative w-full", isOpen && "z-30")} ref={containerRef}>
-      {/* Hidden input to ensure FormData gets guru_id seamlessly */}
-      <input type="hidden" name="guru_id" value={value} required={required} />
+      {/* Hidden input to ensure FormData gets mapel_id seamlessly */}
+      <input type="hidden" name="mapel_id" value={value} required={required} />
 
       {/* Trigger Button */}
       <button
@@ -105,22 +105,20 @@ export function TeacherSearchSelect({
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <User className="h-3 w-3" />
+          <div className="h-5 w-5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <BookOpen className="h-3 w-3" />
           </div>
-          {selectedTeacher ? (
+          {selectedSubject ? (
             <div className="truncate flex items-center gap-1.5">
               <span className="font-semibold text-foreground truncate">
-                {selectedTeacher.nama}
+                {selectedSubject.nama}
               </span>
-              {selectedTeacher.bidang && (
-                <span className="text-[11px] text-muted-foreground truncate">
-                  ({selectedTeacher.bidang})
-                </span>
-              )}
+              <span className="text-[11px] font-mono font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                {selectedSubject.kode}
+              </span>
             </div>
           ) : (
-            <span className="text-muted-foreground">-- Pilih Guru Pengampu --</span>
+            <span className="text-muted-foreground">-- Pilih Mata Pelajaran --</span>
           )}
         </div>
         <ChevronDown
@@ -142,7 +140,7 @@ export function TeacherSearchSelect({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama guru atau bidang studi..."
+              placeholder="Cari nama mata pelajaran atau kode..."
               className="w-full pl-8 pr-7 py-2 text-xs rounded-lg border border-input bg-muted/40 focus:bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
             />
             {searchQuery && (
@@ -161,20 +159,20 @@ export function TeacherSearchSelect({
 
           {/* Results Info Counter */}
           <div className="flex items-center justify-between px-1 text-[10px] text-muted-foreground font-medium">
-            <span>Daftar Guru Pengampu</span>
-            <span>{filteredTeachers.length} guru</span>
+            <span>Daftar Mata Pelajaran</span>
+            <span>{filteredSubjects.length} mata pelajaran</span>
           </div>
 
-          {/* Scrollable Teachers List */}
+          {/* Scrollable Subjects List */}
           <div className="max-h-52 overflow-y-auto space-y-1 pr-0.5 custom-scrollbar">
-            {filteredTeachers.length > 0 ? (
-              filteredTeachers.map((t) => {
-                const isSelected = t.id === value;
+            {filteredSubjects.length > 0 ? (
+              filteredSubjects.map((s) => {
+                const isSelected = s.id === value;
                 return (
                   <button
-                    key={t.id}
+                    key={s.id}
                     type="button"
-                    onClick={() => handleSelect(t.id)}
+                    onClick={() => handleSelect(s.id)}
                     className={cn(
                       "w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between gap-2 transition-colors cursor-pointer",
                       isSelected
@@ -188,20 +186,18 @@ export function TeacherSearchSelect({
                           "h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
                           isSelected
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
+                            : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                         )}
                       >
-                        {t.nama.charAt(0).toUpperCase()}
+                        <BookOpen className="h-3 w-3" />
                       </div>
                       <div className="truncate">
                         <span className="block truncate font-medium text-foreground">
-                          {t.nama}
+                          {s.nama}
                         </span>
-                        {t.bidang ? (
-                          <span className="block truncate text-[10px] text-muted-foreground font-normal">
-                            Bidang: {t.bidang}
-                          </span>
-                        ) : null}
+                        <span className="block truncate text-[10px] text-muted-foreground font-mono">
+                          Kode: {s.kode}
+                        </span>
                       </div>
                     </div>
                     {isSelected && (
@@ -212,9 +208,9 @@ export function TeacherSearchSelect({
               })
             ) : (
               <div className="py-6 text-center text-xs text-muted-foreground space-y-1">
-                <p className="font-medium">Guru tidak ditemukan</p>
+                <p className="font-medium">Mata pelajaran tidak ditemukan</p>
                 <p className="text-[11px] text-muted-foreground/80">
-                  Tidak ada guru yang cocok dengan "{searchQuery}"
+                  Tidak ada mata pelajaran yang cocok dengan "{searchQuery}"
                 </p>
               </div>
             )}

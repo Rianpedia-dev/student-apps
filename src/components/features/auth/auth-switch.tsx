@@ -23,7 +23,9 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
-  ChevronDown
+  ChevronDown,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 interface AuthSwitchProps {
@@ -62,6 +64,9 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
   // --- Sign In State & Handlers ---
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showRegApplePassword, setShowRegApplePassword] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [loadingDemoRole, setLoadingDemoRole] = useState<string | null>(null);
   const [loginError, setLoginError] = useState("");
@@ -172,20 +177,22 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           font-family: var(--font-plus-jakarta-sans), var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           background-color: #022018;
           min-height: 100vh;
+          min-height: 100dvh;
           width: 100%;
           display: flex;
           justify-content: center;
           align-items: center;
           padding: 20px;
           position: relative;
-          overflow: hidden;
+          overflow-x: hidden;
+          overflow-y: auto;
         }
 
         .container {
           position: relative;
           width: 100%;
-          max-width: 980px;
-          min-height: 600px;
+          max-width: 1040px;
+          min-height: 620px;
           background: #ffffff;
           border-radius: 26px;
           box-shadow: 0 25px 65px -15px rgba(2, 32, 24, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.25);
@@ -218,7 +225,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           align-items: center;
           justify-content: center;
           flex-direction: column;
-          padding: 0 3.5rem;
+          padding: 0 3rem;
           transition: all 0.2s 0.7s;
           grid-column: 1 / 2;
           grid-row: 1 / 2;
@@ -229,17 +236,18 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           z-index: 2;
           max-width: 430px;
           margin: 0 auto;
+          padding-bottom: 2rem;
         }
 
         form.sign-up-form {
           opacity: 0;
           z-index: 1;
-          max-width: 470px;
+          max-width: 480px;
+          width: 100%;
           margin: 0 auto;
-          max-height: 560px;
+          max-height: 590px;
           overflow-y: auto;
-          padding-top: 1.5rem;
-          padding-bottom: 2rem;
+          padding: 1rem 1.25rem 2.25rem 1.25rem;
           scrollbar-width: thin;
           scrollbar-color: #cbd5e1 transparent;
         }
@@ -253,46 +261,70 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
         }
 
         .title {
-          font-size: 1.85rem;
+          font-size: 1.7rem;
           color: #064e3b;
-          margin-bottom: 4px;
+          margin-bottom: 2px;
           font-weight: 800;
           letter-spacing: -0.02em;
           text-align: center;
         }
 
         .subtitle {
-          font-size: 0.82rem;
+          font-size: 0.8rem;
           color: #64748b;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
           text-align: center;
         }
 
         .input-field {
           max-width: 370px;
           width: 100%;
-          background-color: #f1f5f9;
-          margin: 6px 0;
-          height: 48px;
-          border-radius: 48px;
+          background-color: #f8fafc;
+          margin: 5px 0;
+          height: 46px;
+          border-radius: 46px;
           display: flex;
           align-items: center;
           padding: 0 1rem;
           position: relative;
-          transition: 0.3s;
-          border: 1px solid transparent;
+          transition: 0.25s ease;
+          border: 1px solid #e2e8f0;
+        }
+
+        .input-field:hover {
+          border-color: #cbd5e1;
+          background-color: #ffffff;
+        }
+
+        form.sign-up-form .input-field,
+        form.sign-up-form .input-row {
+          max-width: 440px;
+          width: 100%;
         }
 
         .input-field.compact {
           height: 42px;
-          margin: 4px 0;
+          margin: 3.5px 0;
           border-radius: 42px;
-          font-size: 0.88rem;
+          padding: 0 0.85rem;
+        }
+
+        .input-field.compact input,
+        .input-field.compact select {
+          font-size: 0.84rem;
+        }
+
+        .input-field.compact input::placeholder {
+          font-size: 0.81rem;
+          letter-spacing: -0.01em;
+          color: #94a3b8;
         }
 
         .input-field:focus-within {
-          background-color: #ecfdf5;
+          background-color: #ffffff;
           border-color: #059669;
+          box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+        }
           box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
         }
 
@@ -476,7 +508,8 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
         }
 
         .container.sign-up-mode .signin-signup {
-          left: 25%;
+          left: 27%;
+          width: 54%;
         }
 
         .container.sign-up-mode form.sign-up-form {
@@ -584,26 +617,33 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
         .input-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 8px;
+          gap: 9px;
           width: 100%;
           max-width: 370px;
+        }
+
+        .signin-form-logo {
+          display: none;
         }
 
         /* Media Queries */
         @media (max-width: 870px) {
           .container {
-            min-height: 870px;
+            max-width: 600px;
+            min-height: 720px;
             height: auto;
+            border-radius: 22px;
           }
           .signin-signup {
             width: 100%;
-            top: 92%;
+            top: 94%;
             transform: translate(-50%, -100%);
             transition: 1s 0.8s ease-in-out;
           }
           .signin-signup,
           .container.sign-up-mode .signin-signup {
             left: 50%;
+            width: 100%;
           }
           .panels-container {
             grid-template-columns: 1fr;
@@ -613,7 +653,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
             flex-direction: row;
             justify-content: space-around;
             align-items: center;
-            padding: 2rem 6%;
+            padding: 1.5rem 6%;
             grid-column: 1 / 2;
           }
           .right-panel {
@@ -628,30 +668,34 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
             transition-delay: 0.8s;
           }
           .panel h3 {
-            font-size: 1.2rem;
+            font-size: 1.25rem;
+            margin-bottom: 4px;
           }
           .panel p {
-            font-size: 0.78rem;
-            padding: 0.2rem 0;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            padding: 0.2rem 0 0.6rem 0;
+            max-width: 320px;
           }
           .btn.transparent {
-            width: 116px;
+            width: 124px;
             height: 36px;
-            font-size: 0.75rem;
+            font-size: 0.78rem;
           }
           .container:before {
             width: 1500px;
             height: 1500px;
             transform: translateX(-50%);
-            left: 30%;
-            bottom: 68%;
+            left: 50%;
+            bottom: 70%;
             right: initial;
             top: initial;
             transition: 2s ease-in-out;
           }
           .container.sign-up-mode:before {
             transform: translate(-50%, 100%);
-            bottom: 32%;
+            left: 50%;
+            bottom: 30%;
             right: initial;
           }
           .container.sign-up-mode .left-panel .content {
@@ -664,21 +708,256 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
             transform: translateY(300px);
           }
           .container.sign-up-mode .signin-signup {
-            top: 7%;
+            top: 4%;
             transform: translate(-50%, 0);
+          }
+          form.sign-in-form {
+            padding-bottom: 2.2rem;
+          }
+          form.sign-up-form {
+            max-height: 520px;
+            padding: 1rem 1.25rem 2.2rem 1.25rem;
           }
         }
 
         @media (max-width: 570px) {
-          form {
-            padding: 0 1.2rem;
+          .auth-switch {
+            padding: 10px 8px;
+          }
+          .container {
+            max-width: 100%;
+            min-height: 600px;
+            border-radius: 20px;
+            box-shadow: 0 16px 40px -10px rgba(2, 32, 24, 0.55);
+          }
+          .container.sign-up-mode {
+            min-height: 600px;
+          }
+
+          /* Gelombang Hijau di Mobile: Terbalik
+             Saat Sign In: Berada di BAWAH
+             Saat Sign Up: Meluncur NAIK ke ATAS */
+          .container:before {
+            width: 1200px;
+            height: 1200px;
+            left: 50%;
+            transform: translate(-50%, 100%);
+            bottom: 23%;
+            right: initial;
+            top: initial;
+            transition: 1.6s ease-in-out;
+          }
+          .container.sign-up-mode:before {
+            width: 1200px;
+            height: 1200px;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 74%;
+            right: initial;
+            top: initial;
+          }
+
+          /* Form Container di Mobile:
+             Saat Sign In: Form Masuk Akun berada di ATAS
+             Saat Sign Up: Form Registrasi berada di BAWAH */
+          .signin-signup {
+            left: 50%;
+            width: 100%;
+            top: 2%;
+            transform: translate(-50%, 0);
+            height: calc(100% - 142px);
+            transition: 1s 0.7s ease-in-out;
+          }
+          .container.sign-up-mode .signin-signup {
+            left: 50%;
+            width: 100%;
+            top: 98%;
+            transform: translate(-50%, -100%);
+            height: calc(100% - 152px);
+          }
+
+          /* Panels Layout di Mobile:
+             Saat Sign In: Left Panel (Pendidik Baru?) di BAWAH (row 3)
+             Saat Sign Up: Right Panel (Sudah Punya Akun?) di ATAS (row 1) */
+          .panels-container {
+            pointer-events: none;
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr 1fr 140px;
+          }
+          .container.sign-up-mode .panels-container {
+            grid-template-rows: 150px 1fr 1fr;
+          }
+
+          .panel {
+            padding: 0.5rem 1rem;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
           }
           .panel .content {
-            padding: 0.5rem 0.5rem;
+            padding: 0;
+            gap: 2px;
+            transition: transform 0.8s ease-in-out;
+          }
+
+          /* Left Panel (Pendidik Baru? Daftar Guru) */
+          .left-panel {
+            grid-row: 3 / 4;
+            pointer-events: all;
+            padding-bottom: 1.6rem;
+          }
+          .left-panel .content {
+            transform: translateY(0);
+          }
+          .container.sign-up-mode .left-panel {
+            pointer-events: none;
+          }
+          .container.sign-up-mode .left-panel .content {
+            transform: translateY(300px);
+          }
+
+          /* Right Panel (Sudah Punya Akun? Masuk Akun) */
+          .right-panel {
+            grid-row: 1 / 2;
+            pointer-events: none;
+            padding-top: 1rem;
+          }
+          .right-panel .content {
+            transform: translateY(-300px);
+          }
+          .container.sign-up-mode .right-panel {
+            grid-row: 1 / 2;
+            pointer-events: all;
+            padding-top: 1rem;
+          }
+          .container.sign-up-mode .right-panel .content {
+            transform: translateY(0);
+          }
+
+          .left-panel .panel-logo {
+            display: none !important;
+          }
+
+          .signin-form-logo {
+            display: flex !important;
+          }
+
+          .panel h3 {
+            font-size: 1.05rem;
+            margin-bottom: 2px;
+            font-weight: 800;
+          }
+          .panel p {
+            display: none;
+          }
+          .btn.transparent {
+            width: 110px;
+            height: 30px;
+            font-size: 0.72rem;
+            margin-top: 2px;
+          }
+          form {
+            padding: 0 0.85rem;
+            width: 100%;
+            max-width: 100%;
+          }
+          form.sign-in-form,
+          form.sign-up-form {
+            width: 100%;
+            max-width: 100%;
+          }
+          form.sign-in-form {
+            padding: 0.5rem 0.85rem 0.6rem 0.85rem;
+            justify-content: center;
+          }
+          .title {
+            font-size: 1.3rem;
+            margin-bottom: 1px;
+          }
+          .subtitle {
+            font-size: 0.72rem;
+            margin-bottom: 3px;
+          }
+          .input-field {
+            height: 38px;
+            margin: 3.5px 0;
+            border-radius: 38px;
+            padding: 0 0.75rem;
+            width: 100%;
+            max-width: 100%;
+          }
+          .input-field.compact {
+            height: 38px;
+            margin: 3.5px 0;
+            border-radius: 38px;
+            padding: 0 0.7rem;
+            width: 100%;
+            max-width: 100%;
+          }
+          .input-icon {
+            margin-right: 6px;
+          }
+          .input-icon svg {
+            width: 14px;
+            height: 14px;
+          }
+          .input-field input,
+          .input-field select {
+            font-size: 0.78rem;
+          }
+          .input-field input::placeholder {
+            font-size: 0.73rem;
+            letter-spacing: -0.01em;
+          }
+          .btn {
+            height: 38px;
+            width: 140px;
+            font-size: 0.8rem;
+            margin: 10px 0 3px 0;
+          }
+          .demo-roles-wrap {
+            margin-top: 4px;
+          }
+          .demo-roles-title {
+            font-size: 0.66rem;
+            margin-bottom: 3px;
+          }
+          .demo-roles-group {
+            gap: 4px;
+          }
+          .demo-badge {
+            padding: 2.5px 7px;
+            font-size: 0.68rem;
+            gap: 3.5px;
           }
           .input-row {
-            grid-template-columns: 1fr;
-            gap: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            width: 100%;
+            max-width: 100%;
+            margin: 1px 0;
+          }
+          form.sign-up-form {
+            height: 100%;
+            max-height: 100%;
+            overflow-y: auto;
+            padding: 0.25rem 0.85rem 0.8rem 0.85rem;
+            scrollbar-width: thin;
+          }
+          form.sign-up-form .input-field,
+          form.sign-up-form .input-row {
+            width: 100%;
+            max-width: 100%;
+          }
+          form.sign-up-form .title {
+            font-size: 1.25rem;
+            white-space: nowrap;
+            margin-bottom: 1px;
+          }
+          form.sign-up-form .subtitle {
+            font-size: 0.7rem;
+            margin-bottom: 3px;
           }
         }
       `}</style>
@@ -709,12 +988,12 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
       {/* Main Interactive Card Container */}
       <div className={isSignUp ? "container sign-up-mode" : "container"}>
         {/* Corner Mosaics from Sidebar (Top Corners of Card) */}
-        <AlAzharCornerMosaic className="absolute top-0 right-0 w-32 sm:w-40 h-20 sm:h-24 opacity-85 z-20 pointer-events-none" />
-        <AlAzharCornerMosaic className="absolute top-0 left-0 w-32 sm:w-40 h-20 sm:h-24 opacity-85 z-20 pointer-events-none -scale-x-100" />
+        <AlAzharCornerMosaic className="absolute top-0 right-0 w-20 sm:w-32 md:w-40 h-14 sm:h-20 md:h-24 opacity-80 z-20 pointer-events-none" />
+        <AlAzharCornerMosaic className="absolute top-0 left-0 w-20 sm:w-32 md:w-40 h-14 sm:h-20 md:h-24 opacity-80 z-20 pointer-events-none -scale-x-100" />
 
         {/* Bottom Colorful Triangular Prism Mosaic Strip (Mirrors Sidebar Bottom) */}
         <div className="absolute bottom-0 left-0 right-0 z-20 overflow-hidden pointer-events-none border-t border-slate-200/50">
-          <AlAzharMosaicStrip className="h-3.5 sm:h-4 w-full opacity-95" />
+          <AlAzharMosaicStrip className="h-5 sm:h-6 md:h-8 w-full opacity-100" />
         </div>
 
         <div className="forms-container">
@@ -722,17 +1001,18 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
             {/* ================= FORM SIGN IN ================= */}
             <form className="sign-in-form" onSubmit={handleSignInSubmit}>
               <div className="flex flex-col items-center mb-1">
-                {/* Official Circular Logo with Gold Accent */}
-                <div className="relative h-16 w-16 sm:h-18 sm:w-18 shrink-0 rounded-full overflow-hidden p-1 border-2 border-amber-500/40 bg-white shadow-md mb-2">
+                {/* Logo Resmi Al-Azhar Cairo (Tampil khusus di mobile di atas Masuk Akun) */}
+                <div className="signin-form-logo relative w-12 h-12 mb-1.5 group transition-transform duration-300 hover:scale-105 flex sm:hidden items-center justify-center">
                   <Image
                     src="/images/logo-alazhar-cairo.avif"
                     alt="Logo Al-Azhar Cairo Palembang"
-                    width={72}
-                    height={72}
+                    width={80}
+                    height={80}
                     priority
-                    className="h-full w-full object-contain"
+                    className="h-full w-full object-contain drop-shadow-md"
                   />
                 </div>
+
                 <h2 className="title">Masuk Akun</h2>
                 <p className="subtitle">Portal Sistem Sekolah Terpadu Al-Azhar</p>
                 {/* Colorful Mosaic Accent Pill */}
@@ -774,12 +1054,21 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                   <Lock size={18} />
                 </div>
                 <input
-                  type="password"
+                  type={showLoginPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isAnyLoginBusy}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="text-slate-400 hover:text-slate-600 focus:outline-none p-1 shrink-0 ml-auto transition-colors"
+                  tabIndex={-1}
+                  title={showLoginPassword ? "Sembunyikan password" : "Lihat password"}
+                >
+                  {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
 
               <button type="submit" className="btn" disabled={isAnyLoginBusy}>
@@ -858,7 +1147,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
             {/* ================= FORM SIGN UP (TEACHER) ================= */}
             <form className="sign-up-form" action={formAction}>
               <div className="flex flex-col items-center mb-1">
-                <h2 className="title" style={{ fontSize: "1.7rem" }}>Registrasi Guru</h2>
+                <h2 className="title">Registrasi Guru</h2>
                 <p className="subtitle">Pendaftaran Akun Pendidik Baru Al-Azhar</p>
                 {/* Colorful Mosaic Accent Pill */}
                 <div className="w-24 h-1.5 rounded-full overflow-hidden mb-2.5 shadow-sm">
@@ -873,6 +1162,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                 </div>
               )}
 
+              {/* Row 1: Nama Lengkap & Gelar (Full Width) */}
               <div className="input-field compact">
                 <div className="input-icon">
                   <User size={16} />
@@ -880,16 +1170,17 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                 <input
                   type="text"
                   name="name"
-                  placeholder="Nama Lengkap & Gelar"
+                  placeholder="Nama Lengkap & Gelar (Ustadz / Ustadzah)"
                   required
                   disabled={isRegisterPending}
                 />
               </div>
 
+              {/* Row 2: Kredensial Elearning (2 Kolom) */}
               <div className="input-row">
                 <div className="input-field compact">
                   <div className="input-icon">
-                    <Mail size={16} />
+                    <Mail size={15} />
                   </div>
                   <input
                     type="text"
@@ -901,71 +1192,70 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                 </div>
                 <div className="input-field compact">
                   <div className="input-icon">
-                    <Lock size={16} />
+                    <Lock size={15} />
                   </div>
                   <input
-                    type="password"
+                    type={showRegPassword ? "text" : "password"}
                     name="password"
-                    placeholder="Password Elearning"
+                    placeholder="Password"
                     required
                     minLength={6}
                     disabled={isRegisterPending}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    className="text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 shrink-0 ml-auto transition-colors"
+                    tabIndex={-1}
+                    title={showRegPassword ? "Sembunyikan password" : "Lihat password"}
+                  >
+                    {showRegPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
                 </div>
               </div>
 
+              {/* Row 3: Kredensial iPad & Apple ID (2 Kolom) */}
               <div className="input-row">
                 <div className="input-field compact">
                   <div className="input-icon">
-                    <Smartphone size={16} />
+                    <Smartphone size={15} />
                   </div>
                   <input
                     type="text"
                     name="appleid"
-                    placeholder="Apple ID"
+                    placeholder="Apple ID iPad"
                     required
                     disabled={isRegisterPending}
                   />
                 </div>
                 <div className="input-field compact">
                   <div className="input-icon">
-                    <Key size={16} />
+                    <Key size={15} />
                   </div>
                   <input
-                    type="password"
+                    type={showRegApplePassword ? "text" : "password"}
                     name="passwordappleid"
-                    placeholder="Password Apple ID"
+                    placeholder="Pass Apple ID"
                     required
                     disabled={isRegisterPending}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegApplePassword(!showRegApplePassword)}
+                    className="text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 shrink-0 ml-auto transition-colors"
+                    tabIndex={-1}
+                    title={showRegApplePassword ? "Sembunyikan password" : "Lihat password"}
+                  >
+                    {showRegApplePassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
                 </div>
               </div>
 
-              <div className="input-field compact">
-                <div className="input-icon">
-                  <GraduationCap size={16} />
-                </div>
-                <select name="kelas" defaultValue="" disabled={isRegisterPending}>
-                  <option value="" disabled>Wali Kelas / Kosongkan jika bukan</option>
-                  <option value="Bukan Wali Kelas">Bukan Wali Kelas (Guru Bidang Studi)</option>
-                  <optgroup label="── Sekolah Dasar (SD) ──">
-                    {classListSD.map((k) => (
-                      <option key={k} value={k}>{k}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="── Sekolah Menengah Pertama (SMP) ──">
-                    {classListSMP.map((k) => (
-                      <option key={k} value={k}>{k}</option>
-                    ))}
-                  </optgroup>
-                </select>
-                <ChevronDown size={14} className="text-slate-400 ml-auto pointer-events-none" />
-              </div>
-
+              {/* Row 4: Bidang Studi & Wali Kelas (2 Kolom) */}
               <div className="input-row">
                 <div className="input-field compact">
                   <div className="input-icon">
-                    <BookOpen size={16} />
+                    <BookOpen size={15} />
                   </div>
                   <input
                     type="text"
@@ -977,7 +1267,42 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                 </div>
                 <div className="input-field compact">
                   <div className="input-icon">
-                    <BadgeCheck size={16} />
+                    <GraduationCap size={15} />
+                  </div>
+                  <select name="kelas" defaultValue="" disabled={isRegisterPending}>
+                    <option value="" disabled>Wali Kelas</option>
+                    <option value="Bukan Wali Kelas">Bukan Wali Kelas</option>
+                    <optgroup label="── Sekolah Dasar (SD) ──">
+                      {classListSD.map((k) => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="── Sekolah Menengah Pertama (SMP) ──">
+                      {classListSMP.map((k) => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  <ChevronDown size={13} className="text-slate-400 ml-auto pointer-events-none shrink-0" />
+                </div>
+              </div>
+
+              {/* Row 5: Jenis Kelamin & NIP (2 Kolom) */}
+              <div className="input-row">
+                <div className="input-field compact">
+                  <div className="input-icon">
+                    <Users size={15} />
+                  </div>
+                  <select name="gender" defaultValue="" required disabled={isRegisterPending}>
+                    <option value="" disabled>Gender</option>
+                    <option value="L">Laki-laki (L)</option>
+                    <option value="P">Perempuan (P)</option>
+                  </select>
+                  <ChevronDown size={13} className="text-slate-400 ml-auto pointer-events-none shrink-0" />
+                </div>
+                <div className="input-field compact">
+                  <div className="input-icon">
+                    <BadgeCheck size={15} />
                   </div>
                   <input
                     type="text"
@@ -986,18 +1311,6 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                     disabled={isRegisterPending}
                   />
                 </div>
-              </div>
-
-              <div className="input-field compact">
-                <div className="input-icon">
-                  <Users size={16} />
-                </div>
-                <select name="gender" defaultValue="" required disabled={isRegisterPending}>
-                  <option value="" disabled>Pilih Jenis Kelamin</option>
-                  <option value="L">Laki-laki (L)</option>
-                  <option value="P">Perempuan (P)</option>
-                </select>
-                <ChevronDown size={14} className="text-slate-400 ml-auto pointer-events-none" />
               </div>
 
               <button type="submit" className="btn" disabled={isRegisterPending}>
@@ -1013,21 +1326,21 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           {/* Panel Kiri (Terlihat saat Sign In, mengajak ke Sign Up) */}
           <div className="panel left-panel">
             <div className="content">
-              {/* Logo Resmi Al-Azhar Cairo Palembang */}
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-2xl border-2 border-amber-400/50 mb-3.5 bg-white p-2 backdrop-blur-md group transition-transform duration-300 hover:scale-105 flex items-center justify-center">
+              {/* Logo Resmi Al-Azhar Cairo Palembang (Disembunyikan di mobile agar rapi, dipindahkan ke atas Masuk Akun) */}
+              <div className="panel-logo relative w-11 h-11 sm:w-20 sm:h-20 md:w-28 md:h-28 lg:w-36 lg:h-36 xl:w-40 xl:h-40 mb-1 sm:mb-2.5 md:mb-3.5 group transition-transform duration-300 hover:scale-105 hidden sm:flex items-center justify-center">
                 <Image
                   src="/images/logo-alazhar-cairo.avif"
                   alt="Logo Al-Azhar Cairo Palembang"
-                  width={96}
-                  height={96}
+                  width={160}
+                  height={160}
                   priority
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-contain drop-shadow-lg"
                 />
               </div>
 
               <h3>Pendidik Baru?</h3>
               <p>
-                Bergabunglah bersama keluarga besar Al-Azhar Cairo Palembang. Daftarkan akun pendidik Anda dalam beberapa langkah mudah.
+                Daftarkan akun pendidik Anda bersama Al-Azhar Cairo.
               </p>
               <button
                 type="button"
@@ -1043,20 +1356,20 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           <div className="panel right-panel">
             <div className="content">
               {/* Logo Resmi Al-Azhar Cairo Palembang */}
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-2xl border-2 border-amber-400/50 mb-3.5 bg-white p-2 backdrop-blur-md group transition-transform duration-300 hover:scale-105 flex items-center justify-center">
+              <div className="relative w-11 h-11 sm:w-20 sm:h-20 md:w-28 md:h-28 lg:w-36 lg:h-36 xl:w-40 xl:h-40 mb-1 sm:mb-2.5 md:mb-3.5 group transition-transform duration-300 hover:scale-105 flex items-center justify-center">
                 <Image
                   src="/images/logo-alazhar-cairo.avif"
                   alt="Logo Al-Azhar Cairo Palembang"
-                  width={96}
-                  height={96}
+                  width={160}
+                  height={160}
                   priority
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-contain drop-shadow-lg"
                 />
               </div>
 
               <h3>Sudah Punya Akun?</h3>
-              <p>
-                Selamat datang kembali! Masuk ke portal sistem terpadu untuk mengakses layanan dan pembelajaran.
+              <p className="hidden sm:block">
+                Masuk ke portal sistem terpadu Al-Azhar Cairo.
               </p>
               <button
                 type="button"

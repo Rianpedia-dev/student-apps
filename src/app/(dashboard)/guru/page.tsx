@@ -5,8 +5,16 @@ import { getSession } from "@/lib/auth";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/shared/user-avatar";
-import { AlAzharSchoolBanner } from "@/components/shared/alazhar-patterns";
+import {
+  IslamicMosaicPattern,
+  IslamicStarGeometricPattern,
+  AlAzharColorfulMosqueHero,
+  AlAzharMosaicStrip,
+  AlAzharCornerMosaic,
+  AlAzharSchoolBanner,
+} from "@/components/shared/alazhar-patterns";
 
 export const dynamic = "force-dynamic";
 
@@ -195,41 +203,62 @@ export default async function GuruDashboardPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Header Greeting */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 dir="ltr" className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-            <span dir="rtl" className="inline-block">السَّلاَمُ عَلَيْكُمْ</span>, {session.name}
-          </h1>
-          <div className="text-xs sm:text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-2">
-            {isWaliKelas ? (
-              <>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+      {/* Premium Hero Banner Guru — Gradasi Mewah, Motif Islami & Siluet Masjid Warna-Warni */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#064e3b] via-[#09574c] to-[#083344] p-6 sm:p-8 md:p-9 text-white shadow-2xl border border-emerald-400/35">
+        {/* Decorative Ambient Lighting & Color Glows */}
+        <div className="absolute -left-16 -top-16 h-72 w-72 rounded-full bg-emerald-400/30 blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 -top-10 h-64 w-64 rounded-full bg-teal-400/25 blur-3xl pointer-events-none" />
+        <div className="absolute right-1/4 -bottom-10 h-64 w-64 rounded-full bg-amber-400/25 blur-3xl pointer-events-none" />
+        <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-purple-500/25 blur-3xl pointer-events-none" />
+
+        {/* Motif Desain: Islamic Geometric Star Pattern Overlay */}
+        <div className="absolute inset-0 opacity-[0.16] pointer-events-none mix-blend-screen">
+          <IslamicStarGeometricPattern />
+        </div>
+        <div className="absolute inset-0 opacity-[0.12] pointer-events-none mix-blend-overlay">
+          <IslamicMosaicPattern />
+        </div>
+
+        {/* Corner Mosaic Motif di Sudut Kanan Atas */}
+        <div className="absolute top-0 right-0 w-36 sm:w-44 h-28 opacity-40 pointer-events-none">
+          <AlAzharCornerMosaic className="w-full h-full" />
+        </div>
+
+        {/* Siluet Arsitektur Masjid Al-Azhar Berwarna-Warni */}
+        <div className="absolute right-0 bottom-0 top-0 w-full sm:w-[62%] lg:w-[50%] flex items-end justify-end pointer-events-none opacity-95 overflow-hidden">
+          <AlAzharColorfulMosqueHero className="h-[92%] sm:h-full w-auto max-w-none object-contain object-bottom drop-shadow-[0_10px_24px_rgba(0,0,0,0.5)]" />
+        </div>
+
+        {/* Pita Mozaik Segitiga Warna-Warni di Garis Bawah Card */}
+        <div className="absolute inset-x-0 bottom-0 h-1.5 opacity-90 overflow-hidden">
+          <AlAzharMosaicStrip className="h-full w-full object-cover" />
+        </div>
+
+        <div className="relative z-10 max-w-xl lg:max-w-2xl">
+          {/* Greeting */}
+          <div className="space-y-3">
+            <h1 dir="ltr" className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              <span dir="rtl" className="inline-block text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
+                السَّلاَمُ عَلَيْكُمْ
+              </span>
+              ,{" "}
+              <span className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                {session.name}
+              </span>
+            </h1>
+
+            {/* Role Badge */}
+            <div className="flex items-center gap-2">
+              {isWaliKelas ? (
+                <Badge variant="amber" size="sm">
                   Guru & Wali Kelas
-                </span>
-                <span>
-                  Kelas Binaan: <strong className="text-foreground font-semibold">{guruClass || "Belum ditentukan"}</strong>
-                </span>
-                {guruBidang && (
-                  <span className="text-muted-foreground">
-                    • Mapel: <strong className="text-foreground font-medium">{guruBidang}</strong>
-                  </span>
-                )}
-              </>
-            ) : (
-              <>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                </Badge>
+              ) : (
+                <Badge variant="emerald" size="sm">
                   Guru Mata Pelajaran
-                </span>
-                {guruBidang ? (
-                  <span>
-                    Bidang Studi: <strong className="text-foreground font-semibold">{guruBidang}</strong>
-                  </span>
-                ) : (
-                  <span>Pengampu Mata Pelajaran</span>
-                )}
-              </>
-            )}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </div>
