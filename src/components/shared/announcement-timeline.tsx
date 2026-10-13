@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Megaphone, Trash2, Edit, Calendar } from "lucide-react";
+import { Megaphone, Trash2, Edit, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,14 +37,17 @@ interface AnnouncementTimelineProps {
   announcements: AnnouncementData[];
   userRole: "admin" | "guru" | "siswa";
   canManage?: boolean;
+  initialLimit?: number;
 }
 
 export function AnnouncementTimeline({
   announcements,
   userRole,
   canManage = false,
+  initialLimit = 3,
 }: AnnouncementTimelineProps) {
   const [items, setItems] = useState<AnnouncementData[]>(announcements);
+  const [showAll, setShowAll] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -133,10 +136,13 @@ export function AnnouncementTimeline({
     );
   }
 
+  const displayedItems = showAll ? items : items.slice(0, initialLimit);
+  const remainingCount = Math.max(0, items.length - initialLimit);
+
   return (
     <div className="space-y-4">
-      {items.map((item) => (
-        <Card key={item.id} className="relative overflow-hidden rounded-xl border-l-4 border-l-primary transition-all duration-200 hover:shadow-md">
+      {displayedItems.map((item) => (
+        <Card key={item.id} className="relative overflow-hidden rounded-xl border-l-4 border-l-primary transition-all duration-200 hover:shadow-md animate-in fade-in-50 duration-300">
           {/* Al-Azhar Triangular Prism Mosaic Accent */}
           <AlAzharCornerMosaic className="absolute top-0 right-0 w-24 sm:w-28 h-14 pointer-events-none opacity-40 group-hover:opacity-75 transition-opacity select-none" />
           <CardContent className="p-4 sm:p-5.5 relative z-10">
@@ -216,6 +222,36 @@ export function AnnouncementTimeline({
           </CardContent>
         </Card>
       ))}
+
+      {/* Tombol Lihat Pengumuman Sebelumnya */}
+      {items.length > initialLimit && (
+        <div className="pt-2 flex justify-center">
+          {!showAll ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowAll(true)}
+              className="gap-2 px-5 py-2.5 rounded-xl border border-primary/30 hover:border-primary hover:bg-primary/5 text-foreground font-semibold text-xs sm:text-sm shadow-2xs transition-all hover:scale-[1.01]"
+            >
+              <ChevronDown className="h-4 w-4 text-primary" />
+              <span>Lihat Pengumuman Sebelumnya</span>
+              <Badge variant="secondary" className="ml-1 text-[11px] px-2 py-0.5 font-bold">
+                +{remainingCount} Lainnya
+              </Badge>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowAll(false)}
+              className="gap-1.5 px-4 py-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-all"
+            >
+              <ChevronUp className="h-4 w-4" />
+              <span>Sembunyikan Pengumuman Sebelumnya</span>
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Dialog Konfirmasi Hapus */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

@@ -172,9 +172,6 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
               <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[160px]">
                 Mata Pelajaran
               </TableHead>
-              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[220px]">
-                Judul Tugas
-              </TableHead>
               <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[140px]">
                 Batas Waktu
               </TableHead>
@@ -189,7 +186,7 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-36 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-36 text-center text-muted-foreground">
                   <p className="text-sm font-semibold text-foreground">
                     {tab === "belum"
                       ? "Alhamdulillah, tidak ada tugas yang belum selesai!"
@@ -224,18 +221,11 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
 
                     {/* Mata Pelajaran */}
                     <TableCell>
-                      <span className="font-semibold text-xs sm:text-sm text-foreground">
-                        {task.mapelNama}
-                      </span>
-                    </TableCell>
-
-                    {/* Judul Tugas */}
-                    <TableCell>
                       <Link
                         href={href}
-                        className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors block leading-snug"
+                        className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors block"
                       >
-                        {task.judul}
+                        {task.mapelNama}
                       </Link>
                     </TableCell>
 

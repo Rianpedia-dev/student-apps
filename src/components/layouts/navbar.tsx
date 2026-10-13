@@ -82,7 +82,7 @@ export function Navbar({ role, userName, userEmail, kelas, status, userImage }: 
   );
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border/80 bg-background/85 px-4 backdrop-blur-md shadow-xs sm:px-6 relative overflow-hidden">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border/80 bg-background/85 px-2.5 backdrop-blur-md shadow-xs sm:px-6 relative overflow-hidden">
       {/* Al-Azhar Geometric Triangular Prism Mosaic in Top Right Corner */}
       <AlAzharCornerMosaic className="absolute top-0 right-0 w-36 sm:w-44 h-16 pointer-events-none opacity-90 select-none" />
 
@@ -108,27 +108,37 @@ export function Navbar({ role, userName, userEmail, kelas, status, userImage }: 
         </button>
 
 
-        {/* Mobile School Logo (Di kiri pada mobile) */}
-        <div className="md:hidden flex items-center shrink-0">
+        {/* Mobile School Logo & Title */}
+        <div className="md:hidden flex items-center gap-2 shrink-0">
           <Link
             href={`/${role}`}
-            className="flex h-11 w-11 items-center justify-center rounded-[var(--radius)] transition-transform hover:scale-105 active:scale-95 -ml-1"
-            title="SD - SMP Islam Al-Azhar Cairo Palembang"
+            className="flex items-center gap-2 group transition-opacity hover:opacity-90 -ml-1"
+            title="Student Apps Al-Azhar Cairo"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/logo-alazhar-cairo.avif"
-              alt="Logo SD - SMP Islam Al-Azhar Cairo Palembang"
-              className="h-10 w-10 object-contain drop-shadow-xs"
+              alt="Logo Al-Azhar Cairo"
+              className="h-9 w-9 object-contain drop-shadow-xs shrink-0"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = "/favicon.ico";
               }}
             />
+            <div className="flex flex-col min-w-0 leading-tight">
+              <span className="text-[13px] font-black tracking-tight text-foreground uppercase">
+                Student Apps
+              </span>
+              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 tracking-wider uppercase">
+                Al-Azhar Cairo
+              </span>
+            </div>
           </Link>
         </div>
 
-        {/* Academic & Live Clock Combined Banner (1 Badge Atas-Bawah) */}
-        <NavbarLiveClock academic={academic} />
+        {/* Academic & Live Clock Combined Banner (Hidden on mobile, visible on desktop) */}
+        <div className="hidden md:inline-flex shrink-0">
+          <NavbarLiveClock academic={academic} />
+        </div>
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2.5 relative z-10">
@@ -202,6 +212,7 @@ export function Navbar({ role, userName, userEmail, kelas, status, userImage }: 
                 userEmail={userEmail}
                 kelas={kelas}
                 status={status}
+                userImage={userImage}
                 onNavigate={() => setOpenMobile(false)}
                 forceExpanded={true}
                 className="w-full h-full border-none shadow-none bg-transparent"

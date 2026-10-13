@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowRight, Trophy } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/shared/user-avatar";
 import { DashboardService } from "@/services/dashboard.service";
 import {
   IslamicMosaicPattern,
@@ -15,7 +14,6 @@ import {
   AlAzharColorfulMosqueHero,
   AlAzharMosaicStrip,
   AlAzharCornerMosaic,
-  AlAzharSchoolBanner,
 } from "@/components/shared/alazhar-patterns";
 
 export const dynamic = "force-dynamic";
@@ -26,32 +24,32 @@ export default async function SiswaDashboardPage() {
     redirect("/login");
   }
 
+  const [dashboardData, violationsCount] = await Promise.all([
+    DashboardService.getStudentDashboardData(session.id, session.kelas || "", session),
+    prisma.pelanggaran.count({ where: { user_id: session.id } }).catch(() => 0),
+  ]);
+
   const {
     studentInfo,
     metrics,
     classmates,
     announcements: formattedAnnouncements,
-    achievements,
     todaySchedules,
-  } = await DashboardService.getStudentDashboardData(session.id, session.kelas || "", session);
+  } = dashboardData;
 
   const studentName = studentInfo.name;
   const studentNis = studentInfo.nis;
   const studentImage = studentInfo.image;
   const waliKelas = studentInfo.waliKelas;
   const studentClass = studentInfo.kelas;
-  const totalHadirMonth = metrics.totalHadirBulanIni;
-  const totalEventsMonth = metrics.totalKegiatanBulanIni;
-  const pendingTasksCount = metrics.pendingTasksCount;
-  const totalMapelCount = metrics.totalMapelCount;
 
   const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
   const todayDayName = DAY_NAMES[new Date().getDay()];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
       {/* Premium Hero Banner Siswa — Gradasi Mewah, Motif Islami & Siluet Masjid Warna-Warni */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#064e3b] via-[#09574c] to-[#083344] p-6 sm:p-8 md:p-9 text-white shadow-2xl border border-emerald-400/35">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#064e3b] via-[#09574c] to-[#083344] p-4 sm:p-7 md:p-9 text-white shadow-2xl border border-emerald-400/35">
         {/* Decorative Ambient Lighting & Color Glows */}
         <div className="absolute -left-16 -top-16 h-72 w-72 rounded-full bg-emerald-400/30 blur-3xl pointer-events-none" />
         <div className="absolute left-1/3 -top-10 h-64 w-64 rounded-full bg-teal-400/25 blur-3xl pointer-events-none" />
@@ -102,31 +100,45 @@ export default async function SiswaDashboardPage() {
       </div>
 
 
-      {/* 4 Stat Cards Bertema Al-Azhar */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {/* 6 Folder Cards:
+          - Desktop (lg): 4 card dalam satu baris mendatar (Baris 1: 4 card, Baris 2: 2 card)
+          - Tablet (md): 3 card dalam satu baris mendatar (2 baris x 3 card)
+          - Mobile: 2 card per baris mendatar (3 baris mendatar, responsif) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5 md:gap-4">
+        {/* Baris 1: Amber, Blue, Emerald */}
         <StatCard
-          title="Hadir Bulan Ini"
-          value={`${totalHadirMonth} Hari`}
+          title="Absensi"
           variant="amber"
           href="/siswa/attendance"
         />
         <StatCard
-          title="Kegiatan Bulan Ini"
-          value={`${totalEventsMonth} Kegiatan`}
-          variant="accent"
+          title="Kalender Kegiatan"
+          variant="blue"
           href="/siswa/calendar"
         />
         <StatCard
-          title="Tugas Aktif"
-          value={`${pendingTasksCount} Tugas`}
+          title="Tugas Saya"
+          variant="emerald"
+          href="/siswa/tugas"
+        />
+
+        {/* Baris 2: Rose, Purple, Teal */}
+        <StatCard
+          title="Mata Pelajaran"
           variant="rose"
           href="/siswa/mapel"
         />
         <StatCard
-          title="Mata Pelajaran"
-          value={`${totalMapelCount} Mapel`}
-          variant="primary"
-          href="/siswa/mapel"
+          title="Pelanggaran"
+          variant="purple"
+          href="/siswa/violations"
+          value={`${violationsCount} Catatan`}
+          meta={violationsCount === 0 ? "Disiplin" : "Evaluasi"}
+        />
+        <StatCard
+          title="Kelas Online"
+          variant="teal"
+          href="/siswa/kelas-online"
         />
       </div>
 
@@ -211,73 +223,16 @@ export default async function SiswaDashboardPage() {
         )}
       </div>
 
-      {/* 2 Columns: Announcements + Prestasi Terkini & Banner Sekolah */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Timeline Pengumuman */}
-        <div className="space-y-3.5 lg:col-span-7">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Pengumuman Sekolah & Kelas</h2>
-          </div>
-          <AnnouncementTimeline
-            announcements={formattedAnnouncements}
-            userRole="siswa"
-            canManage={false}
-          />
+      {/* Timeline Pengumuman */}
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Pengumuman Sekolah & Kelas</h2>
         </div>
-
-        {/* Right side: Prestasi Siswa & Banner Motto */}
-        <div className="space-y-6 lg:col-span-5">
-          {/* Prestasi Terkini Section */}
-          <Card className="border border-amber-500/20 rounded-xl shadow-xs">
-            <CardHeader className="pb-3 border-b border-border/50">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-amber-500" />
-                  <span>Prestasi Terkini</span>
-                </CardTitle>
-                <Badge variant="outline" size="xs">
-                  Siswa Berprestasi
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {achievements.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4 italic">
-                  Belum ada prestasi siswa dicatat.
-                </p>
-              ) : (
-                achievements.map((ach) => (
-                  <div
-                    key={ach.id.toString()}
-                    className="flex items-center gap-3 rounded-lg border p-2.5 text-xs transition-colors hover:bg-muted/30"
-                  >
-                    <div className="shrink-0">
-                      <UserAvatar
-                        src={ach.studentImage}
-                        gender={ach.studentGender}
-                        name={ach.nama}
-                        className="h-9 w-9 rounded-lg object-cover border border-border shadow-xs"
-                        previewable={true}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-foreground truncate">{ach.prestasi}</p>
-                      <p className="text-muted-foreground truncate">{ach.nama} • {ach.kelas}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Official Al-Azhar School Motto Banner */}
-          <Card className="border border-border/80 bg-white/95 dark:bg-card/95 rounded-2xl shadow-xs overflow-hidden">
-            <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-amber-500 to-sky-500" />
-            <CardContent className="p-4 flex flex-col items-center justify-center">
-              <AlAzharSchoolBanner />
-            </CardContent>
-          </Card>
-        </div>
+        <AnnouncementTimeline
+          announcements={formattedAnnouncements}
+          userRole="siswa"
+          canManage={false}
+        />
       </div>
     </div>
   );

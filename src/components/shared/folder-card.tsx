@@ -61,6 +61,14 @@ export interface FolderCardProps
   href?: string;
   /** Hover motion. Default: true. */
   interactive?: boolean;
+  /** Sleek compact size for dense dashboard views. Default: false. */
+  compact?: boolean;
+  /** Custom aspect ratio classes for the bezel, e.g. "aspect-[16/10]". */
+  aspectRatioClassName?: string;
+  /** Whether to center text horizontally and vertically. Defaults to true when no footer stats. */
+  centered?: boolean;
+  /** Whether the top-right corner is chamfered / cut diagonally. Default: true. */
+  chamfer?: boolean;
 }
 
 /**
@@ -150,12 +158,70 @@ const coverVariants: Variants = {
   hover: { scale: 1.07 },
 };
 
+/**
+ * Chamfer silhouette paths with smooth rounded transition fillets.
+ * Box size: 500 x 500
+ * - Cut depth: 105px (21% of the card - deep and prominent)
+ * - Corner radius (top-left, bottom-left, bottom-right): 32px
+ * - Chamfer fillet radius: 24px (continuous tangency into the 45deg cut)
+ */
+export const CHAMFER_PATH_500 =
+  "M 32,0 " +
+  "L 371,0 " +
+  "Q 395,0 412,17 " +
+  "L 483,88 " +
+  "Q 500,105 500,129 " +
+  "L 500,468 " +
+  "A 32,32 0 0,1 468,500 " +
+  "L 32,500 " +
+  "A 32,32 0 0,1 0,468 " +
+  "L 0,32 " +
+  "A 32,32 0 0,1 32,0 Z";
+
+export const ROUNDED_PATH_500 =
+  "M 32,0 " +
+  "L 468,0 " +
+  "A 32,32 0 0,1 500,32 " +
+  "L 500,468 " +
+  "A 32,32 0 0,1 468,500 " +
+  "L 32,500 " +
+  "A 32,32 0 0,1 0,468 " +
+  "L 0,32 " +
+  "A 32,32 0 0,1 32,0 Z";
+
+/**
+ * Normalized path (0 to 1) for SVG clipPath with clipPathUnits="objectBoundingBox".
+ */
+export const CHAMFER_CLIP_OBB =
+  "M 0.064,0 " +
+  "L 0.742,0 " +
+  "Q 0.79,0 0.824,0.034 " +
+  "L 0.966,0.176 " +
+  "Q 1,0.21 1,0.258 " +
+  "L 1,0.936 " +
+  "A 0.064,0.064 0 0,1 0.936,1 " +
+  "L 0.064,1 " +
+  "A 0.064,0.064 0 0,1 0,0.936 " +
+  "L 0,0.064 " +
+  "A 0.064,0.064 0 0,1 0.064,0 Z";
+
+export const ROUNDED_CLIP_OBB =
+  "M 0.064,0 " +
+  "L 0.936,0 " +
+  "A 0.064,0.064 0 0,1 1,0.064 " +
+  "L 1,0.936 " +
+  "A 0.064,0.064 0 0,1 0.936,1 " +
+  "L 0.064,1 " +
+  "A 0.064,0.064 0 0,1 0,0.936 " +
+  "L 0,0.064 " +
+  "A 0.064,0.064 0 0,1 0.064,0 Z";
+
 export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
   function FolderCard(
     {
       title = "Card Title",
       subtitle = "",
-      count = "0",
+      count,
       countLabel = "",
       meta = "",
       cover,
@@ -166,6 +232,10 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
       icon,
       href,
       interactive = true,
+      compact = false,
+      aspectRatioClassName,
+      centered,
+      chamfer = true,
       className,
       style,
       ...props
@@ -174,6 +244,15 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
   ) {
     const reduceMotion = useReducedMotion();
     const animate = interactive && !reduceMotion;
+    const rawId = React.useId();
+    const clipId = `folder-chamfer-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+
+    const hasFooter = Boolean(
+      (count !== undefined && count !== null && count !== "") ||
+        countLabel ||
+        meta
+    );
+    const isCentered = centered ?? !hasFooter;
 
     // Use pure solid color (no gradients)
     const activeColor =
@@ -200,116 +279,150 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
         }
         className={cn(
           "w-full select-none [container-type:inline-size]",
+          "filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.14)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.36)]",
           LIGHT_TOKENS,
           DARK_TOKENS,
           className,
         )}
         {...props}
       >
-        {/* bezel */}
-        <div className="relative box-border aspect-[544/522] w-full rounded-[8.46cqw] bg-[var(--folder-card-bezel)] p-[2.57cqw] shadow-[0_2cqw_5cqw_-2cqw_rgb(0_0_0/.5)] transition-shadow duration-300">
-          <div className="relative h-full w-full overflow-hidden rounded-[5.88cqw] bg-[var(--folder-card-surface)]">
-            {/* Cover: Image or Solid Fixed Color */}
-            <div className="absolute left-px right-px top-0 h-[54%] overflow-hidden">
-              <motion.div
-                variants={animate ? coverVariants : undefined}
-                transition={SPRING}
-                className="relative h-full w-full origin-bottom"
-              >
-                {cover ? (
-                  <img
-                    src={cover}
-                    alt={coverAlt}
-                    draggable={false}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div
-                    aria-hidden
-                    style={{ backgroundColor: activeColor }}
-                    className="h-full w-full"
-                  />
-                )}
-              </motion.div>
-            </div>
+        {/* SVG clip-path definition with objectBoundingBox */}
+        <svg
+          className="pointer-events-none absolute h-0 w-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <defs>
+            <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+              <path d={chamfer ? CHAMFER_CLIP_OBB : ROUNDED_CLIP_OBB} />
+            </clipPath>
+          </defs>
+        </svg>
 
-            {/* folder front: panel + tab copy, moving as one */}
-            <div className="absolute -left-px -right-px inset-y-0 overflow-hidden pointer-events-none">
-              <motion.div
-                variants={animate ? panelVariants : undefined}
-                transition={SPRING}
-                className="absolute inset-0"
-              >
-                <svg
-                  aria-hidden
-                  viewBox="0 0 516 494"
-                  preserveAspectRatio="none"
-                  className="absolute inset-0 block h-full w-full"
-                >
-                  {/* Clean solid fill and stroke without gradient */}
-                  <path
-                    d={FOLDER_PATH}
-                    fill="var(--folder-card-panel)"
-                    stroke="var(--folder-card-panel)"
-                    strokeWidth="2"
-                  />
-                </svg>
-
-                {/* Title & Subtitle inside the tab */}
+        {/* Card Body — clipped with smooth rounded chamfer */}
+        <div
+          className={cn(
+            "relative box-border w-full aspect-square overflow-hidden bg-[var(--folder-card-surface)] transition-all duration-300",
+            aspectRatioClassName
+          )}
+          style={{
+            clipPath: `url(#${clipId})`,
+          }}
+        >
+          {/* Cover: Image or Solid Fixed Color */}
+          <div className="absolute left-0 right-0 top-0 h-[52%] overflow-hidden">
+            <motion.div
+              variants={animate ? coverVariants : undefined}
+              transition={SPRING}
+              className="relative h-full w-full origin-bottom"
+            >
+              {cover ? (
+                <img
+                  src={cover}
+                  alt={coverAlt}
+                  draggable={false}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
                 <div
+                  aria-hidden
+                  style={{ backgroundColor: activeColor }}
+                  className="h-full w-full"
+                />
+              )}
+            </motion.div>
+          </div>
+
+          {/* folder front: panel + tab copy, moving as one */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <motion.div
+              variants={animate ? panelVariants : undefined}
+              transition={SPRING}
+              className="absolute inset-0"
+            >
+              <svg
+                aria-hidden
+                viewBox="0 0 516 494"
+                preserveAspectRatio="none"
+                className="absolute inset-0 block h-full w-full"
+              >
+                {/* Clean solid fill and stroke without gradient */}
+                <path
+                  d={FOLDER_PATH}
+                  fill="var(--folder-card-panel)"
+                  stroke="var(--folder-card-panel)"
+                  strokeWidth="2"
+                />
+              </svg>
+
+              {/* Title & Subtitle inside the tab / card body */}
+              <div
+                className={cn(
+                  "absolute pointer-events-auto",
+                  isCentered
+                    ? "inset-x-[6%] top-[38%] bottom-[8%] flex flex-col items-center justify-center text-center px-2"
+                    : subtitle
+                    ? "max-w-[82%] left-[7.5%] top-[36%] leading-tight text-left"
+                    : "max-w-[82%] left-[8%] top-[39%] leading-tight text-left"
+                )}
+              >
+                <h3
                   className={cn(
-                    "absolute max-w-[72%] leading-tight pointer-events-auto",
-                    subtitle
-                      ? "left-[5.2cqw] top-[30cqw]"
-                      : "left-[6.8cqw] top-[32.5cqw]"
+                    "m-0 font-bold tracking-[0.01em] text-[var(--folder-card-title)]",
+                    isCentered
+                      ? "text-[clamp(16.5px,7.5cqw,25px)] font-bold sm:font-extrabold line-clamp-2 leading-snug sm:leading-tight text-center"
+                      : subtitle
+                      ? "text-[clamp(12.5px,4.8cqw,17.5px)] line-clamp-1"
+                      : "text-[clamp(15px,6.5cqw,22px)] font-bold sm:font-extrabold line-clamp-2 leading-snug sm:leading-tight"
                   )}
                 >
-                  <h3
+                  {title}
+                </h3>
+                {subtitle && (
+                  <p
                     className={cn(
-                      "m-0 font-bold tracking-[0.01em] text-[var(--folder-card-title)]",
-                      subtitle
-                        ? "text-[clamp(11px,4.5cqw,17px)] line-clamp-1"
-                        : "text-[clamp(13px,5.6cqw,20px)] font-extrabold line-clamp-2"
+                      "mt-1.5 font-medium tracking-[0.005em] text-[var(--folder-card-subtitle)] line-clamp-1",
+                      isCentered
+                        ? "text-[clamp(11.5px,4.2cqw,15px)] text-center"
+                        : "text-[clamp(10.5px,3.8cqw,14px)]"
                     )}
                   >
-                    {title}
-                  </h3>
-                  {subtitle && (
-                    <p className="mt-[1.8cqw] text-[clamp(9.5px,3.8cqw,13px)] font-medium tracking-[0.005em] text-[var(--folder-card-subtitle)] line-clamp-1">
-                      {subtitle}
-                    </p>
-                  )}
-                </div>
-              </motion.div>
-            </div>
+                    {subtitle}
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          </div>
 
-            {/* footer stays put while the folder front slides */}
+          {/* footer stats */}
+          {(count !== undefined && count !== null && count !== "") || countLabel || meta ? (
             <div
               className={cn(
                 "absolute flex items-baseline justify-between leading-none text-[var(--folder-card-title)]",
                 subtitle
-                  ? "inset-x-[5.2cqw] bottom-[4.8cqw]"
-                  : "inset-x-[6.8cqw] bottom-[6.5cqw]"
+                  ? "inset-x-[7.5%] bottom-[9%]"
+                  : "inset-x-[8%] bottom-[9.5%]"
               )}
             >
-              <div className="m-0 flex items-baseline gap-[1.8cqw]">
-                <span
-                  className={cn(
-                    "font-extrabold tracking-[-0.02em]",
-                    subtitle
-                      ? "text-[clamp(18px,9.2cqw,36px)]"
-                      : "text-[clamp(21px,10.6cqw,40px)]"
-                  )}
-                >
-                  {count}
-                </span>
+              <div className="m-0 flex items-baseline gap-2 sm:gap-2.5 min-w-0 max-w-full">
+                {count !== undefined && count !== null && count !== "" && (
+                  <span
+                    className={cn(
+                      "font-black tracking-[-0.03em] shrink-0",
+                      subtitle
+                        ? "text-[clamp(22px,10.5cqw,36px)]"
+                        : "text-[clamp(26px,12.5cqw,44px)]"
+                    )}
+                  >
+                    {count}
+                  </span>
+                )}
                 {countLabel && (
                   <span
                     className={cn(
-                      "font-semibold text-[var(--folder-card-subtitle)]",
+                      "font-semibold text-[var(--folder-card-subtitle)] truncate",
                       subtitle
-                        ? "text-[clamp(10px,4.2cqw,14px)] font-medium"
-                        : "text-[clamp(11.5px,4.6cqw,16px)]"
+                        ? "text-[clamp(12px,4.5cqw,16px)]"
+                        : "text-[clamp(13px,5.2cqw,18px)]"
                     )}
                   >
                     {countLabel}
@@ -317,12 +430,49 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
                 )}
               </div>
               {meta && (
-                <div className="m-0 text-[clamp(9px,3.9cqw,13px)] font-semibold text-[var(--folder-card-subtitle)] px-[2.2cqw] py-[1cqw] rounded-[2cqw] bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                <div className="m-0 text-[clamp(9.5px,3.6cqw,13px)] font-semibold text-[var(--folder-card-subtitle)] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 shrink-0 ml-1.5">
                   {meta}
                 </div>
               )}
             </div>
-          </div>
+          ) : null}
+
+          {/* Precision Bezel Overlay & Chamfer Accent (draws inside the clipped card) */}
+          <svg
+            aria-hidden
+            viewBox="0 0 500 500"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute inset-0 h-full w-full"
+          >
+            {/* Outer Bezel Frame — uniform width all around */}
+            <path
+              d={chamfer ? CHAMFER_PATH_500 : ROUNDED_PATH_500}
+              fill="none"
+              stroke="var(--folder-card-bezel)"
+              strokeWidth="18"
+            />
+            {/* Subtle Inner Highlight Rim */}
+            <path
+              d={chamfer ? CHAMFER_PATH_500 : ROUNDED_PATH_500}
+              fill="none"
+              stroke="rgba(255,255,255,0.12)"
+              strokeWidth="2"
+            />
+            {/* Chamfer diagonal cut specular highlight */}
+            {chamfer && (
+              <g>
+                <line
+                  x1="412"
+                  y1="17"
+                  x2="483"
+                  y2="88"
+                  stroke="rgba(255,255,255,0.4)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+              </g>
+            )}
+          </svg>
         </div>
       </motion.div>
     );

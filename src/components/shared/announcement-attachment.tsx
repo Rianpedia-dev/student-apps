@@ -32,6 +32,7 @@ interface AnnouncementAttachmentProps {
   title?: string;
   className?: string;
   defaultExpanded?: boolean;
+  compact?: boolean;
 }
 
 export function getFileTypeInfo(url: string) {
@@ -68,6 +69,7 @@ export function AnnouncementAttachment({
   title = "Lampiran Pengumuman",
   className = "",
   defaultExpanded = true,
+  compact = false,
 }: AnnouncementAttachmentProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,24 +112,29 @@ export function AnnouncementAttachment({
   /* ------------------------------------------------------------- */
   if (isImage && !imageError) {
     return (
-      <div className={`mt-3 overflow-hidden rounded-xl border border-border/70 bg-black/5 dark:bg-black/30 transition-all ${className}`}>
+      <div className={`mt-2.5 overflow-hidden rounded-xl border border-border/70 bg-black/5 dark:bg-black/30 transition-all ${className}`}>
         {/* Responsive Image Container */}
-        {/* Mobile: max-h-[260px] | Tablet: max-h-[380px] | Desktop: max-h-[480px] */}
         <div
           onClick={openModal}
-          className="relative w-full overflow-hidden flex items-center justify-center cursor-pointer group"
+          className={`relative w-full overflow-hidden flex items-center justify-center cursor-pointer group ${
+            compact ? "h-[190px] sm:h-[200px] bg-muted/10" : ""
+          }`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={fileUrl}
             alt={title}
             onError={() => setImageError(true)}
-            className="w-auto h-auto max-w-full max-h-[260px] sm:max-h-[360px] md:max-h-[420px] lg:max-h-[480px] object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.01]"
+            className={
+              compact
+                ? "w-full h-full object-contain p-1.5 transition-transform duration-300 group-hover:scale-[1.02]"
+                : "w-auto h-auto max-w-full max-h-[260px] sm:max-h-[360px] md:max-h-[420px] lg:max-h-[480px] object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.01]"
+            }
             loading="lazy"
           />
 
-          {/* Quick Floating Action on top-right on hover */}
-          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {/* Quick Floating Action on top-right */}
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
             <Button
               type="button"
               variant="ghost"
@@ -152,11 +159,11 @@ export function AnnouncementAttachment({
             </a>
           </div>
 
-          {/* Hover overlay hint (desktop/tablet) */}
-          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 text-white pointer-events-none">
+          {/* Hover overlay hint */}
+          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 text-white pointer-events-none z-10">
             <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-xs flex items-center gap-1.5 shadow-md">
               <ZoomIn className="h-3.5 w-3.5" />
-              <span>Klik untuk melihat layar penuh</span>
+              <span>Klik untuk layar penuh</span>
             </span>
           </div>
         </div>
@@ -254,6 +261,139 @@ export function AnnouncementAttachment({
   /* 2. DOKUMEN PDF                                                */
   /* ------------------------------------------------------------- */
   if (isPdf) {
+    if (compact) {
+      return (
+        <div className={`mt-2.5 overflow-hidden rounded-xl border border-border/70 bg-card shadow-xs transition-all ${className}`}>
+          <div
+            onClick={openModal}
+            className="relative w-full h-[190px] sm:h-[200px] overflow-hidden rounded-xl bg-slate-900/5 dark:bg-slate-900/40 cursor-pointer group flex flex-col justify-between"
+          >
+            {/* Background PDF preview frame with fallback */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none select-none bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+              <div className="flex flex-col items-center justify-center text-rose-500/20 dark:text-rose-400/20">
+                <FileText className="h-16 w-16" />
+                <span className="text-xs font-mono font-bold mt-1 tracking-wider">PDF DOCUMENT</span>
+              </div>
+              <iframe
+                src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                title={title}
+                className="absolute inset-0 w-full h-[320px] -mt-1 border-0 opacity-90 group-hover:opacity-100 transition-opacity"
+                tabIndex={-1}
+              />
+            </div>
+
+            {/* Top Toolbar overlay */}
+            <div className="relative z-10 p-2.5 flex items-center justify-between gap-1 pointer-events-none">
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-600/90 text-white text-[11px] font-bold shadow-xs backdrop-blur-xs font-mono">
+                <FileText className="h-3 w-3" />
+                <span>PDF</span>
+              </span>
+
+              <div className="flex items-center gap-1 pointer-events-auto">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openModal();
+                  }}
+                  className="h-7 w-7 rounded-lg bg-black/60 hover:bg-black/85 text-white backdrop-blur-xs shadow-md transition-colors"
+                  title="Buka Layar Penuh"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                </Button>
+                <a
+                  href={downloadUrl}
+                  download={downloadFilename}
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-black/60 hover:bg-black/85 text-white backdrop-blur-xs shadow-md transition-colors"
+                  title="Unduh PDF"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                </a>
+                <a
+                  href={fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-black/60 hover:bg-black/85 text-white backdrop-blur-xs shadow-md transition-colors"
+                  title="Buka di Tab Baru"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Hover overlay hint */}
+            <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 text-white pointer-events-none z-10">
+              <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-xs flex items-center gap-1.5 shadow-md">
+                <ZoomIn className="h-3.5 w-3.5" />
+                <span>Klik untuk membaca PDF</span>
+              </span>
+            </div>
+
+            {/* Bottom info bar */}
+            <div className="relative z-10 pt-6 pb-2.5 px-3 bg-gradient-to-t from-black/85 via-black/50 to-transparent flex items-center justify-between text-white pointer-events-none">
+              <span className="text-xs font-medium truncate max-w-[70%] text-white/95">
+                {downloadFilename}
+              </span>
+              <span className="text-[11px] font-semibold text-rose-300 group-hover:text-rose-200 flex items-center gap-1 shrink-0">
+                <span>Buka PDF</span>
+                <Maximize2 className="h-3 w-3" />
+              </span>
+            </div>
+          </div>
+
+          {/* Modal Fullscreen PDF Reader */}
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogContent className="max-w-[96vw] sm:max-w-5xl md:max-w-6xl max-h-[95vh] h-[92vh] p-3 sm:p-5 flex flex-col bg-card">
+              <DialogHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/70 pr-8 shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-1 rounded-md bg-rose-500/10 text-rose-600">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <DialogTitle className="text-sm sm:text-base font-bold text-foreground truncate">
+                    {title}
+                  </DialogTitle>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-1.5">
+                  <a
+                    href={fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center h-8 px-2.5 text-xs font-medium rounded-md border border-input bg-background hover:bg-muted text-foreground gap-1"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Tab Baru</span>
+                  </a>
+                  <a
+                    href={downloadUrl}
+                    download={downloadFilename}
+                    className="inline-flex items-center justify-center h-8 px-3 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>Unduh PDF</span>
+                  </a>
+                </div>
+              </DialogHeader>
+
+              {/* Fullscreen PDF frame */}
+              <div className="flex-1 min-h-0 w-full rounded-xl overflow-hidden border border-border/60 bg-muted/10">
+                <iframe
+                  src={`${fileUrl}#toolbar=0&navpanes=0`}
+                  title={title}
+                  className="w-full h-full border-0"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      );
+    }
+
     return (
       <div className={`mt-3.5 space-y-2 overflow-hidden rounded-xl border border-border/80 bg-card shadow-xs p-2.5 sm:p-3 transition-all ${className}`}>
         {/* Header Bar */}
@@ -398,6 +538,53 @@ export function AnnouncementAttachment({
   /* ------------------------------------------------------------- */
   /* 3. DOKUMEN OFFICE / FILE LAINNYA                              */
   /* ------------------------------------------------------------- */
+  if (compact) {
+    return (
+      <div className={`mt-2.5 flex flex-col justify-between h-[190px] sm:h-[200px] rounded-xl border border-border/80 bg-muted/30 dark:bg-muted/15 p-4 text-xs text-foreground transition-all ${className}`}>
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0">
+            {isDoc ? <FileSpreadsheet className="h-6 w-6" /> : <GenericFileIcon className="h-6 w-6" />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-semibold text-foreground text-sm truncate">
+                {title || "Lampiran Dokumen"}
+              </span>
+              {ext && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-mono">
+                  {ext}
+                </Badge>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground truncate mt-1">
+              {fileUrl.split("/").pop()}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+          <a
+            href={downloadUrl}
+            download={downloadFilename}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-2xs transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Unduh File</span>
+          </a>
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title="Buka File"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`mt-3.5 flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-muted/30 dark:bg-muted/15 p-3 text-xs text-foreground transition-all ${className}`}>
       <div className="flex items-center gap-2.5 min-w-0">

@@ -1,17 +1,10 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatDateIndo } from "@/lib/utils";
+import { parseViolationKeterangan } from "@/lib/constants/violations";
+import { DisciplineSummaryCard } from "./_components/discipline-summary-card";
+import { StudentViolationsClient } from "./_components/student-violations-client";
+import type { ViolationItem } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -21,68 +14,76 @@ export default async function SiswaViolationsPage() {
     redirect("/login");
   }
 
-  let violations: any[] = [];
+  let dbViolations: any[] = [];
+  let studentUser: { name: string; point: string | null } | null = null;
+
   try {
-    violations = await prisma.pelanggaran.findMany({
-      where: { user_id: session.id },
-      orderBy: { created_at: "desc" },
-    });
+    const isNum = /^\d+$/.test(session.id);
+    const [violationsData, userData] = await Promise.all([
+      prisma.pelanggaran.findMany({
+        where: { user_id: session.id },
+        orderBy: [{ created_at: "desc" }, { id: "desc" }],
+      }),
+      isNum
+        ? prisma.user.findUnique({
+            where: { id: BigInt(session.id) },
+            select: { name: true, point: true },
+          })
+        : null,
+    ]);
+
+    dbViolations = violationsData;
+    studentUser = userData;
   } catch (e) {
     console.warn("DB error in violations, returning empty list:", e);
   }
 
+  // Parse all violations
+  let totalDeductedPoints = 0;
+
+  const violations: ViolationItem[] = dbViolations.map((vl) => {
+    const parsed = parseViolationKeterangan(vl.keterangan);
+    totalDeductedPoints += parsed.points;
+
+    return {
+      id: vl.id.toString(),
+      user_id: vl.user_id,
+      nama: vl.nama || studentUser?.name || "Siswa",
+      kelas: vl.kelas || "",
+      kategori: vl.kategori || "Pelanggaran Umum",
+      keterangan: vl.keterangan,
+      created_at: vl.created_at,
+      status: parsed.status,
+      severity: parsed.severity,
+      points: parsed.points,
+      cleanKeterangan: parsed.cleanKeterangan,
+      tindakan: parsed.tindakan,
+    };
+  });
+
+  // Base score 100
+  const score = Math.max(0, 100 - totalDeductedPoints);
+
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Data Pelanggaran Kedisiplinan</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          Buku Kedisiplinan
+        </h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+          Catatan tata tertib dan rekam jejak kedisiplinan santri.
+        </p>
       </div>
 
-      <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Catatan Pelanggaran Pribadi</CardTitle>
-            <Badge variant="purple" size="sm" className="font-mono">
-              Total: {violations.length} Catatan
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-xl border overflow-hidden">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="w-12 text-center font-bold">No</TableHead>
-                  <TableHead className="font-bold">Tanggal</TableHead>
-                  <TableHead className="font-bold">Kategori</TableHead>
-                  <TableHead className="font-bold">Deskripsi Pelanggaran</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {violations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                      Alhamdulillah, tidak ada catatan pelanggaran tata tertib atas nama Anda. Pertahankan!
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  violations.map((vl, idx) => (
-                    <TableRow key={vl.id.toString()} className="hover:bg-muted/30">
-                      <TableCell className="text-center font-medium">{idx + 1}</TableCell>
-                      <TableCell className="font-mono text-xs">{formatDateIndo(vl.created_at)}</TableCell>
-                      <TableCell>
-                        <Badge variant="destructive" size="sm">
-                          {vl.kategori}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{vl.keterangan}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* 1. Indeks Skor Disiplin & Karakter */}
+      <DisciplineSummaryCard
+        score={score}
+        studentName={studentUser?.name}
+      />
+
+      {/* 2. Interactive Client View List Catatan */}
+      <StudentViolationsClient violations={violations} />
     </div>
   );
 }

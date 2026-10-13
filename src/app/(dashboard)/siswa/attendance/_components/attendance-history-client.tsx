@@ -59,26 +59,7 @@ export function AttendanceHistoryClient() {
     calendarDays.push(d);
   }
 
-  // Count month stats
-  let countHadir = 0;
-  let countSakit = 0;
-  let countIzin = 0;
-  let countAlpha = 0;
 
-  events.forEach((e) => {
-    const parts = (e.start || "").split("-");
-    if (parts.length === 3) {
-      const y = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10) - 1;
-      if (y === year && m === month) {
-        const ket = e.extendedProps?.keterangan || e.title;
-        if (ket === "Hadir") countHadir++;
-        else if (ket === "Sakit") countSakit++;
-        else if (ket === "Izin") countIzin++;
-        else if (ket === "Alpha") countAlpha++;
-      }
-    }
-  });
 
   const getAttendanceForDay = (d: number) => {
     const dStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -87,26 +68,6 @@ export function AttendanceHistoryClient() {
 
   return (
     <div className="space-y-6">
-      {/* 4 Stat Cards for this month's attendance */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/50 p-4 text-center dark:bg-emerald-950/30">
-          <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">Hadir</p>
-          <p className="font-mono text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1">{countHadir} Hari</p>
-        </div>
-        <div className="rounded-xl border border-sky-500/30 bg-sky-50/50 p-4 text-center dark:bg-sky-950/30">
-          <p className="text-xs font-semibold text-sky-800 dark:text-sky-300">Sakit</p>
-          <p className="font-mono text-2xl font-black text-sky-700 dark:text-sky-400 mt-1">{countSakit} Hari</p>
-        </div>
-        <div className="rounded-xl border border-amber-500/30 bg-amber-50/50 p-4 text-center dark:bg-amber-950/30">
-          <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Izin</p>
-          <p className="font-mono text-2xl font-black text-amber-700 dark:text-amber-400 mt-1">{countIzin} Hari</p>
-        </div>
-        <div className="rounded-xl border border-rose-500/30 bg-rose-50/50 p-4 text-center dark:bg-rose-950/30">
-          <p className="text-xs font-semibold text-rose-800 dark:text-rose-300">Alpha</p>
-          <p className="font-mono text-2xl font-black text-rose-700 dark:text-rose-400 mt-1">{countAlpha} Hari</p>
-        </div>
-      </div>
-
       {/* Calendar Card */}
       <Card className="border-emerald-500/20 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">

@@ -2,31 +2,23 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, User, FileText, Clock, AlertTriangle, Save, Plus, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ArrowLeft,
+  ShieldAlert,
+  Mail,
+  Hash,
+  GraduationCap,
+  User,
+  Tablet,
+  MapPin,
+  Award,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  updateNotesAction,
-  createViolationAction,
-  deleteViolationAction,
-} from "@/actions/guru";
-import { formatDateIndo } from "@/lib/utils";
 import { UserAvatar } from "@/components/shared/user-avatar";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function GuruStudentDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -39,76 +31,52 @@ export default async function GuruStudentDetailPage(props: {
   const { id } = await props.params;
 
   let student: any = null;
-  let violationsList: any[] = [];
 
   try {
     const isNum = /^\d+$/.test(id);
-    const [dbStudent, dbViolations] = await Promise.all([
-      isNum
-        ? prisma.user.findUnique({
-          where: { id: BigInt(id) },
-        })
-        : null,
-      prisma.pelanggaran.findMany({
-        where: { user_id: id },
-        orderBy: { created_at: "desc" },
-      }),
-    ]);
-    student = dbStudent;
-    violationsList = dbViolations;
+    if (isNum) {
+      student = await prisma.user.findUnique({
+        where: { id: BigInt(id) },
+      });
+    }
   } catch (e) {
-    console.warn("DB error in guru student detail, falling back to mock:", e);
+    console.warn("DB error in guru student detail:", e);
   }
 
   if (!student) {
-    student = {
-      id: id || "2",
-      name: "Muhammad Fatih",
-      nis: "20260401",
-      email: "siswa@gmail.com",
-      gender: "L",
-      image: null,
-      kelas: session.kelas || "Kelas 4 - Mehmed Al Fatih",
-      status: "1",
-      point: "125",
-      appleid: "fatih@appleid.com",
-      notes: "Siswa sangat aktif di kelas.",
-    };
-  }
-
-  if (violationsList.length === 0) {
-    violationsList = [
-      {
-        id: BigInt(1),
-        nama: student.name,
-        kategori: "Kedisiplinan",
-        keterangan: "Lupa membawa mushaf Al-Qur'an dan sajadah sholat",
-        created_at: new Date("2026-09-14T08:00:00Z"),
-      },
-    ];
+    notFound();
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Back */}
+    <div className="space-y-5 max-w-4xl mx-auto">
+      {/* Header Back & Action */}
       <div className="flex items-center justify-between">
         <Link
           href="/guru/my-class"
-          className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Kelas Saya
         </Link>
-        <Badge variant="outline" size="sm" className="font-mono">
-          Poin Reward: {student.point || "0"}
-        </Badge>
+        <Link href="/guru/violations">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+          >
+            <ShieldAlert className="h-3.5 w-3.5" />
+            <span>Buku Kedisiplinan</span>
+          </Button>
+        </Link>
       </div>
 
-      {/* Info Card Siswa */}
-      <Card className="border-emerald-500/20 shadow-sm">
-        <CardContent className="p-6">
+      {/* Info Card Profil Siswa */}
+      <Card className="border-border shadow-xs overflow-hidden rounded-2xl bg-card">
+        <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500" />
+        <CardContent className="p-4 sm:p-6 space-y-5">
+          {/* Header Profil (Avatar, Nama, Kelas, Poin Reward) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-2xl overflow-hidden border border-emerald-500/30 bg-muted shadow-sm ring-2 ring-emerald-500/10">
+              <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-2xl overflow-hidden border-2 border-emerald-500/20 bg-muted shadow-xs">
                 <UserAvatar
                   src={student.image}
                   gender={student.gender}
@@ -118,174 +86,116 @@ export default async function GuruStudentDetailPage(props: {
                   previewable={true}
                 />
               </div>
-              <div>
-                <h1 className="text-xl font-bold">{student.name}</h1>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  NIS: {student.nis || "-"} • Kelas: {student.kelas || "-"} • {student.gender === "L" ? "Laki-laki" : "Perempuan"}
-                </p>
-                <p className="text-xs font-mono text-emerald-700 dark:text-emerald-400 mt-1">
-                  {student.email}
-                </p>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
+                  {student.name}
+                </h1>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg border bg-muted/30 p-2.5 text-center text-xs min-w-[100px]">
-                <p className="text-muted-foreground">Pelanggaran</p>
-                <p className="text-base font-bold text-rose-600 dark:text-rose-400">{violationsList.length}</p>
+            {/* Poin Reward Badge */}
+            <div className="self-start sm:self-auto shrink-0">
+              <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                <Award className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="text-xs font-semibold">Poin Reward: {student.point || "0"}</span>
               </div>
             </div>
           </div>
+
+          {/* Grid Informasi Rapi & Terstruktur */}
+          <div className="space-y-3 pt-4 border-t border-border/50">
+            {/* Baris 1: Identitas Pokok (NIS, Kelas, Jenis Kelamin) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* NIS */}
+              <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-background border border-border/60 text-muted-foreground shrink-0 mt-0.5">
+                  <Hash className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <span className="text-[11px] font-medium text-muted-foreground block">NIS</span>
+                  <span className="text-xs sm:text-sm font-semibold text-foreground font-mono block truncate">
+                    {student.nis || "-"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Kelas */}
+              <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-background border border-border/60 text-muted-foreground shrink-0 mt-0.5">
+                  <GraduationCap className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <span className="text-[11px] font-medium text-muted-foreground block">Kelas</span>
+                  <span className="text-xs sm:text-sm font-semibold text-foreground block truncate">
+                    {student.kelas || "-"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Jenis Kelamin */}
+              <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-background border border-border/60 text-muted-foreground shrink-0 mt-0.5">
+                  <User className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <span className="text-[11px] font-medium text-muted-foreground block">Jenis Kelamin</span>
+                  <span className="text-xs sm:text-sm font-semibold text-foreground block truncate">
+                    {student.gender === "L"
+                      ? "Laki-laki"
+                      : student.gender === "P"
+                      ? "Perempuan"
+                      : student.gender || "-"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Baris 2: Akun Digital (Email & Apple ID - 2 Kolom Lebar agar teks email tidak terpotong) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Email */}
+              <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-background border border-border/60 text-muted-foreground shrink-0 mt-0.5">
+                  <Mail className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <span className="text-[11px] font-medium text-muted-foreground block">Email Akun</span>
+                  <span className="text-xs sm:text-sm font-medium text-emerald-600 dark:text-emerald-400 block font-mono break-all sm:break-normal">
+                    {student.email || "-"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Apple ID */}
+              <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-background border border-border/60 text-muted-foreground shrink-0 mt-0.5">
+                  <Tablet className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <span className="text-[11px] font-medium text-muted-foreground block">Apple ID (iPad)</span>
+                  <span className="text-xs sm:text-sm font-medium text-foreground block font-mono break-all sm:break-normal">
+                    {student.appleid || "-"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Baris 3: Alamat Tempat Tinggal (jika ada) */}
+            {student.address && (
+              <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-background border border-border/60 text-muted-foreground shrink-0 mt-0.5">
+                  <MapPin className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <span className="text-[11px] font-medium text-muted-foreground block">Alamat Tempat Tinggal</span>
+                  <span className="text-xs sm:text-sm font-medium text-foreground block leading-relaxed">
+                    {student.address}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
-
-      {/* 2 Tabs: Catatan Siswa & Pelanggaran */}
-      <Tabs defaultValue="notes" className="space-y-4">
-        <TabsList className="grid grid-cols-2 w-full max-w-xs">
-          <TabsTrigger value="notes" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" /> Catatan
-          </TabsTrigger>
-          <TabsTrigger value="violations" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" /> Pelanggaran
-          </TabsTrigger>
-        </TabsList>
-
-        {/* TAB 1: CATATAN SISWA */}
-        <TabsContent value="notes">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Catatan Evaluasi Siswa</CardTitle>
-              <CardDescription>
-                Tuliskan catatan kepribadian, perkembangan akademik, atau hal yang perlu diperhatikan wali kelas.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                action={async (formData: FormData) => {
-                  "use server";
-                  const notes = formData.get("notes") as string;
-                  await updateNotesAction(id, notes);
-                }}
-                className="space-y-3"
-              >
-                <Textarea
-                  name="notes"
-                  defaultValue={student.notes || ""}
-                  placeholder="Tuliskan catatan evaluasi siswa..."
-                  rows={5}
-                />
-                <div className="flex justify-end">
-                  <Button type="submit">
-                    <Save className="h-4 w-4" /> Simpan Catatan
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* TAB 2: PELANGGARAN */}
-        <TabsContent value="violations" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Catat Pelanggaran Kedisiplinan</CardTitle>
-              <CardDescription>
-                Catat kategori pelanggaran tata tertib sekolah yang dilakukan siswa.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                action={async (formData: FormData) => {
-                  "use server";
-                  await createViolationAction(formData);
-                }}
-                className="space-y-3"
-              >
-                <input type="hidden" name="user_id" value={id} />
-                <input type="hidden" name="nama" value={student.name} />
-                <input type="hidden" name="kelas" value={student.kelas || ""} />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="kategori">Kategori Pelanggaran</Label>
-                    <Input id="kategori" name="kategori" placeholder="Contoh: Seragam / Atribut / iPad" required />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="keterangan">Deskripsi Kejadian</Label>
-                    <Input id="keterangan" name="keterangan" placeholder="Contoh: Tidak memakai dasi saat upacara" required />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-1">
-                  <Button type="submit" size="sm" variant="destructive">
-                    <Plus className="h-4 w-4" /> Catat Pelanggaran
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* List Pelanggaran */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Riwayat Pelanggaran ({violationsList.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="w-12 text-center font-bold">No</TableHead>
-                      <TableHead className="font-bold">Tanggal</TableHead>
-                      <TableHead className="font-bold">Kategori</TableHead>
-                      <TableHead className="font-bold">Keterangan</TableHead>
-                      <TableHead className="w-20 text-center font-bold">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {violationsList.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                          Tidak ada catatan pelanggaran untuk siswa ini
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      violationsList.map((vl, idx) => (
-                        <TableRow key={vl.id.toString()}>
-                          <TableCell className="text-center font-medium">{idx + 1}</TableCell>
-                          <TableCell className="text-xs">{formatDateIndo(vl.created_at)}</TableCell>
-                          <TableCell>
-                            <Badge variant="destructive" size="sm">
-                              {vl.kategori}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{vl.keterangan}</TableCell>
-                          <TableCell className="text-center">
-                            <form
-                              action={async () => {
-                                "use server";
-                                await deleteViolationAction(vl.id.toString(), id);
-                              }}
-                            >
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </form>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

@@ -81,6 +81,14 @@ export interface ViolationItem {
   kategori?: string | null;
   keterangan?: string | null;
   created_at?: Date | string | null;
+  // Parsed / presentation properties
+  status?: "TERCATAT" | "DIBINA" | "SELESAI";
+  severity?: "RINGAN" | "SEDANG" | "BERAT";
+  points?: number;
+  cleanKeterangan?: string;
+  tindakan?: string;
+  studentImage?: string | null;
+  studentGender?: string | null;
 }
 
 export interface RestrictItem {

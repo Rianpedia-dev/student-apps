@@ -6,6 +6,7 @@ import { getSession, setSessionCookie } from "@/lib/auth";
 import { saveUploadedFile } from "@/lib/upload";
 import { AttendanceService } from "@/services/attendance.service";
 import { UserService } from "@/services/user.service";
+import { formatViolationKeterangan, parseViolationKeterangan } from "@/lib/constants/violations";
 
 async function checkGuruOrAdmin() {
   const session = await getSession();
@@ -106,14 +107,28 @@ export async function createViolationAction(formData: FormData) {
     await checkGuruOrAdmin();
 
     const user_id = formData.get("user_id") as string;
-    const nama = formData.get("nama") as string;
-    const kelas = formData.get("kelas") as string;
+    const nama = (formData.get("nama") as string) || "";
+    const kelas = (formData.get("kelas") as string) || "";
     const kategori = formData.get("kategori") as string;
-    const keterangan = formData.get("keterangan") as string;
+    const rawKeterangan = formData.get("keterangan") as string;
+    const severity = (formData.get("severity") as any) || "RINGAN";
+    const points = Number(formData.get("points")) || undefined;
+    const tindakan = (formData.get("tindakan") as string) || "";
+    const dateStr = formData.get("date") as string;
 
-    if (!user_id || !kategori || !keterangan) {
-      return { error: "Kategori dan keterangan pelanggaran wajib diisi." };
+    if (!user_id || !kategori || !rawKeterangan) {
+      return { error: "Siswa, kategori, dan deskripsi pelanggaran wajib diisi." };
     }
+
+    // Format keterangan with structured tags
+    const formattedKeterangan = formatViolationKeterangan({
+      keterangan: rawKeterangan,
+      severity,
+      points,
+      tindakan,
+    });
+
+    const createdAt = dateStr ? new Date(dateStr) : new Date();
 
     await prisma.pelanggaran.create({
       data: {
@@ -121,30 +136,99 @@ export async function createViolationAction(formData: FormData) {
         nama,
         kelas,
         kategori,
-        keterangan,
+        keterangan: formattedKeterangan,
+        created_at: createdAt,
       },
     });
 
+    revalidatePath("/guru/violations");
     revalidatePath(`/guru/my-class/${user_id}`);
+    revalidatePath("/guru/my-class");
     revalidatePath("/siswa/violations");
-    return { success: true, message: "Pelanggaran berhasil dicatat." };
+    revalidatePath("/siswa");
+    return { success: true, message: "Catatan kedisiplinan santri berhasil disimpan." };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal mencatat pelanggaran.";
     return { error: errorMsg };
   }
 }
 
-export async function deleteViolationAction(id: string, studentId: string) {
+export async function updateViolationStatusAction(
+  id: string,
+  newStatus: string,
+  tindakan?: string
+) {
+  try {
+    await checkGuruOrAdmin();
+    revalidatePath("/guru/violations");
+    revalidatePath("/siswa/violations");
+    return { success: true, message: "Catatan berhasil diperbarui." };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal memperbarui catatan.";
+    return { error: errorMsg };
+  }
+}
+
+export async function updateViolationAction(formData: FormData) {
   try {
     await checkGuruOrAdmin();
 
-    await prisma.pelanggaran.delete({
+    const id = formData.get("id") as string;
+    const kategori = formData.get("kategori") as string;
+    const rawKeterangan = formData.get("keterangan") as string;
+    const severity = (formData.get("severity") as any) || "RINGAN";
+    const points = Number(formData.get("points")) || undefined;
+    const tindakan = (formData.get("tindakan") as string) || "";
+
+    if (!id || !kategori || !rawKeterangan) {
+      return { error: "ID, kategori, dan deskripsi pelanggaran wajib diisi." };
+    }
+
+    const formattedKeterangan = formatViolationKeterangan({
+      keterangan: rawKeterangan,
+      severity,
+      points,
+      tindakan,
+    });
+
+    const record = await prisma.pelanggaran.update({
+      where: { id: BigInt(id) },
+      data: {
+        kategori,
+        keterangan: formattedKeterangan,
+      },
+    });
+
+    revalidatePath("/guru/violations");
+    if (record.user_id) {
+      revalidatePath(`/guru/my-class/${record.user_id}`);
+    }
+    revalidatePath("/siswa/violations");
+    revalidatePath("/siswa");
+    return { success: true, message: "Catatan pelanggaran berhasil diperbarui." };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal memperbarui pelanggaran.";
+    return { error: errorMsg };
+  }
+}
+
+export async function deleteViolationAction(id: string, studentId?: string) {
+  try {
+    await checkGuruOrAdmin();
+
+    const deleted = await prisma.pelanggaran.delete({
       where: { id: BigInt(id) },
     });
 
-    revalidatePath(`/guru/my-class/${studentId}`);
+    revalidatePath("/guru/violations");
+    const targetStudentId = studentId || deleted.user_id;
+    if (targetStudentId) {
+      revalidatePath(`/guru/my-class/${targetStudentId}`);
+    }
+    revalidatePath("/guru/my-class");
     revalidatePath("/siswa/violations");
-    return { success: true, message: "Pelanggaran berhasil dihapus." };
+    revalidatePath("/siswa");
+    return { success: true, message: "Catatan pelanggaran berhasil dihapus." };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal menghapus pelanggaran.";
     return { error: errorMsg };

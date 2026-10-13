@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Users,
+  User,
   GraduationCap,
   LogOut,
   CalendarClock,
@@ -143,6 +144,7 @@ interface SidebarProps {
   userEmail?: string;
   kelas?: string | null;
   status?: string | null;
+  userImage?: string | null;
   onNavigate?: () => void;
   forceExpanded?: boolean;
   className?: string;
@@ -155,6 +157,7 @@ export function Sidebar({
   userEmail,
   kelas,
   status,
+  userImage,
   onNavigate,
   forceExpanded = false,
   className,
@@ -166,6 +169,13 @@ export function Sidebar({
 
   // Status "4" adalah Guru & Wali Kelas. Jika status "2", Guru Mapel (tanpa perwalian).
   const isWaliKelas = status === "4" || (role === "guru" && Boolean(kelas && status !== "2"));
+
+  const profileHref =
+    role === "guru"
+      ? "/guru/profile"
+      : role === "siswa"
+        ? "/siswa/profile"
+        : "/admin";
 
   const adminMenu: MenuItemType[] = [
     { label: "Dashboard", href: "/admin", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
@@ -181,7 +191,6 @@ export function Sidebar({
 
   const guruMenu: MenuItemType[] = [
     { label: "Dashboard", href: "/guru", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
-    { label: "Profil Saya", href: "/guru/profile", icon: ContactIcon, iconColor: "text-amber-600" },
     { label: "Mata Pelajaran", href: "/guru/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
     { label: "Chat Siswa", href: "/guru/chat", icon: ChatIcon, iconColor: "text-cyan-600" },
     ...(isWaliKelas
@@ -193,12 +202,12 @@ export function Sidebar({
     { label: "Pengumuman", href: "/guru/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500" },
     { label: "Kalender Kegiatan", href: "/guru/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
     { label: "Prestasi Siswa", href: "/guru/achievements", icon: TrophyIcon, iconColor: "text-amber-500" },
+    { label: "Kedisiplinan Siswa", href: "/guru/violations", icon: AlertLoopIcon, iconColor: "text-rose-500" },
     { label: "Kelas Online", href: "/guru/kelas-online", icon: VideoIcon, iconColor: "text-indigo-500" },
   ];
 
   const siswaMenu: MenuItemType[] = [
     { label: "Dashboard", href: "/siswa", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
-    { label: "Profil Saya", href: "/siswa/profile", icon: ContactIcon, iconColor: "text-amber-600" },
     { label: "Mata Pelajaran", href: "/siswa/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
     { label: "Chat Guru", href: "/siswa/chat", icon: ChatIcon, iconColor: "text-cyan-600" },
     { label: "Kalender Kegiatan", href: "/siswa/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
@@ -290,6 +299,44 @@ export function Sidebar({
             </Link>
           )}
         </div>
+
+        {/* Mobile Profile Card */}
+        {isMobileDrawer && (
+          <div className="px-3 pt-3 pb-2 border-b border-sidebar-border/60">
+            <Link
+              href={profileHref}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center gap-2.5 p-2 rounded-xl transition-all duration-150 group border",
+                pathname === profileHref
+                  ? "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/40 text-foreground"
+                  : "bg-muted/40 hover:bg-muted/70 dark:bg-muted/20 border-border/50 text-foreground hover:border-amber-500/30"
+              )}
+            >
+              <div className="relative h-9.5 w-9.5 rounded-full overflow-hidden ring-2 ring-amber-500/70 shrink-0 bg-muted flex items-center justify-center shadow-xs">
+                {userImage ? (
+                  <img
+                    src={userImage}
+                    alt={userName || "Profil"}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                    {userName ? userName.substring(0, 2).toUpperCase() : <User className="h-4 w-4" />}
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[13px] font-bold text-foreground truncate block group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  {userName || "Profil Saya"}
+                </span>
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* Nav Menu */}
         <nav

@@ -1,5 +1,14 @@
 import prisma from "@/lib/prisma";
-import { Users, GraduationCap, UserCheck, UserX } from "lucide-react";
+import {
+  Users,
+  GraduationCap,
+  School,
+  BookOpen,
+  Calendar,
+  Bell,
+  UserCheck,
+  UserX,
+} from "lucide-react";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
 import { CalendarWidget } from "@/components/shared/calendar-widget";
@@ -10,29 +19,51 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboardPage() {
   let totalSiswa = 0;
   let totalGuru = 0;
+  let totalKelas = 0;
+  let totalMapel = 0;
+  let totalJadwal = 0;
+  let totalPengumuman = 0;
   let totalAktif = 0;
   let totalNonAktif = 0;
   let formattedAnnouncements: any[] = [];
   let formattedRestricts: any[] = [];
 
   try {
-    const [siswaCount, guruCount, aktifCount, nonAktifCount, pengumumanList, restricts] =
-      await Promise.all([
-        prisma.user.count({ where: { status: "1" } }),
-        prisma.user.count({ where: { status: { in: ["2", "4"] } } }),
-        prisma.user.count({ where: { status: { not: "0" } } }),
-        prisma.user.count({ where: { status: "0" } }),
-        prisma.pengumuman.findMany({
-          orderBy: { id: "desc" },
-          take: 10,
-        }),
-        prisma.restrict.findMany({
-          orderBy: { nama_kelas: "asc" },
-        }),
-      ]);
+    const [
+      siswaCount,
+      guruCount,
+      kelasCount,
+      mapelCount,
+      jadwalCount,
+      pengumumanTotal,
+      aktifCount,
+      nonAktifCount,
+      pengumumanList,
+      restricts,
+    ] = await Promise.all([
+      prisma.user.count({ where: { status: "1" } }),
+      prisma.user.count({ where: { status: { in: ["2", "4"] } } }),
+      prisma.kelas.count(),
+      prisma.mataPelajaran.count(),
+      prisma.jadwalPelajaran.count(),
+      prisma.pengumuman.count(),
+      prisma.user.count({ where: { status: { not: "0" } } }),
+      prisma.user.count({ where: { status: "0" } }),
+      prisma.pengumuman.findMany({
+        orderBy: { id: "desc" },
+        take: 20,
+      }),
+      prisma.restrict.findMany({
+        orderBy: { nama_kelas: "asc" },
+      }),
+    ]);
 
     totalSiswa = siswaCount;
     totalGuru = guruCount;
+    totalKelas = kelasCount;
+    totalMapel = mapelCount;
+    totalJadwal = jadwalCount;
+    totalPengumuman = pengumumanTotal;
     totalAktif = aktifCount;
     totalNonAktif = nonAktifCount;
 
@@ -67,16 +98,18 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* 4 Stat Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {/* 8 Folder Cards:
+          - Desktop (lg): 4 card dalam satu baris mendatar (2 baris x 4 card)
+          - Tablet (md): 3 card dalam satu baris mendatar
+          - Mobile: 2 card per baris mendatar (4 baris mendatar, responsif) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-4">
+        {/* Baris 1: Amber, Blue, Emerald, Rose */}
         <StatCard
           title="Jumlah Siswa"
           value={totalSiswa}
           countLabel="Siswa"
           icon={GraduationCap}
-          description="Total siswa aktif"
-          variant="primary"
-          meta="Terdaftar"
+          variant="amber"
           href="/admin/students"
         />
         <StatCard
@@ -84,29 +117,57 @@ export default async function AdminDashboardPage() {
           value={totalGuru}
           countLabel="Guru"
           icon={Users}
-          description="Total dewan pengajar"
-          variant="accent"
-          meta="Pengajar"
+          variant="blue"
           href="/admin/teachers"
+        />
+        <StatCard
+          title="Total Kelas"
+          value={totalKelas}
+          countLabel="Rombel"
+          icon={School}
+          variant="emerald"
+          href="/admin/classes"
+        />
+        <StatCard
+          title="Mata Pelajaran"
+          value={totalMapel}
+          countLabel="Mapel"
+          icon={BookOpen}
+          variant="rose"
+          href="/admin/subjects"
+        />
+
+        {/* Baris 2: Purple, Teal, Indigo, Orange */}
+        <StatCard
+          title="Jadwal Pelajaran"
+          value={totalJadwal}
+          countLabel="Jadwal"
+          icon={Calendar}
+          variant="purple"
+          href="/admin/schedules"
+        />
+        <StatCard
+          title="Pengumuman"
+          value={totalPengumuman}
+          countLabel="Info"
+          icon={Bell}
+          variant="teal"
+          href="/admin/announcements"
         />
         <StatCard
           title="Akun Aktif"
           value={totalAktif}
           countLabel="Akun"
           icon={UserCheck}
-          description="Pengguna terverifikasi"
-          variant="purple"
-          meta="Aktif"
+          variant="indigo"
           href="/admin/students"
         />
         <StatCard
-          title="Akun Non-Aktif"
+          title="Perlu Verifikasi"
           value={totalNonAktif}
           countLabel="Akun"
           icon={UserX}
-          description="Menunggu verifikasi admin"
-          variant="amber"
-          meta="Pending"
+          variant="orange"
           href="/admin/students"
         />
       </div>

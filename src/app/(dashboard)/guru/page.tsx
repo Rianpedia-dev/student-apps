@@ -1,19 +1,15 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserAvatar } from "@/components/shared/user-avatar";
 import {
   IslamicMosaicPattern,
   IslamicStarGeometricPattern,
   AlAzharColorfulMosqueHero,
   AlAzharMosaicStrip,
   AlAzharCornerMosaic,
-  AlAzharSchoolBanner,
 } from "@/components/shared/alazhar-patterns";
 
 export const dynamic = "force-dynamic";
@@ -48,67 +44,79 @@ export default async function GuruDashboardPage() {
   let pendingReview = 0;
   let totalMateri = 0;
   let totalJadwal = 0;
-  let achievements: any[] = [];
+  let totalKelasOnline = 0;
   let announcements: any[] = [];
 
   try {
-    const [dbStudents, dbAttHadir, dbAttTotal, dbTugas, dbReview, dbMateri, dbJadwal, dbAchieve, dbAnnounce] =
-      await Promise.all([
-        guruClass
-          ? prisma.user.findMany({
-              where: { kelas: guruClass, status: "1" },
-              orderBy: { name: "asc" },
-            })
-          : [],
-        guruClass
-          ? prisma.absen.count({
-              where: {
-                kelas: guruClass,
-                date: todayStr,
-                keterangan: "Hadir",
-              },
-            })
-          : 0,
-        guruClass
-          ? prisma.absen.count({
-              where: { kelas: guruClass, date: todayStr },
-            })
-          : 0,
-        guruIdBigInt
-          ? prisma.tugas.count({
-              where: { guru_id: guruIdBigInt, status: "aktif" },
-            })
-          : 0,
-        guruIdBigInt
-          ? prisma.tugasSubmission.count({
-              where: { tugas: { guru_id: guruIdBigInt }, status: "dikumpulkan" },
-            })
-          : 0,
-        guruIdBigInt
-          ? prisma.pertemuan.count({
+    const [
+      dbStudents,
+      dbAttHadir,
+      dbAttTotal,
+      dbTugas,
+      dbReview,
+      dbMateri,
+      dbJadwal,
+      dbOnline,
+      dbAnnounce,
+    ] = await Promise.all([
+      guruClass
+        ? prisma.user.findMany({
+            where: { kelas: guruClass, status: "1" },
+            orderBy: { name: "asc" },
+          })
+        : [],
+      guruClass
+        ? prisma.absen.count({
+            where: {
+              kelas: guruClass,
+              date: todayStr,
+              keterangan: "Hadir",
+            },
+          })
+        : 0,
+      guruClass
+        ? prisma.absen.count({
+            where: { kelas: guruClass, date: todayStr },
+          })
+        : 0,
+      guruIdBigInt
+        ? prisma.tugas.count({
+            where: { guru_id: guruIdBigInt, status: "aktif" },
+          })
+        : 0,
+      guruIdBigInt
+        ? prisma.tugasSubmission.count({
+            where: { tugas: { guru_id: guruIdBigInt }, status: "dikumpulkan" },
+          })
+        : 0,
+      guruIdBigInt
+        ? prisma.pertemuan.count({
+            where: { guru_id: guruIdBigInt },
+          })
+        : 0,
+      guruIdBigInt
+        ? prisma.jadwalPelajaran.count({
+            where: { guru_id: guruIdBigInt },
+          })
+        : 0,
+      guruIdBigInt
+        ? prisma.kelasOnline
+            .count({
               where: { guru_id: guruIdBigInt },
             })
-          : 0,
-        guruIdBigInt
-          ? prisma.jadwalPelajaran.count({
-              where: { guru_id: guruIdBigInt },
-            })
-          : 0,
-        prisma.prestasi.findMany({
-          orderBy: { created_at: "desc" },
-          take: 5,
-        }),
-        prisma.pengumuman.findMany({
-          where: {
-            OR: [
-              { from: "IT" },
-              ...(guruClass ? [{ from: guruClass }] : []),
-            ],
-          },
-          orderBy: { id: "desc" },
-          take: 10,
-        }),
-      ]);
+            .catch(() => 0)
+        : 0,
+      prisma.pengumuman.findMany({
+        where: {
+          OR: [
+            { from: "IT" },
+            ...(guruClass ? [{ from: guruClass }] : []),
+          ],
+        },
+        orderBy: { id: "desc" },
+        take: 20,
+      }),
+    ]);
 
     students = dbStudents;
     attendanceToday = dbAttHadir;
@@ -117,52 +125,7 @@ export default async function GuruDashboardPage() {
     pendingReview = dbReview;
     totalMateri = dbMateri;
     totalJadwal = dbJadwal;
-    // Fetch student profile data for dashboard achievements
-    const achieveUserIds = dbAchieve
-      .map((a) => {
-        try {
-          const n = BigInt(a.id_user);
-          return n > BigInt(0) ? n : null;
-        } catch {
-          return null;
-        }
-      })
-      .filter((id): id is bigint => id !== null);
-
-    const achieveNames = dbAchieve.map((a) => a.nama).filter(Boolean);
-
-    const matchedAchieveUsers = await prisma.user.findMany({
-      where: {
-        OR: [
-          ...(achieveUserIds.length > 0 ? [{ id: { in: achieveUserIds } }] : []),
-          ...(achieveNames.length > 0 ? [{ name: { in: achieveNames } }] : []),
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        gender: true,
-        image: true,
-      },
-    });
-
-    const achieveUserById = new Map<string, (typeof matchedAchieveUsers)[0]>();
-    const achieveUserByName = new Map<string, (typeof matchedAchieveUsers)[0]>();
-    for (const u of matchedAchieveUsers) {
-      achieveUserById.set(u.id.toString(), u);
-      achieveUserByName.set(u.name.trim().toLowerCase(), u);
-    }
-
-    achievements = dbAchieve.map((ach) => {
-      const studentUser = achieveUserById.get(ach.id_user) || achieveUserByName.get(ach.nama.trim().toLowerCase());
-      const studentImage = studentUser?.image || null;
-
-      return {
-        ...ach,
-        studentImage,
-        studentGender: studentUser?.gender || null,
-      };
-    });
+    totalKelasOnline = dbOnline;
     announcements = dbAnnounce;
   } catch (e) {
     console.error("Database query error in guru dashboard:", e);
@@ -263,124 +226,96 @@ export default async function GuruDashboardPage() {
         </div>
       </div>
 
-      {/* 4 Stat Cards Bertema Al-Azhar */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {/* 6 Folder Cards:
+          - Desktop (lg): 4 card dalam satu baris mendatar (Baris 1: 4 card, Baris 2: 2 card)
+          - Tablet (md): 3 card dalam satu baris mendatar (2 baris x 3 card)
+          - Mobile: 2 card per baris mendatar (3 baris mendatar, responsif) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5 md:gap-4">
         {isWaliKelas ? (
           <>
+            {/* Baris 1: Amber, Blue, Emerald */}
             <StatCard
               title="Kelas Saya"
-              value={`${students.length} Siswa`}
               variant="amber"
               href="/guru/my-class"
             />
             <StatCard
               title="Absensi Hari Ini"
-              value={totalAbsenToday > 0 ? `${attendanceToday} Hadir` : "0 Hadir"}
-              count={totalAbsenToday > 0 ? attendanceToday : "—"}
-              countLabel={totalAbsenToday > 0 ? "Hadir" : "Belum diisi"}
-              variant="accent"
+              variant="blue"
               href={`/guru/attendance/${todayFormatted}`}
+            />
+            <StatCard
+              title="Tugas Aktif"
+              variant="emerald"
+              href="/guru/tugas"
+            />
+
+            {/* Baris 2: Rose, Purple, Teal */}
+            <StatCard
+              title="Perlu Dinilai"
+              variant="rose"
+              href="/guru/tugas?status=need_grading"
+            />
+            <StatCard
+              title="Materi & Modul"
+              variant="purple"
+              href="/guru/mapel"
+            />
+            <StatCard
+              title="Jadwal Mengajar"
+              variant="teal"
+              href="/guru/calendar"
             />
           </>
         ) : (
           <>
+            {/* Baris 1: Amber, Blue, Emerald */}
             <StatCard
-              title="Materi & Modul"
-              value={`${totalMateri} Pertemuan`}
+              title="Mata Pelajaran"
               variant="amber"
               href="/guru/mapel"
             />
             <StatCard
               title="Jadwal Mengajar"
-              value={`${totalJadwal} Jadwal`}
-              variant="accent"
+              variant="blue"
               href="/guru/calendar"
+            />
+            <StatCard
+              title="Tugas Aktif"
+              variant="emerald"
+              href="/guru/tugas"
+            />
+
+            {/* Baris 2: Rose, Purple, Teal */}
+            <StatCard
+              title="Perlu Dinilai"
+              variant="rose"
+              href="/guru/tugas?status=need_grading"
+            />
+            <StatCard
+              title="Materi & Modul"
+              variant="purple"
+              href="/guru/mapel"
+            />
+            <StatCard
+              title="Kelas Online"
+              variant="teal"
+              href="/guru/kelas-online"
             />
           </>
         )}
-        <StatCard
-          title="Tugas Aktif"
-          value={`${totalTugas} Tugas`}
-          variant="primary"
-          href="/guru/tugas"
-        />
-        <StatCard
-          title="Perlu Dinilai"
-          value={`${pendingReview} Submisi`}
-          variant="rose"
-          href="/guru/tugas?status=need_grading"
-        />
       </div>
 
-      {/* 2 Columns: Announcements + Prestasi */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Timeline Pengumuman */}
-        <div className="space-y-3.5 lg:col-span-7">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Timeline Pengumuman</h2>
-          </div>
-          <AnnouncementTimeline
-            announcements={formattedAnnouncements}
-            userRole="guru"
-            canManage={false}
-          />
+      {/* Timeline Pengumuman */}
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Timeline Pengumuman</h2>
         </div>
-
-        {/* Right side: Prestasi Siswa & Banner Motto */}
-        <div className="space-y-6 lg:col-span-5">
-          {/* Prestasi Siswa Section */}
-          <Card className="border border-amber-500/20 rounded-xl shadow-xs">
-            <CardHeader className="pb-3 border-b border-border/50">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <span>Prestasi Terkini</span>
-                </CardTitle>
-                <Link
-                  href="/guru/achievements"
-                  className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline"
-                >
-                  Lihat Semua
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {achievements.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4 italic">
-                  Belum ada prestasi siswa dicatat.
-                </p>
-              ) : (
-                achievements.map((ach) => (
-                  <div
-                    key={ach.id.toString()}
-                    className="flex items-center gap-3 rounded-lg border p-2.5 text-xs transition-colors hover:bg-muted/30"
-                  >
-                    <div className="shrink-0">
-                      <UserAvatar
-                        src={ach.studentImage}
-                        gender={ach.studentGender}
-                        name={ach.nama}
-                        className="h-9 w-9 rounded-lg object-cover border border-border shadow-xs"
-                        previewable={true}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-foreground truncate">{ach.prestasi}</p>
-                      <p className="text-muted-foreground truncate">{ach.nama} • {ach.kelas}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Official Al-Azhar School Motto Banner (As shown in reference mockup) */}
-          <Card className="border border-border/80 bg-white/95 dark:bg-card/95 rounded-2xl shadow-xs overflow-hidden">
-            <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-amber-500 to-sky-500" />
-            <CardContent className="p-4 flex flex-col items-center justify-center">
-              <AlAzharSchoolBanner />
-            </CardContent>
-          </Card>
-        </div>
+        <AnnouncementTimeline
+          announcements={formattedAnnouncements}
+          userRole="guru"
+          canManage={false}
+        />
       </div>
     </div>
   );

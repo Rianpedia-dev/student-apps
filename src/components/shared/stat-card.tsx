@@ -4,7 +4,7 @@ import { FolderCard, FolderCardVariant } from "@/components/shared/folder-card";
 
 export interface StatCardProps {
   title: string;
-  value: React.ReactNode;
+  value?: React.ReactNode;
   icon?: LucideIcon | React.ComponentType<{ className?: string; size?: number }>;
   imageSrc?: string;
   description?: string;
@@ -16,13 +16,21 @@ export interface StatCardProps {
   count?: React.ReactNode;
   countLabel?: string;
   className?: string;
+  compact?: boolean;
+  aspectRatioClassName?: string;
+  centered?: boolean;
+  chamfer?: boolean;
 }
 
 /**
  * Helper to intelligently split compound values like "0 Hari", "5 Kegiatan", "12 Siswa"
  * into separate count figure and countLabel for the folder card footer.
  */
-function parseValue(value: React.ReactNode): { count: React.ReactNode; countLabel: string } {
+function parseValue(value?: React.ReactNode): { count: React.ReactNode; countLabel: string } {
+  if (value === undefined || value === null) {
+    return { count: undefined, countLabel: "" };
+  }
+
   if (typeof value === "number") {
     return { count: value.toLocaleString("id-ID"), countLabel: "" };
   }
@@ -65,6 +73,10 @@ export function StatCard({
   meta,
   count: propCount,
   countLabel: propCountLabel,
+  compact,
+  aspectRatioClassName,
+  centered,
+  chamfer,
   className,
 }: StatCardProps) {
   const parsed = parseValue(value);
@@ -86,6 +98,10 @@ export function StatCard({
       variant={variant}
       icon={renderedIcon}
       href={href}
+      compact={compact}
+      aspectRatioClassName={aspectRatioClassName}
+      centered={centered}
+      chamfer={chamfer}
       className={className}
     />
   );

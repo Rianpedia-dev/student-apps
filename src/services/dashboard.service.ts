@@ -120,7 +120,7 @@ export class DashboardService {
             OR: [{ from: "IT" }, ...(studentClass ? [{ from: studentClass }] : [])],
           },
           orderBy: { id: "desc" },
-          take: 10,
+          take: 20,
         }).catch(() => []),
         prisma.prestasi.findMany({
           orderBy: { created_at: "desc" },
