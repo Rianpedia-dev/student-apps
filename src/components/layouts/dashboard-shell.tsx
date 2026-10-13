@@ -9,6 +9,7 @@ import { Footer } from "./footer";
 import { cn } from "@/lib/utils";
 import { KelasOnlineProvider } from "@/components/features/kelas-online/kelas-online-context";
 import { PersistentVideoHost } from "@/components/features/kelas-online/persistent-video-host";
+import { RouteTransitionOverlay } from "@/components/shared/route-transition-overlay";
 
 interface DashboardShellProps {
   role: "admin" | "guru" | "siswa";
@@ -83,10 +84,10 @@ function DashboardLayoutContent({
           className={cn(
             isChatPage
               ? "flex-1 p-0 w-full min-w-0 h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] overflow-hidden flex flex-col"
-              : "flex-1 px-2 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-5 md:py-6 lg:py-8 pb-8 w-full max-w-7xl mx-auto min-w-0"
+              : "flex-1 px-2 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-5 md:py-6 lg:py-8 pb-8 w-full max-w-7xl mx-auto min-w-0 flex flex-col"
           )}
         >
-          {children}
+          <RouteTransitionOverlay>{children}</RouteTransitionOverlay>
         </main>
         {!isChatPage && <Footer />}
       </div>
