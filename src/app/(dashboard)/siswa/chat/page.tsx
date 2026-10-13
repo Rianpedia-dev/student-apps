@@ -44,7 +44,7 @@ export default async function SiswaChatPage({ searchParams }: PageProps) {
   ]);
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full flex flex-col min-h-0 flex-1">
       <Suspense
         fallback={
           <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">

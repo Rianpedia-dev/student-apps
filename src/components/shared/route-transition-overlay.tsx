@@ -89,7 +89,7 @@ export function RouteTransitionOverlay({ children }: RouteTransitionOverlayProps
   };
 
   return (
-    <div className="relative flex-1 flex flex-col w-full min-w-0">
+    <div className="relative flex-1 flex flex-col w-full min-w-0 min-h-0 h-full">
       {/* Seamless in-content loading overlay */}
       {isNavigating && (
         <div
@@ -108,7 +108,7 @@ export function RouteTransitionOverlay({ children }: RouteTransitionOverlayProps
       )}
 
       {/* Konten Halaman */}
-      <div className={isNavigating ? "opacity-30 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200 flex-1 flex flex-col"}>
+      <div className={isNavigating ? "opacity-30 pointer-events-none transition-opacity duration-200 flex-1 flex flex-col min-h-0 h-full w-full" : "transition-opacity duration-200 flex-1 flex flex-col min-h-0 h-full w-full"}>
         {children}
       </div>
     </div>

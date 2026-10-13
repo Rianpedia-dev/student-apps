@@ -83,7 +83,7 @@ function DashboardLayoutContent({
         <main
           className={cn(
             isChatPage
-              ? "flex-1 p-0 w-full min-w-0 h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] overflow-hidden flex flex-col"
+              ? "flex-1 p-0 w-full min-w-0 min-h-0 h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] overflow-hidden flex flex-col"
               : "flex-1 px-2 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-5 md:py-6 lg:py-8 pb-8 w-full max-w-7xl mx-auto min-w-0 flex flex-col"
           )}
         >

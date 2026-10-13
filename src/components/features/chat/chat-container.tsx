@@ -30,7 +30,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { CardDescription, CardTitle } from "@/components/ui/card";
 import {
@@ -318,6 +317,7 @@ export function ChatContainer({
   );
 
   // Refs
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -461,10 +461,30 @@ export function ChatContainer({
     };
   }, [activeRoomId, emitMarkRead]);
 
-  // Scroll to bottom on message updates
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior,
+      });
+    }
+  };
+
+  // Scroll to bottom on message updates or typing indicator
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const timer = setTimeout(() => {
+      scrollToBottom("smooth");
+    }, 50);
+    return () => clearTimeout(timer);
   }, [messages, otherUserTyping]);
+
+  // Instant scroll on active room change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scrollToBottom("instant");
+    }, 30);
+    return () => clearTimeout(timer);
+  }, [activeRoomId]);
 
   // Handle typing debounce
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -970,7 +990,7 @@ export function ChatContainer({
   const emojis = ["👍", "🌟", "🌸", "🙋‍♂️", "🏆", "🙏", "😊", "📚", "❤️", "🎯", "🎉", "💡", "🤲", "📖", "🕌", "✅"];
 
   return (
-    <div className="relative flex h-full w-full border-0 rounded-none bg-card overflow-hidden shadow-none">
+    <div className="relative flex h-full w-full min-h-0 flex-1 border-0 rounded-none bg-card overflow-hidden shadow-none">
       {/* Hidden File Inputs for Attachment Types */}
       <input
         ref={fileInputRef}
@@ -998,7 +1018,7 @@ export function ChatContainer({
 
       {/* ================= LEFT PANEL - WHATSAPP CHATS LIST ================= */}
       <div
-        className={`flex-col h-full bg-background border-r border-border/70 min-w-0 overflow-hidden w-full lg:w-[380px] xl:w-[420px] lg:shrink-0 transition-all duration-200 ${!showMobileList ? "hidden lg:flex" : "flex"
+        className={`flex-col h-full min-h-0 bg-background border-r border-border/70 min-w-0 overflow-hidden w-full lg:w-[380px] xl:w-[420px] lg:shrink-0 transition-all duration-200 ${!showMobileList ? "hidden lg:flex" : "flex"
           }`}
       >
         {/* Chats Header */}
@@ -1076,10 +1096,10 @@ export function ChatContainer({
         </div>
 
         {/* Contact / Conversation List */}
-        <ScrollArea className="flex-1 w-full overflow-hidden">
+        <div className="flex-1 w-full min-h-0 overflow-y-auto">
           <div className="divide-y divide-border/30 overflow-x-hidden">
             {/* Header label */}
-            <div className="px-4 py-2 bg-muted/30 text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+            <div className="px-4 py-2 bg-muted/30 text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between sticky top-0 z-10 backdrop-blur-xs">
               <span>
                 {currentUserRole === "siswa" ? "Ustadz & Ustadzah" : "Daftar Siswa"}
               </span>
@@ -1183,16 +1203,16 @@ export function ChatContainer({
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* ================= RIGHT PANEL - WHATSAPP CHAT ROOM ================= */}
       <div
-        className={`flex-col h-full bg-[#efeae2] dark:bg-[#0b141a] min-w-0 overflow-hidden flex-1 relative transition-all duration-200 ${showMobileList ? "hidden lg:flex" : "flex"
+        className={`flex-col h-full min-h-0 bg-[#efeae2] dark:bg-[#0b141a] min-w-0 overflow-hidden flex-1 relative transition-all duration-200 ${showMobileList ? "hidden lg:flex" : "flex"
           }`}
       >
         {activeRoomId && activeContact ? (
-          <div className="flex flex-col justify-between h-full min-w-0 relative">
+          <div className="flex flex-col h-full min-h-0 min-w-0 relative">
             {/* WhatsApp Header / App Bar */}
             <div className="h-12 sm:h-14 border-b border-border/40 flex items-center justify-between px-2.5 sm:px-4 shrink-0 bg-transparent relative z-20">
               <div className="flex items-center gap-1 sm:gap-2.5 min-w-0 z-10">
@@ -1253,7 +1273,10 @@ export function ChatContainer({
             </div>
 
             {/* Messages Feed Area */}
-            <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-5 sm:py-4 space-y-1.5 min-w-0 relative z-10">
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:px-5 sm:py-4 space-y-1.5 min-w-0 relative z-10"
+            >
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground my-auto">
                   <div className="max-w-xs bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 text-xs px-3.5 py-2 rounded-xl text-center shadow-2xs mb-4">
