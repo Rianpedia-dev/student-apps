@@ -52,6 +52,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      { source: "/guru/classes", destination: "/guru/my-class", permanent: false },
+      { source: "/guru/subjects", destination: "/guru/mapel", permanent: false },
+      { source: "/siswa/subjects", destination: "/siswa/mapel", permanent: false },
+    ];
+  },
 };
+
 
 export default nextConfig;

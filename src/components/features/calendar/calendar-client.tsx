@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { EventManager, type Event } from "@/components/shared/event-manager"
+import { EventManager, type Event } from "./event-manager"
 import { toast } from "sonner"
 
 interface CalendarClientProps {
