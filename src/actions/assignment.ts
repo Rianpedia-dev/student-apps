@@ -5,6 +5,8 @@ import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import crypto from "crypto";
+import { optimizeImage } from "@/lib/image-optimizer";
 
 export interface QuestionOptionInput {
   label: string; // A, B, C, D, E
@@ -54,23 +56,20 @@ export async function uploadTaskImageAction(formData: FormData) {
     return { success: false, error: "Tidak ada berkas gambar yang dipilih." };
   }
 
-  const allowedExts = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"];
-  const ext = path.extname(file.name).toLowerCase();
-  if (!allowedExts.includes(ext)) {
-    return { success: false, error: "Format gambar harus berupa PNG, JPG, JPEG, atau WebP." };
-  }
-
-  if (file.size > 10 * 1024 * 1024) {
-    return { success: false, error: "Ukuran gambar maksimal 10MB." };
-  }
-
   try {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const optRes = await optimizeImage(buffer, { category: "task_media" });
+    if (!optRes.success) {
+      return { success: false, error: optRes.error };
+    }
+
     const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas", "media");
     await mkdir(uploadDir, { recursive: true });
 
-    const safeName = `img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}${ext}`;
-    const bytes = await file.arrayBuffer();
-    await writeFile(path.join(uploadDir, safeName), Buffer.from(bytes));
+    const safeName = `img-${Date.now()}-${crypto.randomBytes(4).toString("hex")}.webp`;
+    await writeFile(path.join(uploadDir, safeName), optRes.buffer);
 
     return {
       success: true,

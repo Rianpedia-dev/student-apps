@@ -31,13 +31,23 @@ async function checkWaliKelasOrAdmin(targetKelas?: string) {
   return session;
 }
 
-export async function enrollStudentAction(studentId: string, kelas: string) {
+export async function enrollStudentAction(studentIds: string | string[], kelas: string) {
   try {
     await checkWaliKelasOrAdmin(kelas);
-    await UserService.enrollStudentToClass(studentId, kelas);
+    const ids = Array.isArray(studentIds) ? studentIds : [studentIds];
+    if (ids.length === 0) {
+      return { error: "Pilih setidaknya satu siswa untuk didaftarkan." };
+    }
+
+    const count = await UserService.enrollStudentsToClass(ids, kelas);
 
     revalidatePath("/guru/my-class");
-    return { success: true, message: "Siswa berhasil didaftarkan ke kelas." };
+    return {
+      success: true,
+      message: count === 1
+        ? "1 siswa berhasil didaftarkan ke kelas."
+        : `${count} siswa berhasil didaftarkan ke kelas.`,
+    };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal mendaftarkan siswa.";
     return { error: errorMsg };

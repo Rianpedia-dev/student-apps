@@ -136,9 +136,9 @@ export async function createPertemuanAction(formData: FormData) {
       return { success: false, error: uploadRes.error || "Gagal mengunggah berkas materi." };
     }
     fileUrl = uploadRes.filePath || null;
-    fileName = file.name;
-    fileSize = file.size;
-    fileType = path.extname(file.name).toLowerCase().replace(".", "");
+    fileName = uploadRes.fileName || file.name;
+    fileSize = uploadRes.fileSize ?? file.size;
+    fileType = uploadRes.fileType || path.extname(file.name).toLowerCase().replace(".", "");
   }
 
   try {
@@ -231,9 +231,9 @@ export async function updatePertemuanAction(id: string, formData: FormData) {
       return { success: false, error: uploadRes.error || "Gagal mengunggah berkas materi baru." };
     }
     fileUrl = uploadRes.filePath || null;
-    fileName = file.name;
-    fileSize = file.size;
-    fileType = path.extname(file.name).toLowerCase().replace(".", "");
+    fileName = uploadRes.fileName || file.name;
+    fileSize = uploadRes.fileSize ?? file.size;
+    fileType = uploadRes.fileType || path.extname(file.name).toLowerCase().replace(".", "");
   }
 
   try {

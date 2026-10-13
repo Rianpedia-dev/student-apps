@@ -1035,7 +1035,7 @@ export function ChatContainer({
           </div>
           <div className="flex items-center gap-1.5">
             <Badge variant="secondary" size="xs">
-              {currentUserRole === "siswa" ? "Santri" : "Ustadz"}
+              {currentUserRole === "siswa" ? "Sisiwa" : "Ustadz"}
             </Badge>
           </div>
         </div>
@@ -1773,7 +1773,7 @@ export function ChatContainer({
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-md leading-relaxed">
               {currentUserRole === "siswa"
-                ? "Silakan pilih salah satu Ustadz/Ustadzah di sebelah kiri untuk berkonsultasi mengenai materi pelajaran, tugas, atau bimbingan santri."
+                ? "Silakan pilih salah satu Ustadz/Ustadzah di sebelah kiri untuk berkonsultasi mengenai materi pelajaran, tugas, atau bimbingan siswa."
                 : "Silakan pilih salah satu siswa di sebelah kiri untuk memberikan bimbingan belajar, evaluasi, dan umpan balik tugas."}
             </p>
             <div className="mt-8 flex items-center gap-2 text-[11px] text-muted-foreground/70 bg-card/60 px-3 py-1.5 rounded-full border border-border/40">

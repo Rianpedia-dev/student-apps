@@ -140,14 +140,18 @@ export default async function GuruMyClassPage() {
         OR: [{ kelas: null }, { kelas: "" }, { kelas: { not: guruClass } }],
       },
       orderBy: { name: "asc" },
-      take: 20,
+      take: 150,
     });
 
     formattedAvailable = availableStudents.map((s) => ({
       id: s.id.toString(),
       name: s.name,
       nis: s.nis,
+      email: s.email,
+      gender: s.gender,
+      image: s.image,
       kelas: s.kelas,
+      status: s.status,
     }));
   } catch (e) {
     console.error("Database query error in guru my-class:", e);

@@ -203,6 +203,22 @@ export class UserService {
   }
 
   /**
+   * Mendaftarkan beberapa siswa sekaligus ke kelas wali
+   */
+  static async enrollStudentsToClass(studentIds: string[], kelas: string) {
+    if (!studentIds || studentIds.length === 0) return 0;
+
+    const result = await prisma.user.updateMany({
+      where: {
+        id: { in: studentIds.map((id) => BigInt(id)) },
+      },
+      data: { kelas },
+    });
+
+    return result.count;
+  }
+
+  /**
    * Mengeluarkan sejumlah siswa dari kelas (set kelas = null)
    */
   static async removeStudentsFromClass(studentIds: string[]) {

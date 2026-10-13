@@ -6,6 +6,8 @@ import { getUserProfileImage } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import crypto from "crypto";
+import { optimizeImage, isImageFileName } from "@/lib/image-optimizer";
 
 /**
  * Membuka atau membuat ruang obrolan langsung (1-on-1).
@@ -314,14 +316,31 @@ export async function sendMessageAction(formData: FormData) {
 
     if (file && file.size > 0) {
       try {
-        const ext = path.extname(file.name).toLowerCase();
-        const safeName = `chat-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
         const uploadDir = path.join(process.cwd(), "public", "uploads", "chat");
         await mkdir(uploadDir, { recursive: true });
         const bytes = await file.arrayBuffer();
-        await writeFile(path.join(uploadDir, safeName), Buffer.from(bytes));
-        attachmentUrl = `/uploads/chat/${safeName}`;
-        attachmentType = [".jpg", ".jpeg", ".png", ".webp"].includes(ext) ? "image" : "file";
+        const buffer = Buffer.from(bytes);
+
+        const isImage = isImageFileName(file.name) || (file.type && file.type.startsWith("image/"));
+
+        if (isImage) {
+          const optRes = await optimizeImage(buffer, { category: "chat" });
+          if (optRes.success) {
+            const randomHex = crypto.randomBytes(6).toString("hex");
+            const safeName = `chat-${Date.now()}-${randomHex}.webp`;
+            await writeFile(path.join(uploadDir, safeName), optRes.buffer);
+            attachmentUrl = `/uploads/chat/${safeName}`;
+            attachmentType = "image";
+          }
+        }
+
+        // Jika bukan gambar (dokumen PDF, Word, Excel, dsb)
+        if (!attachmentUrl) {
+          const safeName = `chat-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+          await writeFile(path.join(uploadDir, safeName), buffer);
+          attachmentUrl = `/uploads/chat/${safeName}`;
+          attachmentType = "file";
+        }
       } catch (e) {
         console.error("Gagal mengunggah lampiran chat:", e);
       }

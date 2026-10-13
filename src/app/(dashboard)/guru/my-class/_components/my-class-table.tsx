@@ -41,6 +41,7 @@ import {
 } from "@/actions/guru";
 import { toast } from "sonner";
 import { UserItem } from "@/types";
+import { StudentSearchSelect } from "./student-search-select";
 
 interface StudentRow extends UserItem { }
 
@@ -59,7 +60,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
 
   // Modals
   const [openEnrollModal, setOpenEnrollModal] = useState(false);
-  const [selectedStudentToEnroll, setSelectedStudentToEnroll] = useState("");
+  const [selectedStudentsToEnroll, setSelectedStudentsToEnroll] = useState<string[]>([]);
   const [profileModalStudent, setProfileModalStudent] = useState<StudentRow | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -104,18 +105,19 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
     }
   };
 
-  // Enroll student
+  // Enroll students (single or bulk)
   const handleEnroll = async () => {
-    if (!selectedStudentToEnroll) return;
+    if (selectedStudentsToEnroll.length === 0) return;
     setIsSubmitting(true);
     try {
-      const res = await enrollStudentAction(selectedStudentToEnroll, guruClass);
+      const res = await enrollStudentAction(selectedStudentsToEnroll, guruClass);
       if (res.success) {
         toast.success(res.message);
         setOpenEnrollModal(false);
+        setSelectedStudentsToEnroll([]);
         window.location.reload();
       } else {
-        toast.error("Gagal mendaftarkan siswa");
+        toast.error(res.error || "Gagal mendaftarkan siswa");
       }
     } finally {
       setIsSubmitting(false);
@@ -356,36 +358,57 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
       </div>
 
       {/* Modal Tambah Murid ke Kelas */}
-      <Dialog open={openEnrollModal} onOpenChange={setOpenEnrollModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Daftarkan Siswa ke {guruClass}</DialogTitle>
-            <DialogDescription>
-              Pilih siswa aktif yang belum memiliki rombel untuk dimasukkan ke kelas Anda.
+      <Dialog
+        open={openEnrollModal}
+        onOpenChange={(open) => {
+          setOpenEnrollModal(open);
+          if (!open) setSelectedStudentsToEnroll([]);
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl md:max-w-3xl max-w-[calc(100%-2rem)] max-h-[92vh] rounded-3xl p-5 sm:p-7 shadow-2xl border border-border flex flex-col gap-4">
+          <DialogHeader className="space-y-1.5 pb-2 border-b border-border/50">
+            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              <span>Daftarkan Siswa ke {guruClass}</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+              Pilih satu atau beberapa siswa aktif untuk dimasukkan ke rombel binaan Anda.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <Label htmlFor="studentSelect">Pilih Siswa</Label>
-            <select
-              id="studentSelect"
-              value={selectedStudentToEnroll}
-              onChange={(e) => setSelectedStudentToEnroll(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
-            >
-              <option value="">-- Pilih Siswa --</option>
-              {availableStudents.map((st) => (
-                <option key={st.id} value={st.id}>
-                  {st.name} ({st.email}) {st.kelas ? `- Saat ini: ${st.kelas}` : ""}
-                </option>
-              ))}
-            </select>
+
+          <div className="py-1 flex-1 min-h-0 flex flex-col space-y-2">
+            <StudentSearchSelect
+              students={availableStudents}
+              selectedIds={selectedStudentsToEnroll}
+              onChange={setSelectedStudentsToEnroll}
+              disabled={isSubmitting}
+            />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenEnrollModal(false)} disabled={isSubmitting}>
+
+          <DialogFooter className="pt-2 border-t border-border/50 gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setOpenEnrollModal(false);
+                setSelectedStudentsToEnroll([]);
+              }}
+              disabled={isSubmitting}
+              className="cursor-pointer"
+            >
               Batal
             </Button>
-            <Button onClick={handleEnroll} disabled={isSubmitting || !selectedStudentToEnroll}>
-              {isSubmitting ? "Mendaftarkan..." : "Daftarkan Siswa"}
+            <Button
+              type="button"
+              onClick={handleEnroll}
+              disabled={isSubmitting || selectedStudentsToEnroll.length === 0}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer font-semibold shadow-xs"
+            >
+              {isSubmitting
+                ? "Mendaftarkan..."
+                : selectedStudentsToEnroll.length > 0
+                ? `Daftarkan ${selectedStudentsToEnroll.length} Siswa`
+                : "Daftarkan Siswa"}
             </Button>
           </DialogFooter>
         </DialogContent>

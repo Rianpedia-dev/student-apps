@@ -43,7 +43,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder /app/public ./public
 
 # Set permission direktori uploads agar bisa ditulisi oleh nextjs user
-RUN mkdir -p ./public/uploads/images ./public/uploads/files && \
+RUN mkdir -p ./public/uploads/images ./public/uploads/files ./public/uploads/materials ./public/uploads/tugas/media ./public/uploads/chat && \
     chown -R nextjs:nodejs ./public/uploads
 
 # Salin output standalone dan static build

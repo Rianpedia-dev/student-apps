@@ -1,8 +1,19 @@
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import {
+  optimizeImage,
+  isImageFileName,
+  isImageMimeType,
+  ImageCategory,
+} from "./image-optimizer";
 
-export type UploadCategory = "avatar" | "attachment" | "achievement" | "best_student" | "material";
+export type UploadCategory =
+  | "avatar"
+  | "attachment"
+  | "achievement"
+  | "best_student"
+  | "material";
 
 interface UploadOptions {
   category: UploadCategory;
@@ -11,16 +22,18 @@ interface UploadOptions {
 export interface UploadResult {
   success: boolean;
   filePath?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
   error?: string;
 }
 
 /**
- * Validasi dan simpan file yang diupload ke storage publik sesuai PRD Section 13:
- * - Foto Profil (Guru/Siswa): jpg, jpeg, png, max 5MB -> /uploads/images/
- * - Lampiran Pengumuman: pdf, jpg, jpeg, png, max 5MB -> /uploads/files/
- * - Foto Prestasi: jpg, jpeg, png, max 5MB -> /uploads/images/
- * - Foto Best Student: jpg, jpeg, png, max 5MB -> /uploads/images/
- * - Materi Pelajaran: pdf, ppt, pptx, doc, docx, xls, xlsx, mp4, gambar, max 30MB -> /uploads/materials/
+ * Validasi dan simpan file yang diupload ke storage publik dengan optimasi Sharp otomatis:
+ * - Foto Profil (Guru/Siswa): Otomatis optimasi WebP, max 800x800 -> /uploads/images/
+ * - Foto Prestasi & Best Student: Otomatis optimasi WebP, max 1600x1600 -> /uploads/images/
+ * - Lampiran Pengumuman: Gambar otomatis optimasi WebP (max 1600px), PDF disimpan asli -> /uploads/files/
+ * - Materi Pelajaran: Gambar otomatis optimasi WebP (max 1600px), berkas dokumen/video disimpan asli -> /uploads/materials/
  */
 export async function saveUploadedFile(
   file: File | Blob | null | undefined,
@@ -34,23 +47,13 @@ export async function saveUploadedFile(
 
   // Ekstensi dari file jika ada
   let originalExt = "";
-  if ("name" in file && typeof file.name === "string" && file.name.includes(".")) {
-    originalExt = path.extname(file.name).toLowerCase();
+  let originalName = "";
+  if ("name" in file && typeof file.name === "string") {
+    originalName = file.name;
+    if (file.name.includes(".")) {
+      originalExt = path.extname(file.name).toLowerCase();
+    }
   }
-
-  const imageExtensions = [
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".webp",
-    ".avif",
-    ".gif",
-    ".bmp",
-    ".svg",
-    ".heic",
-    ".heif",
-    ".ico",
-  ];
 
   const docExtensions = [
     ".pdf",
@@ -65,25 +68,25 @@ export async function saveUploadedFile(
     ".webm",
   ];
 
-  // Tentukan batas ukuran dan direktori tujuan
-  let maxBytes = 5 * 1024 * 1024; // Default 5MB
+  // Tentukan batas ukuran dan sub-direktori tujuan
+  let maxBytes = 10 * 1024 * 1024; // Default 10MB
   let subDir = "images";
 
   if (category === "avatar") {
-    maxBytes = 5 * 1024 * 1024; // 5MB
+    maxBytes = 10 * 1024 * 1024;
     subDir = "images";
   } else if (category === "attachment") {
-    maxBytes = 5 * 1024 * 1024; // 5MB
+    maxBytes = 10 * 1024 * 1024;
     subDir = "files";
   } else if (category === "achievement" || category === "best_student") {
-    maxBytes = 5 * 1024 * 1024; // 5MB
+    maxBytes = 10 * 1024 * 1024;
     subDir = "images";
   } else if (category === "material") {
-    maxBytes = 35 * 1024 * 1024; // 35MB untuk modul PPT / PDF / Video pendek
+    maxBytes = 35 * 1024 * 1024; // 35MB untuk modul PPT / PDF / Video
     subDir = "materials";
   }
 
-  // Validasi ukuran
+  // 1. Validasi batas ukuran file asli
   if (file.size > maxBytes) {
     const maxMb = Math.round(maxBytes / (1024 * 1024));
     return {
@@ -92,26 +95,30 @@ export async function saveUploadedFile(
     };
   }
 
-  // Validasi tipe MIME / Ekstensi
-  const mimeType = file.type.toLowerCase();
-  const isImageMime = mimeType.startsWith("image/");
-  const isImageExt = imageExtensions.includes(originalExt);
+  const mimeType = (file.type || "").toLowerCase();
+  const isImageCandidate =
+    isImageFileName(originalName) ||
+    isImageMimeType(mimeType) ||
+    category === "avatar" ||
+    category === "achievement" ||
+    category === "best_student";
+
+  const isPdf = mimeType === "application/pdf" || originalExt === ".pdf";
   const isDocExt = docExtensions.includes(originalExt);
 
+  // 2. Validasi kelayakan format berdasarkan kategori
   if (category === "attachment") {
-    const isPdf = mimeType === "application/pdf" || originalExt === ".pdf";
-    if (!isPdf && !isImageMime && !isImageExt) {
+    if (!isPdf && !isImageCandidate) {
       return {
         success: false,
-        error: "Format file tidak diizinkan. Harap upload dokumen PDF atau file gambar (JPG, PNG, WebP, AVIF, dll).",
+        error: "Format file tidak diizinkan. Harap upload dokumen PDF atau file gambar (JPG, PNG, WebP, dll).",
       };
     }
   } else if (category === "material") {
     const isAllowedMaterial =
-      isImageMime ||
-      isImageExt ||
+      isImageCandidate ||
       isDocExt ||
-      mimeType === "application/pdf" ||
+      isPdf ||
       mimeType.includes("presentation") ||
       mimeType.includes("wordprocessingml") ||
       mimeType.includes("spreadsheet") ||
@@ -124,11 +131,11 @@ export async function saveUploadedFile(
       };
     }
   } else {
-    // Kategori gambar (avatar, achievement, best_student)
-    if (!isImageMime && !isImageExt) {
+    // Kategori khusus gambar (avatar, achievement, best_student)
+    if (!isImageCandidate && !mimeType.startsWith("image/")) {
       return {
         success: false,
-        error: "Format file tidak diizinkan. Harap upload file gambar (PNG, JPG, WebP, AVIF, dsb).",
+        error: "Format file tidak diizinkan. Harap upload file gambar (PNG, JPG, WebP, dll).",
       };
     }
   }
@@ -137,43 +144,66 @@ export async function saveUploadedFile(
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Ambil ekstensi dari nama file asli jika ada, atau tebak dari MIME
-    let ext = ".jpg";
-    if (originalExt) {
-      ext = originalExt;
-    } else if (mimeType === "application/pdf") {
-      ext = ".pdf";
-    } else if (mimeType === "image/png") {
-      ext = ".png";
-    } else if (mimeType === "image/webp") {
-      ext = ".webp";
-    } else if (mimeType === "image/avif") {
-      ext = ".avif";
-    } else if (mimeType === "image/gif") {
-      ext = ".gif";
-    } else if (mimeType === "image/svg+xml") {
-      ext = ".svg";
-    }
-
-    // Nama file aman dan unik
     const randomHex = crypto.randomBytes(8).toString("hex");
     const timestamp = Date.now();
-    const fileName = `${category}-${timestamp}-${randomHex}${ext}`;
-
     const targetDir = path.join(process.cwd(), "public", "uploads", subDir);
     await mkdir(targetDir, { recursive: true });
 
+    // 3. JIKA BERUPA GAMBAR: Optimasi otomatis menggunakan Sharp
+    if (isImageCandidate && !isPdf && (!isDocExt || originalExt === ".png" || originalExt === ".jpg" || originalExt === ".jpeg")) {
+      const optRes = await optimizeImage(buffer, {
+        category: category as ImageCategory,
+      });
+
+      if (!optRes.success) {
+        return {
+          success: false,
+          error: optRes.error || "Gagal memproses dan memvalidasi berkas gambar.",
+        };
+      }
+
+      const fileName = `${category}-${timestamp}-${randomHex}.webp`;
+      const fullFilePath = path.join(targetDir, fileName);
+      await writeFile(fullFilePath, optRes.buffer);
+
+      const publicUrl = `/uploads/${subDir}/${fileName}`;
+      return {
+        success: true,
+        filePath: publicUrl,
+        fileName,
+        fileSize: optRes.size,
+        fileType: "webp",
+      };
+    }
+
+    // 4. JIKA BUKAN GAMBAR (Dokumen PDF / PPT / DOCX / Video): Simpan berkas asli dengan nama aman
+    let ext = originalExt;
+    if (!ext) {
+      if (isPdf) ext = ".pdf";
+      else if (mimeType.includes("presentation")) ext = ".pptx";
+      else if (mimeType.includes("wordprocessingml")) ext = ".docx";
+      else if (mimeType.includes("spreadsheet")) ext = ".xlsx";
+      else if (mimeType.startsWith("video/")) ext = ".mp4";
+      else ext = ".bin";
+    }
+
+    const fileName = `${category}-${timestamp}-${randomHex}${ext}`;
     const fullFilePath = path.join(targetDir, fileName);
     await writeFile(fullFilePath, buffer);
 
-    // Kembalikan relative public URL path
     const publicUrl = `/uploads/${subDir}/${fileName}`;
-    return { success: true, filePath: publicUrl };
+    return {
+      success: true,
+      filePath: publicUrl,
+      fileName: originalName || fileName,
+      fileSize: buffer.length,
+      fileType: ext.replace(".", "").toLowerCase(),
+    };
   } catch (error) {
     console.error("Gagal menyimpan file yang diupload:", error);
     return {
       success: false,
-      error: "Terjadi kesalahan pada server saat menyimpan file.",
+      error: "Terjadi kesalahan pada server saat memproses dan menyimpan berkas.",
     };
   }
 }
