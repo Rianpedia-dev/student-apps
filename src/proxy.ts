@@ -60,6 +60,11 @@ export async function proxy(request: NextRequest) {
 
   // Role-based access control
   if (session) {
+    // Akun berstatus 0 (belum diverifikasi admin) wajib dialihkan ke login
+    if (session.status === "0" || (session as any).role === "unverified") {
+      return NextResponse.redirect(new URL("/login?error=unverified", request.url));
+    }
+
     if (isAdminRoute && session.role !== "admin") {
       return NextResponse.redirect(new URL(`/${session.role}`, request.url));
     }
