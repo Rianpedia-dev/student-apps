@@ -25,13 +25,21 @@ function createPrismaClient() {
 
     const dbName = parsed.pathname.replace(/^\//, "").split("?")[0] || "student-app";
 
-    const defaultLimit = process.env.NODE_ENV === "production" ? 25 : 5;
+    const isVercel = Boolean(process.env.VERCEL);
+    if (!rawUrl && isVercel) {
+      console.error(
+        "[Prisma Error] DATABASE_URL tidak ditemukan di environment Vercel! Harap tambahkan DATABASE_URL pada Vercel Settings -> Environment Variables lalu lakukan Redeploy."
+      );
+    }
+
+    const defaultLimit = isVercel ? 5 : (process.env.NODE_ENV === "production" ? 10 : 5);
     const poolLimit = parseInt(
       process.env.DB_CONNECTION_LIMIT || process.env.DATABASE_POOL_SIZE || String(defaultLimit),
       10
     ) || defaultLimit;
 
-    const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false";
+    // Untuk remote DB seperti TiDB Cloud di Vercel Lambda, default rejectUnauthorized false agar tidak gagal verifikasi cert di container serverless
+    const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED === "true";
 
     const adapter = new PrismaMariaDb({
       host: parsed.hostname || "localhost",
@@ -40,6 +48,8 @@ function createPrismaClient() {
       password: decodeURIComponent(parsed.password || ""),
       database: dbName,
       connectionLimit: poolLimit,
+      connectTimeout: 8000,
+      acquireTimeout: 8000,
       ssl: isLocal ? undefined : { minVersion: "TLSv1.2", rejectUnauthorized },
     });
 
