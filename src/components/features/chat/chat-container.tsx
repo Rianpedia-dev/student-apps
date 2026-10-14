@@ -332,6 +332,7 @@ export function ChatContainer({
     emitDeleteMessage,
     emitTyping,
     emitMarkRead,
+    refreshSocketToken,
   } = useSocket({
     userId: currentUserId,
     userName: currentUserName,
@@ -505,6 +506,8 @@ export function ChatContainer({
     try {
       const res = await getOrCreateChatRoom(contact.id);
       if (res.success && res.room) {
+        // Segarkan capability token agar ruang baru ikut tercantum & diizinkan untuk join.
+        await refreshSocketToken();
         setActiveRoomId(res.room.id);
         setActiveContact({
           id: contact.id,

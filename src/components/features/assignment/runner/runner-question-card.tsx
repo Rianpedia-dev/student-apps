@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Bookmark,
   Check,
@@ -31,6 +31,51 @@ export interface RunnerQuestion {
   gambar_soal?: string | null;
   bobot_poin: number;
   opsi: RunnerOption[];
+}
+
+interface RunnerImageProps {
+  src: string;
+  alt: string;
+  onZoom: (src: string) => void;
+  /** Kelas untuk elemen <img> (mengatur tinggi/rasio). */
+  imgClassName?: string;
+  /** Kelas untuk elemen pembungkus. */
+  wrapperClassName?: string;
+}
+
+/**
+ * RunnerImage
+ * Pembungkus gambar lampiran yang konsisten: object-contain, latar halus,
+ * rounded, state loading, dan klik untuk memperbesar.
+ */
+function RunnerImage({ src, alt, onZoom, imgClassName, wrapperClassName }: RunnerImageProps) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div
+      className={
+        "relative overflow-hidden rounded-lg border border-border bg-muted/20 " +
+        (wrapperClassName ?? "")
+      }
+    >
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-muted/40" aria-hidden="true" />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onClick={() => onZoom(src)}
+        className={
+          "cursor-zoom-in transition-opacity duration-300 " +
+          (loaded ? "opacity-100" : "opacity-0") +
+          " " +
+          (imgClassName ?? "")
+        }
+      />
+    </div>
+  );
 }
 
 interface RunnerQuestionCardProps {
@@ -64,6 +109,15 @@ export function RunnerQuestionCard({
   hasPrev,
   hasNext,
 }: RunnerQuestionCardProps) {
+  const isChoice =
+    question.tipe_soal === "PILIHAN_GANDA" || question.tipe_soal === "PILIHAN_GAMBAR";
+  // Mode tile gambar dipakai bila ada salah satu opsi yang menyertakan gambar.
+  const hasImageOptions = isChoice && question.opsi.some((op) => !!op.gambar_opsi);
+
+  const isOptionSelected = (op: RunnerOption) =>
+    (op.id && currentAnswer === op.id) ||
+    (!!op.label && currentAnswer.toUpperCase() === op.label.toUpperCase());
+
   return (
     <Card>
       <CardContent className="p-4 sm:p-6 space-y-5">
@@ -88,23 +142,24 @@ export function RunnerQuestionCard({
           </Button>
         </div>
 
-        {/* Image Stimulus */}
+        {/* Image Stimulus — blok penuh, ter-center, zoom via overlay pojok kanan-atas */}
         {question.gambar_soal && (
-          <div className="relative inline-block border border-border rounded-lg overflow-hidden bg-muted/20 p-1">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div className="relative w-full">
+            <RunnerImage
               src={question.gambar_soal}
               alt="Stimulus Soal"
-              className="max-h-64 w-auto object-contain rounded cursor-pointer"
-              onClick={() => onZoomImage(question.gambar_soal!)}
+              onZoom={onZoomImage}
+              wrapperClassName="w-full"
+              imgClassName="w-full max-h-[45vh] md:max-h-[60vh] object-contain"
             />
             <button
               type="button"
               onClick={() => onZoomImage(question.gambar_soal!)}
-              className="absolute bottom-2 right-2 bg-foreground/80 text-background p-1.5 rounded-md text-xs flex items-center gap-1 hover:bg-foreground transition-colors"
+              className="absolute top-2 right-2 bg-foreground/80 text-background p-1.5 sm:px-2 rounded-md text-xs flex items-center gap-1 hover:bg-foreground transition-colors"
+              title="Perbesar gambar"
             >
-              <ZoomIn className="h-3 w-3" />
-              Perbesar
+              <ZoomIn className="h-4 w-4" />
+              <span className="hidden sm:inline">Perbesar</span>
             </button>
           </div>
         )}
@@ -114,33 +169,100 @@ export function RunnerQuestionCard({
           {question.pertanyaan}
         </p>
 
-        {/* ── Option: Pilihan Ganda & Pilihan Gambar ── */}
-        {(question.tipe_soal === "PILIHAN_GANDA" ||
-          question.tipe_soal === "PILIHAN_GAMBAR") && (
-          <div className="space-y-2.5">
+        {/* ── Option: Grid tile untuk opsi bergambar ── */}
+        {hasImageOptions && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {question.opsi.map((op) => {
-              const isSelected =
-                (op.id && currentAnswer === op.id) ||
-                (op.label && currentAnswer.toUpperCase() === op.label.toUpperCase());
+              const selected = isOptionSelected(op);
               return (
                 <button
                   key={op.id || op.label}
                   type="button"
                   onClick={() => onSelectAnswer(question.id, op.id || op.label)}
-                  className={`w-full text-left p-3 sm:p-3.5 rounded-lg border transition-all flex items-start gap-3 cursor-pointer ${
-                    isSelected
+                  className={`relative text-left rounded-xl border overflow-hidden transition-all cursor-pointer bg-background ${
+                    selected
+                      ? "border-primary ring-2 ring-primary/40 shadow-xs"
+                      : "border-border hover:border-primary/40 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="aspect-[4/3] w-full bg-muted/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={op.gambar_opsi!}
+                      alt={`Pilihan ${op.label}`}
+                      loading="lazy"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+
+                  {/* Label A/B/C */}
+                  <span className="absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-background/90 text-foreground border border-border shadow-xs">
+                    {op.label}
+                  </span>
+
+                  {/* Indikator terpilih */}
+                  {selected && (
+                    <span className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center bg-primary text-primary-foreground shadow-sm">
+                      <Check className="h-4 w-4 stroke-[3]" />
+                    </span>
+                  )}
+
+                  {/* Teks opsi (bila ada) di bawah gambar */}
+                  {op.teks_opsi && (
+                    <div className="p-2.5 border-t border-border/60">
+                      <span
+                        className={`text-sm leading-snug block ${
+                          selected ? "font-semibold text-foreground" : "text-foreground"
+                        }`}
+                      >
+                        {op.teks_opsi}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Tombol perbesar gambar opsi */}
+                  <span
+                    role="button"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onZoomImage(op.gambar_opsi!);
+                    }}
+                    className="absolute bottom-2 right-2 bg-foreground/70 text-background p-1.5 rounded-md opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity"
+                    title="Perbesar gambar opsi"
+                  >
+                    <ZoomIn className="h-3.5 w-3.5" />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Option: List teks untuk pilihan ganda murni (tanpa gambar) ── */}
+        {isChoice && !hasImageOptions && (
+          <div className="space-y-2.5">
+            {question.opsi.map((op) => {
+              const selected = isOptionSelected(op);
+              return (
+                <button
+                  key={op.id || op.label}
+                  type="button"
+                  onClick={() => onSelectAnswer(question.id, op.id || op.label)}
+                  className={`w-full text-left p-3 sm:p-3.5 min-h-11 rounded-lg border transition-all flex items-start gap-3 cursor-pointer ${
+                    selected
                       ? "bg-primary/5 border-primary ring-1 ring-primary/30"
                       : "bg-background border-border hover:bg-muted/50 hover:border-primary/30"
                   }`}
                 >
                   <span
                     className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-all ${
-                      isSelected
+                      selected
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {isSelected ? (
+                    {selected ? (
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
                     ) : (
                       op.label
@@ -150,36 +272,11 @@ export function RunnerQuestionCard({
                     {op.teks_opsi && (
                       <span
                         className={`text-sm block leading-snug ${
-                          isSelected
-                            ? "text-foreground font-semibold"
-                            : "text-foreground"
+                          selected ? "text-foreground font-semibold" : "text-foreground"
                         }`}
                       >
                         {op.teks_opsi}
                       </span>
-                    )}
-                    {op.gambar_opsi && (
-                      <div
-                        className="relative group/optimg inline-block border border-border rounded-lg overflow-hidden p-1 bg-card"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectAnswer(question.id, op.id || op.label);
-                          onZoomImage(op.gambar_opsi!);
-                        }}
-                        title="Klik untuk perbesar gambar opsi"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={op.gambar_opsi}
-                          alt={`Pilihan ${op.label}`}
-                          className="h-24 sm:h-28 object-contain rounded cursor-zoom-in"
-                        />
-                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/optimg:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                          <span className="text-[10px] bg-background/90 text-foreground px-1.5 py-0.5 rounded shadow-xs">
-                            Perbesar
-                          </span>
-                        </div>
-                      </div>
                     )}
                   </div>
                 </button>
@@ -224,42 +321,44 @@ export function RunnerQuestionCard({
           </div>
         )}
 
-        {/* Bottom Navigation */}
-        <Separator />
-        <div className="flex items-center justify-between gap-3 pt-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!hasPrev}
-            onClick={onPrev}
-            className="text-xs h-10 px-4 gap-1.5"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Sebelumnya
-          </Button>
+        {/* Bottom Navigation — hanya tablet/desktop; mobile memakai sticky bar global */}
+        <div className="hidden md:block">
+          <Separator />
+          <div className="flex items-center justify-between gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!hasPrev}
+              onClick={onPrev}
+              className="text-xs h-10 px-4 gap-1.5"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Sebelumnya
+            </Button>
 
-          {hasNext ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={onNext}
-              className="text-xs font-semibold h-10 px-5 gap-1.5"
-            >
-              Selanjutnya
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              onClick={onSubmitClick}
-              className="text-xs font-semibold h-10 px-5 gap-1.5"
-            >
-              Selesai & Kumpulkan
-              <CheckCircle2 className="h-4 w-4" />
-            </Button>
-          )}
+            {hasNext ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={onNext}
+                className="text-xs font-semibold h-10 px-5 gap-1.5"
+              >
+                Selanjutnya
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                onClick={onSubmitClick}
+                className="text-xs font-semibold h-10 px-5 gap-1.5"
+              >
+                Selesai & Kumpulkan
+                <CheckCircle2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

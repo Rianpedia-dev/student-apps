@@ -8,19 +8,43 @@ import { getAcademicYear } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function GuruAttendanceRecapPage() {
+/**
+ * Membaca periode (bulan/tahun) dari URL dengan validasi rentang.
+ * Nilai yang tidak valid dikembalikan ke default: bulan & tahun berjalan.
+ */
+function parsePeriod(rawMonth?: string, rawYear?: string, now: Date = new Date()) {
+  const m = parseInt(rawMonth ?? "", 10);
+  const y = parseInt(rawYear ?? "", 10);
+  return {
+    month: Number.isFinite(m) && m >= 1 && m <= 12 ? m : now.getMonth() + 1,
+    year: Number.isFinite(y) && y >= 2000 && y <= 2100 ? y : now.getFullYear(),
+  };
+}
+
+export default async function GuruAttendanceRecapPage(props: {
+  searchParams: Promise<{ month?: string; year?: string }>;
+}) {
   const session = await getSession();
   if (!session || session.role !== "guru") {
     redirect("/login");
   }
 
+  const { month: rawMonth, year: rawYear } = await props.searchParams;
+  const { month: selectedMonth, year: selectedYear } = parsePeriod(rawMonth, rawYear);
+
   const guruClass = session.kelas || "";
   const academic = getAcademicYear();
+
+  // Rentang pilihan tahun: 3 tahun ke belakang sampai 1 tahun ke depan.
+  const thisYear = new Date().getFullYear();
+  const availableYears = Array.from({ length: 5 }, (_, i) => thisYear - 3 + i);
 
   let formattedStudents: any[] = [];
   let formattedAbsens: any[] = [];
 
   try {
+    const monthPadded = String(selectedMonth).padStart(2, "0");
+
     const [students, absens] = await Promise.all([
       guruClass
         ? prisma.user.findMany({
@@ -28,9 +52,19 @@ export default async function GuruAttendanceRecapPage() {
             orderBy: { name: "asc" },
           })
         : [],
+      // Hanya ambil baris pada periode terpilih, bukan seluruh riwayat.
+      // `date` disimpan sebagai string "YYYY-MM-DD", namun data warisan ada
+      // yang tanpa padding ("YYYY-M-D"), sehingga kedua variasi prefix dicakup.
+      // Tahun selalu ikut difilter agar data lintas tahun tidak tercampur.
       guruClass
         ? prisma.absen.findMany({
-            where: { kelas: guruClass },
+            where: {
+              kelas: guruClass,
+              OR: [
+                { date: { startsWith: `${selectedYear}-${monthPadded}-` } },
+                { date: { startsWith: `${selectedYear}-${selectedMonth}-` } },
+              ],
+            },
           })
         : [],
     ]);
@@ -75,6 +109,9 @@ export default async function GuruAttendanceRecapPage() {
         guruClass={guruClass}
         tahunPelajaran={academic.tahunPelajaran}
         semester={academic.semester}
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+        availableYears={availableYears}
         students={formattedStudents}
         allAbsen={formattedAbsens}
       />

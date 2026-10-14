@@ -83,10 +83,11 @@ export function DailyAttendanceForm({
         toast.success(res.message);
         router.push(`/guru/attendance/table/${dateStr}`);
       } else {
-        toast.error("Gagal menyimpan absensi.");
+        toast.error(res.error || "Gagal menyimpan absensi.");
       }
-    } catch {
-      toast.error("Terjadi kesalahan.");
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Terjadi kesalahan.";
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -100,7 +101,12 @@ export function DailyAttendanceForm({
       if (res.success) {
         toast.success(res.message);
         router.push("/guru/attendance");
+      } else {
+        toast.error(res.error || "Gagal menghapus data absensi.");
       }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Gagal menghapus data absensi.";
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }

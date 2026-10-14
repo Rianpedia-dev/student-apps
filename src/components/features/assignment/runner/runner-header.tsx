@@ -37,7 +37,10 @@ export function RunnerHeader({
           <span className="text-[11px] font-medium text-muted-foreground block truncate">
             {mapelNama}
           </span>
-          <h1 className="text-xs sm:text-sm font-bold text-foreground truncate">
+          <h1
+            className="text-xs sm:text-sm font-bold text-foreground truncate"
+            title={tugasJudul}
+          >
             {tugasJudul}
           </h1>
         </div>
@@ -58,11 +61,12 @@ export function RunnerHeader({
 
         {/* Right: Progress & Submit */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:flex flex-col items-end">
+          <div className="flex flex-col items-end">
             <span className="text-[11px] font-medium text-muted-foreground">
-              {answeredCount}/{totalCount} terjawab
+              {answeredCount}/{totalCount}
+              <span className="hidden sm:inline"> terjawab</span>
             </span>
-            <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden mt-0.5">
+            <div className="hidden sm:block w-20 h-1.5 bg-muted rounded-full overflow-hidden mt-0.5">
               <div
                 className="h-full bg-primary transition-all duration-300 rounded-full"
                 style={{ width: `${progressPercent}%` }}

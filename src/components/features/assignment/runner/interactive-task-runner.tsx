@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import {
   saveAnswerDraftAction,
   submitInteractiveTaskAction,
 } from "@/actions/assignment";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { RunnerHeader } from "./runner-header";
 import {
   RunnerQuestionCard,
@@ -114,6 +115,16 @@ export function InteractiveTaskRunner({
     }
   };
 
+  // Tutup lightbox dengan tombol Esc
+  useEffect(() => {
+    if (!zoomedImage) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoomedImage(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoomedImage]);
+
   useEffect(() => {
     if (secondsRemaining === null) return;
     if (secondsRemaining <= 0) {
@@ -215,8 +226,8 @@ export function InteractiveTaskRunner({
         onSubmitClick={() => setShowConfirmModal(true)}
       />
 
-      {/* ── Mobile Horizontal Question Strip ── */}
-      <div className="lg:hidden bg-muted/40 border-b border-border py-2 px-4 overflow-x-auto scrollbar-none flex items-center gap-1.5">
+      {/* ── Mobile/Tablet-portrait Horizontal Question Strip ── */}
+      <div className="md:hidden bg-muted/40 border-b border-border py-2 px-4 overflow-x-auto scrollbar-none flex items-center gap-1.5">
         {questions.map((q, idx) => {
           const ans = answers[q.id];
           const hasAnswer = ans?.jawaban?.trim().length > 0;
@@ -244,10 +255,10 @@ export function InteractiveTaskRunner({
       </div>
 
       {/* ── Main Layout (Question Card + Sidebar) ── */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <main className="max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 pt-4 sm:pt-5 pb-24 md:pb-0">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
           {/* Question Card */}
-          <div className="lg:col-span-8">
+          <div className="md:col-span-8">
             <RunnerQuestionCard
               question={currentQ}
               currentIndex={currentIndex}
@@ -269,8 +280,8 @@ export function InteractiveTaskRunner({
             />
           </div>
 
-          {/* Desktop/Tablet Sidebar Question Map */}
-          <div className="hidden lg:block lg:col-span-4">
+          {/* Tablet/Desktop Sidebar Question Map */}
+          <div className="hidden md:block md:col-span-4">
             <RunnerNavigation
               questions={questions}
               currentIndex={currentIndex}
@@ -283,25 +294,72 @@ export function InteractiveTaskRunner({
         </div>
       </main>
 
+      {/* ── Sticky Bottom Action Bar (mobile/tablet-portrait) ── */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-card/95 backdrop-blur-md border-t border-border px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={currentIndex === 0}
+            onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+            className="flex-1 text-xs font-semibold h-11 gap-1.5"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Sebelumnya
+          </Button>
+
+          {currentIndex < questions.length - 1 ? (
+            <Button
+              type="button"
+              onClick={() =>
+                setCurrentIndex((prev) =>
+                  Math.min(questions.length - 1, prev + 1)
+                )
+              }
+              className="flex-1 text-xs font-semibold h-11 gap-1.5"
+            >
+              Selanjutnya
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={() => setShowConfirmModal(true)}
+              className="flex-1 text-xs font-semibold h-11 gap-1.5"
+            >
+              Kumpulkan
+              <CheckCircle2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* ── Lightbox Image Modal ── */}
       {zoomedImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Perbesar Gambar"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
           onClick={() => setZoomedImage(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh]">
-            <button
-              type="button"
-              onClick={() => setZoomedImage(null)}
-              className="absolute -top-10 right-0 p-1.5 text-white hover:text-gray-300 transition-colors"
-            >
-              <X className="h-6 w-6" />
-            </button>
+          <button
+            type="button"
+            onClick={() => setZoomedImage(null)}
+            aria-label="Tutup"
+            className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/15 text-white hover:bg-white/30 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <div
+            className="max-w-[95vw] max-h-[92vh] overflow-auto flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={zoomedImage}
               alt="Perbesar Gambar"
-              className="max-h-[85vh] max-w-full rounded-lg object-contain"
+              className="max-w-full max-h-[92vh] rounded-lg object-contain"
             />
           </div>
         </div>

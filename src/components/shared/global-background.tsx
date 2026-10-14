@@ -47,7 +47,7 @@ export function GlobalBackground() {
       </div>
 
       {/* 5. Clean Porcelain Scrim (Dioptimalkan agar foto background terlihat lembut tanpa mengorbankan keterbacaan teks) */}
-      <div className="absolute inset-0 transition-colors duration-700 ease-in-out bg-gradient-to-b from-slate-50/60 via-white/50 to-slate-100/65 dark:from-slate-950/75 dark:via-slate-900/65 dark:to-slate-950/80" />
+      <div className="absolute inset-0 transition-colors duration-700 ease-in-out bg-gradient-to-b from-slate-50/40 via-white/25 to-slate-100/45 dark:from-slate-950/75 dark:via-slate-900/65 dark:to-slate-950/80" />
     </div>
   );
 }

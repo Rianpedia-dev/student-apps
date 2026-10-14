@@ -18,6 +18,9 @@ module.exports = {
       instances: 1,
       exec_mode: "fork",
       max_memory_restart: "500M",
+      // Catatan: server socket memuat berkas .env di root proyek sendiri, sehingga
+      // AUTH_SECRET otomatis identik dengan aplikasi Next.js. Tidak perlu diduplikasi
+      // ke sini, kecuali bila Anda ingin nilainya berbeda dari .env.
       env: {
         NODE_ENV: "production",
         SOCKET_PORT: 3001,

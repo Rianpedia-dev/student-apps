@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -15,6 +16,9 @@ interface RecapClientProps {
   guruClass: string;
   tahunPelajaran: string;
   semester: string;
+  selectedMonth: number;
+  selectedYear: number;
+  availableYears: number[];
   students: UserItem[];
   allAbsen: {
     user_id: string;
@@ -27,11 +31,14 @@ export function RecapClient({
   guruClass,
   tahunPelajaran,
   semester,
+  selectedMonth,
+  selectedYear,
+  availableYears,
   students,
   allAbsen,
 }: RecapClientProps) {
-  const currentYear = new Date().getFullYear();
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const router = useRouter();
+  const pathname = usePathname();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const monthNames = [
@@ -39,18 +46,30 @@ export function RecapClient({
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
   ];
 
-  const daysInMonth = new Date(currentYear, selectedMonth, 0).getDate();
-  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  // Perpindahan bulan/tahun dikodekan ke URL supaya server hanya mengambil
+  // data pada periode terpilih (bukan seluruh riwayat absensi kelas).
+  const goToPeriod = (month: number, year: number) => {
+    router.push(`${pathname}?month=${month}&year=${year}`);
+  };
 
-  // Compute stats for each student in selectedMonth
+  // Pastikan tahun terpilih selalu ada dalam daftar opsi, termasuk ketika halaman
+  // dibuka manual lewat URL dengan tahun di luar rentang bawaan.
+  const yearOptions = Array.from(new Set([...availableYears, selectedYear])).sort(
+    (a, b) => b - a
+  );
+
+  // Hitung rekap per siswa. Server sudah mempersempit data ke periode terpilih;
+  // pencocokan tahun DAN bulan di bawah menjadi penjaga agar data lintas tahun
+  // tidak pernah tercampur ke dalam satu bulan yang sama.
   const studentStats = students.map((s) => {
     const studentAbsens = allAbsen.filter((a) => {
       if (a.user_id !== s.id) return false;
       const parts = (a.date || "").split("-");
-      if (parts.length === 3) {
-        return parseInt(parts[1], 10) === selectedMonth;
-      }
-      return false;
+      if (parts.length !== 3) return false;
+      return (
+        parseInt(parts[0], 10) === selectedYear &&
+        parseInt(parts[1], 10) === selectedMonth
+      );
     });
 
     let h = 0, sc = 0, i = 0, a = 0;
@@ -88,14 +107,14 @@ export function RecapClient({
       // Header Sekolah
       doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
-      doc.text("SD ISLAM AL-AZHAR CAIRO PALEMBANG", 148.5, 15, { align: "center" });
+      doc.text("SEKOLAH ISLAM AL-AZHAR CAIRO PALEMBANG", 148.5, 15, { align: "center" });
 
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
       doc.text("REKAPITULASI PRESENSI KEHADIRAN SISWA", 148.5, 22, { align: "center" });
 
       doc.setFontSize(9);
-      doc.text(`Kelas: ${guruClass}  |  Tahun Pelajaran: ${tahunPelajaran}  |  Semester: ${semester}  |  Bulan: ${monthNames[selectedMonth]} ${currentYear}`, 148.5, 28, { align: "center" });
+      doc.text(`Kelas: ${guruClass}  |  Tahun Pelajaran: ${tahunPelajaran}  |  Semester: ${semester}  |  Bulan: ${monthNames[selectedMonth]} ${selectedYear}`, 148.5, 28, { align: "center" });
       doc.line(14, 31, 283, 31);
 
       // Table Data
@@ -147,7 +166,7 @@ export function RecapClient({
       doc.text("( ......................................... )", 235, finalY + 38, { align: "center" });
 
       // Save PDF
-      doc.save(`Rekap_Absen_${guruClass.replace(/\s+/g, "_")}_${monthNames[selectedMonth]}_${currentYear}.pdf`);
+      doc.save(`Rekap_Absen_${guruClass.replace(/\s+/g, "_")}_${monthNames[selectedMonth]}_${selectedYear}.pdf`);
       toast.success("Dokumen PDF berhasil di-download.");
     } catch {
       toast.error("Gagal membuat file PDF");
@@ -161,19 +180,36 @@ export function RecapClient({
       {/* Month Picker & Action Bar */}
       <Card className="border-emerald-500/20 shadow-sm">
         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-muted-foreground">Pilih Bulan:</span>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm"
-            >
-              {monthNames.slice(1).map((m, idx) => (
-                <option key={m} value={idx + 1}>
-                  {m} {currentYear}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground">Pilih Bulan:</span>
+              <select
+                value={selectedMonth}
+                onChange={(e) => goToPeriod(parseInt(e.target.value, 10), selectedYear)}
+                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm"
+              >
+                {monthNames.slice(1).map((m, idx) => (
+                  <option key={m} value={idx + 1}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground">Tahun:</span>
+              <select
+                value={selectedYear}
+                onChange={(e) => goToPeriod(selectedMonth, parseInt(e.target.value, 10))}
+                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm"
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <Button
@@ -191,7 +227,7 @@ export function RecapClient({
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="text-base">
-            Rekapitulasi Bulan {monthNames[selectedMonth]} {currentYear}
+            Rekapitulasi Bulan {monthNames[selectedMonth]} {selectedYear}
           </CardTitle>
           <CardDescription>
             Ringkasan kehadiran siswa kelas {guruClass}
