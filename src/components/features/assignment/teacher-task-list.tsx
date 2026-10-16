@@ -36,6 +36,7 @@ export interface TeacherTaskItem {
   mapelWarna?: string | null;
   kelasId?: string;
   kelasNama: string;
+  tipePengerjaan?: string;
   pertemuanId?: string | null;
   pertemuanKe?: number | null;
   pertemuanJudul?: string | null;
@@ -223,12 +224,19 @@ export function TeacherTaskList({
                     {/* Judul Tugas */}
                     <TableCell>
                       <div className="space-y-0.5">
-                        <Link
-                          href={`/guru/tugas/${task.id}`}
-                          className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors block leading-snug"
-                        >
-                          {task.judul}
-                        </Link>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Link
+                            href={`/guru/tugas/${task.id}`}
+                            className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors block leading-snug"
+                          >
+                            {task.judul}
+                          </Link>
+                          {task.tipePengerjaan === "LEMBAR_KERJA" && (
+                            <Badge variant="emerald" size="sm" className="text-[10px] py-0 px-1.5 h-4">
+                              Berkas
+                            </Badge>
+                          )}
+                        </div>
                         {task.pertemuanJudul && (
                           <span className="text-[11px] text-muted-foreground block">
                             Pertemuan {task.pertemuanKe || ""}: {task.pertemuanJudul}

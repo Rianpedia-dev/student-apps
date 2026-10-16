@@ -7,6 +7,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { optimizeImage } from "@/lib/image-optimizer";
+import { saveUploadedFile } from "@/lib/upload";
 
 export interface QuestionOptionInput {
   label: string; // A, B, C, D, E
@@ -831,13 +832,395 @@ export async function updateSubmissionAction({
   }
 }
 
+function parseBase64Image(dataUrl: string): { buffer: Buffer; ext: string } | null {
+  const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) return null;
+  const mime = matches[1];
+  const buffer = Buffer.from(matches[2], "base64");
+  let ext = ".png";
+  if (mime === "image/webp") ext = ".webp";
+  else if (mime === "image/jpeg" || mime === "image/jpg") ext = ".jpg";
+  return { buffer, ext };
+}
+
+/**
+ * Buat Tugas Lembar Kerja Berkas Baru (PDF / Image) oleh Guru
+ */
+export async function createDocumentTugasAction(formData: FormData) {
+  const session = await getSession();
+  if (!session || (session.role !== "guru" && session.role !== "admin")) {
+    return { success: false, error: "Hanya guru atau admin yang berhak membuat tugas." };
+  }
+
+  const judul = formData.get("judul") as string;
+  const deskripsi = formData.get("deskripsi") as string;
+  const kelas_id = formData.get("kelas_id") as string;
+  const mapel_id = formData.get("mapel_id") as string;
+  const pertemuan_id = formData.get("pertemuan_id") as string | null;
+  const deadline = formData.get("deadline") as string;
+  const poin_maksimal = Number(formData.get("poin_maksimal")) || 100;
+  const file = formData.get("file_soal") as File | null;
+
+  if (!judul?.trim() || !deskripsi?.trim() || !kelas_id || !mapel_id || !deadline) {
+    return { success: false, error: "Mohon lengkapi seluruh informasi tugas (Judul, Deskripsi, Kelas, Mapel, Deadline)." };
+  }
+
+  if (!file || !(file instanceof Blob) || file.size === 0) {
+    return { success: false, error: "Mohon pilih berkas soal (PDF atau Gambar Lembar Soal)." };
+  }
+
+  const uploadRes = await saveUploadedFile(file, { category: "task_worksheet" });
+  if (!uploadRes.success || !uploadRes.filePath) {
+    return { success: false, error: uploadRes.error || "Gagal menyimpan berkas soal ke server." };
+  }
+
+  const parsedPertemuanId = pertemuan_id && /^\d+$/.test(pertemuan_id) ? BigInt(pertemuan_id) : null;
+
+  try {
+    const tugas = await prisma.tugas.create({
+      data: {
+        kelas_id: BigInt(kelas_id),
+        mapel_id: BigInt(mapel_id),
+        guru_id: BigInt(session.id),
+        pertemuan_id: parsedPertemuanId,
+        judul: judul.trim(),
+        deskripsi: deskripsi.trim(),
+        file_petunjuk: uploadRes.filePath,
+        deadline: new Date(deadline),
+        poin_maksimal: poin_maksimal,
+        status: "aktif",
+        tipe_pengerjaan: "LEMBAR_KERJA",
+      },
+    });
+
+    revalidatePath("/guru/tugas");
+    revalidatePath("/guru/mapel");
+    revalidatePath(`/guru/mapel/${mapel_id}`);
+    revalidatePath("/siswa/tugas");
+    revalidatePath("/siswa");
+
+    return {
+      success: true,
+      message: "Alhamdulillah, tugas lembar kerja berkas berhasil dibuat dan diterbitkan! 🎉",
+      data: { id: tugas.id.toString() },
+    };
+  } catch (err: any) {
+    console.error("Gagal membuat tugas berkas:", err);
+    return { success: false, error: err.message || "Gagal membuat tugas baru." };
+  }
+}
+
+/**
+ * Autosave Real-Time Draft Coretan / Teks Siswa pada Lembar Kerja
+ */
+export async function saveStudentDraftAnnotationAction({
+  tugasId,
+  annotatedData,
+}: {
+  tugasId: string;
+  annotatedData: string;
+}) {
+  const session = await getSession();
+  if (!session || session.role !== "siswa") {
+    return { success: false, error: "Hanya siswa yang dapat menyimpan draft pengerjaan." };
+  }
+
+  try {
+    const tId = BigInt(tugasId);
+    const sId = BigInt(session.id);
+
+    const submission = await prisma.tugasSubmission.upsert({
+      where: {
+        tugas_id_siswa_id: {
+          tugas_id: tId,
+          siswa_id: sId,
+        },
+      },
+      create: {
+        tugas_id: tId,
+        siswa_id: sId,
+        status: "sedang_mengerjakan",
+        mulai_mengerjakan_at: new Date(),
+        annotated_data: annotatedData,
+      },
+      update: {
+        annotated_data: annotatedData,
+      },
+    });
+
+    if (submission.status === "belum_mengumpulkan") {
+      await prisma.tugasSubmission.update({
+        where: { id: submission.id },
+        data: { status: "sedang_mengerjakan", mulai_mengerjakan_at: new Date() },
+      });
+    }
+
+    return { success: true, submissionId: submission.id.toString() };
+  } catch (err: any) {
+    console.error("Gagal autosave draft pengerjaan:", err);
+    return { success: false, error: "Gagal menyimpan draft pengerjaan." };
+  }
+}
+
+/**
+ * Siswa Mengumpulkan Tugas Lembar Kerja (In-App Canvas Render atau Upload Manual)
+ */
+export async function submitDocumentTaskAction(formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role !== "siswa") {
+    return { success: false, error: "Akses ditolak." };
+  }
+
+  const tugasId = formData.get("tugas_id") as string;
+  const catatanSiswa = (formData.get("catatan_siswa") as string) || "";
+  const submissionMode = (formData.get("submission_mode") as string) || "in_app"; // "in_app" | "upload"
+  const annotatedData = (formData.get("annotated_data") as string) || null;
+  const canvasImageData = (formData.get("canvas_image_data") as string) || null; // base64
+  const rawFile = formData.get("file") as File | null;
+
+  if (!tugasId || !/^\d+$/.test(tugasId)) {
+    return { success: false, error: "ID tugas tidak valid." };
+  }
+
+  const tId = BigInt(tugasId);
+  const sId = BigInt(session.id);
+
+  const tugas = await prisma.tugas.findUnique({ where: { id: tId } });
+  if (!tugas) return { success: false, error: "Tugas tidak ditemukan." };
+
+  let savedFilePath = "";
+  let savedFileName = "";
+  let savedFileType = "webp";
+
+  if (submissionMode === "upload") {
+    if (!rawFile || !(rawFile instanceof Blob) || rawFile.size === 0) {
+      return { success: false, error: "Silakan pilih berkas lembar pengerjaan kamu terlebih dahulu." };
+    }
+    const uploadRes = await saveUploadedFile(rawFile, { category: "task_submission" });
+    if (!uploadRes.success || !uploadRes.filePath) {
+      return { success: false, error: uploadRes.error || "Gagal mengunggah berkas pengerjaan." };
+    }
+    savedFilePath = uploadRes.filePath;
+    savedFileName = uploadRes.fileName || ("name" in rawFile ? (rawFile as any).name : "pengerjaan-siswa");
+    savedFileType = uploadRes.fileType || "doc";
+  } else {
+    // Mode In-App Canvas
+    if (canvasImageData && canvasImageData.startsWith("data:image")) {
+      const parsed = parseBase64Image(canvasImageData);
+      if (parsed) {
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas");
+        await mkdir(uploadDir, { recursive: true });
+        const fileName = `canvas-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${parsed.ext}`;
+        await writeFile(path.join(uploadDir, fileName), parsed.buffer);
+        savedFilePath = `/uploads/tugas/${fileName}`;
+        savedFileName = fileName;
+        savedFileType = parsed.ext.replace(".", "");
+      }
+    } else if (rawFile && rawFile instanceof Blob && rawFile.size > 0) {
+      const uploadRes = await saveUploadedFile(rawFile, { category: "task_submission" });
+      if (uploadRes.success && uploadRes.filePath) {
+        savedFilePath = uploadRes.filePath;
+        savedFileName = uploadRes.fileName || "lembar-jawaban.webp";
+        savedFileType = uploadRes.fileType || "webp";
+      }
+    }
+
+    if (!savedFilePath) {
+      savedFilePath = tugas.file_petunjuk || "/uploads/tugas/default-worksheet.webp";
+      savedFileName = "Lembar Kerja Siswa";
+      savedFileType = "worksheet";
+    }
+  }
+
+  const now = new Date();
+
+  try {
+    const updatedSub = await prisma.tugasSubmission.upsert({
+      where: {
+        tugas_id_siswa_id: {
+          tugas_id: tId,
+          siswa_id: sId,
+        },
+      },
+      create: {
+        tugas_id: tId,
+        siswa_id: sId,
+        file_url: savedFilePath,
+        file_name: savedFileName,
+        file_type: savedFileType,
+        catatan_siswa: catatanSiswa.trim() || null,
+        annotated_data: annotatedData,
+        status: "menunggu_penilaian",
+        submitted_at: now,
+      },
+      update: {
+        file_url: savedFilePath,
+        file_name: savedFileName,
+        file_type: savedFileType,
+        catatan_siswa: catatanSiswa.trim() || null,
+        annotated_data: annotatedData,
+        status: "menunggu_penilaian",
+        submitted_at: now,
+      },
+    });
+
+    revalidatePath("/siswa/tugas");
+    revalidatePath(`/siswa/tugas/${tugasId}`);
+    revalidatePath(`/guru/tugas/${tugasId}`);
+
+    return {
+      success: true,
+      message: "Alhamdulillah, tugas berhasil dikumpulkan! Ustadz/Ustadzah akan segera memeriksa hasil karyamu. 🌟",
+      submissionId: updatedSub.id.toString(),
+    };
+  } catch (err: any) {
+    console.error("Gagal submit tugas lembar kerja:", err);
+    return { success: false, error: err.message || "Gagal mengumpulkan tugas." };
+  }
+}
+
+/**
+ * Guru Menyimpan Nilai, Catatan, dan Berkas Lembar Terkoreksi (Pena Merah/Stempel)
+ */
+export async function gradeDocumentTaskAction({
+  submissionId,
+  nilai,
+  catatanGuru,
+  annotatedData,
+  teacherImageData,
+}: {
+  submissionId: string;
+  nilai: number;
+  catatanGuru?: string;
+  annotatedData?: string;
+  teacherImageData?: string;
+}) {
+  const session = await getSession();
+  if (!session || (session.role !== "guru" && session.role !== "admin")) {
+    return { success: false, error: "Akses ditolak." };
+  }
+
+  try {
+    const subId = BigInt(submissionId);
+    const existing = await prisma.tugasSubmission.findUnique({
+      where: { id: subId },
+      include: { tugas: true },
+    });
+
+    if (!existing) return { success: false, error: "Data pengerjaan tidak ditemukan." };
+
+    let teacherAnnotatedFileUrl = existing.annotated_file_url;
+    if (teacherImageData && teacherImageData.startsWith("data:image")) {
+      const parsed = parseBase64Image(teacherImageData);
+      if (parsed) {
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas");
+        await mkdir(uploadDir, { recursive: true });
+        const fileName = `corrected-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${parsed.ext}`;
+        await writeFile(path.join(uploadDir, fileName), parsed.buffer);
+        teacherAnnotatedFileUrl = `/uploads/tugas/${fileName}`;
+      }
+    }
+
+    const maxScore = existing.tugas.poin_maksimal || 100;
+    const finalScore = Math.max(0, Math.min(maxScore, Number(nilai) || 0));
+
+    await prisma.tugasSubmission.update({
+      where: { id: subId },
+      data: {
+        nilai: finalScore,
+        catatan_guru: catatanGuru?.trim() || null,
+        annotated_data: annotatedData || existing.annotated_data,
+        annotated_file_url: teacherAnnotatedFileUrl,
+        status: "sudah_dinilai",
+        graded_at: new Date(),
+        graded_by: BigInt(session.id),
+      },
+    });
+
+    revalidatePath(`/guru/tugas/${existing.tugas_id}`);
+    revalidatePath(`/siswa/tugas/${existing.tugas_id}`);
+    revalidatePath("/siswa/tugas");
+
+    return {
+      success: true,
+      message: "Alhamdulillah, nilai dan lembar koreksi berhasil disimpan! ⭐",
+    };
+  } catch (err: any) {
+    console.error("Gagal menilai tugas lembar kerja:", err);
+    return { success: false, error: err.message || "Gagal menyimpan nilai." };
+  }
+}
+
+/**
+ * Guru Menginstruksikan Siswa untuk Merevisi Tugas beserta Catatan Perbaikan
+ */
+export async function requestTaskRevisionAction({
+  submissionId,
+  catatanRevisi,
+  annotatedData,
+  teacherImageData,
+}: {
+  submissionId: string;
+  catatanRevisi: string;
+  annotatedData?: string;
+  teacherImageData?: string;
+}) {
+  const session = await getSession();
+  if (!session || (session.role !== "guru" && session.role !== "admin")) {
+    return { success: false, error: "Akses ditolak." };
+  }
+
+  if (!catatanRevisi?.trim()) {
+    return { success: false, error: "Mohon tuliskan catatan instruksi revisi untuk santri." };
+  }
+
+  try {
+    const subId = BigInt(submissionId);
+    const existing = await prisma.tugasSubmission.findUnique({
+      where: { id: subId },
+    });
+    if (!existing) return { success: false, error: "Data pengerjaan tidak ditemukan." };
+
+    let teacherAnnotatedFileUrl = existing.annotated_file_url;
+    if (teacherImageData && teacherImageData.startsWith("data:image")) {
+      const parsed = parseBase64Image(teacherImageData);
+      if (parsed) {
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas");
+        await mkdir(uploadDir, { recursive: true });
+        const fileName = `corrected-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${parsed.ext}`;
+        await writeFile(path.join(uploadDir, fileName), parsed.buffer);
+        teacherAnnotatedFileUrl = `/uploads/tugas/${fileName}`;
+      }
+    }
+
+    await prisma.tugasSubmission.update({
+      where: { id: subId },
+      data: {
+        catatan_guru: catatanRevisi.trim(),
+        annotated_data: annotatedData || existing.annotated_data,
+        annotated_file_url: teacherAnnotatedFileUrl,
+        status: "perlu_revisi",
+        graded_at: new Date(),
+        graded_by: BigInt(session.id),
+      },
+    });
+
+    revalidatePath(`/guru/tugas/${existing.tugas_id}`);
+    revalidatePath(`/siswa/tugas/${existing.tugas_id}`);
+    revalidatePath("/siswa/tugas");
+
+    return {
+      success: true,
+      message: "Instruksi revisi tugas berhasil dikirimkan ke siswa! 📝",
+    };
+  } catch (err: any) {
+    console.error("Gagal meminta revisi:", err);
+    return { success: false, error: err.message || "Gagal mengirim permintaan revisi." };
+  }
+}
+
 /** @deprecated Gunakan updateSubmissionAction. Wrapper backward-compat. */
 export async function updateTaskSubmissionNoteAction(args: { submissionId: string; catatanGuru: string; nilaiOverride?: number | null }) {
   return updateSubmissionAction({ submissionId: args.submissionId, catatan: args.catatanGuru, nilaiOverride: args.nilaiOverride });
-}
-
-/** @deprecated Gunakan updateSubmissionAction({ requestRevision: true }). */
-export async function requestTaskRevisionAction(args: { submissionId: string; catatanRevisi: string }) {
-  return updateSubmissionAction({ submissionId: args.submissionId, catatan: args.catatanRevisi, requestRevision: true });
 }
 

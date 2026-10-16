@@ -435,8 +435,8 @@ model TugasSubmission {
   nilai_otomatis         Float?
   nilai_manual           Float?
   catatan_guru           String?             @db.Text
-  annotated_file_url     String?             @db.VarChar(500)
-  annotated_data         String?             @db.Text
+  annotated_file_url     String?             @db.VarChar(1000)
+  annotated_data         String?             @db.LongText
   mulai_mengerjakan_at   DateTime?           @db.Timestamp(0)
   selesai_mengerjakan_at DateTime?           @db.Timestamp(0)
   durasi_detik           Int?

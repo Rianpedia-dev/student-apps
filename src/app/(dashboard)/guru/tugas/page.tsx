@@ -126,6 +126,7 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
       mapelWarna: task.mapel.warna,
       kelasId: task.kelas_id.toString(),
       kelasNama: task.kelas.nama_kelas,
+      tipePengerjaan: task.tipe_pengerjaan,
       pertemuanId: task.pertemuan_id ? task.pertemuan_id.toString() : null,
       pertemuanKe: task.pertemuan ? task.pertemuan.pertemuan_ke : null,
       pertemuanJudul: task.pertemuan ? task.pertemuan.judul : null,

@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { TeacherInteractiveTaskReview } from "@/components/features/assignment/teacher/teacher-interactive-task-review";
+import { TeacherDocumentTaskReview } from "@/components/features/assignment/teacher/teacher-document-task-review";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,45 @@ export default async function GuruReviewTugasPage({ params, searchParams }: Page
     currentIndex >= 0 && currentIndex < allSubs.length - 1
       ? allSubs[currentIndex + 1].id.toString()
       : null;
+
+  const isDocumentTask =
+    submission.tugas.tipe_pengerjaan === "LEMBAR_KERJA" ||
+    (Boolean(submission.tugas.file_petunjuk) && submission.tugas.soal.length === 0) ||
+    (Boolean(submission.file_url) && submission.tugas.soal.length === 0);
+
+  if (isDocumentTask) {
+    return (
+      <TeacherDocumentTaskReview
+        tugasId={submission.tugas_id.toString()}
+        tugasJudul={submission.tugas.judul}
+        mapelNama={submission.tugas.mapel.nama_mapel}
+        kelasNama={submission.tugas.kelas.nama_kelas}
+        poinMaksimal={submission.tugas.poin_maksimal}
+        fileSoalUrl={submission.tugas.file_petunjuk || submission.file_url || ""}
+        submission={{
+          id: submission.id.toString(),
+          nilai: submission.nilai,
+          status: submission.status,
+          catatanGuru: submission.catatan_guru,
+          catatanSiswa: submission.catatan_siswa,
+          fileUrl: submission.file_url,
+          annotatedFileUrl: submission.annotated_file_url,
+          annotatedData: submission.annotated_data,
+          submittedAt: submission.submitted_at ? submission.submitted_at.toISOString() : null,
+          siswa: {
+            id: submission.siswa.id.toString(),
+            name: submission.siswa.name,
+            nis: submission.siswa.nis,
+            image: submission.siswa.image,
+            gender: submission.siswa.gender,
+          },
+        }}
+        prevSubId={prevSubId}
+        nextSubId={nextSubId}
+        fromOrigin={from}
+      />
+    );
+  }
 
   const jawabanMap = new Map(
     (submission.jawaban || []).map((j) => [j.soal_id.toString(), j])

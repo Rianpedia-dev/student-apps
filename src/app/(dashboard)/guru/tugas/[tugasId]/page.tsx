@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Clock, Edit3, HelpCircle, Award, Layers } from "lucide-react";
+import { Clock, Edit3, HelpCircle, Award, Layers, Download, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -92,7 +92,7 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
         siswaImage: student.image,
         siswaGender: student.gender,
         submissionId: sub.id.toString(),
-        submittedAt: sub.submitted_at.toISOString(),
+        submittedAt: sub.submitted_at ? sub.submitted_at.toISOString() : null,
         fileUrl: sub.file_url,
         fileName: sub.file_name,
         fileType: sub.file_type,
@@ -137,6 +137,10 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
     minute: "2-digit",
   });
 
+  const isDocumentTask =
+    tugas.tipe_pengerjaan === "LEMBAR_KERJA" ||
+    (Boolean(tugas.file_petunjuk) && tugas.soal.length === 0);
+
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
       <DashboardBreadcrumb backHref={backHref} backLabel={backLabel} />
@@ -149,15 +153,31 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="secondary" size="sm">{tugas.mapel.nama_mapel}</Badge>
                 <Badge variant="outline" size="sm">{tugas.kelas.nama_kelas}</Badge>
+                {isDocumentTask && (
+                  <Badge variant="emerald" size="sm">Lembar Kerja Berkas</Badge>
+                )}
               </div>
               <CardTitle className="text-xl sm:text-2xl">{tugas.judul}</CardTitle>
             </div>
-            <Link href={`/guru/tugas/${tugasId}/edit`}>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5">
-                <Edit3 className="h-3.5 w-3.5" />
-                Edit Soal
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              {isDocumentTask && tugas.file_petunjuk ? (
+                <a
+                  href={`/api/download?file=${encodeURIComponent(tugas.file_petunjuk)}&name=${encodeURIComponent(`Soal-${tugas.judul}`)}`}
+                  download
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-bold text-foreground hover:bg-muted transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5 text-primary" />
+                  <span>Unduh Soal</span>
+                </a>
+              ) : (
+                <Link href={`/guru/tugas/${tugasId}/edit`}>
+                  <Button variant="outline" size="sm" className="text-xs gap-1.5">
+                    <Edit3 className="h-3.5 w-3.5" />
+                    Edit Soal
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
           {tugas.deskripsi && (
             <CardDescription className="whitespace-pre-line mt-2">
@@ -169,9 +189,12 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
               <span className="text-muted-foreground flex items-center gap-1">
-                <HelpCircle className="h-3 w-3" /> Soal
+                {isDocumentTask ? <FileText className="h-3 w-3" /> : <HelpCircle className="h-3 w-3" />}
+                {isDocumentTask ? "Moda" : "Soal"}
               </span>
-              <strong className="text-foreground block">{tugas.soal.length} Butir</strong>
+              <strong className="text-foreground block truncate">
+                {isDocumentTask ? "Lembar Kerja PDF/Img" : `${tugas.soal.length} Butir`}
+              </strong>
             </div>
             <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
               <span className="text-muted-foreground flex items-center gap-1">
@@ -201,7 +224,11 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
       <TeacherSubmissionsView
         tugasId={tugas.id.toString()}
         tugasJudul={tugas.judul}
+        mapelNama={tugas.mapel.nama_mapel}
+        kelasNama={tugas.kelas.nama_kelas}
         poinMaksimal={tugas.poin_maksimal}
+        deadlineFormatted={deadlineFormatted}
+        guruNama={session.name || "Dewan Guru"}
         students={studentsData}
         fromOrigin={from}
       />

@@ -41,7 +41,12 @@ export default async function SiswaKerjakanTugasPage({ params }: PageProps) {
 
   if (!tugas) notFound();
 
-  // Jika tugas belum memiliki soal, arahkan kembali
+  // Jika tugas lembar kerja berkas, arahkan ke kanvas pengerjaan berkas
+  if (tugas.tipe_pengerjaan === "LEMBAR_KERJA" || (Boolean(tugas.file_petunjuk) && tugas.soal.length === 0)) {
+    redirect(`/siswa/tugas/${tugasId}/kerjakan-berkas`);
+  }
+
+  // Jika tugas CBT belum memiliki butir soal, arahkan kembali ke lobby
   if (tugas.soal.length === 0) {
     redirect(`/siswa/tugas/${tugasId}`);
   }

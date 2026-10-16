@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { InteractiveTaskBuilder } from "@/components/features/assignment/builder/interactive-task-builder";
+import { TaskCreateTabs } from "@/components/features/assignment/builder/task-create-tabs";
 import { DashboardBreadcrumb } from "@/components/shared/dashboard-breadcrumb";
 
 export const dynamic = "force-dynamic";
@@ -63,14 +63,14 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
       {/* Header Info */}
       <div className="bg-card/70 backdrop-blur-xs p-5 sm:p-6 rounded-2xl border border-border shadow-2xs">
         <h1 className="text-xl sm:text-2xl font-black text-foreground">
-          Buat Tugas Interaktif Baru
+          Buat Tugas Baru
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Susun butir-butir soal interaktif (pilihan ganda dan esai/uraian) yang dikerjakan langsung oleh murid di sistem.
+          Pilih moda tugas yang ingin diberikan: Unggah Lembar Kerja Berkas (PDF / Gambar) atau Kuis Interaktif CBT.
         </p>
       </div>
 
-      <InteractiveTaskBuilder
+      <TaskCreateTabs
         classes={classes.map((c) => ({
           id: c.id.toString(),
           nama: c.nama_kelas,

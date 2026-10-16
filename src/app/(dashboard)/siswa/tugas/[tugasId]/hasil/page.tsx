@@ -46,6 +46,11 @@ export default async function SiswaTugasHasilPage({ params }: PageProps) {
 
   if (!tugas) notFound();
 
+  // Jika tugas lembar kerja berkas, arahkan ke halaman detail tugas di mana kartu koreksi ditampilkan
+  if (tugas.tipe_pengerjaan === "LEMBAR_KERJA" || (!tugas.soal.length && tugas.file_petunjuk)) {
+    redirect(`/siswa/tugas/${tugasId}`);
+  }
+
   const submission = tugas.submissions[0];
   if (!submission || submission.status === "sedang_mengerjakan") {
     redirect(`/siswa/tugas/${tugasId}`);

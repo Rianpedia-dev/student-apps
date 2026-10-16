@@ -13,7 +13,9 @@ export type UploadCategory =
   | "attachment"
   | "achievement"
   | "best_student"
-  | "material";
+  | "material"
+  | "task_worksheet"
+  | "task_submission";
 
 interface UploadOptions {
   category: UploadCategory;
@@ -34,6 +36,7 @@ export interface UploadResult {
  * - Foto Prestasi & Best Student: Otomatis optimasi WebP, max 1600x1600 -> /uploads/images/
  * - Lampiran Pengumuman: Gambar otomatis optimasi WebP (max 1600px), PDF disimpan asli -> /uploads/files/
  * - Materi Pelajaran: Gambar otomatis optimasi WebP (max 1600px), berkas dokumen/video disimpan asli -> /uploads/materials/
+ * - Lembar Soal & Pengerjaan Tugas: PDF disimpan asli, Gambar WebP (max 2000px) -> /uploads/tugas/
  */
 export async function saveUploadedFile(
   file: File | Blob | null | undefined,
@@ -84,6 +87,9 @@ export async function saveUploadedFile(
   } else if (category === "material") {
     maxBytes = 35 * 1024 * 1024; // 35MB untuk modul PPT / PDF / Video
     subDir = "materials";
+  } else if (category === "task_worksheet" || category === "task_submission") {
+    maxBytes = 25 * 1024 * 1024; // 25MB untuk lembar soal / pengerjaan tugas PDF/Image
+    subDir = "tugas";
   }
 
   // 1. Validasi batas ukuran file asli
@@ -107,11 +113,11 @@ export async function saveUploadedFile(
   const isDocExt = docExtensions.includes(originalExt);
 
   // 2. Validasi kelayakan format berdasarkan kategori
-  if (category === "attachment") {
+  if (category === "attachment" || category === "task_worksheet" || category === "task_submission") {
     if (!isPdf && !isImageCandidate) {
       return {
         success: false,
-        error: "Format file tidak diizinkan. Harap upload dokumen PDF atau file gambar (JPG, PNG, WebP, dll).",
+        error: "Format file tidak diizinkan. Harap upload dokumen PDF atau file gambar (JPG, PNG, WebP).",
       };
     }
   } else if (category === "material") {
@@ -151,8 +157,12 @@ export async function saveUploadedFile(
 
     // 3. JIKA BERUPA GAMBAR: Optimasi otomatis menggunakan Sharp
     if (isImageCandidate && !isPdf && (!isDocExt || originalExt === ".png" || originalExt === ".jpg" || originalExt === ".jpeg")) {
+      const optCategory: ImageCategory =
+        category === "task_worksheet" || category === "task_submission"
+          ? "task_media"
+          : (category as ImageCategory);
       const optRes = await optimizeImage(buffer, {
-        category: category as ImageCategory,
+        category: optCategory,
       });
 
       if (!optRes.success) {

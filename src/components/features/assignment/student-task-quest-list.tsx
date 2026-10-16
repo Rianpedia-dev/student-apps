@@ -23,6 +23,7 @@ export interface StudentTaskItem {
   guruNama: string;
   deadline: string;
   poinMaksimal: number;
+  tipePengerjaan?: string;
   tampilkanNilaiInstan?: boolean;
   submission?: {
     status: string;
@@ -45,6 +46,9 @@ function resolveStatus(task: StudentTaskItem): string {
 /** Determines CTA target URL */
 function getTaskHref(task: StudentTaskItem): string {
   const status = resolveStatus(task);
+  if (task.tipePengerjaan === "LEMBAR_KERJA") {
+    return `/siswa/tugas/${task.id}`;
+  }
   if (status === "sudah_dinilai" || status === "selesai") {
     return `/siswa/tugas/${task.id}/hasil`;
   }
@@ -172,6 +176,9 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
               <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[160px]">
                 Mata Pelajaran
               </TableHead>
+              <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[200px]">
+                Judul Tugas
+              </TableHead>
               <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground min-w-[140px]">
                 Batas Waktu
               </TableHead>
@@ -186,7 +193,7 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-36 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="h-36 text-center text-muted-foreground">
                   <p className="text-sm font-semibold text-foreground">
                     {tab === "belum"
                       ? "Alhamdulillah, tidak ada tugas yang belum selesai!"
@@ -221,12 +228,28 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
 
                     {/* Mata Pelajaran */}
                     <TableCell>
-                      <Link
-                        href={href}
-                        className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors block"
-                      >
+                      <span className="font-semibold text-xs sm:text-sm text-foreground block">
                         {task.mapelNama}
-                      </Link>
+                      </span>
+                    </TableCell>
+
+                    {/* Judul Tugas */}
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Link
+                            href={href}
+                            className="font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors block leading-snug"
+                          >
+                            {task.judul}
+                          </Link>
+                          {task.tipePengerjaan === "LEMBAR_KERJA" && (
+                            <Badge variant="emerald" size="sm" className="text-[10px] py-0 px-1.5 h-4">
+                              Berkas
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </TableCell>
 
                     {/* Batas Waktu */}

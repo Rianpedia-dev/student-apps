@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Edit3 } from "lucide-react";
+import { Edit3, Download, FileSpreadsheet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { getStatusConfig } from "@/lib/task-status";
+import { exportTaskRecapToExcel, exportTaskRecapToPdf } from "@/lib/export-task-recap";
+import { toast } from "sonner";
 
 export interface StudentSubmissionItem {
   siswaId: string;
@@ -33,22 +35,100 @@ export interface StudentSubmissionItem {
 interface TeacherSubmissionsViewProps {
   tugasId: string;
   tugasJudul: string;
+  mapelNama?: string;
+  kelasNama?: string;
   poinMaksimal: number;
+  deadlineFormatted?: string;
+  guruNama?: string;
   students: StudentSubmissionItem[];
   fromOrigin?: string;
 }
 
 export function TeacherSubmissionsView({
   tugasId,
+  tugasJudul,
+  mapelNama,
+  kelasNama,
   poinMaksimal,
+  deadlineFormatted,
+  guruNama,
   students,
   fromOrigin,
 }: TeacherSubmissionsViewProps) {
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
   const waitingCount = students.filter(
     (s) => s.status === "menunggu_penilaian" || s.status === "terlambat" || s.status === "perlu_revisi"
   ).length;
   const gradedCount = students.filter((s) => s.status === "sudah_dinilai").length;
   const unsubmittedCount = students.filter((s) => s.status === "belum_mengumpulkan").length;
+
+  const handleExportExcel = async () => {
+    setIsExportingExcel(true);
+    try {
+      await exportTaskRecapToExcel(
+        {
+          tugasId,
+          judul: tugasJudul,
+          mapelNama: mapelNama || "Mata Pelajaran",
+          kelasNama: kelasNama || "Kelas",
+          poinMaksimal,
+          deadlineFormatted: deadlineFormatted || "-",
+          guruNama: guruNama || "Dewan Guru",
+        },
+        students.map((s) => ({
+          siswaId: s.siswaId,
+          siswaName: s.siswaName,
+          siswaNis: s.siswaNis,
+          siswaGender: s.siswaGender,
+          status: s.status,
+          submittedAt: s.submittedAt,
+          nilai: s.nilai,
+          catatanGuru: s.catatanGuru,
+        }))
+      );
+      toast.success("File Rekap Nilai Excel (.xlsx) berhasil diunduh!");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Gagal mengunduh rekap Excel.");
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      await exportTaskRecapToPdf(
+        {
+          tugasId,
+          judul: tugasJudul,
+          mapelNama: mapelNama || "Mata Pelajaran",
+          kelasNama: kelasNama || "Kelas",
+          poinMaksimal,
+          deadlineFormatted: deadlineFormatted || "-",
+          guruNama: guruNama || "Dewan Guru",
+        },
+        students.map((s) => ({
+          siswaId: s.siswaId,
+          siswaName: s.siswaName,
+          siswaNis: s.siswaNis,
+          siswaGender: s.siswaGender,
+          status: s.status,
+          submittedAt: s.submittedAt,
+          nilai: s.nilai,
+          catatanGuru: s.catatanGuru,
+        }))
+      );
+      toast.success("Dokumen Rekap Nilai PDF berhasil diunduh!");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Gagal mengunduh rekap PDF.");
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const filterStudents = (tab: string) => {
     return students.filter((s) => {
@@ -185,12 +265,51 @@ export function TeacherSubmissionsView({
   return (
     <div className="space-y-4">
       <Tabs defaultValue="semua">
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="semua">Semua ({students.length})</TabsTrigger>
-          <TabsTrigger value="perlu_koreksi">Dikoreksi ({waitingCount})</TabsTrigger>
-          <TabsTrigger value="sudah_dinilai">Dinilai ({gradedCount})</TabsTrigger>
-          <TabsTrigger value="belum">Belum ({unsubmittedCount})</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="semua">Semua ({students.length})</TabsTrigger>
+            <TabsTrigger value="perlu_koreksi">Dikoreksi ({waitingCount})</TabsTrigger>
+            <TabsTrigger value="sudah_dinilai">Dinilai ({gradedCount})</TabsTrigger>
+            <TabsTrigger value="belum">Belum ({unsubmittedCount})</TabsTrigger>
+          </TabsList>
+
+          {/* Tombol Unduh Rekap Nilai Kelas (Excel & PDF) */}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isExportingExcel}
+              onClick={handleExportExcel}
+              className="text-xs h-8 gap-1.5 rounded-xl border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold"
+              title="Unduh Rekap Nilai ke Excel"
+            >
+              {isExportingExcel ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+              )}
+              <span>Unduh Excel (.xlsx)</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isExportingPdf}
+              onClick={handleExportPdf}
+              className="text-xs h-8 gap-1.5 rounded-xl border-rose-500/30 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-semibold"
+              title="Unduh Rekap Nilai Cetak PDF"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5 text-rose-600" />
+              )}
+              <span>Unduh PDF (.pdf)</span>
+            </Button>
+          </div>
+        </div>
 
         <TabsContent value="semua">{renderStudentList("semua")}</TabsContent>
         <TabsContent value="perlu_koreksi">{renderStudentList("perlu_koreksi")}</TabsContent>

@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft } from "lucide-react";
 import { StudentTaskLobbyCard } from "@/components/features/assignment/student-task-lobby-card";
+import { StudentDocumentTaskCard } from "@/components/features/assignment/student/student-document-task-card";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,11 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
         status: sub.status,
         nilai: sub.nilai,
         catatanGuru: sub.catatan_guru,
+        catatanSiswa: sub.catatan_siswa,
+        fileUrl: sub.file_url,
+        fileName: sub.file_name,
+        fileType: sub.file_type,
+        annotatedFileUrl: sub.annotated_file_url,
         totalBenar: sub.total_benar ?? 0,
         totalSalah: sub.total_salah ?? 0,
         submittedAt: sub.submitted_at.toISOString(),
@@ -59,6 +65,10 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
     minute: "2-digit",
   });
 
+  const isDocumentTask =
+    tugas.tipe_pengerjaan === "LEMBAR_KERJA" ||
+    (Boolean(tugas.file_petunjuk) && tugas.soal.length === 0);
+
   return (
     <div className="space-y-5 max-w-4xl mx-auto">
       {/* Back to Mission Board */}
@@ -72,21 +82,37 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* Task Lobby Card */}
-      <StudentTaskLobbyCard
-        tugasId={tugas.id.toString()}
-        judul={tugas.judul}
-        deskripsi={tugas.deskripsi}
-        mapelNama={tugas.mapel.nama_mapel}
-        kelasNama={tugas.kelas.nama_kelas}
-        guruNama={tugas.guru.name}
-        deadlineFormatted={deadlineFormatted}
-        isLate={isLate}
-        totalSoal={tugas.soal.length}
-        durasiMenit={tugas.durasi_menit}
-        poinMaksimal={tugas.poin_maksimal}
-        existingSubmission={existingSubmission}
-      />
+      {isDocumentTask && tugas.file_petunjuk ? (
+        <StudentDocumentTaskCard
+          tugasId={tugas.id.toString()}
+          judul={tugas.judul}
+          deskripsi={tugas.deskripsi}
+          fileSoalUrl={tugas.file_petunjuk}
+          mapelNama={tugas.mapel.nama_mapel}
+          kelasNama={tugas.kelas.nama_kelas}
+          guruNama={tugas.guru.name}
+          deadlineFormatted={deadlineFormatted}
+          isLate={isLate}
+          poinMaksimal={tugas.poin_maksimal}
+          existingSubmission={existingSubmission}
+        />
+      ) : (
+        /* Task Lobby Card for CBT */
+        <StudentTaskLobbyCard
+          tugasId={tugas.id.toString()}
+          judul={tugas.judul}
+          deskripsi={tugas.deskripsi}
+          mapelNama={tugas.mapel.nama_mapel}
+          kelasNama={tugas.kelas.nama_kelas}
+          guruNama={tugas.guru.name}
+          deadlineFormatted={deadlineFormatted}
+          isLate={isLate}
+          totalSoal={tugas.soal.length}
+          durasiMenit={tugas.durasi_menit}
+          poinMaksimal={tugas.poin_maksimal}
+          existingSubmission={existingSubmission}
+        />
+      )}
     </div>
   );
 }

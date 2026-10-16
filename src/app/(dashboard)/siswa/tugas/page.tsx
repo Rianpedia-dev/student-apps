@@ -59,6 +59,7 @@ export default async function SiswaTugasListPage({ searchParams }: PageProps) {
       guruNama: t.guru.name,
       deadline: t.deadline.toISOString(),
       poinMaksimal: t.poin_maksimal,
+      tipePengerjaan: t.tipe_pengerjaan,
       tampilkanNilaiInstan: t.tampilkan_nilai_instan,
       submission: sub
         ? {

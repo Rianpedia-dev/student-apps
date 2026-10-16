@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Clock,
   Award,
-  User as UserIcon,
   Play,
   RotateCw,
   Calendar,
@@ -15,8 +14,7 @@ import {
   Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { startTaskSessionAction } from "@/actions/assignment";
 import { toast } from "sonner";
@@ -27,9 +25,9 @@ interface StudentTaskLobbyCardProps {
   tugasId: string;
   judul: string;
   deskripsi: string;
-  mapelNama: string;
-  kelasNama: string;
-  guruNama: string;
+  mapelNama?: string;
+  kelasNama?: string;
+  guruNama?: string;
   deadlineFormatted: string;
   isLate: boolean;
   totalSoal: number;
@@ -50,9 +48,6 @@ export function StudentTaskLobbyCard({
   tugasId,
   judul,
   deskripsi,
-  mapelNama,
-  kelasNama,
-  guruNama,
   deadlineFormatted,
   isLate,
   totalSoal,
@@ -93,17 +88,9 @@ export function StudentTaskLobbyCard({
 
   return (
     <Card>
-      {/* Header: Subject, Class, Teacher */}
+      {/* Header: Judul Tugas */}
       <CardHeader>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" size="sm">{mapelNama}</Badge>
-          <Badge variant="outline" size="sm">{kelasNama}</Badge>
-        </div>
         <CardTitle className="text-xl sm:text-2xl font-bold">{judul}</CardTitle>
-        <CardDescription className="flex items-center gap-1.5">
-          <UserIcon className="h-3.5 w-3.5" />
-          Pengajar: {guruNama}
-        </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-5">
