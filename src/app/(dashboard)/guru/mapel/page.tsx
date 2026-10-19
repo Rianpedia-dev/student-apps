@@ -82,7 +82,6 @@ export default async function GuruMapelPage() {
       hari: sch.hari,
       jamMulai: sch.jam_mulai,
       jamSelesai: sch.jam_selesai,
-      ruang: sch.ruang || null,
       meetingsCount: meetingsInSchedule.length,
       tasksCount: tasksInSchedule.length,
     };

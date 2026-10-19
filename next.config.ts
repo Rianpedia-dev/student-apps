@@ -57,6 +57,7 @@ const nextConfig: NextConfig = {
       { source: "/guru/classes", destination: "/guru/my-class", permanent: false },
       { source: "/guru/subjects", destination: "/guru/mapel", permanent: false },
       { source: "/siswa/subjects", destination: "/siswa/mapel", permanent: false },
+      { source: "/siswa/tugas", destination: "/siswa/mapel", permanent: false },
     ];
   },
 };

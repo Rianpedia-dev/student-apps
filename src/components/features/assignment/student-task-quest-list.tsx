@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getDeadlineInfo } from "@/lib/task-status";
+import { LayoutGrid, Table as TableIcon, Clock, ArrowRight, BookOpen } from "lucide-react";
+import { LiquidGlassCard } from "@/components/ui/liquid-weather-glass";
 
 export interface StudentTaskItem {
   id: string;
@@ -133,6 +135,28 @@ function renderStatusBadge(task: StudentTaskItem, isLate: boolean) {
 }
 
 export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("alazhar_siswa_tugas_view_mode");
+      if (saved === "table" || saved === "card") {
+        setViewMode(saved);
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, []);
+
+  const handleViewModeChange = (mode: "card" | "table") => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem("alazhar_siswa_tugas_view_mode", mode);
+    } catch {
+      // Ignore localStorage errors
+    }
+  };
+
   const counts = useMemo(() => {
     let belum = 0;
     let menunggu = 0;
@@ -166,9 +190,15 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
     const filtered = filterTasks(tab);
 
     return (
-      <div className="rounded-2xl border border-border bg-card shadow-2xs overflow-hidden">
+      <div
+        className="rounded-2xl border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 backdrop-blur-xl shadow-sm overflow-hidden"
+        style={{
+          boxShadow:
+            "inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.45), inset -1.5px -1.5px 2px 0 rgba(255, 255, 255, 0.25)",
+        }}
+      >
         <Table className="w-full">
-          <TableHeader className="bg-muted/40 border-b border-border">
+          <TableHeader className="bg-muted/30 backdrop-blur-xs border-b border-border/60">
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-12 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground">
                 No
@@ -296,29 +326,211 @@ export function StudentTaskQuestList({ tasks }: StudentTaskQuestListProps) {
     );
   };
 
+  const renderTaskCards = (tab: string) => {
+    const filtered = filterTasks(tab);
+
+    if (filtered.length === 0) {
+      return (
+        <div
+          className="rounded-2xl border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 backdrop-blur-xl p-12 text-center shadow-sm"
+          style={{
+            boxShadow:
+              "inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.45), inset -1.5px -1.5px 2px 0 rgba(255, 255, 255, 0.25)",
+          }}
+        >
+          <BookOpen className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+          <h3 className="text-base font-bold text-foreground">
+            {tab === "belum"
+              ? "Alhamdulillah, tidak ada tugas yang belum selesai!"
+              : "Tidak ada tugas pada kategori ini."}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+            {tab === "belum"
+              ? "Semua tugas telah dikerjakan dengan baik."
+              : "Silakan pilih tab kategori lainnya untuk melihat tugas Anda."}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        {filtered.map((task) => {
+          const status = resolveStatus(task);
+          const { label: deadlineLabel, isLate } = getDeadlineInfo(task.deadline);
+          const href = getTaskHref(task);
+          const isPendingWork =
+            status === "belum_mengumpulkan" ||
+            status === "sedang_mengerjakan" ||
+            status === "perlu_revisi";
+
+          return (
+            <LiquidGlassCard
+              key={task.id}
+              borderRadius="24px"
+              blurIntensity="xl"
+              shadowIntensity="sm"
+              glowIntensity="sm"
+              draggable={false}
+              className="p-5 bg-card/65 dark:bg-card/45 border border-white/50 dark:border-white/10 group flex flex-col justify-between hover:border-primary/50 transition-all duration-200"
+            >
+              <div className="space-y-3">
+                {/* Header: Mapel Badge & Status Badge */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                    <span
+                      className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full truncate max-w-[170px]"
+                      title={task.mapelNama}
+                    >
+                      {task.mapelNama}
+                    </span>
+                    {task.tipePengerjaan === "LEMBAR_KERJA" && (
+                      <Badge variant="emerald" size="sm" className="text-[10px] py-0 px-1.5 h-4 shrink-0">
+                        Berkas
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="shrink-0">
+                    {renderStatusBadge(task, isLate)}
+                  </div>
+                </div>
+
+                {/* Task Title & Description */}
+                <div>
+                  <Link
+                    href={href}
+                    className="font-bold text-sm sm:text-base text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2 block"
+                  >
+                    {task.judul}
+                  </Link>
+                  {task.deskripsi && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                      {task.deskripsi}
+                    </p>
+                  )}
+                </div>
+
+                {/* Metadata Pills */}
+                <div className="space-y-1.5 pt-1 text-xs">
+                  {/* Deadline Info */}
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground text-[11px]">Batas Waktu:</span>
+                    <span
+                      className={`text-[11px] font-semibold ${
+                        isLate && isPendingWork
+                          ? "text-rose-600 dark:text-rose-400 font-bold"
+                          : "text-foreground/80"
+                      }`}
+                    >
+                      {deadlineLabel}
+                    </span>
+                  </div>
+
+                  {/* Teacher & Poin */}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
+                    <span className="truncate text-muted-foreground/90 text-[11px]">
+                      Guru: <strong className="text-foreground/80 font-medium">{task.guruNama}</strong>
+                    </span>
+                    <span className="font-mono text-[11px] font-bold text-foreground/80 bg-muted/60 px-2 py-0.5 rounded-md shrink-0">
+                      {task.poinMaksimal} Poin
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Action CTA Button */}
+              <div className="pt-4 mt-2 border-t border-border/50">
+                <Link href={href} className="block w-full">
+                  <Button
+                    size="sm"
+                    variant={isPendingWork ? "default" : "outline"}
+                    className={`w-full text-xs h-9 rounded-xl font-bold transition-all shadow-2xs gap-1.5 ${
+                      isPendingWork
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "border-border/80 hover:bg-muted hover:text-primary"
+                    }`}
+                  >
+                    <span>{getCtaLabel(status)}</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            </LiquidGlassCard>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
-      {/* Tabs Kategori Tugas */}
+      {/* Tabs Kategori Tugas & View Toggle */}
       <Tabs defaultValue="semua" className="space-y-4">
-        <TabsList className="w-full sm:w-auto p-1 bg-muted/60 rounded-xl">
-          <TabsTrigger value="semua" className="rounded-lg text-xs font-semibold">
-            Semua ({tasks.length})
-          </TabsTrigger>
-          <TabsTrigger value="belum" className="rounded-lg text-xs font-semibold">
-            Belum ({counts.belum})
-          </TabsTrigger>
-          <TabsTrigger value="menunggu" className="rounded-lg text-xs font-semibold">
-            Diperiksa ({counts.menunggu})
-          </TabsTrigger>
-          <TabsTrigger value="dinilai" className="rounded-lg text-xs font-semibold">
-            Selesai ({counts.dinilai})
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/65 dark:bg-card/45 backdrop-blur-xl p-2.5 sm:p-3 rounded-2xl border border-white/50 dark:border-white/10 shadow-xs">
+          <TabsList className="p-1 bg-muted/70 dark:bg-muted/50 backdrop-blur-md rounded-xl border border-border/50 shadow-xs h-auto flex flex-wrap gap-1">
+            <TabsTrigger value="semua" className="rounded-lg text-xs font-semibold px-3 py-1.5 cursor-pointer">
+              Semua ({tasks.length})
+            </TabsTrigger>
+            <TabsTrigger value="belum" className="rounded-lg text-xs font-semibold px-3 py-1.5 cursor-pointer">
+              Belum ({counts.belum})
+            </TabsTrigger>
+            <TabsTrigger value="menunggu" className="rounded-lg text-xs font-semibold px-3 py-1.5 cursor-pointer">
+              Diperiksa ({counts.menunggu})
+            </TabsTrigger>
+            <TabsTrigger value="dinilai" className="rounded-lg text-xs font-semibold px-3 py-1.5 cursor-pointer">
+              Selesai ({counts.dinilai})
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="semua">{renderTaskTable("semua")}</TabsContent>
-        <TabsContent value="belum">{renderTaskTable("belum")}</TabsContent>
-        <TabsContent value="menunggu">{renderTaskTable("menunggu")}</TabsContent>
-        <TabsContent value="dinilai">{renderTaskTable("dinilai")}</TabsContent>
+          {/* View Mode Toggle Pill (Card vs Table) */}
+          <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 px-1 sm:px-0">
+            <span className="text-xs text-muted-foreground font-medium sm:hidden">
+              Tampilan:
+            </span>
+            <div className="inline-flex items-center p-1 bg-muted/80 dark:bg-muted/60 rounded-full border border-border/60 shadow-xs">
+              <button
+                type="button"
+                onClick={() => handleViewModeChange("card")}
+                title="Tampilan Card"
+                aria-label="Tampilan Card"
+                className={`p-1.5 rounded-full transition-all cursor-pointer ${
+                  viewMode === "card"
+                    ? "bg-background text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleViewModeChange("table")}
+                title="Tampilan Tabel"
+                aria-label="Tampilan Tabel"
+                className={`p-1.5 rounded-full transition-all cursor-pointer ${
+                  viewMode === "table"
+                    ? "bg-background text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <TableIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <TabsContent value="semua">
+          {viewMode === "card" ? renderTaskCards("semua") : renderTaskTable("semua")}
+        </TabsContent>
+        <TabsContent value="belum">
+          {viewMode === "card" ? renderTaskCards("belum") : renderTaskTable("belum")}
+        </TabsContent>
+        <TabsContent value="menunggu">
+          {viewMode === "card" ? renderTaskCards("menunggu") : renderTaskTable("menunggu")}
+        </TabsContent>
+        <TabsContent value="dinilai">
+          {viewMode === "card" ? renderTaskCards("dinilai") : renderTaskTable("dinilai")}
+        </TabsContent>
       </Tabs>
     </div>
   );

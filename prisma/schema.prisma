@@ -342,7 +342,6 @@ model JadwalPelajaran {
   hari        String        @db.VarChar(20)
   jam_mulai   String        @db.VarChar(10)
   jam_selesai String        @db.VarChar(10)
-  ruang       String?       @db.VarChar(100)
   created_at  DateTime?     @default(now()) @db.Timestamp(0)
   updated_at  DateTime?     @updatedAt @db.Timestamp(0)
   kelas       Kelas         @relation(fields: [kelas_id], references: [id], onDelete: Cascade)

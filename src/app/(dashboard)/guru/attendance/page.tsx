@@ -130,7 +130,7 @@ export default async function GuruAttendancePage() {
     <div className="space-y-6">
       {/* Header Info */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Presensi Absensi Kelas</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Presensi Kelas</h1>
         <p className="text-xs text-muted-foreground mt-1">Kelola kehadiran harian dan rekap kelas {guruClass}</p>
       </div>
 
@@ -144,7 +144,7 @@ export default async function GuruAttendancePage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Isi Cepat Hari Ini</p>
-                <p className="text-sm font-bold text-foreground">Form Absen Hari Ini</p>
+                <p className="text-sm font-bold text-foreground">Form Presensi Hari Ini</p>
               </div>
             </CardContent>
           </Card>
@@ -158,7 +158,7 @@ export default async function GuruAttendancePage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Tampilan Matriks</p>
-                <p className="text-sm font-bold text-foreground">Tabel Absen Bulanan</p>
+                <p className="text-sm font-bold text-foreground">Tabel Presensi Bulanan</p>
               </div>
             </CardContent>
           </Card>
@@ -172,7 +172,7 @@ export default async function GuruAttendancePage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Export Dokumen</p>
-                <p className="text-sm font-bold text-foreground">Rekap Absen & PDF</p>
+                <p className="text-sm font-bold text-foreground">Rekap Presensi & PDF</p>
               </div>
             </CardContent>
           </Card>

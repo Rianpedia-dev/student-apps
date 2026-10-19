@@ -92,9 +92,9 @@ export async function createAttendanceAction(
     revalidatePath("/guru/attendance");
     revalidatePath(`/guru/attendance/${date}`);
     revalidatePath("/guru");
-    return { success: true, message: "Data absensi berhasil disimpan." };
+    return { success: true, message: "Data presensi berhasil disimpan." };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Gagal menyimpan absensi.";
+    const errorMsg = err instanceof Error ? err.message : "Gagal menyimpan presensi.";
     return { error: errorMsg };
   }
 }
@@ -105,9 +105,9 @@ export async function deleteAttendanceAction(date: string, kelas: string) {
     await AttendanceService.deleteAttendanceByDate(date, kelas);
 
     revalidatePath("/guru/attendance");
-    return { success: true, message: "Data absensi tanggal tersebut berhasil dihapus." };
+    return { success: true, message: "Data presensi tanggal tersebut berhasil dihapus." };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Gagal menghapus data absensi.";
+    const errorMsg = err instanceof Error ? err.message : "Gagal menghapus data presensi.";
     return { error: errorMsg };
   }
 }
@@ -518,7 +518,7 @@ export async function downloadAttendancePdfAction(kelas: string, month: number, 
       ...recap,
     };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Gagal mengunduh data rekap absensi.";
+    const errorMsg = err instanceof Error ? err.message : "Gagal mengunduh data rekap presensi.";
     return { success: false, error: errorMsg };
   }
 }

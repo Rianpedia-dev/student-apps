@@ -166,7 +166,7 @@ export function RecapClient({
       doc.text("( ......................................... )", 235, finalY + 38, { align: "center" });
 
       // Save PDF
-      doc.save(`Rekap_Absen_${guruClass.replace(/\s+/g, "_")}_${monthNames[selectedMonth]}_${selectedYear}.pdf`);
+      doc.save(`Rekap_Presensi_${guruClass.replace(/\s+/g, "_")}_${monthNames[selectedMonth]}_${selectedYear}.pdf`);
       toast.success("Dokumen PDF berhasil di-download.");
     } catch {
       toast.error("Gagal membuat file PDF");

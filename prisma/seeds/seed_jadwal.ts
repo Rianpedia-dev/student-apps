@@ -53,16 +53,16 @@ async function main() {
   if (kelasSD && guruSD) {
     await prisma.jadwalPelajaran.deleteMany({ where: { kelas_id: kelasSD.id } });
     const jadwalSDList = [];
-    if (mapelPai && guruSD) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelPai.id, guru_id: guruSD.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00", ruang: null });
-    if (mapelMtk && guruMaryam) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelMtk.id, guru_id: guruMaryam.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00", ruang: null });
-    if (mapelBarab && guruAhmad) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelBarab.id, guru_id: guruAhmad.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00", ruang: null });
-    if (mapelBind && guruSD) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelBind.id, guru_id: guruSD.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00", ruang: null });
-    if (mapelTahfidz && guruHasan) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelTahfidz.id, guru_id: guruHasan.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Masjid Al-Azhar" });
-    if (mapelIpa && guruIbrahim) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelIpa.id, guru_id: guruIbrahim.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "Lab Sains Terpadu" });
-    if (mapelBing && guruAisyah) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelBing.id, guru_id: guruAisyah.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00", ruang: null });
-    if (mapelInfor && guruRidwan) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelInfor.id, guru_id: guruRidwan.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "Lab Komputer / iPad" });
-    if (mapelPjok && guruFaisal) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelPjok.id, guru_id: guruFaisal.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Lapangan Olahraga" });
-    if (mapelPai && guruSD) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelPai.id, guru_id: guruSD.id, hari: "Jumat", jam_mulai: "09:30", jam_selesai: "10:45", ruang: "Masjid Al-Azhar" });
+    if (mapelPai && guruSD) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelPai.id, guru_id: guruSD.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelMtk && guruMaryam) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelMtk.id, guru_id: guruMaryam.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelBarab && guruAhmad) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelBarab.id, guru_id: guruAhmad.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelBind && guruSD) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelBind.id, guru_id: guruSD.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelTahfidz && guruHasan) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelTahfidz.id, guru_id: guruHasan.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelIpa && guruIbrahim) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelIpa.id, guru_id: guruIbrahim.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelBing && guruAisyah) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelBing.id, guru_id: guruAisyah.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelInfor && guruRidwan) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelInfor.id, guru_id: guruRidwan.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelPjok && guruFaisal) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelPjok.id, guru_id: guruFaisal.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelPai && guruSD) jadwalSDList.push({ kelas_id: kelasSD.id, mapel_id: mapelPai.id, guru_id: guruSD.id, hari: "Jumat", jam_mulai: "09:30", jam_selesai: "10:45" });
 
     if (jadwalSDList.length > 0) {
       await prisma.jadwalPelajaran.createMany({ data: jadwalSDList });
@@ -75,15 +75,15 @@ async function main() {
   if (kelas5 && guruHasan) {
     await prisma.jadwalPelajaran.deleteMany({ where: { kelas_id: kelas5.id } });
     const jadwalK5List = [];
-    if (mapelTahfidz) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelTahfidz.id, guru_id: guruHasan.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Masjid Al-Azhar" });
-    if (mapelBind && guruSD) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelBind.id, guru_id: guruSD.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00", ruang: null });
-    if (mapelMtk && guruMaryam) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelMtk.id, guru_id: guruMaryam.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00", ruang: null });
-    if (mapelIpa && guruIbrahim) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelIpa.id, guru_id: guruIbrahim.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "Lab Sains" });
-    if (mapelBarab && guruAhmad) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelBarab.id, guru_id: guruAhmad.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00", ruang: null });
-    if (mapelBing && guruAisyah) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelBing.id, guru_id: guruAisyah.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00", ruang: null });
-    if (mapelInfor && guruRidwan) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelInfor.id, guru_id: guruRidwan.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Lab Komputer / iPad" });
-    if (mapelPai && guruSD) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelPai.id, guru_id: guruSD.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00", ruang: null });
-    if (mapelPjok && guruFaisal) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelPjok.id, guru_id: guruFaisal.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Lapangan Olahraga" });
+    if (mapelTahfidz) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelTahfidz.id, guru_id: guruHasan.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelBind && guruSD) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelBind.id, guru_id: guruSD.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelMtk && guruMaryam) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelMtk.id, guru_id: guruMaryam.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelIpa && guruIbrahim) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelIpa.id, guru_id: guruIbrahim.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelBarab && guruAhmad) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelBarab.id, guru_id: guruAhmad.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelBing && guruAisyah) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelBing.id, guru_id: guruAisyah.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelInfor && guruRidwan) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelInfor.id, guru_id: guruRidwan.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelPai && guruSD) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelPai.id, guru_id: guruSD.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelPjok && guruFaisal) jadwalK5List.push({ kelas_id: kelas5.id, mapel_id: mapelPjok.id, guru_id: guruFaisal.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00" });
 
     if (jadwalK5List.length > 0) {
       await prisma.jadwalPelajaran.createMany({ data: jadwalK5List });
@@ -96,16 +96,16 @@ async function main() {
   if (kelasSMP && guruSMP) {
     await prisma.jadwalPelajaran.deleteMany({ where: { kelas_id: kelasSMP.id } });
     const jadwalSMPList = [];
-    if (mapelMtk) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelMtk.id, guru_id: guruSMP.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "R. Ibnu Sina" });
-    if (mapelBing && guruAisyah) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelBing.id, guru_id: guruAisyah.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "R. Ibnu Sina" });
-    if (mapelBind) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelBind.id, guru_id: guruSMP.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "R. Ibnu Sina" });
-    if (mapelBarab && guruAhmad) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelBarab.id, guru_id: guruAhmad.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "R. Ibnu Sina" });
-    if (mapelIpa) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelIpa.id, guru_id: guruSMP.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Lab Sains Terpadu" });
-    if (mapelIps) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelIps.id, guru_id: guruSMP.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "R. Ibnu Sina" });
-    if (mapelTahfidz && guruHasan) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelTahfidz.id, guru_id: guruHasan.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Masjid Al-Azhar" });
-    if (mapelInfor && guruRidwan) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelInfor.id, guru_id: guruRidwan.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00", ruang: "Lab Komputer / iPad" });
-    if (mapelPjok && guruFaisal) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelPjok.id, guru_id: guruFaisal.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00", ruang: "Lapangan Olahraga" });
-    if (mapelPai) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelPai.id, guru_id: guruSMP.id, hari: "Jumat", jam_mulai: "09:30", jam_selesai: "10:45", ruang: "Masjid Al-Azhar" });
+    if (mapelMtk) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelMtk.id, guru_id: guruSMP.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelBing && guruAisyah) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelBing.id, guru_id: guruAisyah.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelBind) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelBind.id, guru_id: guruSMP.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelBarab && guruAhmad) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelBarab.id, guru_id: guruAhmad.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelIpa) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelIpa.id, guru_id: guruSMP.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelIps) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelIps.id, guru_id: guruSMP.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelTahfidz && guruHasan) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelTahfidz.id, guru_id: guruHasan.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelInfor && guruRidwan) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelInfor.id, guru_id: guruRidwan.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00" });
+    if (mapelPjok && guruFaisal) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelPjok.id, guru_id: guruFaisal.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00" });
+    if (mapelPai) jadwalSMPList.push({ kelas_id: kelasSMP.id, mapel_id: mapelPai.id, guru_id: guruSMP.id, hari: "Jumat", jam_mulai: "09:30", jam_selesai: "10:45" });
 
     if (jadwalSMPList.length > 0) {
       await prisma.jadwalPelajaran.createMany({ data: jadwalSMPList });

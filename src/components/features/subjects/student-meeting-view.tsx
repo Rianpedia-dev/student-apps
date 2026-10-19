@@ -77,6 +77,7 @@ interface StudentMeetingViewProps {
   jadwalInfo?: string | null;
   meetings: MeetingItem[];
   allTasks: TaskItem[];
+  defaultTab?: "pertemuan" | "tugas";
 }
 
 function getYouTubeEmbedUrl(url?: string | null): string | null {
@@ -102,8 +103,9 @@ export function StudentMeetingView({
   jadwalInfo,
   meetings: initialMeetings,
   allTasks,
+  defaultTab = "pertemuan",
 }: StudentMeetingViewProps) {
-  const [activeTab, setActiveTab] = useState<"pertemuan" | "tugas">("pertemuan");
+  const [activeTab, setActiveTab] = useState<"pertemuan" | "tugas">(defaultTab);
   const [meetings, setMeetings] = useState<MeetingItem[]>(initialMeetings);
 
   // Auto-expand first meeting

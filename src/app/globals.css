@@ -78,9 +78,9 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-  --card: rgba(255, 255, 255, 0.92);
+  --card: rgba(255, 255, 255, 0.70);
   --card-foreground: #0f172a;
-  --popover: rgba(255, 255, 255, 0.96);
+  --popover: rgba(255, 255, 255, 0.88);
   --popover-foreground: #0f172a;
   --primary: #059669;
   --primary-foreground: #ffffff;
@@ -130,9 +130,9 @@
 .dark {
   --background: #0b1118;
   --foreground: #f1f5f9;
-  --card: rgba(15, 23, 35, 0.82);
+  --card: rgba(15, 23, 35, 0.52);
   --card-foreground: #f8fafc;
-  --popover: rgba(15, 23, 35, 0.95);
+  --popover: rgba(15, 23, 35, 0.85);
   --popover-foreground: #f8fafc;
   --primary: #10b981;
   --primary-foreground: #ffffff;
@@ -242,14 +242,17 @@
     @apply font-sans text-[13px] sm:text-sm font-normal text-muted-foreground;
   }
 
-  /* Card Elevation — Professional Modern Elevation */
+  /* Card Elevation — Professional Modern Liquid Glass Elevation */
   .card-elevation {
     background-color: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl, 1rem);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: var(--shadow-offset-x) var(--shadow-offset-y) var(--shadow-blur) var(--shadow-spread) hsl(0 0% 0% / var(--shadow-opacity));
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: var(--radius-2xl, 1.25rem);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.45),
+      inset -1.5px -1.5px 2px 0 rgba(255, 255, 255, 0.25),
+      0 4px 16px -2px rgba(0, 0, 0, 0.05),
+      0 0 20px rgba(255, 255, 255, 0.08);
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
       box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
       border-color 0.2s ease;
@@ -257,25 +260,53 @@
 
   .card-elevation-hover:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-offset-x) calc(var(--shadow-offset-y) + 2px) calc(var(--shadow-blur) + 4px) var(--shadow-spread) hsl(0 0% 0% / calc(var(--shadow-opacity) + 0.15));
+    box-shadow: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.6),
+      inset -1.5px -1.5px 2px 0 rgba(255, 255, 255, 0.35),
+      0 8px 25px -4px rgba(0, 0, 0, 0.1),
+      0 0 24px rgba(16, 185, 129, 0.15);
     border-color: var(--primary);
   }
 
   /* Compact card shadow — for small/stat cards */
   .card-elevation-sm {
     border-radius: var(--radius-lg, 0.75rem);
-    box-shadow: var(--shadow-offset-x) 1px var(--shadow-blur) var(--shadow-spread) hsl(0 0% 0% / var(--shadow-opacity));
+    box-shadow: inset 1px 1px 1px 0 rgba(255, 255, 255, 0.4), 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   :is(.dark) .card-elevation {
     background-color: var(--card);
-    border-color: var(--border);
-    box-shadow: var(--shadow-offset-x) var(--shadow-offset-y) var(--shadow-blur) var(--shadow-spread) hsl(0 0% 0% / var(--shadow-opacity));
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 1px 1px 1px 0 rgba(255, 255, 255, 0.12),
+      inset -1px -1px 1px 0 rgba(255, 255, 255, 0.05),
+      0 4px 20px -2px rgba(0, 0, 0, 0.35),
+      0 0 16px rgba(0, 0, 0, 0.2);
   }
 
   :is(.dark) .card-elevation-hover:hover {
-    box-shadow: var(--shadow-offset-x) calc(var(--shadow-offset-y) + 3px) calc(var(--shadow-blur) + 6px) var(--shadow-spread) hsl(0 0% 0% / 0.7);
+    box-shadow: inset 1px 1px 1px 0 rgba(255, 255, 255, 0.2),
+      inset -1px -1px 1px 0 rgba(255, 255, 255, 0.08),
+      0 8px 30px -4px rgba(0, 0, 0, 0.5),
+      0 0 30px rgba(16, 185, 129, 0.2);
     border-color: var(--primary);
+  }
+
+  /* Standalone Glass Card Utility */
+  .glass-card {
+    background-color: var(--card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: var(--radius-2xl, 1.25rem);
+    box-shadow: inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.45),
+      inset -1.5px -1.5px 2px 0 rgba(255, 255, 255, 0.25),
+      0 4px 16px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  :is(.dark) .glass-card {
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 1px 1px 1px 0 rgba(255, 255, 255, 0.12),
+      inset -1px -1px 1px 0 rgba(255, 255, 255, 0.05),
+      0 4px 20px -2px rgba(0, 0, 0, 0.35);
   }
 
   /* Soft Glow Button Utilities */

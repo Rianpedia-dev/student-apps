@@ -145,9 +145,9 @@ export function TaskResultView({
 
           {/* Tombol Navigasi Tunggal */}
           <div className="pt-2">
-            <Link href="/siswa/tugas">
+            <Link href="/siswa/mapel">
               <Button className="rounded-xl px-6 text-xs font-semibold">
-                Kembali ke Daftar Tugas
+                Kembali ke Mata Pelajaran
               </Button>
             </Link>
           </div>

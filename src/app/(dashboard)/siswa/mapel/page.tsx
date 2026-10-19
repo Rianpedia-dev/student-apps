@@ -71,7 +71,6 @@ export default async function SiswaMataPelajaranPage() {
       hari: sch.hari,
       jamMulai: sch.jam_mulai,
       jamSelesai: sch.jam_selesai,
-      ruang: sch.ruang || null,
       guru: sch.guru
         ? {
             id: sch.guru.id.toString(),

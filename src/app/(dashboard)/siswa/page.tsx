@@ -1,12 +1,7 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowRight } from "lucide-react";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { DashboardService } from "@/services/dashboard.service";
 import {
   IslamicMosaicPattern,
@@ -24,27 +19,18 @@ export default async function SiswaDashboardPage() {
     redirect("/login");
   }
 
-  const [dashboardData, violationsCount] = await Promise.all([
-    DashboardService.getStudentDashboardData(session.id, session.kelas || "", session),
-    prisma.pelanggaran.count({ where: { user_id: session.id } }).catch(() => 0),
-  ]);
+  const dashboardData = await DashboardService.getStudentDashboardData(
+    session.id,
+    session.kelas || "",
+    session
+  );
 
   const {
     studentInfo,
-    metrics,
-    classmates,
     announcements: formattedAnnouncements,
-    todaySchedules,
   } = dashboardData;
 
   const studentName = studentInfo.name;
-  const studentNis = studentInfo.nis;
-  const studentImage = studentInfo.image;
-  const waliKelas = studentInfo.waliKelas;
-  const studentClass = studentInfo.kelas;
-
-  const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-  const todayDayName = DAY_NAMES[new Date().getDay()];
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
@@ -107,7 +93,7 @@ export default async function SiswaDashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5 md:gap-4">
         {/* Baris 1: Amber, Blue, Emerald */}
         <StatCard
-          title="Absensi"
+          title="Presensi"
           variant="amber"
           href="/siswa/attendance"
         />
@@ -119,7 +105,7 @@ export default async function SiswaDashboardPage() {
         <StatCard
           title="Tugas Saya"
           variant="emerald"
-          href="/siswa/tugas"
+          href="/siswa/mapel"
         />
 
         {/* Baris 2: Rose, Purple, Teal */}
@@ -132,95 +118,12 @@ export default async function SiswaDashboardPage() {
           title="Pelanggaran"
           variant="purple"
           href="/siswa/violations"
-          value={`${violationsCount} Catatan`}
-          meta={violationsCount === 0 ? "Disiplin" : "Evaluasi"}
         />
         <StatCard
           title="Kelas Online"
           variant="teal"
           href="/siswa/kelas-online"
         />
-      </div>
-
-
-      {/* Widget Section: Jadwal Hari Ini */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              Jadwal Hari Ini
-            </h2>
-          </div>
-          <Link
-            href="/siswa/mapel"
-            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
-          >
-            <span>Lihat Semua Jadwal</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-
-        {todaySchedules.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {todaySchedules.map((subj) => (
-              <Link
-                key={subj.id}
-                href={subj.detailUrl}
-                className="group relative rounded-2xl border border-border/80 hover:border-emerald-500/40 bg-card p-4 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <Badge variant="outline" size="xs">
-                      {subj.waktu}
-                    </Badge>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {subj.activeTasksCount > 0 && (
-                        <Badge variant="amber" size="xs">
-                          {subj.activeTasksCount} Tugas
-                        </Badge>
-                      )}
-                      <ArrowRight className="h-4 w-4 text-muted-foreground/60 transition-transform group-hover:text-primary group-hover:translate-x-0.5" />
-                    </div>
-                  </div>
-
-                  <h3 className="text-base font-bold text-foreground leading-snug truncate group-hover:text-primary transition-colors">
-                    {subj.namaMapel}
-                  </h3>
-
-                  <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground space-y-1">
-                    {subj.guruNama && (
-                      <div className="truncate font-medium text-foreground/80">
-                        {subj.guruNama}
-                      </div>
-                    )}
-                    {subj.ruang && subj.ruang !== "-" && (
-                      <div className="truncate text-[11px] text-muted-foreground/75">
-                        Ruang: {subj.ruang}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-border/80 bg-card/50 p-6 sm:p-8 text-center space-y-2">
-            <p className="text-sm font-semibold text-foreground">Tidak Ada Jadwal Pelajaran Hari Ini</p>
-            <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              Hari ini ({todayDayName}) tidak ada jadwal pelajaran aktif untuk kelas {studentClass || "Anda"}.
-            </p>
-            <div className="pt-2">
-              <Link
-                href="/siswa/mapel"
-                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-              >
-                <span>Lihat Semua Jadwal Mingguan</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Timeline Pengumuman */}

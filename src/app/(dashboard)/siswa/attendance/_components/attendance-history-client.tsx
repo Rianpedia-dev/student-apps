@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LiquidGlassCard } from "@/components/ui/liquid-weather-glass";
 
 interface AttendanceEvent {
   id: string;
@@ -59,8 +59,6 @@ export function AttendanceHistoryClient() {
     calendarDays.push(d);
   }
 
-
-
   const getAttendanceForDay = (d: number) => {
     const dStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     return events.find((e) => e.start === dStr);
@@ -68,20 +66,27 @@ export function AttendanceHistoryClient() {
 
   return (
     <div className="space-y-6">
-      {/* Calendar Card */}
-      <Card className="border-emerald-500/20 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+      {/* Calendar Card in Liquid Glass Style */}
+      <LiquidGlassCard
+        borderRadius="24px"
+        blurIntensity="xl"
+        shadowIntensity="sm"
+        glowIntensity="sm"
+        draggable={false}
+        className="p-0 border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 shadow-lg overflow-hidden"
+      >
+        <div className="flex flex-row items-center justify-between border-b border-border/60 p-4 sm:p-6 pb-4">
           <div>
-            <CardTitle className="text-base">
+            <h2 className="text-base font-bold text-foreground">
               Kalender Presensi: {monthNames[month]} {year}
-            </CardTitle>
+            </h2>
           </div>
 
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-lg bg-background/60 backdrop-blur-sm border-white/50 dark:border-white/10 hover:bg-background/90"
               onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -89,15 +94,15 @@ export function AttendanceHistoryClient() {
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-lg bg-background/60 backdrop-blur-sm border-white/50 dark:border-white/10 hover:bg-background/90"
               onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="p-3 sm:p-6">
+        <div className="p-3 sm:p-6">
           <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-bold text-muted-foreground pb-2">
             {dayNames.map((n) => (
               <div key={n} className="py-1">
@@ -110,7 +115,12 @@ export function AttendanceHistoryClient() {
           <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {calendarDays.map((d, index) => {
               if (d === null) {
-                return <div key={`empty-${index}`} className="min-h-[50px] sm:min-h-[76px] rounded-lg sm:rounded-xl bg-muted/10" />;
+                return (
+                  <div
+                    key={`empty-${index}`}
+                    className="min-h-[50px] sm:min-h-[76px] rounded-lg sm:rounded-xl bg-white/15 dark:bg-white/5 backdrop-blur-xs border border-white/20 dark:border-white/5"
+                  />
+                );
               }
 
               const att = getAttendanceForDay(d);
@@ -119,7 +129,7 @@ export function AttendanceHistoryClient() {
               return (
                 <div
                   key={`day-${d}`}
-                  className="flex flex-col justify-between min-h-[50px] sm:min-h-[76px] rounded-lg sm:rounded-xl border p-1 sm:p-2 text-left bg-card transition-colors hover:border-emerald-500/40"
+                  className="flex flex-col justify-between min-h-[50px] sm:min-h-[76px] rounded-lg sm:rounded-xl border border-white/60 dark:border-white/10 p-1 sm:p-2 text-left bg-white/50 dark:bg-slate-900/40 backdrop-blur-md transition-all duration-200 hover:bg-white/80 dark:hover:bg-slate-800/60 hover:border-emerald-500/50 hover:shadow-xs"
                 >
                   <span className="text-[11px] sm:text-xs font-bold text-foreground">{d}</span>
                   {ket ? (
@@ -139,26 +149,26 @@ export function AttendanceHistoryClient() {
           </div>
 
           {/* Status Legend on Mobile */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 border-t pt-3 text-xs text-muted-foreground">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-600 shrink-0" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-600 shrink-0 shadow-xs" />
               <span>H = Hadir</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-sky-600 shrink-0" />
+              <span className="h-2.5 w-2.5 rounded-full bg-sky-600 shrink-0 shadow-xs" />
               <span>S = Sakit</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0 shadow-xs" />
               <span>I = Izin</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-600 shrink-0" />
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-600 shrink-0 shadow-xs" />
               <span>A = Alpha</span>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </LiquidGlassCard>
     </div>
   );
 }

@@ -249,7 +249,6 @@ export class DashboardService {
               namaMapel: s.mapel?.nama_mapel || "Mata Pelajaran",
               guruNama: s.guru?.name || "Guru Pengampu",
               waktu: `${s.jam_mulai || "07:30"} - ${s.jam_selesai || "09:00"}`,
-              ruang: s.ruang || "-",
               activeTasksCount: unsubmitted,
               detailUrl: `/siswa/mapel/${s.mapel_id || s.id}`,
             };

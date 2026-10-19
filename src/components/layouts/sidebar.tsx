@@ -196,7 +196,7 @@ export function Sidebar({
     ...(isWaliKelas
       ? [
           { label: "Kelas Saya", href: "/guru/my-class", icon: BuildingLibraryIcon, iconColor: "text-emerald-500" },
-          { label: "Absensi Kelas", href: "/guru/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
+          { label: "Presensi Kelas", href: "/guru/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
         ]
       : []),
     { label: "Pengumuman", href: "/guru/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500" },
@@ -211,7 +211,7 @@ export function Sidebar({
     { label: "Mata Pelajaran", href: "/siswa/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
     { label: "Chat Guru", href: "/siswa/chat", icon: ChatIcon, iconColor: "text-cyan-600" },
     { label: "Kalender Kegiatan", href: "/siswa/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
-    { label: "Riwayat Absensi", href: "/siswa/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
+    { label: "Riwayat Presensi", href: "/siswa/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
     { label: "Data Pelanggaran", href: "/siswa/violations", icon: AlertLoopIcon, iconColor: "text-rose-500" },
     { label: "Kelas Online", href: "/siswa/kelas-online", icon: VideoIcon, iconColor: "text-indigo-500" },
   ];

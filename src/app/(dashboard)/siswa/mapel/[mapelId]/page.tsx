@@ -12,10 +12,13 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ mapelId: string }>;
+  searchParams?: Promise<{ tab?: string }>;
 }
 
-export default async function SiswaMapelDetailPage({ params }: PageProps) {
+export default async function SiswaMapelDetailPage({ params, searchParams }: PageProps) {
   const { mapelId } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const defaultTab = resolvedSearchParams?.tab === "tugas" ? "tugas" : "pertemuan";
   const session = await getSession();
   if (!session || session.role !== "siswa") {
     redirect("/login");
@@ -220,6 +223,7 @@ export default async function SiswaMapelDetailPage({ params }: PageProps) {
         jadwalInfo={jadwal ? `${jadwal.hari}, ${jadwal.jam_mulai} - ${jadwal.jam_selesai}` : null}
         meetings={formattedMeetings}
         allTasks={formattedTasks}
+        defaultTab={defaultTab}
       />
     </div>
   );

@@ -24,7 +24,13 @@ export function DisciplineSummaryCard({
   const grade = getGrade(score);
 
   return (
-    <Card className="rounded-2xl border bg-card p-3.5 sm:p-5 shadow-2xs">
+    <Card
+      className="rounded-2xl border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 backdrop-blur-xl p-3.5 sm:p-5 shadow-sm"
+      style={{
+        boxShadow:
+          "inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.45), inset -1.5px -1.5px 2px 0 rgba(255, 255, 255, 0.25)",
+      }}
+    >
       <div className="flex items-center gap-3.5 sm:gap-4">
         {/* Skor Poin */}
         <div

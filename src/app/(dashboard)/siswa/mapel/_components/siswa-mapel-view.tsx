@@ -37,7 +37,6 @@ export interface SiswaMapelItem {
   hari: string;
   jamMulai: string;
   jamSelesai: string;
-  ruang?: string | null;
   guru: {
     id: string;
     name: string;
@@ -94,8 +93,7 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
         s.namaMapel.toLowerCase().includes(q) ||
         s.kodeMapel.toLowerCase().includes(q) ||
         (s.guru?.name && s.guru.name.toLowerCase().includes(q)) ||
-        s.hari.toLowerCase().includes(q) ||
-        (s.ruang && s.ruang.toLowerCase().includes(q));
+        s.hari.toLowerCase().includes(q);
 
       const matchHari =
         selectedHari === "all" || s.hari.toLowerCase() === selectedHari.toLowerCase();
@@ -283,14 +281,6 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                       <span className="font-medium text-foreground/80">
                         {sch.jamMulai} - {sch.jamSelesai} WIB
                       </span>
-                      {sch.ruang && (
-                        <>
-                          <span>•</span>
-                          <span className="font-mono bg-muted/70 px-1.5 py-0.5 rounded text-[11px] text-foreground/80">
-                            {sch.ruang}
-                          </span>
-                        </>
-                      )}
                     </div>
                   </div>
 
@@ -349,7 +339,7 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                     </Button>
                   </Link>
 
-                  <Link href={`/siswa/tugas?mapelId=${sch.mapelId}`} className="w-full">
+                  <Link href={`/siswa/mapel/${sch.mapelId}?tab=tugas`} className="w-full">
                     <Button
                       variant="outline"
                       size="sm"
@@ -453,11 +443,6 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                           <span className="text-muted-foreground text-[11px]">
                             {sch.jamMulai} - {sch.jamSelesai}
                           </span>
-                          {sch.ruang && (
-                            <span className="ml-1 text-[10px] text-muted-foreground bg-muted/60 px-1 py-0.5 rounded">
-                              {sch.ruang}
-                            </span>
-                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -476,7 +461,7 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                           </Button>
                         </Link>
 
-                        <Link href={`/siswa/tugas?mapelId=${sch.mapelId}`}>
+                        <Link href={`/siswa/mapel/${sch.mapelId}?tab=tugas`}>
                           <Button
                             variant="outline"
                             size="sm"

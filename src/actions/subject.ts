@@ -180,7 +180,6 @@ export async function createJadwalAction(formData: FormData) {
   const hari = formData.get("hari") as string;
   const jam_mulai = (formData.get("jam_mulai") as string)?.trim();
   const jam_selesai = (formData.get("jam_selesai") as string)?.trim();
-  const ruang = (formData.get("ruang") as string)?.trim() || null;
   const allow_conflict = formData.get("allow_conflict") === "true";
 
   if (!jam_mulai || !jam_selesai) {
@@ -217,7 +216,6 @@ export async function createJadwalAction(formData: FormData) {
         hari,
         jam_mulai,
         jam_selesai,
-        ruang: null,
       },
     });
 
@@ -290,7 +288,6 @@ export async function updateJadwalAction(formData: FormData) {
         hari,
         jam_mulai,
         jam_selesai,
-        ruang: null,
       },
     });
 

@@ -240,7 +240,7 @@ export default async function GuruDashboardPage() {
               href="/guru/my-class"
             />
             <StatCard
-              title="Absensi Hari Ini"
+              title="Presensi Hari Ini"
               variant="blue"
               href={`/guru/attendance/${todayFormatted}`}
             />

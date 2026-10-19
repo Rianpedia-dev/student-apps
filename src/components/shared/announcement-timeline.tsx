@@ -126,7 +126,7 @@ export function AnnouncementTimeline({
 
   if (!items || items.length === 0) {
     return (
-      <Card className="border-dashed">
+      <Card className="border-dashed border-white/50 dark:border-white/10 bg-card/40 backdrop-blur-xl">
         <CardContent className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
           <Megaphone className="h-10 w-10 text-muted-foreground/40 mb-3" />
           <p className="font-semibold text-sm">Belum ada pengumuman.</p>
@@ -142,7 +142,10 @@ export function AnnouncementTimeline({
   return (
     <div className="space-y-4">
       {displayedItems.map((item) => (
-        <Card key={item.id} className="relative overflow-hidden rounded-xl border-l-4 border-l-primary transition-all duration-200 hover:shadow-md animate-in fade-in-50 duration-300">
+        <Card
+          key={item.id}
+          className="relative overflow-hidden rounded-2xl border border-white/50 dark:border-white/10 border-l-4 border-l-primary bg-card/65 dark:bg-card/45 backdrop-blur-xl transition-all duration-200 hover:shadow-md animate-in fade-in-50 duration-300"
+        >
           {/* Al-Azhar Triangular Prism Mosaic Accent */}
           <AlAzharCornerMosaic className="absolute top-0 right-0 w-24 sm:w-28 h-14 pointer-events-none opacity-40 group-hover:opacity-75 transition-opacity select-none" />
           <CardContent className="p-4 sm:p-5.5 relative z-10">
