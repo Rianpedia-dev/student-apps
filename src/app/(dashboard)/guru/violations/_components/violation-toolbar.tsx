@@ -44,7 +44,7 @@ export function ViolationToolbar({
   };
 
   return (
-    <div className="bg-card/70 backdrop-blur-xs p-3.5 sm:p-4 rounded-2xl border border-border shadow-xs space-y-3">
+    <div className="bg-card/75 dark:bg-card/45 backdrop-blur-xl p-3.5 sm:p-4 rounded-3xl border border-white/50 dark:border-white/10 shadow-xl space-y-3">
       {/* Top Row: Class Selector + View Mode */}
       <div className="flex items-center justify-between gap-3">
         {/* Class Scope Selector */}

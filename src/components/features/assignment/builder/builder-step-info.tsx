@@ -71,27 +71,6 @@ export function BuilderStepInfo({
   pertemuanList,
   onNext,
 }: BuilderStepInfoProps) {
-  const sdClasses = classes.filter((c) => c.jenjang === "SD");
-  const smpClasses = classes.filter((c) => c.jenjang === "SMP");
-
-  const classItems = React.useMemo(
-    () =>
-      classes.map((c) => ({
-        value: c.id,
-        label: c.nama,
-      })),
-    [classes]
-  );
-
-  const subjectItems = React.useMemo(
-    () =>
-      subjects.map((s) => ({
-        value: s.id,
-        label: s.jenjang ? `${s.nama} (${s.jenjang})` : s.nama,
-      })),
-    [subjects]
-  );
-
   const pertemuanItems = React.useMemo(() => {
     const list: Array<{ value: string; label: string }> = [
       { value: "none", label: "Tidak ditautkan" },
@@ -106,7 +85,7 @@ export function BuilderStepInfo({
   }, [pertemuanList]);
 
   return (
-    <Card className="max-w-3xl mx-auto">
+    <Card className="max-w-3xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-xl rounded-3xl">
       <CardHeader>
         <CardTitle className="text-base sm:text-lg">Informasi Tugas</CardTitle>
         <CardDescription className="text-xs">
@@ -126,72 +105,6 @@ export function BuilderStepInfo({
             placeholder="Contoh: Kuis Interaktif Bab 1 - Bilangan Bulat"
             className="text-xs sm:text-sm h-10"
           />
-        </div>
-
-        {/* Kelas & Mapel */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">
-              Kelas Tujuan <span className="text-destructive">*</span>
-            </label>
-            <Select
-              items={classItems}
-              value={kelasId}
-              onValueChange={(val) => setKelasId(val || "")}
-            >
-              <SelectTrigger className="w-full text-xs h-10">
-                <SelectValue placeholder="Pilih Kelas" />
-              </SelectTrigger>
-              <SelectContent>
-                {sdClasses.length > 0 && (
-                  <>
-                    <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase">
-                      Jenjang SD
-                    </div>
-                    {sdClasses.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nama}
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-                {smpClasses.length > 0 && (
-                  <>
-                    <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase">
-                      Jenjang SMP
-                    </div>
-                    {smpClasses.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nama}
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">
-              Mata Pelajaran <span className="text-destructive">*</span>
-            </label>
-            <Select
-              items={subjectItems}
-              value={mapelId}
-              onValueChange={(val) => setMapelId(val || "")}
-            >
-              <SelectTrigger className="w-full text-xs h-10">
-                <SelectValue placeholder="Pilih Mata Pelajaran" />
-              </SelectTrigger>
-              <SelectContent>
-                {subjects.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nama} ({s.jenjang})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         {/* Pertemuan & Deadline */}

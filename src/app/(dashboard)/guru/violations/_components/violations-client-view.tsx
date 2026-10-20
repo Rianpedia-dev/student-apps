@@ -111,7 +111,7 @@ export function ViolationsClientView({
 
       {/* 3. Main Content: Cards View or Table View */}
       {filteredViolations.length === 0 ? (
-        <Card className="border-dashed rounded-2xl bg-card/60">
+        <Card className="border-dashed rounded-3xl glass-card">
           <CardContent className="p-12 text-center text-muted-foreground space-y-4">
             <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
               {categoryFilter !== "ALL" || severityFilter !== "ALL" ? (
@@ -149,10 +149,10 @@ export function ViolationsClientView({
         </div>
       ) : (
         /* Table View */
-        <Card className="rounded-2xl border shadow-xs overflow-hidden">
+        <Card className="rounded-3xl card-elevation overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-muted/50">
+              <TableHeader className="bg-muted/30 backdrop-blur-xs border-b border-border/60">
                 <TableRow>
                   <TableHead className="w-12 text-center font-bold">No</TableHead>
                   <TableHead className="font-bold">Santri</TableHead>

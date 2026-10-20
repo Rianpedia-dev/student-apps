@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   BookOpen,
   Calendar,
@@ -18,6 +19,7 @@ import {
   ExternalLink,
   Sparkles,
   School,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -151,7 +153,7 @@ export function TeacherMeetingList({
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="rounded-3xl bg-card border border-border p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-3xl glass-card p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <Badge variant="purple" size="sm" className="font-bold font-mono uppercase">
@@ -169,10 +171,21 @@ export function TeacherMeetingList({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <Link
+            href={`/guru/attendance/${mapel.id}/${currentKelas.id}/${new Date().toISOString().split("T")[0]}`}
+          >
+            <Button
+              variant="outline"
+              className="h-10 text-xs font-bold gap-2 rounded-2xl border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 cursor-pointer"
+            >
+              <ClipboardList className="h-4 w-4" />
+              <span>Presensi KBM Hari Ini</span>
+            </Button>
+          </Link>
           <Button
             onClick={handleCreate}
-            className="h-10 text-xs font-bold gap-2 rounded-2xl bg-primary text-primary-foreground shadow-sm hover:shadow-md transition-all"
+            className="h-10 text-xs font-bold gap-2 rounded-2xl bg-primary text-primary-foreground shadow-sm hover:shadow-md transition-all cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             <span>Tambah Pertemuan Baru</span>
@@ -271,14 +284,13 @@ export function TeacherMeetingList({
                   {/* Card */}
                   <div
                     className={`
-                      relative ml-0 md:ml-[70px] rounded-2xl border
-                      bg-card/80 backdrop-blur-sm
-                      shadow-sm hover:shadow-lg
+                      relative ml-0 md:ml-[70px] rounded-3xl
+                      card-elevation
                       transition-all duration-300 ease-out
                       hover:-translate-y-0.5
                       ${isDraft
                         ? "border-dashed border-amber-500/40 dark:border-amber-400/30"
-                        : "border-border/60 hover:border-primary/30"
+                        : ""
                       }
                     `}
                   >

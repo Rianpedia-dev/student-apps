@@ -22,7 +22,7 @@ export function AchievementToolbar({
   guruClass,
 }: AchievementToolbarProps) {
   return (
-    <div className="bg-card/60 backdrop-blur-xs p-3.5 sm:p-4 rounded-2xl border border-border shadow-xs">
+    <div className="bg-card/75 dark:bg-card/45 backdrop-blur-xl p-3.5 sm:p-4 rounded-3xl border border-white/50 dark:border-white/10 shadow-xl">
       {/* Class Tabs + Search Input */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Class Scope Selector */}

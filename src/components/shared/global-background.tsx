@@ -19,9 +19,9 @@ export function GlobalBackground() {
       className="fixed inset-0 -z-20 pointer-events-none overflow-hidden select-none"
       aria-hidden="true"
     >
-      {/* 1. Base Image Layer (Foto Kampus Jelas & Tajam) */}
+      {/* 1. Base Image Layer (Watermark Foto Kampus Lembut & Elegan) */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700 ease-in-out opacity-70 brightness-[1.0] contrast-[1.02] dark:opacity-22 dark:brightness-[0.65] dark:contrast-[1.10]"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700 ease-in-out opacity-25 brightness-[1.02] contrast-[1.02] dark:opacity-20 dark:brightness-[0.60] dark:contrast-[1.10]"
         style={{
           backgroundImage: "url('/bc.avif')",
         }}
@@ -46,8 +46,8 @@ export function GlobalBackground() {
         <AlAzharSkylineSilhouette />
       </div>
 
-      {/* 5. Clean Porcelain Scrim (Dipertipis agar foto background terlihat lebih jelas pada light theme) */}
-      <div className="absolute inset-0 transition-colors duration-700 ease-in-out bg-gradient-to-b from-slate-50/15 via-white/10 to-slate-100/20 dark:from-slate-950/75 dark:via-slate-900/65 dark:to-slate-950/80" />
+      {/* 5. Clean Porcelain Scrim (Tingkat kontras tinggi agar semua teks hitam pekat & putih silver terbaca sempurna) */}
+      <div className="absolute inset-0 transition-colors duration-700 ease-in-out bg-gradient-to-b from-white/80 via-slate-50/75 to-slate-100/85 dark:from-slate-950/85 dark:via-slate-900/80 dark:to-slate-950/90" />
     </div>
   );
 }

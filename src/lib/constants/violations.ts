@@ -142,7 +142,7 @@ export function parseViolationKeterangan(rawKeterangan?: string | null): ParsedV
   }
 
   let text = rawKeterangan.trim();
-  let status: ViolationStatus = "TERCATAT";
+  const status: ViolationStatus = "TERCATAT";
   let severity: ViolationSeverity = "RINGAN";
   let points = 5;
   let tindakan: string | undefined = undefined;

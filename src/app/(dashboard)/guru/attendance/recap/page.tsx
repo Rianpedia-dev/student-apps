@@ -2,16 +2,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, BookOpen } from "lucide-react";
 import { RecapClient } from "./_components/recap-client";
 import { getAcademicYear } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Membaca periode (bulan/tahun) dari URL dengan validasi rentang.
- * Nilai yang tidak valid dikembalikan ke default: bulan & tahun berjalan.
- */
 function parsePeriod(rawMonth?: string, rawYear?: string, now: Date = new Date()) {
   const m = parseInt(rawMonth ?? "", 10);
   const y = parseInt(rawYear ?? "", 10);
@@ -22,20 +18,55 @@ function parsePeriod(rawMonth?: string, rawYear?: string, now: Date = new Date()
 }
 
 export default async function GuruAttendanceRecapPage(props: {
-  searchParams: Promise<{ month?: string; year?: string }>;
+  searchParams: Promise<{ month?: string; year?: string; mapelId?: string; kelas?: string }>;
 }) {
   const session = await getSession();
-  if (!session || session.role !== "guru") {
+  if (!session || (session.role !== "guru" && session.role !== "admin")) {
     redirect("/login");
   }
 
-  const { month: rawMonth, year: rawYear } = await props.searchParams;
+  const guruId = BigInt(session.id);
+  const { month: rawMonth, year: rawYear, mapelId: rawMapelId, kelas: rawKelas } = await props.searchParams;
   const { month: selectedMonth, year: selectedYear } = parsePeriod(rawMonth, rawYear);
 
-  const guruClass = session.kelas || "";
+  // Ambil daftar mapel & kelas yang diampu guru ini
+  const schedules = await prisma.jadwalPelajaran.findMany({
+    where: session.role === "guru" ? { guru_id: guruId } : {},
+    include: {
+      mapel: true,
+      kelas: true,
+    },
+    orderBy: { jam_mulai: "asc" },
+  });
+
+  const mapelMap = new Map();
+  const classSet = new Set<string>();
+
+  schedules.forEach((s) => {
+    if (!mapelMap.has(s.mapel_id.toString())) {
+      mapelMap.set(s.mapel_id.toString(), {
+        id: s.mapel_id.toString(),
+        nama: s.mapel.nama_mapel,
+        kode: s.mapel.kode_mapel,
+      });
+    }
+    classSet.add(s.kelas.nama_kelas);
+  });
+
+  if (session.kelas) {
+    classSet.add(session.kelas);
+  }
+
+  const mapelList = Array.from(mapelMap.values());
+  const classList = Array.from(classSet).sort();
+
+  // Tentukan kelas aktif
+  const activeClass = rawKelas || (classList.length > 0 ? classList[0] : session.kelas || "");
+  const activeMapelId = rawMapelId || (mapelList.length > 0 ? mapelList[0].id : undefined);
+
+  const selectedMapel = activeMapelId ? mapelList.find((m) => m.id === activeMapelId) : undefined;
   const academic = getAcademicYear();
 
-  // Rentang pilihan tahun: 3 tahun ke belakang sampai 1 tahun ke depan.
   const thisYear = new Date().getFullYear();
   const availableYears = Array.from({ length: 5 }, (_, i) => thisYear - 3 + i);
 
@@ -46,20 +77,17 @@ export default async function GuruAttendanceRecapPage(props: {
     const monthPadded = String(selectedMonth).padStart(2, "0");
 
     const [students, absens] = await Promise.all([
-      guruClass
+      activeClass
         ? prisma.user.findMany({
-            where: { kelas: guruClass, status: "1" },
+            where: { kelas: activeClass, status: "1" },
             orderBy: { name: "asc" },
           })
         : [],
-      // Hanya ambil baris pada periode terpilih, bukan seluruh riwayat.
-      // `date` disimpan sebagai string "YYYY-MM-DD", namun data warisan ada
-      // yang tanpa padding ("YYYY-M-D"), sehingga kedua variasi prefix dicakup.
-      // Tahun selalu ikut difilter agar data lintas tahun tidak tercampur.
-      guruClass
+      activeClass
         ? prisma.absen.findMany({
             where: {
-              kelas: guruClass,
+              kelas: activeClass,
+              ...(activeMapelId ? { mapel_id: BigInt(activeMapelId) } : {}),
               OR: [
                 { date: { startsWith: `${selectedYear}-${monthPadded}-` } },
                 { date: { startsWith: `${selectedYear}-${selectedMonth}-` } },
@@ -88,25 +116,34 @@ export default async function GuruAttendanceRecapPage(props: {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
         <Link
           href="/guru/attendance"
-          className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" /> Kembali ke Presensi
+          <ArrowLeft className="h-4 w-4" /> Kembali ke Hub Presensi
         </Link>
+        <span className="text-xs font-semibold text-muted-foreground font-mono tracking-tight">
+          SD - SMP Islam Al-Azhar Cairo
+        </span>
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Rekapitulasi Presensi & Export PDF</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Generate dokumen resmi rekap kehadiran bulanan kelas {guruClass} format PDF (Landscape A4).
+        <h1 className="text-2xl font-black tracking-tight text-foreground">
+          Rekapitulasi Presensi & Cetak PDF Resmi
+        </h1>
+        <p className="text-xs font-medium text-muted-foreground mt-1">
+          Laporan kehadiran per mata pelajaran dan rekap bulanan format A4 Landscape
         </p>
       </div>
 
       <RecapClient
-        guruClass={guruClass}
+        guruClass={activeClass}
+        selectedMapelId={activeMapelId}
+        selectedMapelNama={selectedMapel?.nama}
+        mapelList={mapelList}
+        classList={classList}
         tahunPelajaran={academic.tahunPelajaran}
         semester={academic.semester}
         selectedMonth={selectedMonth}

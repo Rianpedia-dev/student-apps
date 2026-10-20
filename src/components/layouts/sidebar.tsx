@@ -81,10 +81,10 @@ function SidebarNavItem({
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-[var(--radius)] transition-all duration-150 relative group",
+                "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-200 relative group",
                 isActive
-                  ? "bg-slate-100 dark:bg-slate-800 text-foreground font-semibold border-l-4 border-amber-500 shadow-xs"
-                  : "text-muted-foreground hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-foreground"
+                  ? "bg-white/80 dark:bg-white/[0.12] backdrop-blur-xl text-foreground font-semibold border border-white/60 dark:border-white/20 shadow-md ring-1 ring-amber-500/40"
+                  : "text-foreground dark:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.05] hover:text-foreground dark:hover:text-white"
               )}
               aria-label={item.label}
             >
@@ -118,10 +118,10 @@ function SidebarNavItem({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "flex items-center gap-2.5 py-1.5 px-3.5 text-[13px] font-medium transition-all duration-150 group rounded-r-xl",
+        "flex items-center gap-2.5 py-2 px-3 mx-2 text-[13px] font-medium transition-all duration-200 group rounded-xl",
         isActive
-          ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold border-l-4 border-amber-500 shadow-xs"
-          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 border-l-4 border-transparent"
+          ? "bg-white/80 dark:bg-white/[0.10] backdrop-blur-xl text-foreground dark:text-white font-bold border border-white/70 dark:border-white/15 shadow-sm border-l-4 border-l-amber-500"
+          : "text-foreground font-semibold dark:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.06] hover:text-foreground dark:hover:text-white border border-transparent"
       )}
     >
       <span className="menu-icon-wrapper shrink-0">
@@ -184,6 +184,7 @@ export function Sidebar({
     { label: "Kelola Kelas", href: "/admin/classes", icon: BuildingLibraryIcon, iconColor: "text-emerald-500" },
     { label: "Mata Pelajaran", href: "/admin/subjects", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
     { label: "Jadwal Pelajaran", href: "/admin/schedules", icon: CalendarClock, iconColor: "text-cyan-600" },
+    { label: "Presensi Siswa", href: "/admin/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
     { label: "Buat Pengumuman", href: "/admin/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500" },
     { label: "Kalender Kegiatan", href: "/admin/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
     { label: "Monitor Kelas Online", href: "/admin/kelas-online", icon: VideoIcon, iconColor: "text-indigo-500" },
@@ -192,11 +193,11 @@ export function Sidebar({
   const guruMenu: MenuItemType[] = [
     { label: "Dashboard", href: "/guru", icon: LayoutDashboardIcon, iconColor: "text-amber-500" },
     { label: "Mata Pelajaran", href: "/guru/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600" },
+    { label: "Presensi KBM", href: "/guru/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
     { label: "Chat Siswa", href: "/guru/chat", icon: ChatIcon, iconColor: "text-cyan-600" },
     ...(isWaliKelas
       ? [
           { label: "Kelas Saya", href: "/guru/my-class", icon: BuildingLibraryIcon, iconColor: "text-emerald-500" },
-          { label: "Presensi Kelas", href: "/guru/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500" },
         ]
       : []),
     { label: "Pengumuman", href: "/guru/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500" },
@@ -222,7 +223,7 @@ export function Sidebar({
     <TooltipProvider delay={100}>
       <aside
         className={cn(
-          "flex h-full flex-col border-r border-sidebar-border bg-sidebar/95 backdrop-blur-md text-sidebar-foreground shadow-xl transition-all duration-300 ease-in-out select-none",
+          "flex h-full flex-col border-r border-white/50 dark:border-white/10 bg-white/70 dark:bg-slate-950/45 backdrop-blur-2xl text-sidebar-foreground shadow-2xl transition-all duration-300 ease-in-out select-none",
           collapsed ? "w-20" : "w-[228px]",
           className
         )}
@@ -230,7 +231,7 @@ export function Sidebar({
         {/* Brand Header */}
         <div
           className={cn(
-            "relative flex shrink-0 border-b border-sidebar-border transition-all duration-300 overflow-hidden",
+            "relative flex shrink-0 border-b border-white/40 dark:border-white/10 transition-all duration-300 overflow-hidden",
             collapsed
               ? "h-16 items-center justify-center px-2"
               : isMobileDrawer
@@ -289,7 +290,7 @@ export function Sidebar({
                 />
               </div>
               <div className="flex flex-col items-center min-w-0 mt-2">
-                <span className="text-[13px] font-black tracking-tight text-slate-800 dark:text-slate-100 leading-snug uppercase">
+                <span className="text-[13px] font-black tracking-tight text-foreground dark:text-white leading-snug uppercase">
                   Al-Azhar Cairo
                 </span>
                 <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 tracking-widest uppercase mt-0.5">
@@ -346,11 +347,11 @@ export function Sidebar({
           )}
         >
           {!collapsed ? (
-            <div className="px-3.5 pt-0.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+            <div className="px-3.5 pt-0.5 pb-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
               Menu Navigasi
             </div>
           ) : (
-            <div className="w-8 border-b border-sidebar-border my-1" />
+            <div className="w-8 border-b border-white/40 dark:border-white/10 my-1" />
           )}
 
           {menu.map((item) => (
@@ -367,7 +368,7 @@ export function Sidebar({
         {/* Logout Footer */}
         <div
           className={cn(
-            "border-t border-sidebar-border shrink-0 transition-all duration-300",
+            "border-t border-white/40 dark:border-white/10 shrink-0 transition-all duration-300",
             collapsed ? "p-2 flex justify-center" : isMobileDrawer ? "p-2.5 pb-3.5" : "p-2.5"
           )}
         >

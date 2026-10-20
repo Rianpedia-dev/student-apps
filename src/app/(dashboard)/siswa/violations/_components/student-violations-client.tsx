@@ -13,8 +13,8 @@ interface StudentViolationsClientProps {
 export function StudentViolationsClient({ violations }: StudentViolationsClientProps) {
   if (violations.length === 0) {
     return (
-      <Card className="rounded-2xl border border-dashed border-white/50 dark:border-white/10 bg-card/45 backdrop-blur-xl p-8 text-center space-y-2">
-        <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+      <Card className="rounded-3xl border-dashed border-white/50 dark:border-white/10 glass-card p-8 text-center space-y-2 shadow-2xl">
+        <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
           <CheckCircle2 className="h-6 w-6" />
         </div>
         <h3 className="text-base font-semibold text-foreground">
@@ -39,11 +39,7 @@ export function StudentViolationsClient({ violations }: StudentViolationsClientP
         return (
           <Card
             key={v.id}
-            className="rounded-2xl border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 backdrop-blur-xl p-3.5 sm:p-4 space-y-2.5 shadow-sm hover:border-primary/40 transition-all duration-200"
-            style={{
-              boxShadow:
-                "inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.45), inset -1.5px -1.5px 2px 0 rgba(255, 255, 255, 0.25)",
-            }}
+            className="rounded-3xl card-elevation p-4 space-y-2.5 shadow-2xl hover:border-primary/40 transition-all duration-200"
           >
             {/* Baris 1: Kategori & Poin Pengurang */}
             <div className="flex items-center justify-between gap-2">

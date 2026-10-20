@@ -33,11 +33,11 @@ export function AchievementCard({
 
   return (
     <Card
-      className={`group relative overflow-hidden rounded-2xl border ${tier.borderClass} bg-card hover:shadow-md transition-all duration-200 flex flex-col justify-between`}
+      className={`group relative overflow-hidden rounded-3xl ${tier.borderClass} card-elevation hover:shadow-2xl transition-all duration-200 flex flex-col justify-between`}
     >
       {/* Decorative top accent line with tier color */}
       <div
-        className={`h-1 w-full ${
+        className={`h-1.5 w-full ${
           tier.tier === "gold"
             ? "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500"
             : tier.tier === "silver"

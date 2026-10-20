@@ -3,7 +3,7 @@ import sharp from "sharp";
 import fs from "fs/promises";
 import path from "path";
 import { saveUploadedFile } from "@/lib/upload";
-import { exportTaskRecapToExcel, exportTaskRecapToPdf, TaskRecapInfo, TaskRecapStudent } from "@/lib/export-task-recap";
+import { TaskRecapInfo, TaskRecapStudent } from "@/lib/export-task-recap";
 
 describe("WORKFLOW FITUR TUGAS BARU: Lembar Kerja Berkas (PDF & Image)", () => {
   // 1. Tes Unggah Soal PDF & Image
@@ -80,7 +80,7 @@ describe("WORKFLOW FITUR TUGAS BARU: Lembar Kerja Berkas (PDF & Image)", () => {
       }
 
       // Langkah 1: Awalnya siswa belum mengerjakan
-      let sub: SubmissionState = {
+      const sub: SubmissionState = {
         status: "belum_mengumpulkan",
         nilai: null,
         catatanGuru: null,

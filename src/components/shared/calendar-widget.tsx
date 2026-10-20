@@ -105,8 +105,8 @@ export function CalendarWidget({ canManage = false }: CalendarWidgetProps) {
   };
 
   return (
-    <Card className="overflow-hidden border-border rounded-xl shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between border-b pb-3">
+    <Card className="overflow-hidden shadow-2xl">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-3">
         <CardTitle className="text-base font-bold">
           Kalender Kegiatan Sekolah
         </CardTitle>
@@ -115,18 +115,18 @@ export function CalendarWidget({ canManage = false }: CalendarWidgetProps) {
             {monthNames[month]} {year}
           </span>
           <div className="flex items-center gap-1 ml-2">
-            <Button variant="outline" size="icon" className="h-7 w-7 rounded-md" onClick={prevMonth}>
+            <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg" onClick={prevMonth}>
               <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="outline" size="icon" className="h-7 w-7 rounded-md" onClick={nextMonth}>
+            <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg" onClick={nextMonth}>
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-4 sm:p-6">
         {/* Day header */}
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-muted-foreground pb-2">
+        <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-muted-foreground pb-2">
           {dayNames.map((d) => (
             <div key={d} className="py-1">
               {d}
@@ -135,10 +135,10 @@ export function CalendarWidget({ canManage = false }: CalendarWidgetProps) {
         </div>
 
         {/* Days grid */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1.5">
           {calendarDays.map((d, index) => {
             if (d === null) {
-              return <div key={`empty-${index}`} className="min-h-[46px] sm:min-h-[70px] rounded-md bg-muted/20" />;
+              return <div key={`empty-${index}`} className="min-h-[46px] sm:min-h-[70px] rounded-xl bg-muted/15" />;
             }
 
             const dayEvents = getEventsForDay(d);
@@ -155,12 +155,12 @@ export function CalendarWidget({ canManage = false }: CalendarWidgetProps) {
                     setSelectedEvent(dayEvents[0]);
                   }
                 }}
-                className={`min-h-[46px] sm:min-h-[70px] rounded-md border p-1 sm:p-1.5 transition-colors ${
+                className={`min-h-[46px] sm:min-h-[70px] rounded-xl border p-1 sm:p-1.5 transition-all ${
                   dayEvents.length > 0 ? "cursor-pointer" : ""
                 } ${
                   isToday
-                    ? "border-primary bg-primary/10"
-                    : "border-border/60 hover:bg-muted/40"
+                    ? "border-primary/50 bg-primary/10 shadow-xs ring-1 ring-primary/30"
+                    : "border-border/50 hover:bg-white/10 dark:hover:bg-white/5"
                 }`}
               >
                 <div className="flex justify-center sm:justify-start">

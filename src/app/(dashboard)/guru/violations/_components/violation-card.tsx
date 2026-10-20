@@ -36,9 +36,9 @@ export function ViolationCard({
       : "bg-teal-500";
 
   return (
-    <Card className="group relative overflow-hidden rounded-2xl border bg-card hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+    <Card className="group relative overflow-hidden rounded-3xl card-elevation hover:shadow-2xl transition-all duration-200 flex flex-col justify-between">
       {/* Top Accent Strip */}
-      <div className={`h-1 w-full ${accentGradient}`} />
+      <div className={`h-1.5 w-full ${accentGradient}`} />
 
       <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full gap-3">
         {/* Top: Student Profile & Points Badge */}

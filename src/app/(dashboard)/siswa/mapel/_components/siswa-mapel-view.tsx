@@ -105,7 +105,7 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
   return (
     <div className="space-y-4">
       {/* Toolbar: Search, Day Filter, and Card/Table View Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/70 backdrop-blur-xs p-3.5 sm:p-4 rounded-2xl border border-border shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/75 dark:bg-card/45 backdrop-blur-xl p-3.5 sm:p-4 rounded-3xl border border-white/50 dark:border-white/10 shadow-xl">
         {/* Left side: Search & Day Filter */}
         <div className="flex flex-1 flex-wrap items-center gap-2.5">
           {/* Search Input */}
@@ -248,12 +248,12 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
             return (
               <LiquidGlassCard
                 key={sch.id}
-                borderRadius="24px"
+                borderRadius="28px"
                 blurIntensity="xl"
-                shadowIntensity="sm"
+                shadowIntensity="md"
                 glowIntensity="sm"
                 draggable={false}
-                className="p-5 bg-card/65 dark:bg-card/45 border border-white/50 dark:border-white/10 group flex flex-col justify-between hover:border-primary/50 transition-all duration-200"
+                className="p-5 bg-card/75 dark:bg-card/45 border border-white/50 dark:border-white/10 group flex flex-col justify-between hover:border-primary/50 transition-all duration-200 shadow-2xl"
               >
                 <div className="space-y-3">
                   {/* Row 1: Kode Badge & Day Pill */}
@@ -339,7 +339,7 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                     </Button>
                   </Link>
 
-                  <Link href={`/siswa/mapel/${sch.mapelId}?tab=tugas`} className="w-full">
+                  <Link href={`/siswa/mapel/${sch.mapelId}/tugas`} className="w-full">
                     <Button
                       variant="outline"
                       size="sm"
@@ -361,9 +361,9 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
         </div>
       ) : (
         /* TABLE VIEW */
-        <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+        <div className="rounded-3xl card-elevation overflow-hidden shadow-2xl">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader className="bg-muted/30 backdrop-blur-xs">
               <TableRow className="border-b border-border/80">
                 <TableHead className="w-12 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   No
@@ -461,7 +461,7 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                           </Button>
                         </Link>
 
-                        <Link href={`/siswa/mapel/${sch.mapelId}?tab=tugas`}>
+                        <Link href={`/siswa/mapel/${sch.mapelId}/tugas`}>
                           <Button
                             variant="outline"
                             size="sm"

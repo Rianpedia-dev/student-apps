@@ -87,7 +87,7 @@ export function StudentTaskLobbyCard({
   };
 
   return (
-    <Card className="bg-card/65 dark:bg-card/45 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg rounded-2xl">
+    <Card className="rounded-3xl shadow-2xl">
       {/* Header: Judul Tugas */}
       <CardHeader>
         <CardTitle className="text-xl sm:text-2xl font-bold">{judul}</CardTitle>
@@ -96,7 +96,7 @@ export function StudentTaskLobbyCard({
       <CardContent className="space-y-5">
         {/* Instructions */}
         {deskripsi && (
-          <div className="p-4 rounded-xl bg-white/40 dark:bg-slate-900/30 backdrop-blur-md border border-white/50 dark:border-white/10 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+          <div className="p-4 rounded-2xl glass-subpanel text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
             <div className="flex items-center gap-1.5 font-semibold text-xs text-muted-foreground mb-2">
               <Info className="h-3.5 w-3.5" />
               Petunjuk Pengerjaan
@@ -120,7 +120,7 @@ export function StudentTaskLobbyCard({
       <CardFooter className="p-5 sm:p-6">
         {isRevisionNeeded ? (
           <div className="w-full space-y-3">
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border border-border">
+            <div className="flex items-start gap-3 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 backdrop-blur-md">
               <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
               <div className="space-y-1 flex-1">
                 <p className="text-sm font-semibold text-foreground">Tugas perlu diperbaiki</p>
@@ -218,7 +218,7 @@ function InfoPill({
   truncate?: boolean;
 }) {
   return (
-    <div className="p-3 rounded-xl bg-white/50 dark:bg-slate-900/40 backdrop-blur-md border border-white/60 dark:border-white/10 space-y-1 shadow-2xs">
+    <div className="p-3.5 rounded-2xl glass-subpanel space-y-1">
       <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
         <Icon className="h-3.5 w-3.5" />
         {label}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -28,6 +28,9 @@ import {
   CheckCheck,
   HelpCircle,
   Award,
+  ListTodo,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,8 +42,13 @@ interface TaskItem {
   deskripsi?: string | null;
   deadline: string;
   poinMaksimal: number;
+  tipePengerjaan?: string;
+  pertemuanKe?: number | null;
+  totalSoal?: number;
+  durasiMenit?: number | null;
   isGraded: boolean;
   isPending: boolean;
+  submissionStatus?: string;
   nilai?: number | null;
 }
 
@@ -76,7 +84,7 @@ interface StudentMeetingViewProps {
   } | null;
   jadwalInfo?: string | null;
   meetings: MeetingItem[];
-  allTasks: TaskItem[];
+  allTasks?: TaskItem[];
   defaultTab?: "pertemuan" | "tugas";
 }
 
@@ -102,10 +110,9 @@ export function StudentMeetingView({
   guru,
   jadwalInfo,
   meetings: initialMeetings,
-  allTasks,
+  allTasks = [],
   defaultTab = "pertemuan",
 }: StudentMeetingViewProps) {
-  const [activeTab, setActiveTab] = useState<"pertemuan" | "tugas">(defaultTab);
   const [meetings, setMeetings] = useState<MeetingItem[]>(initialMeetings);
 
   // Auto-expand first meeting
@@ -120,7 +127,6 @@ export function StudentMeetingView({
 
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState("");
-  const [taskFilter, setTaskFilter] = useState<"all" | "todo" | "pending" | "graded">("all");
 
   // In-browser doc viewer modal
   const [viewerFile, setViewerFile] = useState<{ url: string; name: string } | null>(null);
@@ -153,25 +159,14 @@ export function StudentMeetingView({
     });
   }, [meetings, searchQuery]);
 
-  // Filtered Tasks
-  const filteredTasks = useMemo(() => {
-    return allTasks.filter((t) => {
-      if (taskFilter === "todo") return !t.isGraded && !t.isPending;
-      if (taskFilter === "pending") return t.isPending;
-      if (taskFilter === "graded") return t.isGraded;
-      return true;
-    });
-  }, [allTasks, taskFilter]);
-
-   return (
+  return (
     <div className="space-y-6">
-      {/* KONTEN: MODUL & PERTEMUAN */}
-      {(
-        <div className="space-y-5">
-          {/* Search Bar */}
-          {meetings.length > 0 && (
-            <div className="flex items-center justify-end">
-              <div className="relative w-full sm:max-w-xs">
+      {/* KONTEN: MODUL & PERTEMUAN MATERI */}
+      <div className="space-y-5">
+        {/* Search Bar */}
+        {meetings.length > 0 && (
+          <div className="flex items-center justify-end">
+            <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <input
                   type="text"
@@ -186,7 +181,7 @@ export function StudentMeetingView({
 
           {/* Empty State */}
           {meetings.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-card border border-border space-y-4 shadow-xs">
+            <div className="p-12 text-center rounded-3xl glass-card space-y-4 shadow-2xl">
               <div className="h-16 w-16 rounded-3xl bg-primary/10 text-primary mx-auto flex items-center justify-center">
                 <Compass className="h-8 w-8" />
               </div>
@@ -200,7 +195,7 @@ export function StudentMeetingView({
               </div>
             </div>
           ) : filteredMeetings.length === 0 ? (
-            <div className="p-10 text-center rounded-3xl bg-card border border-border text-muted-foreground space-y-2">
+            <div className="p-10 text-center rounded-3xl glass-card text-muted-foreground space-y-2 shadow-xl">
               <FolderOpen className="h-10 w-10 mx-auto text-muted-foreground/60" />
               <p className="text-sm font-bold text-foreground">Pertemuan Tidak Ditemukan</p>
               <p className="text-xs">Tidak ada modul pertemuan yang sesuai dengan filter atau kata kunci pencarian.</p>
@@ -270,11 +265,11 @@ export function StudentMeetingView({
                       {/* Card */}
                       <div
                         className={`
-                          relative ml-0 md:ml-[72px] rounded-2xl border bg-card transition-all duration-200 shadow-2xs overflow-hidden
+                          relative ml-0 md:ml-[72px] rounded-3xl card-elevation transition-all duration-300 overflow-hidden
                           ${
                             isLatest
-                              ? "border-primary/40 ring-1 ring-primary/20"
-                              : "border-border/80 hover:border-primary/30"
+                              ? "ring-2 ring-primary/40 border-primary/50"
+                              : ""
                           }
                         `}
                       >
@@ -592,7 +587,6 @@ export function StudentMeetingView({
         </div>
       )}
         </div>
-      )}
 
 
       {/* 5. IN-BROWSER DOCUMENT VIEWER MODAL */}

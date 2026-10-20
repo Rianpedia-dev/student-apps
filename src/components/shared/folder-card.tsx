@@ -301,7 +301,7 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
         {/* Card Body — clipped with smooth rounded chamfer */}
         <div
           className={cn(
-            "relative box-border w-full aspect-square overflow-hidden bg-[var(--folder-card-surface)] transition-all duration-300",
+            "relative box-border w-full aspect-square overflow-hidden bg-[var(--folder-card-surface)] transition-all duration-300 backdrop-blur-xl border border-white/40 dark:border-white/10",
             aspectRatioClassName
           )}
           style={{
@@ -345,12 +345,12 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
                 preserveAspectRatio="none"
                 className="absolute inset-0 block h-full w-full"
               >
-                {/* Clean solid fill and stroke without gradient */}
+                {/* Clean solid fill with translucent glass stroke */}
                 <path
                   d={FOLDER_PATH}
                   fill="var(--folder-card-panel)"
-                  stroke="var(--folder-card-panel)"
-                  strokeWidth="2"
+                  stroke="rgba(255, 255, 255, 0.15)"
+                  strokeWidth="1.5"
                 />
               </svg>
 

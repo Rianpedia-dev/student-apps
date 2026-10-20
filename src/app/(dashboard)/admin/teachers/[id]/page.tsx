@@ -61,7 +61,7 @@ export default async function AdminTeacherDetailPage(props: {
         </Badge>
       </div>
 
-      <Card className="border-emerald-500/20 shadow-sm">
+      <Card variant="emerald">
         <CardHeader>
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-emerald-600" />

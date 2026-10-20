@@ -4,6 +4,9 @@ import { getSession } from "@/lib/auth";
 import { TaskCreateTabs } from "@/components/features/assignment/builder/task-create-tabs";
 import { DashboardBreadcrumb } from "@/components/shared/dashboard-breadcrumb";
 
+import { GraduationCap, BookOpen, FileEdit } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
 export const dynamic = "force-dynamic";
 
 interface PageProps {
@@ -44,6 +47,16 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
     }),
   ]);
 
+  const activeKelasId =
+    kelasId ||
+    classes.find((c) => c.nama_kelas === session.kelas)?.id.toString() ||
+    classes[0]?.id.toString() ||
+    "";
+  const activeMapelId = mapelId || subjects[0]?.id.toString() || "";
+
+  const selectedClass = classes.find((c) => c.id.toString() === activeKelasId);
+  const selectedSubject = subjects.find((s) => s.id.toString() === activeMapelId);
+
   const isFromMapel = from === "mapel" && !!mapelId;
   const backHref = isFromMapel
     ? "/guru/mapel"
@@ -53,21 +66,40 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
   const backLabel = isFromMapel ? "Kembali ke Mapel & Tugas" : "Kembali ke Daftar Tugas";
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Back Navigation */}
       <DashboardBreadcrumb
         backHref={backHref}
         backLabel={backLabel}
       />
 
-      {/* Header Info */}
-      <div className="bg-card/70 backdrop-blur-xs p-5 sm:p-6 rounded-2xl border border-border shadow-2xs">
-        <h1 className="text-xl sm:text-2xl font-black text-foreground">
-          Buat Tugas Baru
-        </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Pilih moda tugas yang ingin diberikan: Unggah Lembar Kerja Berkas (PDF / Gambar) atau Kuis Interaktif CBT.
-        </p>
+      {/* Header Info - Clean & Minimal */}
+      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
+            Buat Tugas Baru
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Pilih jenis tugas dan lengkapi konfigurasi berikut.
+          </p>
+        </div>
+
+        {(selectedClass || selectedSubject) && (
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {selectedClass && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-foreground">
+                <GraduationCap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>{selectedClass.nama_kelas}</span>
+              </div>
+            )}
+            {selectedSubject && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-foreground">
+                <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>{selectedSubject.nama_mapel}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <TaskCreateTabs
@@ -89,8 +121,8 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
           judul: p.judul,
         }))}
         defaultKelas={session.kelas || ""}
-        initialKelasId={kelasId}
-        initialMapelId={mapelId}
+        initialKelasId={activeKelasId}
+        initialMapelId={activeMapelId}
         fromOrigin={from}
       />
     </div>

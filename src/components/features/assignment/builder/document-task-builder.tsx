@@ -6,23 +6,21 @@ import {
   Upload,
   FileText,
   Image as ImageIcon,
-  Calendar,
-  Award,
-  BookOpen,
-  GraduationCap,
-  Layers,
   CheckCircle2,
-  AlertCircle,
   Loader2,
-  Eye,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { createDocumentTugasAction } from "@/actions/assignment";
 
@@ -66,6 +64,19 @@ export function DocumentTaskBuilder({
   // File Upload State
   const [fileSoal, setFileSoal] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+
+  const pertemuanItems = React.useMemo(() => {
+    const list: Array<{ value: string; label: string }> = [
+      { value: "none", label: "Tidak ditautkan" },
+    ];
+    pertemuanList.forEach((p) => {
+      list.push({
+        value: p.id,
+        label: `Pertemuan ${p.pertemuan_ke}: ${p.judul}`,
+      });
+    });
+    return list;
+  }, [pertemuanList]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -156,262 +167,194 @@ export function DocumentTaskBuilder({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Kolom Kiri: Informasi Tugas */}
-        <div className="md:col-span-2 space-y-5">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                Informasi & Konfigurasi Tugas
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Tentukan identitas tugas, rombel kelas sasaran, dan batas akhir pengumpulan.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Judul Tugas */}
-              <div className="space-y-1.5">
-                <Label htmlFor="judul" className="text-xs font-bold text-foreground">
-                  Judul Tugas Lembar Kerja <span className="text-rose-500">*</span>
-                </Label>
-                <Input
-                  id="judul"
-                  placeholder="Contoh: LKS Matematika Bab 3 - Operasi Pecahan Desimal"
-                  value={judul}
-                  onChange={(e) => setJudul(e.target.value)}
-                  required
-                  className="text-xs h-9"
+      <Card className="max-w-3xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-xl rounded-3xl">
+        <CardHeader>
+          <CardTitle className="text-base sm:text-lg">Informasi Tugas</CardTitle>
+          <CardDescription className="text-xs">
+            Lengkapi data utama tugas seperti judul, kelas tujuan, mata pelajaran, dan tenggat waktu pengerjaan.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Judul Tugas */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              Judul Tugas <span className="text-destructive">*</span>
+            </label>
+            <Input
+              value={judul}
+              onChange={(e) => setJudul(e.target.value)}
+              placeholder="Contoh: LKS Bab 1 - Bilangan Bulat"
+              className="text-xs sm:text-sm h-10"
+              required
+            />
+          </div>
+
+          {/* Pertemuan (Opsional) */}
+          {pertemuanList.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                Tautkan ke Pertemuan (Opsional)
+              </label>
+              <Select
+                items={pertemuanItems}
+                value={pertemuanId || "none"}
+                onValueChange={(val) => setPertemuanId(val === "none" ? "" : val || "")}
+              >
+                <SelectTrigger className="w-full text-xs h-10">
+                  <SelectValue placeholder="Tidak ditautkan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Tidak ditautkan</SelectItem>
+                  {pertemuanList.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      Pertemuan {p.pertemuan_ke}: {p.judul}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Tenggat Waktu & Skor Maksimal */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                Tenggat Waktu / Deadline <span className="text-destructive">*</span>
+              </label>
+              <Input
+                type="datetime-local"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                className="text-xs sm:text-sm h-10"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                Skor / Poin Maksimal <span className="text-destructive">*</span>
+              </label>
+              <Input
+                type="number"
+                min={10}
+                max={100}
+                value={poinMaksimal}
+                onChange={(e) => setPoinMaksimal(Number(e.target.value) || 100)}
+                className="text-xs sm:text-sm h-10"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Unggah Berkas Lembar Soal */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              Unggah Berkas Lembar Soal <span className="text-destructive">*</span>
+            </label>
+            {!fileSoal ? (
+              <label className="border-2 border-dashed border-input hover:border-emerald-500 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer bg-muted/20 hover:bg-emerald-50/20 transition-colors">
+                <div className="p-2.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600">
+                  <Upload className="h-5 w-5" />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-bold text-foreground">Klik untuk memilih berkas soal</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Format: PDF atau Gambar (JPG, PNG, WebP). Maksimal 25MB.</p>
+                </div>
+                <input
+                  type="file"
+                  accept=".pdf,image/png,image/jpeg,image/webp"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
-              </div>
-
-              {/* Rombel & Mapel Selection */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="kelas_id" className="text-xs font-bold text-foreground">
-                    Rombel Kelas <span className="text-rose-500">*</span>
-                  </Label>
-                  <select
-                    id="kelas_id"
-                    value={kelasId}
-                    onChange={(e) => setKelasId(e.target.value)}
-                    required
-                    className="w-full text-xs h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="" disabled>
-                      Pilih Rombel Kelas
-                    </option>
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nama} {c.jenjang ? `(${c.jenjang})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="mapel_id" className="text-xs font-bold text-foreground">
-                    Mata Pelajaran <span className="text-rose-500">*</span>
-                  </Label>
-                  <select
-                    id="mapel_id"
-                    value={mapelId}
-                    onChange={(e) => setMapelId(e.target.value)}
-                    required
-                    className="w-full text-xs h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="" disabled>
-                      Pilih Mata Pelajaran
-                    </option>
-                    {subjects.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.nama} ({s.kode})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Tautkan Silabus Pertemuan (Opsional) */}
-              {pertemuanList.length > 0 && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="pertemuan_id" className="text-xs font-bold text-foreground">
-                    Tautkan ke Silabus Pertemuan (Opsional)
-                  </Label>
-                  <select
-                    id="pertemuan_id"
-                    value={pertemuanId}
-                    onChange={(e) => setPertemuanId(e.target.value)}
-                    className="w-full text-xs h-9 px-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="">-- Tanpa Tautan Silabus --</option>
-                    {pertemuanList.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        Pertemuan {p.pertemuan_ke}: {p.judul}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Deadline & Poin Maksimal */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="deadline" className="text-xs font-bold text-foreground">
-                    Tenggat Waktu (*Deadline*) <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input
-                    id="deadline"
-                    type="datetime-local"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    required
-                    className="text-xs h-9"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="poin_maksimal" className="text-xs font-bold text-foreground">
-                    Skor / Poin Maksimal
-                  </Label>
-                  <Input
-                    id="poin_maksimal"
-                    type="number"
-                    min={10}
-                    max={100}
-                    value={poinMaksimal}
-                    onChange={(e) => setPoinMaksimal(Number(e.target.value) || 100)}
-                    required
-                    className="text-xs h-9"
-                  />
-                </div>
-              </div>
-
-              {/* Deskripsi & Petunjuk Pengerjaan */}
-              <div className="space-y-1.5">
-                <Label htmlFor="deskripsi" className="text-xs font-bold text-foreground">
-                  Petunjuk Pengerjaan untuk Santri <span className="text-rose-500">*</span>
-                </Label>
-                <Textarea
-                  id="deskripsi"
-                  rows={4}
-                  value={deskripsi}
-                  onChange={(e) => setDeskripsi(e.target.value)}
-                  placeholder="Tuliskan petunjuk pengerjaan soal..."
-                  required
-                  className="text-xs"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Kolom Kanan: Upload Lembar Soal & Pratinjau */}
-        <div className="space-y-5">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Upload className="h-5 w-5 text-primary" />
-                Unggah Berkas Lembar Soal
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Format didukung: <strong>PDF</strong> atau <strong>Gambar (JPG, PNG, WebP)</strong>. Maksimal 25MB.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!fileSoal ? (
-                <label className="border-2 border-dashed border-border hover:border-primary rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer bg-muted/20 hover:bg-muted/40 transition-colors">
-                  <div className="p-3 rounded-full bg-primary/10 text-primary">
-                    <Upload className="h-6 w-6" />
+              </label>
+            ) : (
+              <div className="rounded-xl border border-input p-3 bg-muted/20 space-y-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 shrink-0">
+                      {fileSoal.name.toLowerCase().endsWith(".pdf") ? (
+                        <FileText className="h-5 w-5" />
+                      ) : (
+                        <ImageIcon className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate">{fileSoal.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {(fileSoal.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-xs font-bold text-foreground">Klik untuk memilih berkas soal</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">atau seret & jatuhkan berkas di sini</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveFile}
+                    className="text-destructive hover:text-destructive h-8 px-2 text-xs"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    <span>Ganti</span>
+                  </Button>
+                </div>
+
+                {filePreviewUrl && (
+                  <div className="rounded-lg overflow-hidden border border-input bg-black/5 aspect-4/3 max-h-48 relative">
+                    <img
+                      src={filePreviewUrl}
+                      alt="Pratinjau Lembar Soal"
+                      className="w-full h-full object-contain"
+                    />
                   </div>
-                  <input
-                    type="file"
-                    accept=".pdf,image/png,image/jpeg,image/webp"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </label>
+                )}
+
+                {fileSoal.name.toLowerCase().endsWith(".pdf") && (
+                  <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span>Berkas PDF siap. Sistem akan otomatis mengaktifkan kanvas interaktif.</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Instruksi / Petunjuk Pengerjaan */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              Instruksi / Petunjuk Pengerjaan <span className="text-destructive">*</span>
+            </label>
+            <Textarea
+              value={deskripsi}
+              onChange={(e) => setDeskripsi(e.target.value)}
+              rows={3}
+              placeholder="Tuliskan petunjuk pengerjaan tugas untuk siswa..."
+              className="text-xs sm:text-sm leading-relaxed"
+              required
+            />
+          </div>
+
+          {/* Action Button */}
+          <div className="pt-2 flex justify-end">
+            <Button
+              type="submit"
+              disabled={isSubmitting || !fileSoal}
+              className="text-xs font-semibold gap-1.5 h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Menerbitkan...</span>
+                </>
               ) : (
-                <div className="rounded-xl border border-border p-3.5 bg-muted/30 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-                        {fileSoal.name.toLowerCase().endsWith(".pdf") ? (
-                          <FileText className="h-5 w-5" />
-                        ) : (
-                          <ImageIcon className="h-5 w-5" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-foreground truncate">{fileSoal.name}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {(fileSoal.size / (1024 * 1024)).toFixed(2)} MB
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={handleRemoveFile}
-                      className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                      title="Ganti Berkas"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Image Thumbnail Preview */}
-                  {filePreviewUrl && (
-                    <div className="rounded-lg overflow-hidden border border-border bg-black/5 aspect-4/3 relative">
-                      <img
-                        src={filePreviewUrl}
-                        alt="Pratinjau Lembar Soal"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  )}
-
-                  {fileSoal.name.toLowerCase().endsWith(".pdf") && (
-                    <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 shrink-0" />
-                      <span>Berkas PDF siap. Sistem akan otomatis merender halaman PDF di kanvas siswa & guru.</span>
-                    </div>
-                  )}
-                </div>
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Terbitkan Tugas Lembar Kerja</span>
+                </>
               )}
-
-              {/* Submit Buttons */}
-              <div className="pt-2 space-y-2">
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !fileSoal}
-                  className="w-full text-xs font-bold h-10 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Menerbitkan Tugas...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span>Terbitkan Tugas Lembar Kerja</span>
-                    </>
-                  )}
-                </Button>
-                <p className="text-[11px] text-center text-muted-foreground">
-                  Tugas akan langsung muncul di dasbor siswa kelas terpilih.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </form>
   );
 }

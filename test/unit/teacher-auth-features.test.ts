@@ -83,7 +83,7 @@ describe("MODUL GURU 1 & 2: Autentikasi, Demo Accounts & Peran Wali Kelas vs Gur
   });
 });
 
-describe("MODUL GURU 3 & 4: Absensi Kelas & Presensi Harian Santri", () => {
+describe("MODUL GURU 3 & 4: Absensi Kelas & Presensi Harian siswa", () => {
   it("ATT-G02: Logika Tombol Cepat 'Set Semua Hadir'", () => {
     const students = [
       { id: "1", name: "Rayhan", status: "A" },
@@ -126,7 +126,7 @@ describe("MODUL GURU 6: Konfigurasi Tugas CBT & Bobot Penilaian Guru", () => {
   });
 });
 
-describe("MODUL GURU 11: Pencatatan Kedisiplinan & Tindakan Pembinaan Santri", () => {
+describe("MODUL GURU 11: Pencatatan Kedisiplinan & Tindakan Pembinaan siswa", () => {
   it("VIOL-G02: Format Keterangan Pelanggaran Terstruktur dengan Tag Otomatis", () => {
     const formatted = formatViolationKeterangan({
       severity: "SEDANG",

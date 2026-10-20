@@ -17,7 +17,8 @@
     "seed:tugas": "tsx prisma/seeds/seed_tugas.ts",
     "seed:jadwal": "tsx prisma/seeds/seed_jadwal.ts",
     "seed:prestasi": "tsx prisma/seeds/seed_prestasi.ts",
-    "seed:academic": "tsx prisma/seeds/seed_pertemuan.ts && tsx prisma/seeds/seed_tugas.ts && tsx prisma/seeds/seed_jadwal.ts"
+    "seed:absensi": "tsx prisma/seeds/seed_absensi.ts",
+    "seed:academic": "tsx prisma/seeds/seed_pertemuan.ts && tsx prisma/seeds/seed_tugas.ts && tsx prisma/seeds/seed_jadwal.ts && tsx prisma/seeds/seed_absensi.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

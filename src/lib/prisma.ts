@@ -32,7 +32,7 @@ function createPrismaClient() {
       );
     }
 
-    const defaultLimit = isVercel ? 5 : (process.env.NODE_ENV === "production" ? 10 : 5);
+    const defaultLimit = isVercel ? 5 : (isLocal ? 15 : 10);
     const poolLimit = parseInt(
       process.env.DB_CONNECTION_LIMIT || process.env.DATABASE_POOL_SIZE || String(defaultLimit),
       10
@@ -48,8 +48,8 @@ function createPrismaClient() {
       password: decodeURIComponent(parsed.password || ""),
       database: dbName,
       connectionLimit: poolLimit,
-      connectTimeout: 8000,
-      acquireTimeout: 8000,
+      connectTimeout: 10000,
+      acquireTimeout: 10000,
       ssl: isLocal ? undefined : { minVersion: "TLSv1.2", rejectUnauthorized },
     });
 
@@ -63,7 +63,9 @@ function createPrismaClient() {
       user: "root",
       password: "",
       database: "student-app",
-      connectionLimit: 5,
+      connectionLimit: 15,
+      connectTimeout: 10000,
+      acquireTimeout: 10000,
     });
     return new PrismaClient({ adapter });
   }

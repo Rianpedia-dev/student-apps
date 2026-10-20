@@ -72,7 +72,7 @@ export async function exportTaskRecapToExcel(
 
   const rows: any[][] = [
     ["YAYASAN ASUH ASOSIASI ISLAM AL-AZHAR CAIRO PALEMBANG"],
-    ["REKAPITULASI EVALUASI PENUGASAN SANTRI"],
+    ["REKAPITULASI EVALUASI PENUGASAN SISWA"],
     [`Judul Tugas: ${taskInfo.judul}`],
     [`Mata Pelajaran: ${taskInfo.mapelNama} | Kelas: ${taskInfo.kelasNama} | Poin Maksimal: ${taskInfo.poinMaksimal}`],
     [`Tenggat Waktu: ${taskInfo.deadlineFormatted} | Tanggal Unduh: ${today}`],
@@ -188,7 +188,7 @@ export async function exportTaskRecapToPdf(
   doc.setTextColor(20, 20, 20);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text("REKAPITULASI NILAI EVALUASI PENUGASAN SANTRI", 14, 33);
+  doc.text("REKAPITULASI NILAI EVALUASI PENUGASAN SISWA", 14, 33);
 
   // Metadata Card Info
   doc.setFont("helvetica", "normal");
@@ -259,7 +259,7 @@ export async function exportTaskRecapToPdf(
       7: { halign: "center", cellWidth: 22 },
       8: { cellWidth: "auto" },
     },
-    didDrawPage: (data) => {
+    didDrawPage: () => {
       // Footer page number
       const str = `Halaman ${doc.getNumberOfPages()}`;
       doc.setFontSize(8);

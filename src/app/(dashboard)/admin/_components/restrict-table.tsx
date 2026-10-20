@@ -66,9 +66,9 @@ export function AdminRestrictTable({ initialData }: { initialData: RestrictRow[]
 
   return (
     <>
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-3xl card-elevation overflow-hidden">
         <Table>
-          <TableHeader className="bg-muted/50">
+          <TableHeader className="bg-muted/40 backdrop-blur-xs border-b border-border/60">
             <TableRow>
               <TableHead className="w-16 text-center font-bold">No</TableHead>
               <TableHead className="font-bold">Nama Kelas</TableHead>

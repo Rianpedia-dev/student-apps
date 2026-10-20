@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Download } from "lucide-react";
+import { Download, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,10 @@ import { cn } from "@/lib/utils";
 
 interface RecapClientProps {
   guruClass: string;
+  selectedMapelId?: string;
+  selectedMapelNama?: string;
+  mapelList: { id: string; nama: string; kode: string }[];
+  classList: string[];
   tahunPelajaran: string;
   semester: string;
   selectedMonth: number;
@@ -29,6 +33,10 @@ interface RecapClientProps {
 
 export function RecapClient({
   guruClass,
+  selectedMapelId,
+  selectedMapelNama,
+  mapelList,
+  classList,
   tahunPelajaran,
   semester,
   selectedMonth,
@@ -46,21 +54,30 @@ export function RecapClient({
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
   ];
 
-  // Perpindahan bulan/tahun dikodekan ke URL supaya server hanya mengambil
-  // data pada periode terpilih (bukan seluruh riwayat absensi kelas).
-  const goToPeriod = (month: number, year: number) => {
-    router.push(`${pathname}?month=${month}&year=${year}`);
+  const updateFilters = (params: {
+    month?: number;
+    year?: number;
+    mapelId?: string;
+    kelas?: string;
+  }) => {
+    const m = params.month !== undefined ? params.month : selectedMonth;
+    const y = params.year !== undefined ? params.year : selectedYear;
+    const mapel = params.mapelId !== undefined ? params.mapelId : selectedMapelId || "";
+    const k = params.kelas !== undefined ? params.kelas : guruClass;
+
+    const query = new URLSearchParams();
+    query.set("month", String(m));
+    query.set("year", String(y));
+    if (mapel) query.set("mapelId", mapel);
+    if (k) query.set("kelas", k);
+
+    router.push(`${pathname}?${query.toString()}`);
   };
 
-  // Pastikan tahun terpilih selalu ada dalam daftar opsi, termasuk ketika halaman
-  // dibuka manual lewat URL dengan tahun di luar rentang bawaan.
   const yearOptions = Array.from(new Set([...availableYears, selectedYear])).sort(
     (a, b) => b - a
   );
 
-  // Hitung rekap per siswa. Server sudah mempersempit data ke periode terpilih;
-  // pencocokan tahun DAN bulan di bawah menjadi penjaga agar data lintas tahun
-  // tidak pernah tercampur ke dalam satu bulan yang sama.
   const studentStats = students.map((s) => {
     const studentAbsens = allAbsen.filter((a) => {
       if (a.user_id !== s.id) return false;
@@ -90,14 +107,13 @@ export function RecapClient({
       izin: i,
       alpha: a,
       persentase: `${persentase}%`,
+      percentageNum: persentase,
     };
   });
 
-  // Generate PDF per PRD Section 14
   const generatePdf = () => {
     setIsGenerating(true);
     try {
-      // Landscape A4
       const doc = new jsPDF({
         orientation: "landscape",
         unit: "mm",
@@ -105,17 +121,25 @@ export function RecapClient({
       });
 
       // Header Sekolah
-      doc.setFontSize(16);
+      doc.setFontSize(15);
       doc.setFont("helvetica", "bold");
-      doc.text("SEKOLAH ISLAM AL-AZHAR CAIRO PALEMBANG", 148.5, 15, { align: "center" });
+      doc.text("SD - SMP ISLAM AL-AZHAR CAIRO PALEMBANG", 148.5, 14, { align: "center" });
 
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      doc.text("REKAPITULASI PRESENSI KEHADIRAN SISWA", 148.5, 22, { align: "center" });
+      const title = selectedMapelNama
+        ? `REKAPITULASI PRESENSI MATA PELAJARAN: ${selectedMapelNama.toUpperCase()}`
+        : "REKAPITULASI PRESENSI KEHADIRAN SISWA";
+      doc.text(title, 148.5, 20, { align: "center" });
 
       doc.setFontSize(9);
-      doc.text(`Kelas: ${guruClass}  |  Tahun Pelajaran: ${tahunPelajaran}  |  Semester: ${semester}  |  Bulan: ${monthNames[selectedMonth]} ${selectedYear}`, 148.5, 28, { align: "center" });
-      doc.line(14, 31, 283, 31);
+      doc.text(
+        `Kelas: ${guruClass}  |  Tahun Pelajaran: ${tahunPelajaran}  |  Semester: ${semester}  |  Bulan: ${monthNames[selectedMonth]} ${selectedYear}`,
+        148.5,
+        26,
+        { align: "center" }
+      );
+      doc.line(14, 29, 283, 29);
 
       // Table Data
       const tableRows = studentStats.map((st, idx) => [
@@ -131,12 +155,12 @@ export function RecapClient({
       ]);
 
       autoTable(doc, {
-        startY: 35,
+        startY: 33,
         head: [["No", "Nama Siswa", "NIS", "L/P", "Hadir (H)", "Sakit (S)", "Izin (I)", "Alpha (A)", "Kehadiran %"]],
         body: tableRows,
         theme: "striped",
         headStyles: {
-          fillColor: [13, 148, 136], // Emerald/Teal
+          fillColor: [13, 148, 136],
           textColor: 255,
           fontStyle: "bold",
           fontSize: 9,
@@ -162,11 +186,14 @@ export function RecapClient({
       const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY || 150;
       doc.setFontSize(9);
       doc.text(`Palembang, ${new Date().toLocaleDateString("id-ID")}`, 235, finalY + 15, { align: "center" });
-      doc.text("Wali Kelas,", 235, finalY + 20, { align: "center" });
+      doc.text(selectedMapelNama ? "Guru Pengampu," : "Wali Kelas,", 235, finalY + 20, { align: "center" });
       doc.text("( ......................................... )", 235, finalY + 38, { align: "center" });
 
-      // Save PDF
-      doc.save(`Rekap_Presensi_${guruClass.replace(/\s+/g, "_")}_${monthNames[selectedMonth]}_${selectedYear}.pdf`);
+      const filename = selectedMapelNama
+        ? `Rekap_Presensi_${selectedMapelNama.replace(/\s+/g, "_")}_${guruClass.replace(/\s+/g, "_")}_${monthNames[selectedMonth]}_${selectedYear}.pdf`
+        : `Rekap_Presensi_${guruClass.replace(/\s+/g, "_")}_${monthNames[selectedMonth]}_${selectedYear}.pdf`;
+
+      doc.save(filename);
       toast.success("Dokumen PDF berhasil di-download.");
     } catch {
       toast.error("Gagal membuat file PDF");
@@ -177,16 +204,53 @@ export function RecapClient({
 
   return (
     <div className="space-y-6">
-      {/* Month Picker & Action Bar */}
-      <Card className="border-emerald-500/20 shadow-sm">
-        <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-muted-foreground">Pilih Bulan:</span>
+      {/* Filters Bar */}
+      <Card>
+        <CardContent className="p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
+            {/* Mapel Filter */}
+            {mapelList.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold text-muted-foreground block">Mata Pelajaran:</span>
+                <select
+                  value={selectedMapelId || ""}
+                  onChange={(e) => updateFilters({ mapelId: e.target.value })}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs"
+                >
+                  {mapelList.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Kelas Filter */}
+            {classList.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold text-muted-foreground block">Rombel Kelas:</span>
+                <select
+                  value={guruClass}
+                  onChange={(e) => updateFilters({ kelas: e.target.value })}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs"
+                >
+                  {classList.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Month Filter */}
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-muted-foreground block">Bulan:</span>
               <select
                 value={selectedMonth}
-                onChange={(e) => goToPeriod(parseInt(e.target.value, 10), selectedYear)}
-                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm"
+                onChange={(e) => updateFilters({ month: parseInt(e.target.value, 10) })}
+                className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs"
               >
                 {monthNames.slice(1).map((m, idx) => (
                   <option key={m} value={idx + 1}>
@@ -196,12 +260,13 @@ export function RecapClient({
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-muted-foreground">Tahun:</span>
+            {/* Year Filter */}
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-muted-foreground block">Tahun:</span>
               <select
                 value={selectedYear}
-                onChange={(e) => goToPeriod(selectedMonth, parseInt(e.target.value, 10))}
-                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm"
+                onChange={(e) => updateFilters({ year: parseInt(e.target.value, 10) })}
+                className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs"
               >
                 {yearOptions.map((y) => (
                   <option key={y} value={y}>
@@ -214,92 +279,102 @@ export function RecapClient({
 
           <Button
             onClick={generatePdf}
-            disabled={isGenerating}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            disabled={isGenerating || students.length === 0}
+            className="w-full lg:w-auto gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-md shadow-emerald-600/20 cursor-pointer"
           >
             <Download className="h-4 w-4" />
-            {isGenerating ? "Menyiapkan PDF..." : "Download PDF Rekap (A4 Landscape)"}
+            {isGenerating ? "Menyiapkan PDF..." : "Export PDF Resmi (A4 Landscape)"}
           </Button>
         </CardContent>
       </Card>
 
       {/* Recap Table Preview */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base">
-            Rekapitulasi Bulan {monthNames[selectedMonth]} {selectedYear}
-          </CardTitle>
-          <CardDescription>
-            Ringkasan kehadiran siswa kelas {guruClass}
-          </CardDescription>
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 sm:p-5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <CardTitle className="text-base font-black text-foreground">
+                Rekapitulasi: {selectedMapelNama ? `${selectedMapelNama} • ` : ""}Kelas {guruClass}
+              </CardTitle>
+              <CardDescription className="text-xs font-medium text-muted-foreground mt-0.5">
+                Periode: {monthNames[selectedMonth]} {selectedYear} • {tahunPelajaran} ({semester})
+              </CardDescription>
+            </div>
+            {selectedMapelNama && (
+              <Badge variant="outline" className="text-xs font-mono font-bold border-teal-500/40 text-teal-700 dark:text-teal-300">
+                {selectedMapelNama}
+              </Badge>
+            )}
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-xl border overflow-hidden">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-muted/60 border-b">
+              <thead className="bg-muted/70 border-y border-border text-[11px] font-black text-foreground uppercase tracking-wider">
                 <tr>
-                  <th className="p-3 font-bold text-center w-12 border-r">No</th>
-                  <th className="p-3 font-bold border-r">Nama Siswa</th>
-                  <th className="p-3 font-bold text-center border-r">NIS</th>
-                  <th className="p-3 font-bold text-center border-r">L/P</th>
-                  <th className="p-3 font-extrabold text-center border-r bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-border">
+                  <th className="py-3 px-3 font-extrabold text-center w-12 border-r">No</th>
+                  <th className="py-3 px-4 font-extrabold border-r min-w-[160px]">Nama Siswa</th>
+                  <th className="py-3 px-3 font-extrabold text-center border-r w-24">NIS</th>
+                  <th className="py-3 px-3 font-extrabold text-center border-r w-14">L/P</th>
+                  <th className="py-3 px-3 font-extrabold text-center border-r bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 w-24">
                     Hadir (H)
                   </th>
-                  <th className="p-3 font-extrabold text-center border-r bg-sky-100 text-sky-900 border-sky-200 dark:bg-sky-500/20 dark:text-sky-300 dark:border-border">
+                  <th className="py-3 px-3 font-extrabold text-center border-r bg-sky-500/10 text-sky-800 dark:text-sky-200 w-24">
                     Sakit (S)
                   </th>
-                  <th className="p-3 font-extrabold text-center border-r bg-amber-100 text-amber-950 border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-border">
+                  <th className="py-3 px-3 font-extrabold text-center border-r bg-amber-500/10 text-amber-800 dark:text-amber-200 w-24">
                     Izin (I)
                   </th>
-                  <th className="p-3 font-extrabold text-center border-r bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-300">
+                  <th className="py-3 px-3 font-extrabold text-center border-r bg-rose-500/10 text-rose-800 dark:text-rose-200 w-24">
                     Alpha (A)
                   </th>
-                  <th className="p-3 font-bold text-center">Persentase</th>
+                  <th className="py-3 px-3 font-extrabold text-center w-24">Kehadiran</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border/60">
                 {studentStats.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-8 text-muted-foreground">
-                      Belum ada data siswa di kelas ini.
+                    <td colSpan={9} className="text-center py-10 text-muted-foreground font-medium text-xs">
+                      Belum ada data santri di kelas ini.
                     </td>
                   </tr>
                 ) : (
                   studentStats.map((st, idx) => (
-                    <tr key={st.student.id} className="border-b hover:bg-muted/40 transition-colors">
-                      <td className="p-2.5 text-center font-medium border-r">{idx + 1}</td>
-                      <td className="p-2.5 font-semibold border-r">{st.student.name}</td>
-                      <td className="p-2.5 text-center font-mono text-xs border-r">{st.student.nis || "-"}</td>
-                      <td className="p-2.5 text-center border-r">{st.student.gender || "-"}</td>
-                      <td className="p-2.5 text-center font-extrabold text-emerald-800 dark:text-emerald-300 border-r bg-emerald-50/80 dark:bg-emerald-500/10">
+                    <tr key={st.student.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="py-2.5 px-3 text-center font-bold border-r text-foreground">
+                        {idx + 1}
+                      </td>
+                      <td className="py-2.5 px-4 font-bold border-r text-foreground">
+                        {st.student.name}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-mono font-medium text-[11px] border-r text-foreground">
+                        {st.student.nis || "-"}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-medium border-r text-foreground">{st.student.gender || "-"}</td>
+                      <td className="py-2.5 px-3 text-center font-extrabold text-emerald-600 border-r bg-emerald-500/5">
                         {st.hadir}
                       </td>
-                      <td className={cn(
-                        "p-2.5 text-center border-r font-mono",
-                        st.sakit > 0
-                          ? "font-extrabold text-sky-800 dark:text-sky-300 bg-sky-50/80 dark:bg-sky-500/10"
-                          : "text-muted-foreground/35 font-medium bg-sky-50/30 dark:bg-sky-500/5"
-                      )}>
+                      <td className="py-2.5 px-3 text-center font-extrabold text-sky-600 border-r bg-sky-500/5">
                         {st.sakit}
                       </td>
-                      <td className={cn(
-                        "p-2.5 text-center border-r font-mono",
-                        st.izin > 0
-                          ? "font-extrabold text-amber-900 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-500/10"
-                          : "text-muted-foreground/35 font-medium bg-amber-50/30 dark:bg-amber-500/5"
-                      )}>
+                      <td className="py-2.5 px-3 text-center font-extrabold text-amber-600 border-r bg-amber-500/5">
                         {st.izin}
                       </td>
-                      <td className={cn(
-                        "p-2.5 text-center border-r font-mono",
-                        st.alpha > 0
-                          ? "font-extrabold text-rose-800 dark:text-rose-300 bg-rose-50/80 dark:bg-rose-500/10"
-                          : "text-muted-foreground/35 font-medium bg-rose-50/30 dark:bg-rose-500/5"
-                      )}>
+                      <td className="py-2.5 px-3 text-center font-extrabold text-rose-600 border-r bg-rose-500/5">
                         {st.alpha}
                       </td>
-                      <td className="p-2.5 text-center font-bold font-mono">
-                        {st.persentase}
+                      <td className="py-2.5 px-3 text-center font-bold font-mono">
+                        <span
+                          className={cn(
+                            st.percentageNum >= 85
+                              ? "text-emerald-600"
+                              : st.percentageNum >= 75
+                              ? "text-amber-600"
+                              : "text-rose-600"
+                          )}
+                        >
+                          {st.persentase}
+                        </span>
                       </td>
                     </tr>
                   ))

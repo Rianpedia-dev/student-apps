@@ -31,6 +31,7 @@ model User {
   created_at        DateTime?       @db.Timestamp(0)
   updated_at        DateTime?       @updatedAt @db.Timestamp(0)
   absensi            Absen[]
+  absensiDiambil     Absen[]           @relation("GuruPengabsen")
   jadwalMengajar     JadwalPelajaran[]
   tugasDibuat        Tugas[]
   tugasDikumpulkan   TugasSubmission[]
@@ -78,20 +79,34 @@ model Pengumuman {
 }
 
 model Absen {
-  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id    BigInt    @db.UnsignedBigInt
-  kelas      String    @db.VarChar(255)
-  keterangan String?   @db.VarChar(255)
-  date       String?   @db.VarChar(255)
-  month      String?   @db.VarChar(255)
-  created_at DateTime? @db.Timestamp(0)
-  updated_at DateTime? @updatedAt @db.Timestamp(0)
-  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "tbl_absen_user_id_foreign")
+  id           BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id      BigInt          @db.UnsignedBigInt
+  kelas        String          @db.VarChar(255)
+  kelas_id     BigInt?         @db.UnsignedBigInt
+  mapel_id     BigInt?         @db.UnsignedBigInt
+  jadwal_id    BigInt?         @db.UnsignedBigInt
+  guru_id      BigInt?         @db.UnsignedBigInt
+  pertemuan_id BigInt?         @db.UnsignedBigInt
+  keterangan   String?         @db.VarChar(255)
+  catatan      String?         @db.VarChar(500)
+  date         String?         @db.VarChar(255)
+  month        String?         @db.VarChar(255)
+  jam_ke       String?         @db.VarChar(50)
+  created_at   DateTime?       @db.Timestamp(0)
+  updated_at   DateTime?       @updatedAt @db.Timestamp(0)
+  user         User            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "tbl_absen_user_id_foreign")
+  mapel        MataPelajaran?  @relation(fields: [mapel_id], references: [id], onDelete: SetNull)
+  jadwal       JadwalPelajaran? @relation(fields: [jadwal_id], references: [id], onDelete: SetNull)
+  guru         User?           @relation("GuruPengabsen", fields: [guru_id], references: [id], onDelete: SetNull)
+  pertemuan    Pertemuan?      @relation(fields: [pertemuan_id], references: [id], onDelete: SetNull)
 
-  @@unique([user_id, date], map: "tbl_absen_user_id_date_unique")
+  @@unique([user_id, mapel_id, date], map: "tbl_absen_user_mapel_date_unique")
   @@index([user_id], map: "tbl_absen_user_id_foreign")
   @@index([kelas, month])
   @@index([kelas, date])
+  @@index([mapel_id, date])
+  @@index([guru_id])
+  @@index([jadwal_id])
   @@index([date])
   @@map("tbl_absen")
 }
@@ -330,6 +345,7 @@ model MataPelajaran {
   jadwal      JadwalPelajaran[]
   tugas       Tugas[]
   pertemuan   Pertemuan[]
+  absensi     Absen[]
 
   @@map("tbl_mata_pelajaran")
 }
@@ -347,6 +363,7 @@ model JadwalPelajaran {
   kelas       Kelas         @relation(fields: [kelas_id], references: [id], onDelete: Cascade)
   mapel       MataPelajaran @relation(fields: [mapel_id], references: [id], onDelete: Cascade)
   guru        User          @relation(fields: [guru_id], references: [id], onDelete: Cascade)
+  absensi     Absen[]
 
   @@index([kelas_id, hari])
   @@index([guru_id])
@@ -542,6 +559,7 @@ model Pertemuan {
   guru           User                @relation(fields: [guru_id], references: [id], onDelete: Cascade)
   tugas          Tugas[]
   progressSiswa  PertemuanProgress[]
+  absensi        Absen[]
 
   @@index([kelas_id, mapel_id])
   @@index([guru_id])

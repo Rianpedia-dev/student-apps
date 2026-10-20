@@ -1171,7 +1171,7 @@ export async function requestTaskRevisionAction({
   }
 
   if (!catatanRevisi?.trim()) {
-    return { success: false, error: "Mohon tuliskan catatan instruksi revisi untuk santri." };
+    return { success: false, error: "Mohon tuliskan catatan instruksi revisi untuk siswa." };
   }
 
   try {

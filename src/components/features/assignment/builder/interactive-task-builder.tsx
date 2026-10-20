@@ -343,7 +343,7 @@ export function InteractiveTaskBuilder({
   return (
     <div className="space-y-6">
       {/* ── Stepper Header ── */}
-      <div className="bg-card border border-border rounded-xl p-3.5 sm:p-4 shadow-2xs">
+      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl shadow-slate-900/5">
         <div className="flex items-center justify-between gap-2 max-w-xl mx-auto">
           {/* Step 1 */}
           <button
@@ -351,19 +351,19 @@ export function InteractiveTaskBuilder({
             onClick={() => setActiveStep(1)}
             className={`flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
               activeStep === 1
-                ? "text-primary font-bold"
+                ? "text-blue-600 dark:text-blue-400 font-bold"
                 : activeStep > 1
-                ? "text-foreground hover:text-primary"
+                ? "text-foreground hover:text-blue-600"
                 : "text-muted-foreground"
             }`}
           >
             <span
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+              className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
                 activeStep === 1
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
                   : activeStep > 1
-                  ? "bg-primary/10 text-primary"
-                  : "bg-muted text-muted-foreground"
+                  ? "bg-blue-100 dark:bg-blue-950/50 text-blue-600"
+                  : "bg-slate-100 dark:bg-slate-800 text-muted-foreground"
               }`}
             >
               1
@@ -371,7 +371,7 @@ export function InteractiveTaskBuilder({
             <span>Info Tugas</span>
           </button>
 
-          <div className="h-px flex-1 max-w-16 bg-border" />
+          <div className="h-px flex-1 max-w-16 bg-slate-200 dark:bg-slate-700" />
 
           {/* Step 2 */}
           <button
@@ -379,19 +379,19 @@ export function InteractiveTaskBuilder({
             onClick={() => handleNextFromStep1()}
             className={`flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
               activeStep === 2
-                ? "text-primary font-bold"
+                ? "text-blue-600 dark:text-blue-400 font-bold"
                 : activeStep > 2
-                ? "text-foreground hover:text-primary"
-                : "text-muted-foreground"
+                ? "text-foreground hover:text-blue-600"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+              className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
                 activeStep === 2
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
                   : activeStep > 2
-                  ? "bg-primary/10 text-primary"
-                  : "bg-muted text-muted-foreground"
+                  ? "bg-blue-100 dark:bg-blue-950/50 text-blue-600"
+                  : "bg-slate-100 dark:bg-slate-800 text-muted-foreground"
               }`}
             >
               2
@@ -399,7 +399,7 @@ export function InteractiveTaskBuilder({
             <span>Butir Soal ({questions.length})</span>
           </button>
 
-          <div className="h-px flex-1 max-w-16 bg-border" />
+          <div className="h-px flex-1 max-w-16 bg-slate-200 dark:bg-slate-700" />
 
           {/* Step 3 */}
           <button
@@ -407,15 +407,15 @@ export function InteractiveTaskBuilder({
             onClick={() => handleNextFromStep2()}
             className={`flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
               activeStep === 3
-                ? "text-primary font-bold"
+                ? "text-blue-600 dark:text-blue-400 font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+              className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
                 activeStep === 3
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
+                  ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                  : "bg-slate-100 dark:bg-slate-800 text-muted-foreground"
               }`}
             >
               3

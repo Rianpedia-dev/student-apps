@@ -112,6 +112,79 @@ export async function deleteAttendanceAction(date: string, kelas: string) {
   }
 }
 
+export async function createSubjectAttendanceAction(params: {
+  date: string;
+  kelas: string;
+  kelasId?: string;
+  mapelId: string;
+  jadwalId?: string;
+  pertemuanId?: string;
+  jamKe?: string;
+  records: { userId: string; keterangan: string; catatan?: string }[];
+}) {
+  try {
+    const session = await checkGuruOrAdmin();
+    const guruId = session.role === "guru" ? session.id : undefined;
+
+    await AttendanceService.recordSubjectAttendance({
+      date: params.date,
+      kelas: params.kelas,
+      kelasId: params.kelasId,
+      mapelId: params.mapelId,
+      guruId,
+      jadwalId: params.jadwalId,
+      pertemuanId: params.pertemuanId,
+      jamKe: params.jamKe,
+      records: params.records,
+    });
+
+    revalidatePath("/guru/attendance");
+    revalidatePath("/guru/mapel");
+    revalidatePath("/admin/attendance");
+    revalidatePath("/siswa/attendance");
+    return { success: true, message: "Data presensi mata pelajaran berhasil disimpan." };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal menyimpan presensi mata pelajaran.";
+    return { error: errorMsg };
+  }
+}
+
+export async function deleteSubjectAttendanceAction(date: string, kelas: string, mapelId?: string) {
+  try {
+    await checkGuruOrAdmin();
+    await AttendanceService.deleteSubjectAttendance(date, kelas, mapelId);
+
+    revalidatePath("/guru/attendance");
+    revalidatePath("/admin/attendance");
+    revalidatePath("/siswa/attendance");
+    return { success: true, message: "Data presensi mata pelajaran berhasil dihapus." };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal menghapus data presensi.";
+    return { error: errorMsg };
+  }
+}
+
+export async function applyWaliKelasFullDayAction(params: {
+  dateStr: string;
+  kelasNama: string;
+  studentId: string;
+  keterangan: "Sakit" | "Izin" | "Alpha" | "Hadir";
+  catatan?: string;
+}) {
+  try {
+    await checkWaliKelasOrAdmin(params.kelasNama);
+    await AttendanceService.applyFullDayStatusByWaliKelas(params);
+
+    revalidatePath("/guru/attendance");
+    revalidatePath("/admin/attendance");
+    revalidatePath("/siswa/attendance");
+    return { success: true, message: `Status ${params.keterangan} seharian berhasil diterapkan untuk seluruh mapel.` };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal menerapkan status presensi seharian.";
+    return { error: errorMsg };
+  }
+}
+
 export async function createViolationAction(formData: FormData) {
   try {
     await checkGuruOrAdmin();
@@ -156,7 +229,7 @@ export async function createViolationAction(formData: FormData) {
     revalidatePath("/guru/my-class");
     revalidatePath("/siswa/violations");
     revalidatePath("/siswa");
-    return { success: true, message: "Catatan kedisiplinan santri berhasil disimpan." };
+    return { success: true, message: "Catatan kedisiplinan siswa berhasil disimpan." };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal mencatat pelanggaran.";
     return { error: errorMsg };

@@ -95,7 +95,7 @@ export function AchievementsClientView({
 
       {/* 2. Achievements Grid / Empty State */}
       {filteredAchievements.length === 0 ? (
-        <Card className="border-dashed rounded-2xl bg-card/60">
+        <Card className="border-dashed rounded-3xl glass-card">
           <CardContent className="p-12 text-center text-muted-foreground space-y-4">
             <div className="h-14 w-14 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
               {isFilterActive ? <SearchX className="h-7 w-7" /> : <Trophy className="h-7 w-7" />}

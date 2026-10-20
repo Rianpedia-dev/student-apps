@@ -70,7 +70,7 @@ export default async function AdminClassDetailPage(props: {
 
       {/* Class Banner Info */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-background to-background">
+        <Card variant="emerald">
           <CardContent className="p-5 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
               <School className="h-6 w-6" />
@@ -82,7 +82,7 @@ export default async function AdminClassDetailPage(props: {
           </CardContent>
         </Card>
 
-        <Card className="border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-background to-background">
+        <Card variant="sky">
           <CardContent className="p-5 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
               <User className="h-6 w-6" />
@@ -95,7 +95,7 @@ export default async function AdminClassDetailPage(props: {
           </CardContent>
         </Card>
 
-        <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-background to-background">
+        <Card variant="amber">
           <CardContent className="p-5 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
               <ShieldAlert className="h-6 w-6" />
@@ -109,7 +109,7 @@ export default async function AdminClassDetailPage(props: {
       </div>
 
       {/* Rombongan Belajar / Siswa */}
-      <Card className="shadow-sm">
+      <Card className="overflow-hidden">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Daftar Siswa Terdaftar</CardTitle>

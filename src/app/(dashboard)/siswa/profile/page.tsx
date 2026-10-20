@@ -75,14 +75,14 @@ export default async function SiswaProfilePage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Profile Card & Edit Form (2 Cols) */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="shadow-md overflow-hidden border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 backdrop-blur-xl rounded-2xl">
+          <Card className="shadow-2xl overflow-hidden rounded-3xl card-elevation">
             <SiswaProfileForm student={formattedStudent} />
           </Card>
         </div>
 
         {/* Sidebar Info: Prestasi (1 Col) */}
         <div className="space-y-6">
-          <Card className="shadow-md border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 backdrop-blur-xl rounded-2xl">
+          <Card className="shadow-2xl rounded-3xl card-elevation">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-amber-500" />
@@ -98,7 +98,7 @@ export default async function SiswaProfilePage() {
                 myAchievements.map((ach) => (
                   <div
                     key={ach.id.toString()}
-                    className="rounded-xl border border-white/50 dark:border-white/10 p-3 text-xs bg-white/50 dark:bg-slate-900/40 backdrop-blur-md shadow-2xs"
+                    className="rounded-2xl p-3.5 text-xs glass-subpanel shadow-2xs"
                   >
                     <div className="flex items-center gap-2 font-bold text-foreground">
                       <span>🏆</span>

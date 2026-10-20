@@ -24,17 +24,11 @@ export function DisciplineSummaryCard({
   const grade = getGrade(score);
 
   return (
-    <Card
-      className="rounded-2xl border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 backdrop-blur-xl p-3.5 sm:p-5 shadow-sm"
-      style={{
-        boxShadow:
-          "inset 1.5px 1.5px 2px 0 rgba(255, 255, 255, 0.45), inset -1.5px -1.5px 2px 0 rgba(255, 255, 255, 0.25)",
-      }}
-    >
+    <Card className="rounded-3xl card-elevation p-4 sm:p-5 shadow-2xl">
       <div className="flex items-center gap-3.5 sm:gap-4">
         {/* Skor Poin */}
         <div
-          className={`shrink-0 flex flex-col items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-xl font-extrabold ${
+          className={`shrink-0 flex flex-col items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-2xl font-extrabold ${
             score >= 90
               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
               : score >= 75

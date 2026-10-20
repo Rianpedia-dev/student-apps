@@ -76,7 +76,7 @@ export default async function AdminStudentDetailPage(props: {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Form Edit Data Siswa (2 Cols) */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-emerald-500/20 shadow-sm">
+          <Card variant="emerald">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5 text-emerald-600" />
@@ -176,7 +176,7 @@ export default async function AdminStudentDetailPage(props: {
 
         {/* Prestasi Siswa Section (1 Col) */}
         <div className="space-y-6">
-          <Card className="border-amber-500/20 shadow-sm">
+          <Card variant="amber">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-amber-500" />

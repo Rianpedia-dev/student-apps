@@ -82,7 +82,7 @@ export function Navbar({ role, userName, userEmail, kelas, status, userImage }: 
   );
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border/80 bg-background/85 px-2.5 backdrop-blur-md shadow-xs sm:px-6 relative overflow-hidden">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-white/50 dark:border-white/10 bg-white/70 dark:bg-slate-950/45 px-2.5 backdrop-blur-2xl shadow-sm sm:px-6 relative overflow-hidden">
       {/* Al-Azhar Geometric Triangular Prism Mosaic in Top Right Corner */}
       <AlAzharCornerMosaic className="absolute top-0 right-0 w-36 sm:w-44 h-16 pointer-events-none opacity-90 select-none" />
 
@@ -184,12 +184,12 @@ export function Navbar({ role, userName, userEmail, kelas, status, userImage }: 
         </Link>
 
         {/* Desktop Profile Avatar */}
-        <div className="hidden md:flex items-center pl-2 sm:pl-3 border-l border-border">
+        <div className="hidden md:flex items-center pl-2 sm:pl-3 border-l border-white/40 dark:border-white/10">
           {profileAvatar}
         </div>
 
         {/* Mobile Sidebar Trigger (Burger Menu di kanan pada mobile) */}
-        <div className="md:hidden flex items-center pl-1.5 border-l border-border">
+        <div className="md:hidden flex items-center pl-1.5 border-l border-white/40 dark:border-white/10">
           <Sheet open={openMobile} onOpenChange={setOpenMobile}>
             <SheetTrigger
               render={
@@ -204,7 +204,7 @@ export function Navbar({ role, userName, userEmail, kelas, status, userImage }: 
             />
             <SheetContent
               side="right"
-              className="p-0 gap-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground data-[side=right]:w-[250px] sm:data-[side=right]:w-[260px] max-w-[85vw] shadow-2xl overflow-hidden [&>[data-slot=sheet-close]]:text-sidebar-foreground/80 [&>[data-slot=sheet-close]]:hover:text-sidebar-foreground [&>[data-slot=sheet-close]]:hover:bg-muted/70 [&>[data-slot=sheet-close]]:focus-visible:ring-ring [&>[data-slot=sheet-close]]:top-4 [&>[data-slot=sheet-close]]:right-3.5 [&>[data-slot=sheet-close]]:h-8 [&>[data-slot=sheet-close]]:w-8 [&>[data-slot=sheet-close]]:rounded-[var(--radius)] [&>[data-slot=sheet-close]]:cursor-pointer [&>[data-slot=sheet-close]]:transition-all"
+              className="p-0 gap-0 border-l border-white/40 dark:border-white/10 bg-white/75 dark:bg-slate-950/70 backdrop-blur-2xl text-sidebar-foreground data-[side=right]:w-[250px] sm:data-[side=right]:w-[260px] max-w-[85vw] shadow-2xl overflow-hidden [&>[data-slot=sheet-close]]:text-sidebar-foreground/80 [&>[data-slot=sheet-close]]:hover:text-sidebar-foreground [&>[data-slot=sheet-close]]:hover:bg-muted/70 [&>[data-slot=sheet-close]]:focus-visible:ring-ring [&>[data-slot=sheet-close]]:top-4 [&>[data-slot=sheet-close]]:right-3.5 [&>[data-slot=sheet-close]]:h-8 [&>[data-slot=sheet-close]]:w-8 [&>[data-slot=sheet-close]]:rounded-xl [&>[data-slot=sheet-close]]:cursor-pointer [&>[data-slot=sheet-close]]:transition-all"
             >
               <Sidebar
                 role={role}

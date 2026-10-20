@@ -120,7 +120,7 @@ export function TeacherTaskList({
 
   if (tasks.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-12 text-center space-y-3">
+      <div className="rounded-3xl glass-card p-12 text-center space-y-3 shadow-2xl">
         <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto" />
         <h3 className="text-base font-bold text-foreground">Belum Ada Tugas yang Dibuat</h3>
         <p className="text-xs text-muted-foreground max-w-sm mx-auto">
@@ -141,9 +141,9 @@ export function TeacherTaskList({
     const filtered = filterTasks(statusTab);
 
     return (
-      <div className="rounded-2xl border border-border bg-card shadow-2xs overflow-hidden">
+      <div className="rounded-3xl card-elevation overflow-hidden shadow-2xl">
         <Table className="w-full">
-          <TableHeader className="bg-muted/40 border-b border-border">
+          <TableHeader className="bg-muted/30 backdrop-blur-xs border-b border-border/60">
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-12 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground">
                 No
@@ -378,7 +378,7 @@ export function TeacherTaskList({
                 <select
                   value={selectedKelasId}
                   onChange={(e) => setSelectedKelasId(e.target.value)}
-                  className="h-8 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground cursor-pointer"
+                  className="h-8 rounded-lg border border-white/50 dark:border-white/10 bg-card/70 backdrop-blur-md px-2.5 py-1 text-xs font-medium text-foreground cursor-pointer shadow-xs"
                 >
                   <option value="all">Semua Kelas</option>
                   {availableClasses.map((cls) => (
@@ -393,7 +393,7 @@ export function TeacherTaskList({
                 <select
                   value={selectedMapelId}
                   onChange={(e) => setSelectedMapelId(e.target.value)}
-                  className="h-8 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground cursor-pointer"
+                  className="h-8 rounded-lg border border-white/50 dark:border-white/10 bg-card/70 backdrop-blur-md px-2.5 py-1 text-xs font-medium text-foreground cursor-pointer shadow-xs"
                 >
                   <option value="all">Semua Mapel</option>
                   {availableSubjects.map((sub) => (

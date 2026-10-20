@@ -14,6 +14,12 @@ export async function GET() {
     if (isNum) {
       attendanceList = await prisma.absen.findMany({
         where: { user_id: BigInt(session.id) },
+        include: {
+          mapel: {
+            select: { id: true, nama_mapel: true, kode_mapel: true },
+          },
+        },
+        orderBy: { date: "desc" },
       });
     }
   } catch (e) {
@@ -21,25 +27,26 @@ export async function GET() {
   }
 
   const colorMap: Record<string, string> = {
-    Hadir: "#198754",
-    Sakit: "#0d6efd",
-    Izin: "#eab308",
-    Alpha: "#dc3545",
+    Hadir: "#10b981", // emerald-500
+    Sakit: "#0284c7", // sky-600
+    Izin: "#d97706",  // amber-600
+    Alpha: "#e11d48", // rose-600
   };
 
   const events = attendanceList.map((a) => {
-    // a.date is stored as "Y-m-j" or "Y-m-d"
     const parts = (a.date || "").split("-");
-    const formattedDate = parts.length === 3
-      ? `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`
-      : a.date;
+    const formattedDate =
+      parts.length === 3
+        ? `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`
+        : a.date;
 
     const ket = a.keterangan || "Hadir";
-    const bg = colorMap[ket] || "#198754";
+    const bg = colorMap[ket] || "#10b981";
+    const mapelTitle = a.mapel?.nama_mapel ? `${a.mapel.nama_mapel}: ${ket}` : ket;
 
     return {
       id: a.id.toString(),
-      title: `${ket}`,
+      title: mapelTitle,
       start: formattedDate,
       allDay: true,
       backgroundColor: bg,
@@ -47,6 +54,10 @@ export async function GET() {
       extendedProps: {
         keterangan: ket,
         kelas: a.kelas,
+        mapelNama: a.mapel?.nama_mapel || "Presensi Umum",
+        mapelKode: a.mapel?.kode_mapel || "-",
+        catatan: a.catatan || "",
+        jamKe: a.jam_ke || "",
       },
     };
   });

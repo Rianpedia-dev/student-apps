@@ -33,10 +33,10 @@ export function NavbarLiveClock({ academic: academicProp }: NavbarLiveClockProps
     return (
       <div
         style={{ boxShadow: baseShadow }}
-        className="inline-flex flex-col justify-center rounded-[var(--radius)] border border-border bg-card px-3.5 sm:px-4 py-1.5 text-xs select-none shrink-0 w-fit"
+        className="inline-flex flex-col justify-center rounded-2xl border border-white/60 dark:border-white/15 bg-white/70 dark:bg-white/[0.06] px-3.5 sm:px-4 py-1.5 text-xs select-none shrink-0 w-fit backdrop-blur-xl shadow-md"
       >
-        <span className="inline-block h-3.5 w-20 animate-pulse rounded-[var(--radius)] bg-muted" />
-        <span className="inline-block h-3 w-16 animate-pulse rounded-[var(--radius)] bg-muted/70 mt-1" />
+        <span className="inline-block h-3.5 w-20 animate-pulse rounded-lg bg-muted" />
+        <span className="inline-block h-3 w-16 animate-pulse rounded-lg bg-muted/70 mt-1" />
       </div>
     );
   }
@@ -53,10 +53,10 @@ export function NavbarLiveClock({ academic: academicProp }: NavbarLiveClockProps
       whileHover={{ y: -1, boxShadow: hoverShadow }}
       whileTap={{ y: 1, boxShadow: pressedShadow }}
       transition={{ type: "spring", stiffness: 360, damping: 24, mass: 0.6 }}
-      className="inline-flex flex-col justify-center rounded-[var(--radius)] border border-border bg-card px-3.5 sm:px-4 py-1.5 select-none backdrop-blur-sm shrink-0 w-fit cursor-default"
+      className="inline-flex flex-col justify-center rounded-2xl border border-slate-200/80 dark:border-white/15 bg-white/90 dark:bg-slate-900/80 px-3.5 sm:px-4 py-1.5 select-none backdrop-blur-xl shrink-0 w-fit cursor-default shadow-md"
     >
       {/* Baris 1 (Atas): Tahun Pelajaran */}
-      <div className="flex items-center text-xs sm:text-[13px] font-bold text-foreground leading-tight tracking-tight">
+      <div className="flex items-center text-xs sm:text-[13px] font-extrabold text-foreground leading-tight tracking-tight">
         <span>TP {academic.tahunPelajaran}</span>
       </div>
 
@@ -68,7 +68,7 @@ export function NavbarLiveClock({ academic: academicProp }: NavbarLiveClockProps
         </span>
 
         {/* WIB suffix */}
-        <Badge variant="outline" size="xs" className="text-[9px] font-bold uppercase tracking-wider text-primary">
+        <Badge variant="emerald" size="xs" className="text-[9px] font-bold uppercase tracking-wider">
           WIB
         </Badge>
       </div>

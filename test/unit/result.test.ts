@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { successResult, errorResult } from "@/lib/result";
-import { AppError, ValidationError, NotFoundError, UnauthorizedError } from "@/lib/errors";
+import { ValidationError, NotFoundError, UnauthorizedError } from "@/lib/errors";
 
 describe("ActionResult Factory & Error Classes", () => {
   it("should create successful result with data and message", () => {

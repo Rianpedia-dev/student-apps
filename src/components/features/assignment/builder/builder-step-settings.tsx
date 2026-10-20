@@ -47,7 +47,7 @@ export function BuilderStepSettings({
   onSubmit,
 }: BuilderStepSettingsProps) {
   return (
-    <Card className="max-w-3xl mx-auto">
+    <Card className="max-w-3xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-xl rounded-3xl">
       <CardHeader>
         <CardTitle className="text-base sm:text-lg">
           Pengaturan Pengerjaan & Konfirmasi

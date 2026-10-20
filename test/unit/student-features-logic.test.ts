@@ -146,7 +146,7 @@ describe("MODUL 7: Riwayat Presensi Logic", () => {
 });
 
 describe("MODUL 8: Buku Kedisiplinan & Pelanggaran Logic", () => {
-  it("VIOL-01 & VIOL-02: Parsing tag keterangan dan kalkulasi indeks skor kedisiplinan santri (Skor Awal 100)", () => {
+  it("VIOL-01 & VIOL-02: Parsing tag keterangan dan kalkulasi indeks skor kedisiplinan siswa (Skor Awal 100)", () => {
     const rawRecord1 = "[SEV:RINGAN][PTS:5][TINDAKAN:Nasihat lisan] Terlambat masuk sholat dhuha";
     const rawRecord2 = "[SEV:SEDANG][PTS:15][TINDAKAN:Konseling wali kelas] Mengabaikan adab saat tilawah";
 
@@ -169,7 +169,7 @@ describe("MODUL 8: Buku Kedisiplinan & Pelanggaran Logic", () => {
     expect(finalScore).toBe(80);
   });
 
-  it("VIOL-03: Santri tanpa catatan pelanggaran mempertahankan skor sempurna 100", () => {
+  it("VIOL-03: siswa tanpa catatan pelanggaran mempertahankan skor sempurna 100", () => {
     const totalDeduction = 0;
     const score = Math.max(0, 100 - totalDeduction);
     expect(score).toBe(100);
@@ -208,7 +208,7 @@ describe("MODUL 9: Isolasi Ruang Kelas Online", () => {
 });
 
 describe("MODUL 10: Profil Siswa & Default Image Resolution", () => {
-  it("PROF-05: Avatar fallback santri ikhwan (L) vs akhwat (P)", () => {
+  it("PROF-05: Avatar fallback siswa ikhwan (L) vs akhwat (P)", () => {
     expect(getDefaultProfileImage("L")).toBe("/profil-default-laki-laki.avif");
     expect(getDefaultProfileImage("l")).toBe("/profil-default-laki-laki.avif");
     expect(getDefaultProfileImage("laki-laki")).toBe("/profil-default-laki-laki.avif");
