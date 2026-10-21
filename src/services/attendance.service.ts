@@ -32,6 +32,32 @@ export interface SubjectAttendanceSummary {
   percentage: number;
 }
 
+export interface StudentAttendanceEvent {
+  id: string;
+  title: string;
+  start: string;
+  backgroundColor: string;
+  keterangan: string;
+  mapelId?: string;
+  mapelNama: string;
+  mapelKode: string;
+  catatan?: string;
+  jamKe?: string;
+  guruNama?: string;
+}
+
+export interface StudentAttendanceLogItem {
+  id: string;
+  date: string;
+  mapelId?: string;
+  mapelNama: string;
+  mapelKode?: string;
+  keterangan: string;
+  catatan?: string;
+  jamKe?: string;
+  guruNama?: string;
+}
+
 export interface TodayTeacherScheduleAttendance {
   jadwalId: string;
   mapelId: string;
@@ -758,14 +784,9 @@ export class AttendanceService {
   ): Promise<{
     overallStats: { hadir: number; sakit: number; izin: number; alpha: number; percentage: number };
     subjectSummaries: SubjectAttendanceSummary[];
-    recentLogs: {
-      id: string;
-      date: string;
-      mapelNama: string;
-      keterangan: string;
-      catatan?: string;
-      jamKe?: string;
-    }[];
+    recentLogs: StudentAttendanceLogItem[];
+    allLogs: StudentAttendanceLogItem[];
+    calendarEvents: StudentAttendanceEvent[];
   }> {
     const sId = BigInt(studentId);
 
@@ -774,6 +795,9 @@ export class AttendanceService {
       include: {
         mapel: {
           select: { id: true, nama_mapel: true, kode_mapel: true },
+        },
+        guru: {
+          select: { name: true },
         },
       },
       orderBy: { date: "desc" },
@@ -825,14 +849,50 @@ export class AttendanceService {
       };
     });
 
-    const recentLogs = records.slice(0, 30).map((r) => ({
+    const colorMap: Record<string, string> = {
+      Hadir: "#10b981", // emerald-500
+      Sakit: "#0284c7", // sky-600
+      Izin: "#d97706",  // amber-600
+      Alpha: "#e11d48", // rose-600
+    };
+
+    const allLogs: StudentAttendanceLogItem[] = records.map((r) => ({
       id: r.id.toString(),
       date: r.date || "",
+      mapelId: r.mapel_id ? r.mapel_id.toString() : undefined,
       mapelNama: r.mapel?.nama_mapel || "Presensi Umum",
+      mapelKode: r.mapel?.kode_mapel || "-",
       keterangan: r.keterangan || "Hadir",
       catatan: r.catatan || undefined,
       jamKe: r.jam_ke || undefined,
+      guruNama: r.guru?.name || undefined,
     }));
+
+    const calendarEvents: StudentAttendanceEvent[] = records.map((a) => {
+      const parts = (a.date || "").split("-");
+      const formattedDate =
+        parts.length === 3
+          ? `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`
+          : a.date || "";
+
+      const ket = a.keterangan || "Hadir";
+      const bg = colorMap[ket] || "#10b981";
+      const mapelTitle = a.mapel?.nama_mapel ? `${a.mapel.nama_mapel}: ${ket}` : ket;
+
+      return {
+        id: a.id.toString(),
+        title: mapelTitle,
+        start: formattedDate,
+        backgroundColor: bg,
+        keterangan: ket,
+        mapelId: a.mapel_id ? a.mapel_id.toString() : undefined,
+        mapelNama: a.mapel?.nama_mapel || "Presensi Umum",
+        mapelKode: a.mapel?.kode_mapel || "-",
+        catatan: a.catatan || "",
+        jamKe: a.jam_ke || "",
+        guruNama: a.guru?.name || "",
+      };
+    });
 
     return {
       overallStats: {
@@ -843,7 +903,9 @@ export class AttendanceService {
         percentage: overallPercentage,
       },
       subjectSummaries,
-      recentLogs,
+      recentLogs: allLogs.slice(0, 30),
+      allLogs,
+      calendarEvents,
     };
   }
 

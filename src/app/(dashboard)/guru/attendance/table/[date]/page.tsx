@@ -93,7 +93,7 @@ export default async function GuruAttendanceTablePage(props: {
   const nextUrl = `/guru/attendance/table/${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, "0")}-01`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto w-full px-2 sm:px-4 md:px-0">
       {/* Top Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">

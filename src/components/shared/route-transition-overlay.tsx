@@ -93,7 +93,7 @@ export function RouteTransitionOverlay({ children }: RouteTransitionOverlayProps
       {/* Seamless in-content loading overlay */}
       {isNavigating && (
         <div
-          className="absolute inset-0 z-30 flex items-center justify-center bg-background/85 backdrop-blur-[2px] transition-all duration-300 animate-in fade-in rounded-lg"
+          className="absolute inset-0 z-30 flex items-center justify-center bg-background/40 backdrop-blur-[1px] transition-all duration-300 animate-in fade-in rounded-lg"
           role="status"
           aria-live="polite"
         >

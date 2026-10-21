@@ -116,7 +116,7 @@ export default async function GuruAttendanceRecapPage(props: {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto w-full px-2 sm:px-4 md:px-0">
       <div className="flex items-center justify-between">
         <Link
           href="/guru/attendance"

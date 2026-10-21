@@ -43,55 +43,40 @@ async function main() {
   const hashSiswa = await bcrypt.hash("siswa123", 10);
 
   // ---------------------------------------------------------------------------
-  // 1. DATA KELAS (20 Rombongan Belajar SD: Kelas 3-6 & SMP: Kelas 7-9)
+  // 1. DATA KELAS (23 Rombongan Belajar SD Al-Azhar: Kelas 3 - 6)
   // ---------------------------------------------------------------------------
-  console.log("\n📦 Menyiapkan data kelas (SD & SMP)...");
+  console.log("\n📦 Menyiapkan data 23 kelas SD...");
   const classesData = [
-    // SD - Kelas 3
-    { nama_kelas: "Kelas 3 - Ibnu Hayyan", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadzah Siti Aminah, S.Pd.I", jumlah_siswa: "28", code_restrict: "3101" },
-    { nama_kelas: "Kelas 3 - Ibnu Rusyd", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadzah Ruqayyah, S.Pd", jumlah_siswa: "27", code_restrict: "3102" },
-    { nama_kelas: "Kelas 3 - Ibnu Nafis", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadz Salman, S.Pd", jumlah_siswa: "26", code_restrict: "3103" },
-    { nama_kelas: "Kelas 3 - Ibnu Kholdun", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadz Hamzah, S.Pd.I", jumlah_siswa: "28", code_restrict: "3104" },
-    { nama_kelas: "Kelas 3 - Ibnu Batutah", jenjang: "SD", tingkat: 3, wali_kelas: "Ustadzah Hana, S.Pd", jumlah_siswa: "25", code_restrict: "3105" },
+    // SD - Kelas 3 (7 Rombel)
+    { nama_kelas: "Kelas 3 - Ibnu Batutah", jenjang: "SD", tingkat: 3, wali_kelas: "Ibnu Batutah", jumlah_siswa: "28", code_restrict: "3105" },
+    { nama_kelas: "Kelas 3 - Ibnu Nafis", jenjang: "SD", tingkat: 3, wali_kelas: "Ibnu Nafis", jumlah_siswa: "28", code_restrict: "3103" },
+    { nama_kelas: "Kelas 3 - Ibnu Kholdun", jenjang: "SD", tingkat: 3, wali_kelas: "Ibnu Kholdun", jumlah_siswa: "28", code_restrict: "3104" },
+    { nama_kelas: "Kelas 3 - Ibnu Rusyd", jenjang: "SD", tingkat: 3, wali_kelas: "Ibnu Rusyd", jumlah_siswa: "28", code_restrict: "3102" },
+    { nama_kelas: "Kelas 3 - Ibnu Hayyan", jenjang: "SD", tingkat: 3, wali_kelas: "Ibnu Hayyan", jumlah_siswa: "28", code_restrict: "3101" },
+    { nama_kelas: "Kelas 3 - Ibnu Firnas", jenjang: "SD", tingkat: 3, wali_kelas: "Ibnu Firnas", jumlah_siswa: "28", code_restrict: "3106" },
+    { nama_kelas: "Kelas 3 - Ibnu Thufail", jenjang: "SD", tingkat: 3, wali_kelas: "Ibnu Thufail", jumlah_siswa: "28", code_restrict: "3107" },
 
-    // SD - Kelas 4
-    { nama_kelas: "Kelas 4 - Mehmed Al Fatih", jenjang: "SD", tingkat: 4, wali_kelas: "Ustadzah Fatimah, S.Pd", jumlah_siswa: "28", code_restrict: "2739" },
-    { nama_kelas: "Kelas 4 - Sayfuddin Al Quthuz", jenjang: "SD", tingkat: 4, wali_kelas: "Ustadz Ahmad, S.Pd.I", jumlah_siswa: "26", code_restrict: "2957" },
-    { nama_kelas: "Kelas 4 - Sholahuddin Al Ayubi", jenjang: "SD", tingkat: 4, wali_kelas: "Ustadzah Maryam, M.Pd", jumlah_siswa: "27", code_restrict: "3419" },
-    { nama_kelas: "Kelas 4 - Sulaiman Al Qanuni", jenjang: "SD", tingkat: 4, wali_kelas: "Ustadz Ibrahim, S.Pd", jumlah_siswa: "25", code_restrict: "3458" },
-    { nama_kelas: "Kelas 4 - Mushab bin Umair", jenjang: "SD", tingkat: 4, wali_kelas: "Ustadzah Aisyah, S.Pd", jumlah_siswa: "28", code_restrict: "2816" },
+    // SD - Kelas 4 (6 Rombel)
+    { nama_kelas: "Kelas 4 - Mehmed Al Fatih", jenjang: "SD", tingkat: 4, wali_kelas: null, jumlah_siswa: "28", code_restrict: "2739" },
+    { nama_kelas: "Kelas 4 - Sayfuddin Al Quthuz", jenjang: "SD", tingkat: 4, wali_kelas: null, jumlah_siswa: "28", code_restrict: "2957" },
+    { nama_kelas: "Kelas 4 - Sholahuddin Al Ayubi", jenjang: "SD", tingkat: 4, wali_kelas: null, jumlah_siswa: "28", code_restrict: "3419" },
+    { nama_kelas: "Kelas 4 - Sulaiman Al Qanuni", jenjang: "SD", tingkat: 4, wali_kelas: null, jumlah_siswa: "28", code_restrict: "3458" },
+    { nama_kelas: "Kelas 4 - Mushab bin Umair", jenjang: "SD", tingkat: 4, wali_kelas: null, jumlah_siswa: "28", code_restrict: "2816" },
+    { nama_kelas: "Kelas 4 - Uqbah bin Nafi'", jenjang: "SD", tingkat: 4, wali_kelas: null, jumlah_siswa: "28", code_restrict: "2817" },
 
-    // SD - Kelas 5
-    { nama_kelas: "Kelas 5 - Al Bukhari", jenjang: "SD", tingkat: 5, wali_kelas: "Ustadz Hasan, S.Pd", jumlah_siswa: "29", code_restrict: "9375, 1989" },
-    { nama_kelas: "Kelas 5 - Muslim", jenjang: "SD", tingkat: 5, wali_kelas: "Ustadzah Khadijah, S.Pd.I", jumlah_siswa: "28", code_restrict: "1890, 2371" },
-    { nama_kelas: "Kelas 5 - Abu Daud", jenjang: "SD", tingkat: 5, wali_kelas: "Ustadz Ridwan, S.Kom", jumlah_siswa: "27", code_restrict: "1690, 2560" },
-    { nama_kelas: "Kelas 5 - Tirmidzi", jenjang: "SD", tingkat: 5, wali_kelas: "Ustadzah Nurul, M.Pd", jumlah_siswa: "28", code_restrict: "1990, 7373" },
-    { nama_kelas: "Kelas 5 - An Nasa'i", jenjang: "SD", tingkat: 5, wali_kelas: "Ustadz Faisal, S.Pd", jumlah_siswa: "29", code_restrict: "1996, 2203" },
+    // SD - Kelas 5 (5 Rombel)
+    { nama_kelas: "Kelas 5 - An Nasai", jenjang: "SD", tingkat: 5, wali_kelas: null, jumlah_siswa: "28", code_restrict: "1996, 2203" },
+    { nama_kelas: "Kelas 5 - Abu Daud", jenjang: "SD", tingkat: 5, wali_kelas: null, jumlah_siswa: "28", code_restrict: "1690, 2560" },
+    { nama_kelas: "Kelas 5 - Al Bukhari", jenjang: "SD", tingkat: 5, wali_kelas: null, jumlah_siswa: "28", code_restrict: "9375, 1989" },
+    { nama_kelas: "Kelas 5 - Muslim", jenjang: "SD", tingkat: 5, wali_kelas: null, jumlah_siswa: "28", code_restrict: "1890, 2371" },
+    { nama_kelas: "Kelas 5 - Tirmidzi", jenjang: "SD", tingkat: 5, wali_kelas: null, jumlah_siswa: "28", code_restrict: "1990, 7373" },
 
-    // SD - Kelas 6
-    { nama_kelas: "Kelas 6 - Tholhah bin Ubaidillah", jenjang: "SD", tingkat: 6, wali_kelas: "Ustadz Mansyur, S.Pd", jumlah_siswa: "30", code_restrict: "6183" },
-    { nama_kelas: "Kelas 6 - Anas bin Malik", jenjang: "SD", tingkat: 6, wali_kelas: "Ustadzah Zahra, S.Pd", jumlah_siswa: "29", code_restrict: "6843" },
-    { nama_kelas: "Kelas 6 - Jabir bin Abdillah", jenjang: "SD", tingkat: 6, wali_kelas: "Ustadz Harun, S.Pd.I", jumlah_siswa: "28", code_restrict: "1204" },
-    { nama_kelas: "Kelas 6 - Mu'adz bin Jabal", jenjang: "SD", tingkat: 6, wali_kelas: "Ustadzah Salma, M.Pd", jumlah_siswa: "30", code_restrict: "4952" },
-    { nama_kelas: "Kelas 6 - Urwah bin Zubair", jenjang: "SD", tingkat: 6, wali_kelas: "Ustadz Yahya, S.Pd", jumlah_siswa: "28", code_restrict: "1972" },
-
-    // SMP - Kelas 7
-    { nama_kelas: "Kelas 7 - Ibnu Sina", jenjang: "SMP", tingkat: 7, wali_kelas: "Ustadz Farhan, S.Pd", jumlah_siswa: "28", code_restrict: "7101" },
-    { nama_kelas: "Kelas 7 - Al Khawarizmi", jenjang: "SMP", tingkat: 7, wali_kelas: "Ustadzah Nadia, M.Pd", jumlah_siswa: "27", code_restrict: "7102" },
-    { nama_kelas: "Kelas 7 - Al Biruni", jenjang: "SMP", tingkat: 7, wali_kelas: "Ustadz Zulkifli, S.Si", jumlah_siswa: "26", code_restrict: "7103" },
-    { nama_kelas: "Kelas 7 - Jabir Ibnu Hayyan", jenjang: "SMP", tingkat: 7, wali_kelas: "Ustadzah Rina, S.Pd", jumlah_siswa: "28", code_restrict: "7104" },
-
-    // SMP - Kelas 8
-    { nama_kelas: "Kelas 8 - Ibnu Khaldun", jenjang: "SMP", tingkat: 8, wali_kelas: "Ustadz Syakir, Lc", jumlah_siswa: "28", code_restrict: "8201" },
-    { nama_kelas: "Kelas 8 - Al Razi", jenjang: "SMP", tingkat: 8, wali_kelas: "Ustadzah Maya, M.Si", jumlah_siswa: "27", code_restrict: "8202" },
-    { nama_kelas: "Kelas 8 - Al Kindi", jenjang: "SMP", tingkat: 8, wali_kelas: "Ustadz Taufik, S.Pd", jumlah_siswa: "25", code_restrict: "8203" },
-    { nama_kelas: "Kelas 8 - Ibnu Battuta", jenjang: "SMP", tingkat: 8, wali_kelas: "Ustadzah Laila, S.Hum", jumlah_siswa: "29", code_restrict: "8204" },
-
-    // SMP - Kelas 9
-    { nama_kelas: "Kelas 9 - Al Farabi", jenjang: "SMP", tingkat: 9, wali_kelas: "Ustadz Dimas, M.Kom", jumlah_siswa: "29", code_restrict: "9301" },
-    { nama_kelas: "Kelas 9 - Tariq bin Ziyad", jenjang: "SMP", tingkat: 9, wali_kelas: "Ustadz Bilal, S.Pd.I", jumlah_siswa: "28", code_restrict: "9302" },
-    { nama_kelas: "Kelas 9 - Salahuddin Al Ayyubi", jenjang: "SMP", tingkat: 9, wali_kelas: "Ustadzah Safitri, S.Pd", jumlah_siswa: "30", code_restrict: "9303" },
-    { nama_kelas: "Kelas 9 - Umar bin Abdul Aziz", jenjang: "SMP", tingkat: 9, wali_kelas: "Ustadz Husein, M.Pd", jumlah_siswa: "28", code_restrict: "9304" },
+    // SD - Kelas 6 (5 Rombel)
+    { nama_kelas: "Kelas 6 - Tholhah bin Ubaidillah", jenjang: "SD", tingkat: 6, wali_kelas: null, jumlah_siswa: "28", code_restrict: "6183" },
+    { nama_kelas: "Kelas 6 - Anas bin Malik", jenjang: "SD", tingkat: 6, wali_kelas: null, jumlah_siswa: "28", code_restrict: "6843" },
+    { nama_kelas: "Kelas 6 - Jabir bin Abdillah", jenjang: "SD", tingkat: 6, wali_kelas: null, jumlah_siswa: "28", code_restrict: "1204" },
+    { nama_kelas: "Kelas 6 - Mu'adz bin Jabal", jenjang: "SD", tingkat: 6, wali_kelas: null, jumlah_siswa: "28", code_restrict: "4952" },
+    { nama_kelas: "Kelas 6 - Urwah bin Zubair", jenjang: "SD", tingkat: 6, wali_kelas: null, jumlah_siswa: "28", code_restrict: "1972" },
   ];
 
   for (const c of classesData) {

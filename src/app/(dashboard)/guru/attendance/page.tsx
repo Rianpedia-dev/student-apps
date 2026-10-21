@@ -2,27 +2,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import {
-  Calendar,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  ArrowRight,
-  BookOpen,
-  Table as TableIcon,
-  FileText,
-  ShieldCheck,
-  UserCheck,
-  Sparkles,
-  Search,
-} from "lucide-react";
-import { ClipboardListIcon } from "@/components/icons/clipboard-list-icon";
-import { BuildingLibraryIcon } from "@/components/icons/building-library-icon";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AttendanceService } from "@/services/attendance.service";
-import { formatDateIndo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -85,107 +68,70 @@ export default async function GuruAttendancePage() {
   const currentDayName = dayNames[now.getDay()];
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto w-full px-2 sm:px-4 md:px-0">
       {/* Quick Action Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <Link href={`/guru/attendance/recap`}>
-          <Card enableHover className="cursor-pointer">
-            <CardContent className="p-4 sm:p-5 flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/20">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Rekapitulasi</p>
-                <p className="text-sm font-bold text-foreground">Rekap Presensi per Mapel</p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+      {isWaliKelas ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <Link href="/guru/attendance/recap" className="group">
+            <Card enableHover className="cursor-pointer group-hover:border-teal-500/50 transition-all">
+              <CardContent className="p-4 text-center sm:text-left">
+                <p className="text-sm font-bold text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                  Rekap Presensi Mapel
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
 
-        {isWaliKelas ? (
-          <Link href="/guru/attendance/matrix">
-            <Card enableHover className="cursor-pointer">
-              <CardContent className="p-4 sm:p-5 flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                  <UserCheck className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium">Wali Kelas: {guruClass}</p>
-                  <p className="text-sm font-bold text-foreground">Matriks Supervisi Rombel</p>
-                </div>
+          <Link href="/guru/attendance/matrix" className="group">
+            <Card enableHover className="cursor-pointer group-hover:border-emerald-500/50 transition-all">
+              <CardContent className="p-4 text-center sm:text-left">
+                <p className="text-sm font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  Supervisi Kelas {guruClass}
+                </p>
               </CardContent>
             </Card>
           </Link>
-        ) : (
-          <Link href="/guru/mapel">
-            <Card enableHover className="cursor-pointer">
-              <CardContent className="p-4 sm:p-5 flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-                  <BookOpen className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium">Materi & Silabus</p>
-                  <p className="text-sm font-bold text-foreground">Buka Mapel & Tugas</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
 
-        {isWaliKelas ? (
-          <Link href={`/guru/attendance/table/${todayFormatted}`}>
-            <Card enableHover className="cursor-pointer">
-              <CardContent className="p-4 sm:p-5 flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/20">
-                  <TableIcon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium">Bulanan Rombel</p>
-                  <p className="text-sm font-bold text-foreground">Tabel Presensi 1–31</p>
-                </div>
+          <Link href={`/guru/attendance/table/${todayFormatted}`} className="group">
+            <Card enableHover className="cursor-pointer group-hover:border-sky-500/50 transition-all">
+              <CardContent className="p-4 text-center sm:text-left">
+                <p className="text-sm font-bold text-foreground group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                  Tabel Presensi Bulanan
+                </p>
               </CardContent>
             </Card>
           </Link>
-        ) : (
-          <Link href="/guru/calendar">
-            <Card enableHover className="cursor-pointer">
-              <CardContent className="p-4 sm:p-5 flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-                  <Calendar className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium">Agenda</p>
-                  <p className="text-sm font-bold text-foreground">Kalender Akademik</p>
-                </div>
+        </div>
+      ) : (
+        <div className="flex">
+          <Link href="/guru/attendance/recap" className="group w-full sm:w-auto">
+            <Card enableHover className="cursor-pointer group-hover:border-teal-500/50 transition-all">
+              <CardContent className="py-3 px-5 text-center sm:text-left">
+                <p className="text-sm font-bold text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                  Rekap Presensi Mapel
+                </p>
               </CardContent>
             </Card>
           </Link>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Section 1: Today's Teaching Schedule & Attendance Status */}
       <div className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-500" />
-              <span>Jadwal Mengajar & Presensi Hari Ini</span>
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Daftar sesi KBM yang dijadwalkan untuk Anda pada hari {currentDayName}
-            </p>
-          </div>
-          <Badge variant="outline" className="text-xs font-mono">
-            {todaySchedules.length} Sesi Terjadwal
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
+            Jadwal Mengajar Hari Ini
+          </h2>
+          <Badge variant="outline" className="text-xs font-medium px-2.5 py-0.5 bg-card/80 border-border/80">
+            {todaySchedules.length} Sesi
           </Badge>
         </div>
 
         {todaySchedules.length === 0 ? (
           <Card className="p-8 text-center text-muted-foreground">
-            <Calendar className="h-10 w-10 mx-auto mb-2.5 text-muted-foreground/60" />
             <h3 className="text-sm font-bold text-foreground">Tidak Ada Jadwal Mengajar Hari Ini</h3>
             <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-              Tidak ada jadwal KBM yang terdaftar untuk akun Anda pada hari {currentDayName}. Anda tetap dapat membuka dan mengabsen kelas lain melalui daftar mata pelajaran di bawah.
+              Tidak ada sesi KBM untuk hari {currentDayName}. Anda tetap dapat membuka presensi kelas lain pada daftar di bawah.
             </p>
           </Card>
         ) : (
@@ -200,70 +146,64 @@ export default async function GuruAttendancePage() {
                   enableHover
                 >
                   <div className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-4">
-                    <div className="space-y-2.5">
+                    <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="space-y-0.5">
-                          <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">
+                        <div className="space-y-1">
+                          <span className="text-[11px] font-semibold text-muted-foreground tracking-wide">
                             {schedule.jenjang} • {schedule.jamMulai} - {schedule.jamSelesai}
                           </span>
-                          <h3 className="text-base font-bold text-foreground leading-snug">
+                          <h3 className="text-base sm:text-lg font-bold text-foreground leading-snug">
                             {schedule.mapelNama}
                           </h3>
                         </div>
 
                         {schedule.isFilled ? (
-                          <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-[11px] font-semibold shrink-0">
-                            <CheckCircle2 className="h-3 w-3" /> Sudah Diabsen
+                          <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold shrink-0">
+                            Sudah Diabsen
                           </Badge>
                         ) : (
-                          <Badge className="bg-orange-500 hover:bg-orange-600 text-white gap-1 text-[11px] font-semibold shrink-0 animate-pulse">
-                            <AlertCircle className="h-3 w-3" /> Belum Diabsen
+                          <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-semibold shrink-0 animate-pulse">
+                            Belum Diabsen
                           </Badge>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <BuildingLibraryIcon className="h-4 w-4 text-emerald-600 shrink-0" />
-                        <span className="font-semibold text-foreground">{schedule.kelasNama}</span>
-                        {schedule.totalSiswa > 0 && (
-                          <span>• {schedule.totalSiswa} Siswa Terdaftar</span>
-                        )}
+                      <div className="text-xs text-muted-foreground font-semibold">
+                        <span className="text-foreground">{schedule.kelasNama}</span>
                       </div>
 
                       {schedule.isFilled && (
-                        <div className="grid grid-cols-4 gap-1.5 p-2 rounded-2xl glass-subpanel text-center text-xs">
+                        <div className="grid grid-cols-4 gap-1.5 p-2 rounded-xl bg-card border border-border/60 text-center shadow-2xs">
                           <div>
-                            <span className="text-[10px] text-muted-foreground block">Hadir</span>
-                            <span className="font-bold text-emerald-600">{schedule.hadirCount}</span>
+                            <span className="text-[10px] text-muted-foreground block font-medium">Hadir</span>
+                            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{schedule.hadirCount}</span>
                           </div>
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block">Sakit</span>
-                            <span className="font-bold text-sky-600">{schedule.sakitCount}</span>
+                          <div className="border-l border-border/50">
+                            <span className="text-[10px] text-muted-foreground block font-medium">Sakit</span>
+                            <span className="text-sm font-bold text-sky-600 dark:text-sky-400">{schedule.sakitCount}</span>
                           </div>
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block">Izin</span>
-                            <span className="font-bold text-amber-600">{schedule.izinCount}</span>
+                          <div className="border-l border-border/50">
+                            <span className="text-[10px] text-muted-foreground block font-medium">Izin</span>
+                            <span className="text-sm font-bold text-amber-600 dark:text-amber-400">{schedule.izinCount}</span>
                           </div>
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block">Alpha</span>
-                            <span className="font-bold text-rose-600">{schedule.alphaCount}</span>
+                          <div className="border-l border-border/50">
+                            <span className="text-[10px] text-muted-foreground block font-medium">Alpha</span>
+                            <span className="text-sm font-bold text-rose-600 dark:text-rose-400">{schedule.alphaCount}</span>
                           </div>
                         </div>
                       )}
                     </div>
 
-                    <div className="pt-2">
+                    <div className="pt-1">
                       <Link href={attendanceUrl} className="block">
                         <Button
-                          className={`w-full gap-2 rounded-xl text-xs font-semibold cursor-pointer ${
+                          className={`w-full rounded-xl text-xs sm:text-sm font-semibold cursor-pointer h-10 ${
                             schedule.isFilled
                               ? "bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600"
                               : "bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20"
                           }`}
                         >
-                          <ClipboardListIcon className="h-4 w-4" />
-                          <span>{schedule.isFilled ? "Koreksi / Perbarui Presensi" : "Mulai Presensi Kelas"}</span>
-                          <ArrowRight className="h-3.5 w-3.5 ml-auto" />
+                          {schedule.isFilled ? "Perbarui Presensi" : "Mulai Presensi"}
                         </Button>
                       </Link>
                     </div>
@@ -277,16 +217,10 @@ export default async function GuruAttendancePage() {
 
       {/* Section 2: All Teaching Classes Shortcut */}
       <div className="space-y-3.5 pt-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-teal-600" />
-              <span>Pilih Mata Pelajaran & Kelas Lain</span>
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Buka form presensi tanggal tertentu untuk mata pelajaran yang Anda ampu
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
+            Mata Pelajaran & Kelas Lain
+          </h2>
         </div>
 
         {assignedSubjects.length === 0 ? (
@@ -297,20 +231,15 @@ export default async function GuruAttendancePage() {
               <Link
                 key={idx}
                 href={`/guru/attendance/${sub.mapelId}/${sub.kelasId}/${todayFormatted}`}
-                className="group"
+                className="group block"
               >
-                <div className="p-3.5 rounded-2xl border border-white/20 dark:border-white/10 bg-white/40 dark:bg-black/25 backdrop-blur-md hover:border-teal-500 transition-all flex items-center justify-between gap-2 shadow-2xs">
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-foreground truncate group-hover:text-teal-600 transition-colors">
-                      {sub.mapelNama}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                      {sub.kelasNama}
-                    </p>
-                  </div>
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 shrink-0 text-muted-foreground group-hover:text-teal-600">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                <div className="p-3.5 sm:p-4 rounded-2xl border border-border/80 bg-card/95 hover:bg-card hover:border-teal-500/60 dark:bg-card/90 shadow-2xs hover:shadow-md transition-all">
+                  <p className="text-xs sm:text-sm font-bold text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                    {sub.mapelNama}
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 font-medium">
+                    {sub.kelasNama}
+                  </p>
                 </div>
               </Link>
             ))}

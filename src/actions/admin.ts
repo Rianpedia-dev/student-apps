@@ -143,7 +143,7 @@ export async function deleteUsersAction(ids: string[]) {
     revalidatePath("/admin/students");
     revalidatePath("/admin/teachers");
     revalidatePath("/admin/classes");
-    return { success: true, count, message: `Berhasil menghapus ${count} akun guru.` };
+    return { success: true, count, message: `Berhasil menghapus ${count} akun pengguna.` };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal menghapus akun terpilih.";
     return { error: errorMsg };
@@ -184,10 +184,10 @@ export async function verifyUserAction(id: string, status: string) {
   }
 }
 
-export async function importStudentsAction(fileBufferBase64: string) {
+export async function importStudentsAction(fileBufferBase64: string, defaultKelas?: string) {
   try {
     await checkAdmin();
-    const importedCount = await UserService.importStudentsFromBase64(fileBufferBase64);
+    const importedCount = await UserService.importStudentsFromBase64(fileBufferBase64, defaultKelas);
 
     revalidatePath("/admin/students");
     return { success: true, count: importedCount, message: `Berhasil mengimpor ${importedCount} siswa.` };

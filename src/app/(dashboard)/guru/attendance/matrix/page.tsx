@@ -59,7 +59,7 @@ export default async function GuruAttendanceMatrixPage(props: PageProps) {
   const matrixData = await AttendanceService.getDailyClassSubjectMatrix(guruClass, dateStr);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto w-full px-2 sm:px-4 md:px-0">
       {/* Top Navigation */}
       <div className="flex items-center justify-between">
         <Link

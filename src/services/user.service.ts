@@ -127,6 +127,13 @@ export class UserService {
       throw new NotFoundError("Pengguna tidak ditemukan.");
     }
 
+    await prisma.pelanggaran.deleteMany({
+      where: { user_id: String(id) },
+    });
+    await prisma.prestasi.deleteMany({
+      where: { id_user: String(id) },
+    });
+
     await prisma.user.delete({
       where: { id: BigInt(id) },
     });
@@ -140,6 +147,15 @@ export class UserService {
   static async deleteUsers(ids: string[]) {
     if (!ids || ids.length === 0) return 0;
     const bigIntIds = ids.map((id) => BigInt(id));
+    const stringIds = ids.map((id) => String(id));
+
+    await prisma.pelanggaran.deleteMany({
+      where: { user_id: { in: stringIds } },
+    });
+    await prisma.prestasi.deleteMany({
+      where: { id_user: { in: stringIds } },
+    });
+
     try {
       const res = await prisma.user.deleteMany({
         where: {
@@ -236,58 +252,176 @@ export class UserService {
 
   /**
    * Mengimpor data siswa secara massal dari file Excel (base64 buffer) dengan batching
+   * Fleksibel terhadap urutan kolom, header dinamis, teks 'kosong', serta mendukung kelas & NIS.
    */
-  static async importStudentsFromBase64(base64Data: string): Promise<number> {
+  static async importStudentsFromBase64(base64Data: string, defaultKelas?: string | null): Promise<number> {
     const buffer = Buffer.from(base64Data, "base64");
     const workbook = XLSX.read(buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
+
+    // Pilih sheet: prioritaskan sheet dengan nama mengandung siswa/student, atau sheet pertama
+    let sheetName = workbook.SheetNames[0];
+    for (const name of workbook.SheetNames) {
+      const lower = name.toLowerCase();
+      if (lower.includes("siswa") || lower.includes("student")) {
+        sheetName = name;
+        break;
+      }
+    }
+
     if (!sheetName) {
       throw new AppError("File Excel tidak memiliki lembar kerja (sheet).");
     }
 
     const worksheet = workbook.Sheets[sheetName];
-    // Format: Email, Password, Password Plain, Nama, Apple ID, Password Apple ID, Status, Gender
-    const rows = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 });
-    const dataRows = rows.slice(1);
+    const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, defval: "" });
+    if (!rows || rows.length === 0) return 0;
+
+    // 1. Deteksi letak baris header dan pemetaan nama kolom secara dinamis
+    let headerRowIdx = -1;
+    const colMap: Record<string, number> = {};
+
+    for (let r = 0; r < Math.min(rows.length, 5); r++) {
+      const row = rows[r];
+      if (!Array.isArray(row)) continue;
+      const joined = row.map((c) => String(c ?? "").trim().toLowerCase()).join(" ");
+
+      if (
+        joined.includes("nama") ||
+        joined.includes("email") ||
+        joined.includes("username") ||
+        joined.includes("apple") ||
+        joined.includes("nis") ||
+        joined.includes("kelas")
+      ) {
+        headerRowIdx = r;
+        row.forEach((col, idx) => {
+          const norm = String(col ?? "").trim().toLowerCase();
+          if (norm.includes("nis") || norm.includes("nomor induk") || norm.includes("no induk")) {
+            colMap["nis"] = idx;
+          } else if (norm.includes("nama") || norm.includes("name")) {
+            colMap["name"] = idx;
+          } else if (
+            norm.includes("email") ||
+            norm.includes("username") ||
+            norm.includes("surel") ||
+            norm.includes("e-mail")
+          ) {
+            colMap["email"] = idx;
+          } else if (norm.includes("apple") && (norm.includes("pass") || norm.includes("sandi") || norm.includes("pwd"))) {
+            colMap["passwordappleid"] = idx;
+          } else if (norm.includes("apple")) {
+            colMap["appleid"] = idx;
+          } else if (norm.includes("plain") || norm.includes("password plain")) {
+            colMap["passwordPlain"] = idx;
+          } else if (norm.includes("pass") || norm.includes("sandi") || norm.includes("pwd")) {
+            colMap["password"] = idx;
+          } else if (norm.includes("kelamin") || norm.includes("gender") || norm === "jk") {
+            colMap["gender"] = idx;
+          } else if (norm.includes("kelas") || norm.includes("rombel")) {
+            colMap["kelas"] = idx;
+          } else if (norm.includes("status") || norm.includes("aktif")) {
+            colMap["status"] = idx;
+          }
+        });
+        break;
+      }
+    }
+
+    const cleanVal = (val: unknown): string | null => {
+      if (val === undefined || val === null) return null;
+      const s = String(val).trim();
+      const lower = s.toLowerCase();
+      if (!s || lower === "kosong" || lower === "-" || lower === "null" || lower === "none") {
+        return null;
+      }
+      return s;
+    };
+
+    const getVal = (row: any[], key: string, fallbackIdx: number): string | null => {
+      const idx = colMap[key] !== undefined ? colMap[key] : fallbackIdx;
+      if (idx >= 0 && idx < row.length) {
+        return cleanVal(row[idx]);
+      }
+      return null;
+    };
+
+    const dataRows = headerRowIdx >= 0 ? rows.slice(headerRowIdx + 1) : rows.slice(1);
     let importedCount = 0;
 
-    // Proses dalam chunk 10 baris agar tidak memblokir event loop saat ribuan siswa diimpor
-    const CHUNK_SIZE = 10;
+    // Proses dalam chunk 15 baris untuk performa optimal
+    const CHUNK_SIZE = 15;
     for (let i = 0; i < dataRows.length; i += CHUNK_SIZE) {
       const chunk = dataRows.slice(i, i + CHUNK_SIZE);
       await Promise.all(
         chunk.map(async (row) => {
-          if (!row || row.length < 4) return;
-          const email = String(row[0] || "").trim();
-          const passwordPlain = String(row[2] || row[1] || "123456").trim();
-          const name = String(row[3] || "").trim();
-          const appleid = row[4] ? String(row[4]).trim() : null;
-          const passwordappleid = row[5] ? String(row[5]).trim() : null;
-          const status = row[6] ? String(row[6]).trim() : "1";
-          const gender = row[7] ? String(row[7]).trim() : "L";
+          if (!row || !Array.isArray(row) || row.length === 0) return;
+
+          // Fallback indeks sesuai format klasik:
+          // [0: Email, 1: Password, 2: Password Plain, 3: Nama, 4: Apple ID, 5: Password Apple ID, 6: Status, 7: Gender]
+          const email = getVal(row, "email", 0);
+          const name = getVal(row, "name", 3);
+          const rawPassword =
+            getVal(row, "passwordPlain", 2) || getVal(row, "password", 1) || "123456";
+          const appleid = getVal(row, "appleid", 4);
+          const passwordappleid = getVal(row, "passwordappleid", 5);
+
+          let rawStatus = getVal(row, "status", 6);
+          // Normalisasi status: jika kosong atau "active" -> "1"
+          if (!rawStatus || rawStatus.toLowerCase() === "active" || rawStatus.toLowerCase() === "aktif") {
+            rawStatus = "1";
+          } else if (
+            rawStatus.toLowerCase() === "nonactive" ||
+            rawStatus.toLowerCase() === "nonaktif" ||
+            rawStatus === "0"
+          ) {
+            rawStatus = "0";
+          } else if (rawStatus !== "1") {
+            rawStatus = "1";
+          }
+
+          let gender = getVal(row, "gender", 7);
+          if (gender) {
+            const gUpper = gender.toUpperCase();
+            if (gUpper.startsWith("L") || gUpper.includes("LAKI")) gender = "L";
+            else if (gUpper.startsWith("P") || gUpper.includes("PEREMPUAN")) gender = "P";
+            else gender = "L";
+          } else {
+            gender = "L";
+          }
+
+          const rowKelas = getVal(row, "kelas", 8);
+          const rawKelas = rowKelas || (defaultKelas && defaultKelas.trim() ? defaultKelas.trim() : null);
+          const kelas = rawKelas && rawKelas.toLowerCase() !== "kosong" && rawKelas !== "-" ? rawKelas : null;
+          const nis = getVal(row, "nis", 9);
 
           if (!email || !name) return;
 
-          const hashedPassword = await bcrypt.hash(passwordPlain, 10);
+          const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
           await prisma.user.upsert({
             where: { email },
             update: {
               name,
+              password: hashedPassword,
+              password1: rawPassword,
               appleid,
               passwordappleid,
               gender,
-              status,
+              status: rawStatus,
+              ...(kelas ? { kelas } : {}),
+              ...(nis ? { nis } : {}),
             },
             create: {
               email,
               name,
               password: hashedPassword,
-              password1: passwordPlain,
+              password1: rawPassword,
               appleid,
               passwordappleid,
-              status,
+              status: rawStatus,
               gender,
+              kelas: kelas || null,
+              nis: nis || null,
             },
           });
           importedCount++;

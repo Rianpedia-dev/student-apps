@@ -129,10 +129,10 @@ export function ClassMatrixClient({
     <div className="space-y-6">
       {/* Control & Date Bar */}
       <Card>
-        <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Calendar className="h-4 w-4 text-emerald-600" /> Pilih Tanggal:
+        <CardContent className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 shrink-0">
+              <Calendar className="h-4 w-4 text-emerald-600" /> Tanggal:
             </span>
             <Input
               type="date"
@@ -141,44 +141,45 @@ export function ClassMatrixClient({
                 setSelectedDate(e.target.value);
                 handleDateChange(e.target.value);
               }}
-              className="w-40 h-9 text-xs rounded-xl"
+              className="w-36 sm:w-40 h-9 text-xs rounded-xl"
             />
             <Badge variant="outline" className="text-xs font-medium">
               Hari: {hari}
             </Badge>
-            {/* Search Input */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Cari nama atau NIS siswa..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-14 h-9 text-xs rounded-xl bg-card border-border/80 shadow-2xs"
-        />
-      </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {truancyCount > 0 && (
-              <Badge className="bg-rose-600 text-white gap-1 text-xs">
-                <AlertTriangle className="h-3.5 w-3.5" /> {truancyCount} Bolos Terdeteksi
-              </Badge>
-            )}
-            {sickCount > 0 && (
-              <Badge className="bg-sky-600 text-white text-xs">
-                {sickCount} Sakit Seharian
-              </Badge>
-            )}
-            {permittedCount > 0 && (
-              <Badge className="bg-amber-600 text-white text-xs">
-                {permittedCount} Izin Seharian
-              </Badge>
-            )}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-60">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Cari nama atau NIS siswa..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 text-xs rounded-xl bg-card border-border/80 shadow-2xs w-full"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {truancyCount > 0 && (
+                <Badge className="bg-rose-600 text-white gap-1 text-xs">
+                  <AlertTriangle className="h-3.5 w-3.5" /> {truancyCount} Bolos
+                </Badge>
+              )}
+              {sickCount > 0 && (
+                <Badge className="bg-sky-600 text-white text-xs">
+                  {sickCount} Sakit
+                </Badge>
+              )}
+              {permittedCount > 0 && (
+                <Badge className="bg-amber-600 text-white text-xs">
+                  {permittedCount} Izin
+                </Badge>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      
 
       {/* Schedules Header Summary */}
       <div className="p-4 rounded-2xl glass-subpanel text-xs text-muted-foreground space-y-1.5">
@@ -222,8 +223,13 @@ export function ClassMatrixClient({
 
       {/* Matrix Table */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
+        {/* Mobile scroll hint */}
+        <div className="md:hidden px-3.5 py-1.5 bg-muted/40 border-b border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+          <span>← Geser tabel supervisi rombel →</span>
+          <span className="font-semibold text-foreground">{filteredMatrix.length} Santri</span>
+        </div>
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full text-xs text-left min-w-[700px]">
             <thead className="bg-muted/60 border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-3 w-10 text-center">No</th>

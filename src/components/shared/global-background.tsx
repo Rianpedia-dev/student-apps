@@ -21,7 +21,7 @@ export function GlobalBackground() {
     >
       {/* 1. Base Image Layer (Watermark Foto Kampus Lembut & Elegan) */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700 ease-in-out opacity-25 brightness-[1.02] contrast-[1.02] dark:opacity-20 dark:brightness-[0.60] dark:contrast-[1.10]"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700 ease-in-out opacity-80 brightness-[0.98] contrast-[1.05] dark:opacity-25 dark:brightness-[0.60] dark:contrast-[1.10]"
         style={{
           backgroundImage: "url('/bc.avif')",
         }}
@@ -46,8 +46,8 @@ export function GlobalBackground() {
         <AlAzharSkylineSilhouette />
       </div>
 
-      {/* 5. Clean Porcelain Scrim (Tingkat kontras tinggi agar semua teks hitam pekat & putih silver terbaca sempurna) */}
-      <div className="absolute inset-0 transition-colors duration-700 ease-in-out bg-gradient-to-b from-white/80 via-slate-50/75 to-slate-100/85 dark:from-slate-950/85 dark:via-slate-900/80 dark:to-slate-950/90" />
+      {/* 5. Clean Porcelain Scrim (Diatur lebih tipis agar gambar kampus terlihat jelas) */}
+      <div className="absolute inset-0 transition-colors duration-700 ease-in-out bg-gradient-to-b from-white/30 via-white/15 to-slate-100/35 dark:from-slate-950/85 dark:via-slate-900/80 dark:to-slate-950/90" />
     </div>
   );
 }
