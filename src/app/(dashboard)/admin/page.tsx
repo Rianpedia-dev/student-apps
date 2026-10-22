@@ -12,7 +12,6 @@ import {
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
 import { CalendarWidget } from "@/components/shared/calendar-widget";
-import { AdminRestrictTable } from "./_components/restrict-table";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +25,6 @@ export default async function AdminDashboardPage() {
   let totalAktif = 0;
   let totalNonAktif = 0;
   let formattedAnnouncements: any[] = [];
-  let formattedRestricts: any[] = [];
 
   try {
     const [
@@ -39,7 +37,6 @@ export default async function AdminDashboardPage() {
       aktifCount,
       nonAktifCount,
       pengumumanList,
-      restricts,
     ] = await Promise.all([
       prisma.user.count({ where: { status: "1" } }),
       prisma.user.count({ where: { status: { in: ["2", "4"] } } }),
@@ -52,9 +49,6 @@ export default async function AdminDashboardPage() {
       prisma.pengumuman.findMany({
         orderBy: { id: "desc" },
         take: 20,
-      }),
-      prisma.restrict.findMany({
-        orderBy: { nama_kelas: "asc" },
       }),
     ]);
 
@@ -75,12 +69,6 @@ export default async function AdminDashboardPage() {
       pengumuman: p.pengumuman,
       like: p.like,
       created_at: p.created_at,
-    }));
-
-    formattedRestricts = restricts.map((r) => ({
-      id: r.id.toString(),
-      nama_kelas: r.nama_kelas,
-      code_restrict: r.code_restrict,
     }));
   } catch (e) {
     console.error("Database query error in Admin Dashboard:", e);
@@ -195,11 +183,6 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Tabel Code Restrict */}
-      <div className="space-y-3.5">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Kode Restrict iPad per Kelas</h2>
-        <AdminRestrictTable initialData={formattedRestricts} />
-      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -61,6 +61,19 @@ import { toast } from "sonner";
 import { UserItem } from "@/types";
 import { getRoleLabel } from "@/lib/utils";
 
+const AVAILABLE_TEACHER_EXPORT_FIELDS = [
+  { id: "no", label: "No (Nomor Urut)", default: true },
+  { id: "nip", label: "NIP", default: true },
+  { id: "name", label: "Nama Lengkap", default: true },
+  { id: "gender", label: "Jenis Kelamin (L/P)", default: true },
+  { id: "email", label: "Email Akun", default: true },
+  { id: "guru_bidang", label: "Bidang Studi / Mapel", default: true },
+  { id: "status", label: "Peran / Jabatan", default: true },
+  { id: "kelas", label: "Kelas Diampu / Wali", default: true },
+  { id: "appleid", label: "Apple ID", default: true },
+  { id: "passwordappleid", label: "Password Apple ID", default: false },
+];
+
 interface TeacherTableProps {
   initialTeachers: UserItem[];
   classList?: string[];
@@ -75,11 +88,29 @@ export function TeacherTable({
   const [teachers, setTeachers] = useState<UserItem[]>(initialTeachers);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 15;
 
   // Modals state
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openImportModal, setOpenImportModal] = useState(false);
+  const [openExportModal, setOpenExportModal] = useState(false);
+  const [exportScope, setExportScope] = useState<"all" | "selected" | "filtered" | "custom">("all");
+  const [exportRole, setExportRole] = useState<string>("all");
+  const [exportBidang, setExportBidang] = useState<string>("");
+  const [exportKelas, setExportKelas] = useState<string>("");
+  const [exportGender, setExportGender] = useState<string>("all");
+  const [exportFields, setExportFields] = useState<string[]>([
+    "no",
+    "nip",
+    "name",
+    "gender",
+    "email",
+    "guru_bidang",
+    "status",
+    "kelas",
+    "appleid",
+  ]);
+
   const [addRoleChoice, setAddRoleChoice] = useState<"2" | "4">("2");
   const [editTarget, setEditTarget] = useState<UserItem | null>(null);
   const [editRoleChoice, setEditRoleChoice] = useState<"2" | "4">("2");
@@ -102,10 +133,7 @@ export function TeacherTable({
   // Status Filter State: ALL, 0 (pending verifikasi), 2 (guru mapel), 4 (wali kelas)
   const [statusFilter, setStatusFilter] = useState<"ALL" | "0" | "2" | "4">("ALL");
 
-  const countAll = teachers.length;
   const countPending = teachers.filter((t) => t.status === "0").length;
-  const countMapel = teachers.filter((t) => t.status === "2").length;
-  const countWali = teachers.filter((t) => t.status === "4").length;
 
   const filtered = teachers.filter((t) => {
     const matchSearch =
@@ -116,6 +144,40 @@ export function TeacherTable({
     const matchStatus = statusFilter === "ALL" ? true : t.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  // Target data guru yang akan diekspor sesuai cakupan modal
+  const exportTargetTeachers = useMemo(() => {
+    if (exportScope === "selected") {
+      return teachers.filter((t) => selectedIds.includes(t.id));
+    }
+    if (exportScope === "filtered") {
+      return filtered;
+    }
+    if (exportScope === "all") {
+      return teachers;
+    }
+    // custom scope
+    return teachers.filter((t) => {
+      const matchRole = exportRole === "all" ? true : t.status === exportRole;
+      const matchBidang = exportBidang
+        ? (t.guru_bidang || "").toLowerCase() === exportBidang.toLowerCase()
+        : true;
+      const matchKelas = exportKelas
+        ? (t.kelas || "").toLowerCase() === exportKelas.toLowerCase()
+        : true;
+      const matchGender = exportGender === "all" ? true : t.gender === exportGender;
+      return matchRole && matchBidang && matchKelas && matchGender;
+    });
+  }, [
+    exportScope,
+    selectedIds,
+    filtered,
+    teachers,
+    exportRole,
+    exportBidang,
+    exportKelas,
+    exportGender,
+  ]);
 
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -299,28 +361,70 @@ export function TeacherTable({
     reader.readAsDataURL(file);
   };
 
-  const handleExportExcel = async () => {
+  const handleOpenExportModal = () => {
+    if (selectedIds.length > 0) {
+      setExportScope("selected");
+    } else if (search || statusFilter !== "ALL") {
+      setExportScope("filtered");
+    } else {
+      setExportScope("all");
+    }
+    setOpenExportModal(true);
+  };
+
+  const handleExecuteExport = async () => {
+    if (exportTargetTeachers.length === 0) {
+      toast.error("Tidak ada data guru yang memenuhi kriteria untuk diekspor");
+      return;
+    }
+    if (exportFields.length === 0) {
+      toast.error("Pilih minimal satu kolom data untuk diekspor");
+      return;
+    }
+
     try {
       setIsExporting(true);
       const XLSX = await import("xlsx");
-      const exportData = filtered.map((t, idx) => ({
-        No: idx + 1,
-        NIP: t.nip || "-",
-        "Nama Lengkap": t.name,
-        "Jenis Kelamin": t.gender === "P" ? "Perempuan" : "Laki-laki",
-        Email: t.email,
-        "Bidang Studi": t.guru_bidang || "-",
-        Peran: t.status === "0" ? "Pending Verifikasi" : getRoleLabel(t.status),
-        "Kelas Diampu / Wali": t.kelas || "-",
-      }));
+
+      const exportData = exportTargetTeachers.map((t, idx) => {
+        const row: Record<string, any> = {};
+        if (exportFields.includes("no")) row["No"] = idx + 1;
+        if (exportFields.includes("nip")) row["NIP"] = t.nip || "-";
+        if (exportFields.includes("name")) row["Nama Lengkap"] = t.name;
+        if (exportFields.includes("gender")) {
+          row["Jenis Kelamin"] = t.gender === "P" ? "Perempuan" : "Laki-laki";
+        }
+        if (exportFields.includes("email")) row["Email"] = t.email;
+        if (exportFields.includes("guru_bidang")) row["Bidang Studi / Mapel"] = t.guru_bidang || "-";
+        if (exportFields.includes("status")) {
+          row["Peran / Jabatan"] = t.status === "0" ? "Pending Verifikasi" : getRoleLabel(t.status);
+        }
+        if (exportFields.includes("kelas")) row["Kelas Diampu / Wali"] = t.kelas || "-";
+        if (exportFields.includes("appleid")) row["Apple ID"] = t.appleid || "-";
+        if (exportFields.includes("passwordappleid")) row["Password Apple ID"] = t.passwordappleid || "-";
+        return row;
+      });
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Data Dewan Guru");
 
       const today = new Date().toISOString().split("T")[0];
-      XLSX.writeFile(wb, `Data_Guru_AlAzhar_${today}.xlsx`);
-      toast.success(`Berhasil mengekspor ${exportData.length} data guru ke Excel.`);
+      let filePrefix = "Data_Dewan_Guru";
+      if (exportScope === "selected") {
+        filePrefix = `Data_Guru_Terpilih_${exportTargetTeachers.length}`;
+      } else if (exportScope === "custom") {
+        if (exportRole !== "all") filePrefix += `_${getRoleLabel(exportRole).replace(/[^a-zA-Z0-9]/g, "_")}`;
+        if (exportBidang) filePrefix += `_${exportBidang.replace(/[^a-zA-Z0-9]/g, "_")}`;
+        if (exportKelas) filePrefix += `_${exportKelas.replace(/[^a-zA-Z0-9]/g, "_")}`;
+      } else if (statusFilter !== "ALL") {
+        filePrefix += `_${getRoleLabel(statusFilter).replace(/[^a-zA-Z0-9]/g, "_")}`;
+      }
+
+      const fileName = `${filePrefix}_${today}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      toast.success(`Berhasil mengekspor ${exportData.length} data guru (${exportFields.length} kolom).`);
+      setOpenExportModal(false);
     } catch (err) {
       console.error("Export error:", err);
       toast.error("Gagal mengekspor data guru ke Excel.");
@@ -407,68 +511,35 @@ export function TeacherTable({
         </div>
       )}
 
-      {/* Filter Tabs / Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
-        {[
-          { id: "ALL" as const, label: "Semua Guru", count: countAll, isPending: false },
-          {
-            id: "0" as const,
-            label: "Menunggu Verifikasi",
-            count: countPending,
-            isPending: true,
-          },
-          { id: "2" as const, label: "Guru Mapel", count: countMapel, isPending: false },
-          { id: "4" as const, label: "Guru & Wali Kelas", count: countWali, isPending: false },
-        ].map((tab) => {
-          const isActive = statusFilter === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => {
-                setStatusFilter(tab.id);
-                setPage(1);
-              }}
-              className={cn(
-                "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer",
-                isActive
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : tab.isPending && countPending > 0
-                  ? "bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              <span>{tab.label}</span>
-              <span
-                className={cn(
-                  "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
-                  isActive
-                    ? "bg-white/20 text-white"
-                    : tab.isPending && countPending > 0
-                    ? "bg-amber-500 text-white animate-pulse"
-                    : "bg-muted text-muted-foreground"
-                )}
-              >
-                {tab.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* Top action toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-sm w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari nama, NIP, mapel, email..."
-            value={search}
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari nama, NIP, mapel, email..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9"
+            />
+          </div>
+
+          <select
+            value={statusFilter}
             onChange={(e) => {
-              setSearch(e.target.value);
+              setStatusFilter(e.target.value as "ALL" | "0" | "2" | "4");
               setPage(1);
             }}
-            className="pl-9"
-          />
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-auto min-w-[170px] cursor-pointer"
+          >
+            <option value="ALL">Semua Guru</option>
+            <option value="0">Menunggu Verifikasi</option>
+            <option value="2">Guru Mapel</option>
+            <option value="4">Guru & Wali Kelas</option>
+          </select>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -486,7 +557,7 @@ export function TeacherTable({
 
           <Button
             variant="outline"
-            onClick={handleExportExcel}
+            onClick={handleOpenExportModal}
             disabled={isExporting}
             className="gap-1.5 text-xs sm:text-sm"
             title="Ekspor daftar guru ke file Excel"
@@ -1349,6 +1420,261 @@ export function TeacherTable({
               disabled={isSubmitting}
             >
               {isSubmitting ? "Menghapus..." : `Ya, Hapus ${selectedIds.length} Akun`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Kustomisasi Export Excel */}
+      <Dialog open={openExportModal} onOpenChange={setOpenExportModal}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                <FileSpreadsheet className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold">
+                  Kustomisasi Ekspor Data Guru
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  Pilih cakupan data guru dan kolom apa saja yang ingin disertakan dalam file Excel (.xlsx).
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-1">
+            {/* Bagian 1: Cakupan & Filter Data Guru */}
+            <div className="space-y-3 rounded-xl border bg-muted/20 p-3.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  1. Cakupan Data Guru
+                </Label>
+                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                  {exportTargetTeachers.length} guru akan diekspor
+                </span>
+              </div>
+
+              {/* Pilihan Cakupan / Scope */}
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 text-xs">
+                {selectedIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setExportScope("selected")}
+                    className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                      exportScope === "selected"
+                        ? "border-emerald-500 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                    }`}
+                  >
+                    <span className="font-semibold text-foreground">Terpilih Saja</span>
+                    <span className="text-[10px] text-muted-foreground mt-0.5">{selectedIds.length} guru dicentang</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setExportScope("all")}
+                  className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                    exportScope === "all"
+                      ? "border-emerald-500 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                      : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Semua Guru</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">Seluruh {teachers.length} guru</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setExportScope("filtered")}
+                  className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                    exportScope === "filtered"
+                      ? "border-emerald-500 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                      : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Sesuai Tabel</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">{filtered.length} guru (filter aktif)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setExportScope("custom")}
+                  className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                    exportScope === "custom"
+                      ? "border-emerald-500 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                      : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Filter Kustom</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">Pilih peran, mapel, kelas, dll</span>
+                </button>
+              </div>
+
+              {/* Parameter Filter Kustom */}
+              {exportScope === "custom" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-border/60 mt-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Peran / Status</Label>
+                    <select
+                      value={exportRole}
+                      onChange={(e) => setExportRole(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
+                    >
+                      <option value="all">Semua Peran & Status</option>
+                      <option value="2">Guru Mata Pelajaran</option>
+                      <option value="4">Wali Kelas</option>
+                      <option value="0">Menunggu Verifikasi (Pending)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Bidang Studi / Mapel</Label>
+                    <select
+                      value={exportBidang}
+                      onChange={(e) => setExportBidang(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
+                    >
+                      <option value="">Semua Bidang Studi</option>
+                      {subjectList.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Kelas Diampu / Wali</Label>
+                    <select
+                      value={exportKelas}
+                      onChange={(e) => setExportKelas(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
+                    >
+                      <option value="">Semua Kelas</option>
+                      {classList.map((k) => (
+                        <option key={k} value={k}>
+                          {k}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Jenis Kelamin</Label>
+                    <select
+                      value={exportGender}
+                      onChange={(e) => setExportGender(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
+                    >
+                      <option value="all">Semua Jenis Kelamin</option>
+                      <option value="L">Laki-laki (L)</option>
+                      <option value="P">Perempuan (P)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bagian 2: Pilihan Kolom / Field Data */}
+            <div className="space-y-3 rounded-xl border bg-muted/20 p-3.5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  2. Kolom Data ({exportFields.length} Dipilih)
+                </Label>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setExportFields(AVAILABLE_TEACHER_EXPORT_FIELDS.map((f) => f.id))}
+                    className="text-emerald-600 dark:text-emerald-400 hover:underline text-[11px] font-medium cursor-pointer"
+                  >
+                    Pilih Semua
+                  </button>
+                  <span className="text-muted-foreground">•</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExportFields(AVAILABLE_TEACHER_EXPORT_FIELDS.filter((f) => f.default).map((f) => f.id))
+                    }
+                    className="text-emerald-600 dark:text-emerald-400 hover:underline text-[11px] font-medium cursor-pointer"
+                  >
+                    Format Default
+                  </button>
+                  <span className="text-muted-foreground">•</span>
+                  <button
+                    type="button"
+                    onClick={() => setExportFields([])}
+                    className="text-muted-foreground hover:text-foreground text-[11px] cursor-pointer"
+                  >
+                    Hapus Semua
+                  </button>
+                </div>
+              </div>
+
+              {/* Grid Checkbox Fields */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+                {AVAILABLE_TEACHER_EXPORT_FIELDS.map((field) => {
+                  const isChecked = exportFields.includes(field.id);
+                  return (
+                    <label
+                      key={field.id}
+                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer select-none transition-all ${
+                        isChecked
+                          ? "border-emerald-500/40 bg-emerald-500/5 text-foreground font-medium"
+                          : "border-input bg-background hover:bg-muted/40 text-muted-foreground"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setExportFields((prev) =>
+                            prev.includes(field.id)
+                              ? prev.filter((id) => id !== field.id)
+                              : [...prev, field.id]
+                          );
+                        }}
+                        className="h-3.5 w-3.5 rounded border-input text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                      />
+                      <span className="truncate">{field.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Kotak Ringkasan Pratinjau */}
+            <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="text-muted-foreground">
+                  File Excel akan berisi:{" "}
+                  <strong className="text-foreground">{exportTargetTeachers.length} guru</strong> dengan{" "}
+                  <strong className="text-foreground">{exportFields.length} kolom data</strong>.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpenExportModal(false)}
+              disabled={isExporting}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleExecuteExport}
+              disabled={isExporting || exportTargetTeachers.length === 0 || exportFields.length === 0}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-1.5 cursor-pointer"
+            >
+              <Download className="h-4 w-4" />
+              <span>{isExporting ? "Menyiapkan Excel..." : "Unduh File Excel"}</span>
             </Button>
           </DialogFooter>
         </DialogContent>

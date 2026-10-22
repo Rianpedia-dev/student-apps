@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   UserPlus,
   FileSpreadsheet,
+  Pencil,
   Trash2,
   CheckCircle,
   Eye,
@@ -13,7 +14,15 @@ import {
   ChevronRight,
   Upload,
   Download,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   createUserAction,
+  updateUserAction,
   deleteUserAction,
   deleteUsersAction,
   verifyUserAction,
@@ -44,21 +54,61 @@ import {
 import { toast } from "sonner";
 import { UserItem } from "@/types";
 
+const AVAILABLE_EXPORT_FIELDS = [
+  { id: "no", label: "No (Nomor Urut)", default: true },
+  { id: "nis", label: "NIS", default: true },
+  { id: "name", label: "Nama Lengkap", default: true },
+  { id: "jenjang", label: "Jenjang (SD/SMP)", default: true },
+  { id: "kelas", label: "Kelas / Rombel", default: true },
+  { id: "gender", label: "Jenis Kelamin (L/P)", default: true },
+  { id: "email", label: "Email / Username", default: true },
+  { id: "appleid", label: "Apple ID", default: true },
+  { id: "status", label: "Status Akun", default: true },
+  { id: "passwordappleid", label: "Password Apple ID", default: false },
+  { id: "point", label: "Poin Siswa", default: false },
+  { id: "notes", label: "Catatan Profil", default: false },
+];
+
 interface StudentTableProps {
   initialStudents: UserItem[];
   classList: string[];
+  classJenjangMap?: Record<string, string>;
 }
 
-export function StudentTable({ initialStudents, classList }: StudentTableProps) {
+export function StudentTable({
+  initialStudents,
+  classList,
+  classJenjangMap = {},
+}: StudentTableProps) {
   const [students, setStudents] = useState<UserItem[]>(initialStudents);
   const [search, setSearch] = useState("");
+  const [filterJenjang, setFilterJenjang] = useState<"all" | "SD" | "SMP">("all");
   const [selectedClassFilter, setSelectedClassFilter] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 15;
 
   // Modals state
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openImportModal, setOpenImportModal] = useState(false);
+  const [openExportModal, setOpenExportModal] = useState(false);
+  const [exportScope, setExportScope] = useState<"all" | "selected" | "filtered" | "custom">("all");
+  const [exportJenjang, setExportJenjang] = useState<"all" | "SD" | "SMP">("all");
+  const [exportKelas, setExportKelas] = useState<string>("");
+  const [exportStatus, setExportStatus] = useState<string>("all");
+  const [exportGender, setExportGender] = useState<string>("all");
+  const [exportFields, setExportFields] = useState<string[]>([
+    "no",
+    "nis",
+    "name",
+    "jenjang",
+    "kelas",
+    "gender",
+    "email",
+    "appleid",
+    "status",
+  ]);
+
+  const [editTarget, setEditTarget] = useState<UserItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -67,13 +117,91 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [openBulkDeleteModal, setOpenBulkDeleteModal] = useState(false);
 
+  // Helper check if student belongs to SMP
+  const isSmp = (s: UserItem) => {
+    if (!s.kelas) return false;
+    if (classJenjangMap && classJenjangMap[s.kelas]) {
+      return classJenjangMap[s.kelas] === "SMP";
+    }
+    const clean = s.kelas.trim().toUpperCase();
+    return (
+      clean.includes("SMP") ||
+      clean.startsWith("7") ||
+      clean.startsWith("8") ||
+      clean.startsWith("9")
+    );
+  };
+
+  const availableClasses = useMemo(() => {
+    if (filterJenjang === "all") return classList;
+    return classList.filter((k) => {
+      const isClassSmp =
+        (classJenjangMap && classJenjangMap[k] === "SMP") ||
+        k.toUpperCase().includes("SMP") ||
+        k.startsWith("7") ||
+        k.startsWith("8") ||
+        k.startsWith("9");
+      return filterJenjang === "SMP" ? isClassSmp : !isClassSmp;
+    });
+  }, [classList, filterJenjang, classJenjangMap]);
+
+  const handleFilterJenjangChange = (newJenjang: "all" | "SD" | "SMP") => {
+    setFilterJenjang(newJenjang);
+    setPage(1);
+    if (selectedClassFilter) {
+      const isCurrentClassSmp =
+        (classJenjangMap && classJenjangMap[selectedClassFilter] === "SMP") ||
+        selectedClassFilter.toUpperCase().includes("SMP") ||
+        selectedClassFilter.startsWith("7") ||
+        selectedClassFilter.startsWith("8") ||
+        selectedClassFilter.startsWith("9");
+      if (newJenjang === "SD" && isCurrentClassSmp) setSelectedClassFilter("");
+      if (newJenjang === "SMP" && !isCurrentClassSmp) setSelectedClassFilter("");
+    }
+  };
+
   // Filtered & Paginated
   const filtered = students.filter((s) => {
-    const matchName = s.name.toLowerCase().includes(search.toLowerCase()) ||
+    const matchName =
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.email.toLowerCase().includes(search.toLowerCase());
     const matchClass = selectedClassFilter ? s.kelas === selectedClassFilter : true;
-    return matchName && matchClass;
+    const matchJenjang =
+      filterJenjang === "all" || (filterJenjang === "SMP" ? isSmp(s) : !isSmp(s));
+    return matchName && matchClass && matchJenjang;
   });
+
+  // Target data siswa yang akan diekspor sesuai cakupan modal
+  const exportTargetStudents = useMemo(() => {
+    if (exportScope === "selected") {
+      return students.filter((s) => selectedIds.includes(s.id));
+    }
+    if (exportScope === "filtered") {
+      return filtered;
+    }
+    if (exportScope === "all") {
+      return students;
+    }
+    // custom scope
+    return students.filter((s) => {
+      const matchJenjang =
+        exportJenjang === "all" || (exportJenjang === "SMP" ? isSmp(s) : !isSmp(s));
+      const matchKelas = exportKelas ? s.kelas === exportKelas : true;
+      const matchStatus = exportStatus === "all" ? true : s.status === exportStatus;
+      const matchGender = exportGender === "all" ? true : s.gender === exportGender;
+      return matchJenjang && matchKelas && matchStatus && matchGender;
+    });
+  }, [
+    exportScope,
+    selectedIds,
+    filtered,
+    students,
+    exportJenjang,
+    exportKelas,
+    exportStatus,
+    exportGender,
+    classJenjangMap,
+  ]);
 
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -158,46 +286,74 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
     }
   };
 
-  const handleExportExcel = async () => {
+  const handleOpenExportModal = () => {
+    if (selectedIds.length > 0) {
+      setExportScope("selected");
+    } else if (search || selectedClassFilter || filterJenjang !== "all") {
+      setExportScope("filtered");
+    } else {
+      setExportScope("all");
+    }
+    setOpenExportModal(true);
+  };
+
+  const handleExecuteExport = async () => {
+    if (exportTargetStudents.length === 0) {
+      toast.error("Tidak ada data siswa yang memenuhi kriteria untuk diekspor");
+      return;
+    }
+    if (exportFields.length === 0) {
+      toast.error("Pilih minimal satu kolom data untuk diekspor");
+      return;
+    }
+
     try {
       setIsExporting(true);
       const XLSX = await import("xlsx");
 
-      const targetStudents =
-        selectedIds.length > 0
-          ? students.filter((s) => selectedIds.includes(s.id))
-          : filtered;
-
-      if (targetStudents.length === 0) {
-        toast.error("Tidak ada data siswa untuk diekspor");
-        return;
-      }
-
-      const exportData = targetStudents.map((s, idx) => ({
-        No: idx + 1,
-        NIS: s.nis || "-",
-        "Nama Lengkap": s.name,
-        Kelas: s.kelas || "-",
-        "Jenis Kelamin": s.gender === "P" ? "Perempuan" : s.gender === "L" ? "Laki-laki" : "-",
-        "Email / Username": s.email,
-        "Apple ID": s.appleid || "-",
-        Status: s.status === "1" ? "Aktif" : s.status === "0" ? "Pending" : "Non-Aktif",
-      }));
+      const exportData = exportTargetStudents.map((s, idx) => {
+        const row: Record<string, any> = {};
+        if (exportFields.includes("no")) row["No"] = idx + 1;
+        if (exportFields.includes("nis")) row["NIS"] = s.nis || "-";
+        if (exportFields.includes("name")) row["Nama Lengkap"] = s.name;
+        if (exportFields.includes("jenjang")) row["Jenjang"] = isSmp(s) ? "SMP" : "SD";
+        if (exportFields.includes("kelas")) row["Kelas"] = s.kelas || "-";
+        if (exportFields.includes("gender")) {
+          row["Jenis Kelamin"] = s.gender === "P" ? "Perempuan" : s.gender === "L" ? "Laki-laki" : "-";
+        }
+        if (exportFields.includes("email")) row["Email / Username"] = s.email;
+        if (exportFields.includes("appleid")) row["Apple ID"] = s.appleid || "-";
+        if (exportFields.includes("passwordappleid")) row["Password Apple ID"] = (s as any).passwordappleid || "-";
+        if (exportFields.includes("status")) {
+          row["Status"] = s.status === "1" ? "Aktif" : s.status === "0" ? "Pending" : "Non-Aktif";
+        }
+        if (exportFields.includes("point")) row["Poin"] = s.point || "0";
+        if (exportFields.includes("notes")) row["Catatan"] = s.notes || "-";
+        return row;
+      });
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Data Siswa");
 
       const today = new Date().toISOString().split("T")[0];
-      const fileName =
-        selectedIds.length > 0
-          ? `Data_Siswa_Terpilih_${today}.xlsx`
-          : selectedClassFilter
-          ? `Data_Siswa_${selectedClassFilter.replace(/[^a-zA-Z0-9]/g, "_")}_${today}.xlsx`
-          : `Data_Siswa_AlAzhar_${today}.xlsx`;
+      let filePrefix = "Data_Siswa";
+      if (exportScope === "selected") {
+        filePrefix = `Data_Siswa_Terpilih_${exportTargetStudents.length}`;
+      } else if (exportScope === "custom") {
+        if (exportJenjang !== "all") filePrefix += `_${exportJenjang}`;
+        if (exportKelas) filePrefix += `_${exportKelas.replace(/[^a-zA-Z0-9]/g, "_")}`;
+        if (exportStatus !== "all") filePrefix += `_${exportStatus === "1" ? "Aktif" : "Nonaktif"}`;
+      } else if (selectedClassFilter) {
+        filePrefix += `_${selectedClassFilter.replace(/[^a-zA-Z0-9]/g, "_")}`;
+      } else if (filterJenjang !== "all") {
+        filePrefix += `_${filterJenjang}`;
+      }
 
+      const fileName = `${filePrefix}_${today}.xlsx`;
       XLSX.writeFile(wb, fileName);
-      toast.success(`Berhasil mengekspor ${exportData.length} data siswa ke Excel.`);
+      toast.success(`Berhasil mengekspor ${exportData.length} data siswa (${exportFields.length} kolom).`);
+      setOpenExportModal(false);
     } catch (err) {
       console.error("Export error:", err);
       toast.error("Gagal mengekspor data siswa ke Excel.");
@@ -220,6 +376,48 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
         window.location.reload();
       } else {
         toast.error(res.error || "Gagal menambahkan siswa");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditStudent = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setIsSubmitting(true);
+    const formData = new FormData(e.currentTarget);
+    try {
+      const res = await updateUserAction(editTarget.id, formData);
+      if (res.success) {
+        toast.success(res.message);
+        const updatedName = formData.get("name") as string;
+        const updatedNis = (formData.get("nis") as string) || null;
+        const updatedGender = (formData.get("gender") as string) || "L";
+        const updatedKelas = (formData.get("kelas") as string) || null;
+        const updatedEmail = formData.get("email") as string;
+        const updatedAppleid = (formData.get("appleid") as string) || null;
+        const updatedStatus = (formData.get("status") as string) || editTarget.status;
+
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.id === editTarget.id
+              ? {
+                  ...s,
+                  name: updatedName,
+                  nis: updatedNis,
+                  gender: updatedGender,
+                  kelas: updatedKelas,
+                  email: updatedEmail,
+                  appleid: updatedAppleid,
+                  status: updatedStatus,
+                }
+              : s
+          )
+        );
+        setEditTarget(null);
+      } else {
+        toast.error(res.error || "Gagal memperbarui data siswa");
       }
     } finally {
       setIsSubmitting(false);
@@ -325,9 +523,9 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
   return (
     <div className="space-y-4">
       {/* Top action toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative max-w-xs w-full">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-48 sm:w-60">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Cari nama atau email..."
@@ -339,16 +537,60 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
               className="pl-9"
             />
           </div>
+
+          {/* Filter Jenjang Pills */}
+          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-full border text-xs font-medium shrink-0">
+            <button
+              type="button"
+              onClick={() => handleFilterJenjangChange("all")}
+              className={`rounded-full px-3 py-1 transition-all cursor-pointer ${
+                filterJenjang === "all"
+                  ? "bg-gradient-to-b from-slate-800 to-slate-900 text-white dark:from-slate-100 dark:to-slate-200 dark:text-slate-900 shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterJenjangChange("SD")}
+              className={`rounded-full px-3 py-1 transition-all cursor-pointer ${
+                filterJenjang === "SD"
+                  ? "bg-gradient-to-b from-emerald-400 to-teal-500 text-white shadow-sm font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              SD
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFilterJenjangChange("SMP")}
+              className={`rounded-full px-3 py-1 transition-all cursor-pointer ${
+                filterJenjang === "SMP"
+                  ? "bg-gradient-to-b from-blue-300 to-blue-500 text-black shadow-sm font-bold border border-blue-300/60 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              SMP
+            </button>
+          </div>
+
           <select
             value={selectedClassFilter}
             onChange={(e) => {
               setSelectedClassFilter(e.target.value);
               setPage(1);
             }}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 max-w-xs"
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-auto min-w-[150px] max-w-[220px] truncate shrink-0"
           >
-            <option value="">Semua Kelas</option>
-            {classList.map((k) => (
+            <option value="">
+              {filterJenjang === "SD"
+                ? "Semua Kelas SD"
+                : filterJenjang === "SMP"
+                ? "Semua Kelas SMP"
+                : "Semua Kelas"}
+            </option>
+            {availableClasses.map((k) => (
               <option key={k} value={k}>
                 {k}
               </option>
@@ -371,7 +613,7 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
 
           <Button
             variant="outline"
-            onClick={handleExportExcel}
+            onClick={handleOpenExportModal}
             disabled={isExporting}
             className="gap-1.5 text-xs sm:text-sm"
             title="Ekspor daftar siswa ke file Excel"
@@ -460,7 +702,7 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
               <TableHead className="font-bold">Email</TableHead>
               <TableHead className="font-bold">Apple ID</TableHead>
               <TableHead className="font-bold text-center">Status</TableHead>
-              <TableHead className="w-36 text-center font-bold">Aksi</TableHead>
+              <TableHead className="w-14 text-center font-bold">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -525,34 +767,53 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Link href={`/admin/students/${s.id}`}>
-                        <Button variant="ghost" size="icon-sm" className="h-8 w-8" title="Detail Siswa">
-                          <Eye className="h-4 w-4 text-sky-600 dark:text-sky-400" />
-                        </Button>
-                      </Link>
-                      {s.status === "0" && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
-                          title="Verifikasi Siswa"
-                          onClick={() => handleVerify(s.id)}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
-                        title="Hapus Siswa"
-                        onClick={() => setDeleteTarget(s)}
+                  <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        className="h-8 w-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center justify-center transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                        title="Pilihan Aksi"
+                        aria-label={`Menu aksi ${s.name}`}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        <MoreVertical className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44 p-1">
+                        <Link href={`/admin/students/${s.id}`} className="w-full">
+                          <DropdownMenuItem className="cursor-pointer gap-2">
+                            <Eye className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                            <span>Detail Siswa</span>
+                          </DropdownMenuItem>
+                        </Link>
+
+                        {s.status === "0" && (
+                          <DropdownMenuItem
+                            className="cursor-pointer gap-2 text-emerald-600 dark:text-emerald-400 focus:text-emerald-600"
+                            onClick={() => handleVerify(s.id)}
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            <span>Verifikasi Akun</span>
+                          </DropdownMenuItem>
+                        )}
+
+                        <DropdownMenuItem
+                          className="cursor-pointer gap-2"
+                          onClick={() => setEditTarget(s)}
+                        >
+                          <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          <span>Edit Data</span>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem
+                          variant="destructive"
+                          className="cursor-pointer gap-2 text-rose-600 dark:text-rose-400 focus:text-rose-600"
+                          onClick={() => setDeleteTarget(s)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span>Hapus Siswa</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
@@ -752,6 +1013,149 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
         </DialogContent>
       </Dialog>
 
+      {/* Modal Edit Siswa */}
+      <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Data Siswa</DialogTitle>
+            <DialogDescription>
+              Perbarui identitas, kelas, akun login, atau informasi Apple ID siswa.
+            </DialogDescription>
+          </DialogHeader>
+          {editTarget && (
+            <form onSubmit={handleEditStudent} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="edit-student-name">Nama Lengkap</Label>
+                <Input
+                  id="edit-student-name"
+                  name="name"
+                  defaultValue={editTarget.name}
+                  placeholder="Nama siswa"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="edit-student-nis">NIS</Label>
+                  <Input
+                    id="edit-student-nis"
+                    name="nis"
+                    defaultValue={editTarget.nis || ""}
+                    placeholder="Contoh: 2026..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-student-gender">Jenis Kelamin</Label>
+                  <select
+                    id="edit-student-gender"
+                    name="gender"
+                    defaultValue={editTarget.gender || "L"}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                  >
+                    <option value="L">Laki-laki (L)</option>
+                    <option value="P">Perempuan (P)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="edit-student-kelas">Kelas</Label>
+                  <select
+                    id="edit-student-kelas"
+                    name="kelas"
+                    defaultValue={editTarget.kelas || ""}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                  >
+                    <option value="">-- Belum Diatur / Pilih Kelas --</option>
+                    {classList.map((k) => (
+                      <option key={`edit-student-class-${k}`} value={k}>
+                        {k}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-student-status">Status Akun</Label>
+                  <select
+                    id="edit-student-status"
+                    name="status"
+                    defaultValue={editTarget.status}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                  >
+                    <option value="1">Aktif</option>
+                    <option value="0">Pending / Menunggu Verifikasi</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="edit-student-email">Email Login</Label>
+                  <Input
+                    id="edit-student-email"
+                    name="email"
+                    type="email"
+                    defaultValue={editTarget.email}
+                    placeholder="siswa@gmail.com"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-student-password">Password Baru (Opsional)</Label>
+                  <Input
+                    id="edit-student-password"
+                    name="password"
+                    type="password"
+                    placeholder="Kosongkan jika tak diubah"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="edit-student-appleid">Apple ID (Opsional)</Label>
+                  <Input
+                    id="edit-student-appleid"
+                    name="appleid"
+                    defaultValue={editTarget.appleid || ""}
+                    placeholder="apple@icloud.com"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-student-passwordappleid">Password Apple ID</Label>
+                  <Input
+                    id="edit-student-passwordappleid"
+                    name="passwordappleid"
+                    type="password"
+                    placeholder="Kosongkan jika tak diubah"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="pt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditTarget(null)}
+                  disabled={isSubmitting}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Modal Konfirmasi Hapus */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>
@@ -836,6 +1240,269 @@ export function StudentTable({ initialStudents, classList }: StudentTableProps) 
               disabled={isSubmitting}
             >
               {isSubmitting ? "Menghapus..." : `Ya, Hapus ${selectedIds.length} Akun`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Kustomisasi Export Excel */}
+      <Dialog open={openExportModal} onOpenChange={setOpenExportModal}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 border border-emerald-500/20">
+                <FileSpreadsheet className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold">Kustomisasi Export Data Siswa</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Pilih cakupan data siswa dan tentukan kolom data apa saja yang ingin dimasukkan ke file Excel.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-1">
+            {/* Bagian 1: Cakupan & Filter Data Siswa */}
+            <div className="space-y-3 rounded-xl border bg-muted/20 p-3.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  1. Cakupan Data Siswa
+                </Label>
+                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                  {exportTargetStudents.length} siswa akan diekspor
+                </span>
+              </div>
+
+              {/* Pilihan Cakupan / Scope */}
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 text-xs">
+                {selectedIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setExportScope("selected")}
+                    className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                      exportScope === "selected"
+                        ? "border-emerald-500 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                        : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                    }`}
+                  >
+                    <span className="font-semibold text-foreground">Terpilih Saja</span>
+                    <span className="text-[10px] text-muted-foreground mt-0.5">{selectedIds.length} siswa dicentang</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setExportScope("all")}
+                  className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                    exportScope === "all"
+                      ? "border-emerald-500 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                      : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Semua Siswa</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">Seluruh {students.length} siswa</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setExportScope("filtered")}
+                  className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                    exportScope === "filtered"
+                      ? "border-emerald-500 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                      : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Sesuai Tabel</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">{filtered.length} siswa (filter aktif)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setExportScope("custom")}
+                  className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                    exportScope === "custom"
+                      ? "border-emerald-500 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                      : "border-input bg-background hover:bg-muted/50 text-muted-foreground"
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Filter Kustom</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">Pilih jenjang, kelas, dll</span>
+                </button>
+              </div>
+
+              {/* Parameter Filter Kustom */}
+              {exportScope === "custom" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-border/60 mt-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Filter Jenjang</Label>
+                    <select
+                      value={exportJenjang}
+                      onChange={(e) => {
+                        setExportJenjang(e.target.value as "all" | "SD" | "SMP");
+                        setExportKelas("");
+                      }}
+                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
+                    >
+                      <option value="all">Semua Jenjang (SD & SMP)</option>
+                      <option value="SD">Khusus SD Saja</option>
+                      <option value="SMP">Khusus SMP Saja</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Filter Kelas</Label>
+                    <select
+                      value={exportKelas}
+                      onChange={(e) => setExportKelas(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
+                    >
+                      <option value="">Semua Kelas</option>
+                      {classList
+                        .filter((k) => {
+                          if (exportJenjang === "all") return true;
+                          const isClassSmp =
+                            (classJenjangMap && classJenjangMap[k] === "SMP") ||
+                            k.toUpperCase().includes("SMP") ||
+                            k.startsWith("7") ||
+                            k.startsWith("8") ||
+                            k.startsWith("9");
+                          return exportJenjang === "SMP" ? isClassSmp : !isClassSmp;
+                        })
+                        .map((k) => (
+                          <option key={k} value={k}>
+                            {k}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Status Akun</Label>
+                    <select
+                      value={exportStatus}
+                      onChange={(e) => setExportStatus(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
+                    >
+                      <option value="all">Semua Status</option>
+                      <option value="1">Aktif Saja</option>
+                      <option value="0">Menunggu Verifikasi (Pending)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Jenis Kelamin</Label>
+                    <select
+                      value={exportGender}
+                      onChange={(e) => setExportGender(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
+                    >
+                      <option value="all">Semua Jenis Kelamin</option>
+                      <option value="L">Laki-laki (L)</option>
+                      <option value="P">Perempuan (P)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bagian 2: Pilihan Kolom / Field Data */}
+            <div className="space-y-3 rounded-xl border bg-muted/20 p-3.5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  2. Kolom Data ({exportFields.length} Dipilih)
+                </Label>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setExportFields(AVAILABLE_EXPORT_FIELDS.map((f) => f.id))}
+                    className="text-emerald-600 dark:text-emerald-400 hover:underline text-[11px] font-medium cursor-pointer"
+                  >
+                    Pilih Semua
+                  </button>
+                  <span className="text-muted-foreground">•</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExportFields(AVAILABLE_EXPORT_FIELDS.filter((f) => f.default).map((f) => f.id))
+                    }
+                    className="text-emerald-600 dark:text-emerald-400 hover:underline text-[11px] font-medium cursor-pointer"
+                  >
+                    Format Default
+                  </button>
+                  <span className="text-muted-foreground">•</span>
+                  <button
+                    type="button"
+                    onClick={() => setExportFields([])}
+                    className="text-muted-foreground hover:text-foreground text-[11px] cursor-pointer"
+                  >
+                    Hapus Semua
+                  </button>
+                </div>
+              </div>
+
+              {/* Grid Checkbox Fields */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+                {AVAILABLE_EXPORT_FIELDS.map((field) => {
+                  const isChecked = exportFields.includes(field.id);
+                  return (
+                    <label
+                      key={field.id}
+                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer select-none transition-all ${
+                        isChecked
+                          ? "border-emerald-500/40 bg-emerald-500/5 text-foreground font-medium"
+                          : "border-input bg-background hover:bg-muted/40 text-muted-foreground"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setExportFields((prev) =>
+                            prev.includes(field.id)
+                              ? prev.filter((id) => id !== field.id)
+                              : [...prev, field.id]
+                          );
+                        }}
+                        className="h-3.5 w-3.5 rounded border-input text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                      />
+                      <span className="truncate">{field.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Kotak Ringkasan Pratinjau */}
+            <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="text-muted-foreground">
+                  File Excel akan berisi:{" "}
+                  <strong className="text-foreground">{exportTargetStudents.length} siswa</strong> dengan{" "}
+                  <strong className="text-foreground">{exportFields.length} kolom data</strong>.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpenExportModal(false)}
+              disabled={isExporting}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleExecuteExport}
+              disabled={isExporting || exportTargetStudents.length === 0 || exportFields.length === 0}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-1.5 cursor-pointer"
+            >
+              <Download className="h-4 w-4" />
+              <span>{isExporting ? "Menyiapkan Excel..." : "Unduh File Excel"}</span>
             </Button>
           </DialogFooter>
         </DialogContent>

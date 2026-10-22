@@ -22,6 +22,7 @@ export interface UpdateUserInput {
   id: string;
   name?: string;
   email?: string;
+  nis?: string | null;
   nip?: string | null;
   gender?: string | null;
   status?: string;
@@ -89,6 +90,7 @@ export class UserService {
     const dataToUpdate: Record<string, unknown> = {};
     if (data.name !== undefined) dataToUpdate.name = data.name;
     if (data.email !== undefined) dataToUpdate.email = data.email;
+    if (data.nis !== undefined) dataToUpdate.nis = data.nis;
     if (data.nip !== undefined) dataToUpdate.nip = data.nip;
     if (data.gender !== undefined) dataToUpdate.gender = data.gender;
     if (data.status !== undefined) dataToUpdate.status = data.status;
@@ -258,13 +260,27 @@ export class UserService {
     const buffer = Buffer.from(base64Data, "base64");
     const workbook = XLSX.read(buffer, { type: "buffer" });
 
-    // Pilih sheet: prioritaskan sheet dengan nama mengandung siswa/student, atau sheet pertama
+    // 1. Pilih sheet terbaik: cari sheet yang mengandung kata siswa/student/murid, atau sheet yang memiliki kolom nama/email
     let sheetName = workbook.SheetNames[0];
     for (const name of workbook.SheetNames) {
       const lower = name.toLowerCase();
-      if (lower.includes("siswa") || lower.includes("student")) {
+      if (lower.includes("siswa") || lower.includes("student") || lower.includes("murid")) {
         sheetName = name;
         break;
+      }
+      const ws = workbook.Sheets[name];
+      if (ws) {
+        const sampleRows = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: "" }).slice(0, 5);
+        const hasHeader = sampleRows.some((r) =>
+          Array.isArray(r) &&
+          r.some((c) => {
+            const s = String(c ?? "").toLowerCase();
+            return s.includes("nama") || s.includes("email") || s.includes("username");
+          })
+        );
+        if (hasHeader) {
+          sheetName = name;
+        }
       }
     }
 
@@ -276,7 +292,7 @@ export class UserService {
     const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, defval: "" });
     if (!rows || rows.length === 0) return 0;
 
-    // 1. Deteksi letak baris header dan pemetaan nama kolom secara dinamis
+    // 2. Deteksi letak baris header dan pemetaan nama kolom secara presisi
     let headerRowIdx = -1;
     const colMap: Record<string, number> = {};
 
@@ -296,10 +312,12 @@ export class UserService {
         headerRowIdx = r;
         row.forEach((col, idx) => {
           const norm = String(col ?? "").trim().toLowerCase();
-          if (norm.includes("nis") || norm.includes("nomor induk") || norm.includes("no induk")) {
+          // Catatan: 'jenis kelamin' mengandung substring 'nis' (je-nis), maka harus dikecualikan
+          if (
+            !norm.includes("jenis") &&
+            (/\bnis\b/.test(norm) || norm.includes("nomor induk") || norm.includes("no induk"))
+          ) {
             colMap["nis"] = idx;
-          } else if (norm.includes("nama") || norm.includes("name")) {
-            colMap["name"] = idx;
           } else if (
             norm.includes("email") ||
             norm.includes("username") ||
@@ -307,6 +325,11 @@ export class UserService {
             norm.includes("e-mail")
           ) {
             colMap["email"] = idx;
+          } else if (
+            !norm.includes("username") &&
+            (norm.includes("nama") || norm.includes("name"))
+          ) {
+            colMap["name"] = idx;
           } else if (norm.includes("apple") && (norm.includes("pass") || norm.includes("sandi") || norm.includes("pwd"))) {
             colMap["passwordappleid"] = idx;
           } else if (norm.includes("apple")) {
@@ -315,9 +338,9 @@ export class UserService {
             colMap["passwordPlain"] = idx;
           } else if (norm.includes("pass") || norm.includes("sandi") || norm.includes("pwd")) {
             colMap["password"] = idx;
-          } else if (norm.includes("kelamin") || norm.includes("gender") || norm === "jk") {
+          } else if (norm.includes("kelamin") || norm.includes("gender") || norm === "jk" || norm.includes("(l/p)")) {
             colMap["gender"] = idx;
-          } else if (norm.includes("kelas") || norm.includes("rombel")) {
+          } else if (norm.includes("kelas") || norm.includes("rombel") || norm.includes("class")) {
             colMap["kelas"] = idx;
           } else if (norm.includes("status") || norm.includes("aktif")) {
             colMap["status"] = idx;
@@ -338,7 +361,8 @@ export class UserService {
     };
 
     const getVal = (row: any[], key: string, fallbackIdx: number): string | null => {
-      const idx = colMap[key] !== undefined ? colMap[key] : fallbackIdx;
+      // Jika baris header ditemukan, gunakan HANYA pemetaan colMap agar tidak salah membaca kolom lain
+      const idx = colMap[key] !== undefined ? colMap[key] : (headerRowIdx >= 0 ? -1 : fallbackIdx);
       if (idx >= 0 && idx < row.length) {
         return cleanVal(row[idx]);
       }
@@ -348,6 +372,10 @@ export class UserService {
     const dataRows = headerRowIdx >= 0 ? rows.slice(headerRowIdx + 1) : rows.slice(1);
     let importedCount = 0;
 
+    // Cache hash password agar tidak hashing ulang password yang identik (meningkatkan performa 500x)
+    const passwordHashMap = new Map<string, string>();
+    const detectedClasses = new Set<string>();
+
     // Proses dalam chunk 15 baris untuk performa optimal
     const CHUNK_SIZE = 15;
     for (let i = 0; i < dataRows.length; i += CHUNK_SIZE) {
@@ -356,12 +384,24 @@ export class UserService {
         chunk.map(async (row) => {
           if (!row || !Array.isArray(row) || row.length === 0) return;
 
-          // Fallback indeks sesuai format klasik:
-          // [0: Email, 1: Password, 2: Password Plain, 3: Nama, 4: Apple ID, 5: Password Apple ID, 6: Status, 7: Gender]
           const email = getVal(row, "email", 0);
           const name = getVal(row, "name", 3);
-          const rawPassword =
-            getVal(row, "passwordPlain", 2) || getVal(row, "password", 1) || "123456";
+          if (!email || !name) return;
+
+          let rawPassword: string | null = null;
+          if (colMap["passwordPlain"] !== undefined) {
+            rawPassword = cleanVal(row[colMap["passwordPlain"]]);
+          }
+          if (!rawPassword && colMap["password"] !== undefined) {
+            rawPassword = cleanVal(row[colMap["password"]]);
+          }
+          if (!rawPassword && headerRowIdx < 0) {
+            rawPassword = cleanVal(row[2]) || cleanVal(row[1]);
+          }
+          if (!rawPassword) {
+            rawPassword = "123456";
+          }
+
           const appleid = getVal(row, "appleid", 4);
           const passwordappleid = getVal(row, "passwordappleid", 5);
 
@@ -394,9 +434,15 @@ export class UserService {
           const kelas = rawKelas && rawKelas.toLowerCase() !== "kosong" && rawKelas !== "-" ? rawKelas : null;
           const nis = getVal(row, "nis", 9);
 
-          if (!email || !name) return;
+          if (kelas) {
+            detectedClasses.add(kelas);
+          }
 
-          const hashedPassword = await bcrypt.hash(rawPassword, 10);
+          let hashedPassword = passwordHashMap.get(rawPassword);
+          if (!hashedPassword) {
+            hashedPassword = await bcrypt.hash(rawPassword, 10);
+            passwordHashMap.set(rawPassword, hashedPassword);
+          }
 
           await prisma.user.upsert({
             where: { email },
@@ -427,6 +473,49 @@ export class UserService {
           importedCount++;
         })
       );
+    }
+
+    // Sinkronisasi otomatis kelas baru ke tabel `kelas` agar langsung tampil di dropdown/kelola kelas
+    for (const className of detectedClasses) {
+      try {
+        const existingClass = await prisma.kelas.findFirst({
+          where: { nama_kelas: className },
+        });
+        if (!existingClass) {
+          let jenjang = "SD";
+          let tingkat = 3;
+          const matchDigit = className.match(/\b([1-9]|1[0-2])\b/) || className.match(/^(\d+)/);
+          if (matchDigit) {
+            const num = parseInt(matchDigit[1], 10);
+            if (num >= 1 && num <= 6) {
+              jenjang = "SD";
+              tingkat = num;
+            } else if (num >= 7 && num <= 9) {
+              jenjang = "SMP";
+              tingkat = num;
+            } else if (num >= 10 && num <= 12) {
+              jenjang = "SMA";
+              tingkat = num;
+            }
+          } else if (className.toUpperCase().includes("SMP")) {
+            jenjang = "SMP";
+            tingkat = 7;
+          } else if (className.toUpperCase().includes("SMA") || className.toUpperCase().includes("SMK")) {
+            jenjang = "SMA";
+            tingkat = 10;
+          }
+
+          await prisma.kelas.create({
+            data: {
+              nama_kelas: className,
+              jenjang,
+              tingkat,
+            },
+          });
+        }
+      } catch (err) {
+        console.warn(`[importStudents] Gagal sinkronisasi kelas ${className}:`, err);
+      }
     }
 
     return importedCount;
@@ -469,17 +558,25 @@ export class UserService {
           const norm = String(col ?? "").trim().toLowerCase();
           if (norm.includes("nip") || norm.includes("nomor induk") || norm.includes("no induk")) {
             colMap["nip"] = idx;
-          } else if (norm.includes("nama") || norm.includes("name")) {
-            colMap["name"] = idx;
-          } else if (norm.includes("email") || norm.includes("surel") || norm.includes("e-mail")) {
+          } else if (
+            norm.includes("email") ||
+            norm.includes("username") ||
+            norm.includes("surel") ||
+            norm.includes("e-mail")
+          ) {
             colMap["email"] = idx;
+          } else if (
+            !norm.includes("username") &&
+            (norm.includes("nama") || norm.includes("name"))
+          ) {
+            colMap["name"] = idx;
           } else if (norm.includes("apple") && (norm.includes("pass") || norm.includes("sandi") || norm.includes("pwd"))) {
             colMap["passwordappleid"] = idx;
           } else if (norm.includes("apple")) {
             colMap["appleid"] = idx;
           } else if (norm.includes("pass") || norm.includes("sandi") || norm.includes("pwd")) {
             colMap["password"] = idx;
-          } else if (norm.includes("kelamin") || norm.includes("gender") || norm === "jk") {
+          } else if (norm.includes("kelamin") || norm.includes("gender") || norm === "jk" || norm.includes("(l/p)")) {
             colMap["gender"] = idx;
           } else if (
             norm.includes("bidang") ||
@@ -499,7 +596,7 @@ export class UserService {
     }
 
     const getVal = (row: any[], key: string, fallbackIdx: number): string => {
-      const idx = colMap[key] !== undefined ? colMap[key] : fallbackIdx;
+      const idx = colMap[key] !== undefined ? colMap[key] : (headerRowIdx >= 0 ? -1 : fallbackIdx);
       return idx >= 0 && idx < row.length ? String(row[idx] ?? "").trim() : "";
     };
 

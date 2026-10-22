@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminStudentsPage() {
   let formattedStudents: any[] = [];
   let classList: string[] = [];
+  const classJenjangMap: Record<string, string> = {};
 
   try {
     const [students, classes] = await Promise.all([
@@ -35,6 +36,9 @@ export default async function AdminStudentsPage() {
     }));
 
     classList = classes.map((c) => c.nama_kelas);
+    classes.forEach((c) => {
+      classJenjangMap[c.nama_kelas] = c.jenjang || "SD";
+    });
   } catch (e) {
     console.error("Database query error in Admin Students page:", e);
   }
@@ -48,7 +52,11 @@ export default async function AdminStudentsPage() {
         </p>
       </div>
 
-      <StudentTable initialStudents={formattedStudents} classList={classList} />
+      <StudentTable
+        initialStudents={formattedStudents}
+        classList={classList}
+        classJenjangMap={classJenjangMap}
+      />
     </div>
   );
 }

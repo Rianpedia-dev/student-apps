@@ -65,6 +65,9 @@ export async function updateUserAction(id: string, formData: FormData) {
 
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
+    const nis = formData.get("nis") as string;
+    const gender = formData.get("gender") as string;
+    const status = formData.get("status") as string;
     const kelas = formData.get("kelas") as string;
     const appleid = formData.get("appleid") as string;
     const passwordappleid = formData.get("passwordappleid") as string;
@@ -75,11 +78,14 @@ export async function updateUserAction(id: string, formData: FormData) {
       id,
       name,
       email,
-      kelas: kelas || null,
-      appleid: appleid || null,
-      passwordappleid: passwordappleid || null,
-      ctt_iPad: ctt_iPad || null,
-      password: password || undefined,
+      nis: nis !== null ? (nis || null) : undefined,
+      gender: gender || undefined,
+      status: status || undefined,
+      kelas: kelas !== null ? (kelas || null) : undefined,
+      appleid: appleid !== null ? (appleid || null) : undefined,
+      passwordappleid: passwordappleid !== null ? (passwordappleid || null) : undefined,
+      ctt_iPad: ctt_iPad !== null ? (ctt_iPad || null) : undefined,
+      password: password && password.trim().length > 0 ? password : undefined,
     });
 
     revalidatePath(`/admin/students/${id}`);
@@ -189,11 +195,19 @@ export async function importStudentsAction(fileBufferBase64: string, defaultKela
     await checkAdmin();
     const importedCount = await UserService.importStudentsFromBase64(fileBufferBase64, defaultKelas);
 
+    if (importedCount === 0) {
+      return {
+        success: false,
+        error: "Tidak ada data siswa yang berhasil diimpor. Pastikan file Excel berisi kolom 'Nama Lengkap' dan 'Email / Username'.",
+      };
+    }
+
     revalidatePath("/admin/students");
-    return { success: true, count: importedCount, message: `Berhasil mengimpor ${importedCount} siswa.` };
+    revalidatePath("/admin/classes");
+    return { success: true, count: importedCount, message: `Berhasil mengimpor ${importedCount} data siswa.` };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal mengimpor file Excel";
-    return { error: errorMsg };
+    return { success: false, error: errorMsg };
   }
 }
 
@@ -396,14 +410,22 @@ export async function updateClassAction(id: string, formData: FormData) {
   try {
     await checkAdmin();
 
-    const nama_kelas = formData.get("nama_kelas") as string;
-    const wali_kelas = formData.get("wali_kelas") as string;
-    const jumlah_siswa = formData.get("jumlah_siswa") as string;
-    const code_restrict = formData.get("code_restrict") as string;
+    const nama_kelas = (formData.get("nama_kelas") as string)?.trim();
+    const jenjang = (formData.get("jenjang") as string) || undefined;
+    const tingkat = formData.get("tingkat") ? parseInt(formData.get("tingkat") as string, 10) : undefined;
+    const wali_kelas = (formData.get("wali_kelas") as string)?.trim() || null;
+    const jumlah_siswa = (formData.get("jumlah_siswa") as string)?.trim() || null;
+    const code_restrict = (formData.get("code_restrict") as string)?.trim() || null;
+
+    if (!nama_kelas) {
+      return { error: "Nama kelas wajib diisi." };
+    }
 
     await ClassService.updateClass({
       id,
       nama_kelas,
+      jenjang,
+      tingkat,
       wali_kelas,
       jumlah_siswa,
       code_restrict,
@@ -411,7 +433,8 @@ export async function updateClassAction(id: string, formData: FormData) {
 
     revalidatePath("/admin/classes");
     revalidatePath(`/admin/classes/${id}`);
-    return { success: true, message: "Data kelas dan wali kelas berhasil diperbarui." };
+    revalidatePath("/admin/students");
+    return { success: true, message: "Data kelas berhasil diperbarui." };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal memperbarui kelas.";
     return { error: errorMsg };
@@ -424,9 +447,41 @@ export async function deleteClassAction(id: string) {
     await ClassService.deleteClass(id);
 
     revalidatePath("/admin/classes");
+    revalidatePath("/admin/students");
     return { success: true, message: "Kelas berhasil dihapus." };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Gagal menghapus kelas.";
+    return { error: errorMsg };
+  }
+}
+
+export async function deleteClassesAction(ids: string[]) {
+  try {
+    await checkAdmin();
+    if (!ids || ids.length === 0) {
+      return { error: "Tidak ada kelas yang dipilih untuk dihapus." };
+    }
+    const count = await ClassService.deleteClasses(ids);
+
+    revalidatePath("/admin/classes");
+    revalidatePath("/admin/students");
+    return { success: true, count, message: `Berhasil menghapus ${count} kelas.` };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal menghapus beberapa kelas.";
+    return { error: errorMsg };
+  }
+}
+
+export async function importClassesAction(fileBufferBase64: string, defaultJenjang?: string) {
+  try {
+    await checkAdmin();
+    const importedCount = await ClassService.importClassesFromBase64(fileBufferBase64, defaultJenjang);
+
+    revalidatePath("/admin/classes");
+    revalidatePath("/admin/students");
+    return { success: true, count: importedCount, message: `Berhasil mengimpor ${importedCount} rombel / data kelas.` };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Gagal mengimpor file Excel data kelas.";
     return { error: errorMsg };
   }
 }

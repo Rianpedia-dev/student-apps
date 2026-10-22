@@ -54,7 +54,11 @@ export async function createMataPelajaranAction(formData: FormData) {
   const nama = (formData.get("nama_mapel") as string)?.trim();
   const jenjang = (formData.get("jenjang") as string) || "SEMUA";
   const icon = (formData.get("icon") as string) || "BookOpen";
-  const warna = (formData.get("warna") as string) || "emerald";
+  const allowedWarna = ["emerald", "indigo", "violet", "amber", "rose", "teal"];
+  let rawWarna = (formData.get("warna") as string)?.trim().toLowerCase();
+  const warna = (rawWarna && allowedWarna.includes(rawWarna))
+    ? rawWarna
+    : allowedWarna[Math.floor(Math.random() * allowedWarna.length)];
   const deskripsi = (formData.get("deskripsi") as string) || "";
 
   if (!kode || !nama) {
@@ -97,6 +101,87 @@ export async function deleteMataPelajaranAction(id: string) {
     return { success: true, message: "Mata pelajaran berhasil dihapus." };
   } catch (err: any) {
     return { success: false, error: err.message || "Gagal menghapus mata pelajaran." };
+  }
+}
+
+export async function deleteMataPelajaranBulkAction(ids: string[]) {
+  const session = await getSession();
+  if (!session || session.role !== "admin") {
+    return { success: false, error: "Akses ditolak." };
+  }
+
+  if (!ids || ids.length === 0) {
+    return { success: false, error: "Tidak ada mata pelajaran yang dipilih." };
+  }
+
+  try {
+    const count = await SubjectService.deleteMataPelajaranBulk(ids);
+    revalidatePath("/admin/subjects");
+    return { success: true, count, message: `Berhasil menghapus ${count} mata pelajaran.` };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Gagal menghapus beberapa mata pelajaran." };
+  }
+}
+
+export async function importMataPelajaranAction(fileBufferBase64: string, defaultJenjang?: string) {
+  const session = await getSession();
+  if (!session || session.role !== "admin") {
+    return { success: false, error: "Akses ditolak. Hanya admin yang dapat mengimpor data." };
+  }
+
+  try {
+    const importedCount = await SubjectService.importMataPelajaranFromBase64(fileBufferBase64, defaultJenjang);
+    revalidatePath("/admin/subjects");
+    return {
+      success: true,
+      count: importedCount,
+      message: `Berhasil mengimpor ${importedCount} mata pelajaran.`,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Gagal mengimpor file Excel mata pelajaran.",
+    };
+  }
+}
+
+export async function updateMataPelajaranAction(id: string, formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role !== "admin") {
+    return { success: false, error: "Akses ditolak. Hanya admin yang dapat mengubah mata pelajaran." };
+  }
+
+  const kode = (formData.get("kode_mapel") as string)?.trim().toUpperCase();
+  const nama = (formData.get("nama_mapel") as string)?.trim();
+  const jenjang = (formData.get("jenjang") as string) || "SEMUA";
+  const icon = (formData.get("icon") as string) || "BookOpen";
+  const warna = (formData.get("warna") as string) || "emerald";
+  const deskripsi = (formData.get("deskripsi") as string) || "";
+
+  if (!kode || !nama) {
+    return { success: false, error: "Kode dan Nama mata pelajaran wajib diisi." };
+  }
+
+  try {
+    await prisma.mataPelajaran.update({
+      where: { id: BigInt(id) },
+      data: {
+        kode_mapel: kode,
+        nama_mapel: nama,
+        jenjang,
+        icon,
+        warna,
+        deskripsi,
+      },
+    });
+
+    revalidatePath("/admin/subjects");
+    return { success: true, message: "Mata pelajaran berhasil diperbarui!" };
+  } catch (err: any) {
+    if (err.code === "P2002") {
+      return { success: false, error: `Kode mapel "${kode}" sudah terdaftar pada mapel lain.` };
+    }
+    return { success: false, error: err.message || "Gagal memperbarui mata pelajaran." };
   }
 }
 
