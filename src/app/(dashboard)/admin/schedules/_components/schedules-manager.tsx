@@ -650,17 +650,17 @@ export function SchedulesManager({
 
       {/* Add / Edit Schedule Dialog */}
       <Dialog open={openModal} onOpenChange={(open) => !open && handleCloseModal()}>
-        <DialogContent className="sm:max-w-xl max-w-[calc(100%-2rem)] rounded-2xl">
+        <DialogContent className="sm:max-w-3xl md:max-w-4xl max-w-[calc(100%-2rem)] rounded-2xl p-5 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
+            <DialogTitle className="text-base sm:text-lg font-bold flex items-center gap-2">
               {editTarget ? (
                 <>
-                  <Pencil className="h-4 w-4 text-amber-500" />
+                  <Pencil className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />
                   <span>Edit Jadwal Pelajaran</span>
                 </>
               ) : (
                 <>
-                  <Plus className="h-4 w-4 text-primary" />
+                  <Plus className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   <span>Tambah Jadwal Pelajaran</span>
                 </>
               )}
@@ -668,29 +668,32 @@ export function SchedulesManager({
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            {/* Kelas Selector with Search */}
-            <div>
-              <label className="text-xs font-bold block mb-1">Rombongan Belajar (Kelas) *</label>
-              <ClassSearchSelect
-                classes={classes}
-                value={formKelasId}
-                onChange={(newId) => setFormKelasId(newId)}
-                required
-              />
+            {/* Grid 2 Kolom untuk Kelas & Mata Pelajaran */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Kelas Selector with Search */}
+              <div>
+                <label className="text-xs font-bold block mb-1">Rombongan Belajar (Kelas) *</label>
+                <ClassSearchSelect
+                  classes={classes}
+                  value={formKelasId}
+                  onChange={(newId) => setFormKelasId(newId)}
+                  required
+                />
+              </div>
+
+              {/* Mata Pelajaran Selector with Search */}
+              <div>
+                <label className="text-xs font-bold block mb-1">Mata Pelajaran *</label>
+                <SubjectSearchSelect
+                  subjects={subjects}
+                  value={formMapelId}
+                  onChange={(newId) => setFormMapelId(newId)}
+                  required
+                />
+              </div>
             </div>
 
-            {/* Mata Pelajaran Selector with Search */}
-            <div>
-              <label className="text-xs font-bold block mb-1">Mata Pelajaran *</label>
-              <SubjectSearchSelect
-                subjects={subjects}
-                value={formMapelId}
-                onChange={(newId) => setFormMapelId(newId)}
-                required
-              />
-            </div>
-
-            {/* Guru Pengampu Selector with Search */}
+            {/* Guru Pengampu Selector with Search (Full Width) */}
             <div>
               <label className="text-xs font-bold block mb-1">Guru Pengampu *</label>
               <TeacherSearchSelect
@@ -702,14 +705,14 @@ export function SchedulesManager({
             </div>
 
             {/* Hari & Jam */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-bold block mb-1">Hari *</label>
                 <select
                   name="hari"
                   value={formHari}
                   onChange={(e) => setFormHari(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-input bg-background p-2 focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full text-xs rounded-xl border border-input bg-background p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                 >
                   {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"].map((d) => (
@@ -727,7 +730,7 @@ export function SchedulesManager({
                   name="jam_mulai"
                   value={formJamMulai}
                   onChange={(e) => setFormJamMulai(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-input bg-background p-2 focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full text-xs rounded-xl border border-input bg-background p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                 />
               </div>
@@ -739,7 +742,7 @@ export function SchedulesManager({
                   name="jam_selesai"
                   value={formJamSelesai}
                   onChange={(e) => setFormJamSelesai(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-input bg-background p-2 focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full text-xs rounded-xl border border-input bg-background p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                 />
               </div>

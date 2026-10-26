@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { Badge } from "@/components/ui/badge";
 import { AddAchievementModal } from "./_components/add-achievement-modal";
 import { AchievementsClientView } from "./_components/achievements-client-view";
@@ -14,7 +15,12 @@ export default async function GuruAchievementsPage() {
     redirect("/login");
   }
 
+  const activeJenjang = await getActiveJenjang(session);
+  const isRestricted = activeJenjang !== "ALL";
+
   const guruClass = session.kelas || "";
+  const guruClassJenjang = guruClass && /SMP|Kelas (7|8|9)/i.test(guruClass) ? "SMP" : "SD";
+  const showGuruClass = !isRestricted || activeJenjang === guruClassJenjang;
 
   interface StudentDbRecord {
     id: bigint;
@@ -38,8 +44,17 @@ export default async function GuruAchievementsPage() {
   let achievements: AchievementWithProfile[] = [];
 
   try {
+    let allowedClassNames: string[] = [];
+    if (isRestricted) {
+      const allowedClasses = await prisma.kelas.findMany({
+        where: { jenjang: activeJenjang },
+        select: { nama_kelas: true },
+      });
+      allowedClassNames = allowedClasses.map((c) => c.nama_kelas);
+    }
+
     const [dbStudents, dbPrestasi] = await Promise.all([
-      guruClass
+      guruClass && showGuruClass
         ? prisma.user.findMany({
             where: { kelas: guruClass, status: "1" },
             select: { id: true, name: true, nis: true },
@@ -47,6 +62,7 @@ export default async function GuruAchievementsPage() {
           })
         : [],
       prisma.prestasi.findMany({
+        where: isRestricted ? { kelas: { in: allowedClassNames } } : {},
         orderBy: [{ created_at: "desc" }, { id: "desc" }],
       }),
     ]);
@@ -126,15 +142,9 @@ export default async function GuruAchievementsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Prestasi & Kejuaraan Siswa</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Daftar rekam jejak prestasi dan kejuaraan siswa {guruClass ? `kelas ${guruClass}` : ""}.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Badge variant="amber" size="sm" className="hidden sm:inline-flex">
-            {achievements.length} Prestasi Terdata
-          </Badge>
           <AddAchievementModal students={serializableStudents} guruClass={guruClass} />
         </div>
       </div>

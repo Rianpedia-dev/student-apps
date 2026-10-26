@@ -12,6 +12,8 @@ interface SessionPayload {
   email: string;
   role: "admin" | "guru" | "siswa";
   status: string;
+  jenjang?: "SD" | "SMP" | "ALL";
+  activeJenjang?: "SD" | "SMP" | "ALL";
 }
 
 export async function proxy(request: NextRequest) {

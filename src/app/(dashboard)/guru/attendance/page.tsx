@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,15 +33,25 @@ export default async function GuruAttendancePage() {
   const now = new Date();
   const todayFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
+  const activeJenjang = await getActiveJenjang(session);
+  const isRestricted = activeJenjang !== "ALL";
+
   // Ambil jadwal mengajar hari ini beserta status pengisian presensinya
-  const todaySchedules = await AttendanceService.getTeacherTodaySchedulesWithAttendance(
+  const rawTodaySchedules = await AttendanceService.getTeacherTodaySchedulesWithAttendance(
     guruId,
     todayFormatted
   );
 
+  const todaySchedules = isRestricted
+    ? rawTodaySchedules.filter((s: any) => !s.jenjang || s.jenjang === activeJenjang)
+    : rawTodaySchedules;
+
   // Ambil semua daftar mata pelajaran yang diampu guru ini untuk filter/shortcut
   const allTeacherSchedules = await prisma.jadwalPelajaran.findMany({
-    where: { guru_id: guruId },
+    where: {
+      guru_id: guruId,
+      ...(isRestricted ? { kelas: { jenjang: activeJenjang } } : {}),
+    },
     include: {
       kelas: true,
       mapel: true,

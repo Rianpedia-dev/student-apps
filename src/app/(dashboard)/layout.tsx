@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { DashboardShell } from "@/components/layouts/dashboard-shell";
-import { getUserProfileImage } from "@/lib/utils";
+import { getUserProfileImage, resolveUserJenjang } from "@/lib/utils";
+import { getActiveJenjang } from "@/lib/jenjang";
 
 export default async function DashboardLayout({
   children,
@@ -20,12 +21,13 @@ export default async function DashboardLayout({
   let userGender = session.gender;
   let userStatus = session.status;
   let userKelas = session.kelas;
+  let userJenjang = session.jenjang;
 
   try {
     if (/^\d+$/.test(session.id)) {
       const dbUser = await prisma.user.findUnique({
         where: { id: BigInt(session.id) },
-        select: { image: true, name: true, gender: true, status: true, kelas: true },
+        select: { image: true, name: true, gender: true, status: true, kelas: true, jenjang: true },
       });
       if (dbUser) {
         userImage = dbUser.image;
@@ -33,6 +35,7 @@ export default async function DashboardLayout({
         userGender = dbUser.gender || userGender;
         userStatus = dbUser.status || userStatus;
         userKelas = dbUser.kelas || userKelas;
+        userJenjang = resolveUserJenjang(dbUser.jenjang, userStatus, userKelas);
       }
     }
   } catch (e) {
@@ -45,6 +48,7 @@ export default async function DashboardLayout({
   }
 
   const finalUserImage = getUserProfileImage(userImage, userGender);
+  const activeJenjang = await getActiveJenjang(session);
 
   return (
     <DashboardShell
@@ -53,6 +57,8 @@ export default async function DashboardLayout({
       userEmail={session.email}
       kelas={userKelas}
       status={userStatus}
+      jenjang={userJenjang}
+      activeJenjang={activeJenjang}
       userImage={finalUserImage}
     >
       {children}

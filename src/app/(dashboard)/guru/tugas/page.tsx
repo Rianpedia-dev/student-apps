@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TeacherTaskList, TeacherTaskItem } from "@/components/features/assignment/teacher-task-list";
@@ -40,6 +41,9 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
       : null,
   ]);
 
+  const activeJenjang = await getActiveJenjang(session);
+  const isRestricted = activeJenjang !== "ALL";
+
   // Query filter tugas
   const whereClause: any = {
     OR: [
@@ -47,6 +51,10 @@ export default async function GuruTugasListPage({ searchParams }: PageProps) {
       ...(session.kelas ? [{ kelas: { nama_kelas: session.kelas } }] : []),
     ],
   };
+
+  if (isRestricted) {
+    whereClause.kelas = { jenjang: activeJenjang };
+  }
 
   if (parsedMapelId) {
     whereClause.mapel_id = parsedMapelId;

@@ -65,12 +65,23 @@ const AVAILABLE_CLASS_EXPORT_FIELDS = [
 interface ClassTableProps {
   initialClasses: KelasItem[];
   teachersList: string[];
+  adminJenjang?: "SD" | "SMP" | "ALL";
+  activeJenjang?: "SD" | "SMP" | "ALL";
 }
 
-export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
+export function ClassTable({
+  initialClasses,
+  teachersList,
+  adminJenjang = "ALL",
+  activeJenjang = "ALL",
+}: ClassTableProps) {
   const [classes, setClasses] = useState<KelasItem[]>(initialClasses);
   const [search, setSearch] = useState("");
-  const [filterJenjang, setFilterJenjang] = useState<"all" | "SD" | "SMP">("all");
+  const isSuperAdmin = adminJenjang === "ALL";
+  const defaultJenjangFilter = isSuperAdmin
+    ? (activeJenjang === "SD" || activeJenjang === "SMP" ? (activeJenjang as "SD" | "SMP") : "all")
+    : (adminJenjang as "SD" | "SMP");
+  const [filterJenjang, setFilterJenjang] = useState<"all" | "SD" | "SMP">(defaultJenjangFilter);
   const [page, setPage] = useState(1);
   const pageSize = 15;
 
@@ -79,7 +90,9 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
   const [openImportModal, setOpenImportModal] = useState(false);
   const [openExportModal, setOpenExportModal] = useState(false);
   const [exportScope, setExportScope] = useState<"all" | "selected" | "filtered" | "custom">("all");
-  const [exportJenjang, setExportJenjang] = useState<"all" | "SD" | "SMP">("all");
+  const [exportJenjang, setExportJenjang] = useState<"all" | "SD" | "SMP">(
+    isSuperAdmin ? "all" : (adminJenjang as "SD" | "SMP")
+  );
   const [exportTingkat, setExportTingkat] = useState<string>("all");
   const [exportHasWali, setExportHasWali] = useState<string>("all");
   const [exportFields, setExportFields] = useState<string[]>([
@@ -374,10 +387,18 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
         [
           "Nama Kelas",
           "Jenjang (SD/SMP)",
-          "Tingkat (4-9)",
+          "Tingkat (3-9)",
           "Wali Kelas",
           "Kapasitas Siswa",
           "Code Restrict iPad",
+        ],
+        [
+          "Kelas 3 - Ibnu Batutah",
+          "SD",
+          "3",
+          "",
+          "",
+          "",
         ],
         [
           "Kelas 4 - Mehmed Al Fatih",
@@ -427,7 +448,7 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
         ["Kolom", "Keterangan", "Wajib / Opsional", "Contoh Nilai"],
         ["Nama Kelas", "Nama rombel / kelas resmi", "Wajib", "Kelas 4 - Mehmed Al Fatih"],
         ["Jenjang (SD/SMP)", "Pilihan: SD atau SMP (otomatis terdeteksi bila kosong)", "Opsional", "SD"],
-        ["Tingkat (4-9)", "Angka kelas 4, 5, 6, 7, 8, atau 9 (otomatis terdeteksi bila kosong)", "Opsional", "4"],
+        ["Tingkat (3-9)", "Angka kelas 3, 4, 5, 6, 7, 8, atau 9 (otomatis terdeteksi bila kosong)", "Opsional", "4"],
         ["Wali Kelas", "Nama lengkap guru (sesuai sheet Referensi Guru)", "Opsional", "Ustadz Ahmad Fauzi, S.Pd"],
         ["Kapasitas Siswa", "Perkiraan kuota siswa per kelas (angka)", "Opsional", "28"],
         ["Code Restrict iPad", "Kode 4-digit restrict iPad per kelas", "Opsional", "2739"],
@@ -450,7 +471,7 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
     e.preventDefault();
     const input = e.currentTarget.elements.namedItem("excelFile") as HTMLInputElement;
     const defaultJenjangInput = e.currentTarget.elements.namedItem("defaultJenjang") as HTMLSelectElement;
-    const defaultJenjang = defaultJenjangInput?.value || "";
+    const defaultJenjang = defaultJenjangInput?.value || (!isSuperAdmin ? adminJenjang : "");
 
     const file = input?.files?.[0];
     if (!file) {
@@ -498,18 +519,34 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
             />
           </div>
 
-          <select
-            value={filterJenjang}
-            onChange={(e) => {
-              setFilterJenjang(e.target.value as "all" | "SD" | "SMP");
-              setPage(1);
-            }}
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-auto min-w-[150px] cursor-pointer h-9"
-          >
-            <option value="all">Semua Jenjang</option>
-            <option value="SD">Jenjang SD</option>
-            <option value="SMP">Jenjang SMP</option>
-          </select>
+          {isSuperAdmin ? (
+            <select
+              value={filterJenjang}
+              onChange={(e) => {
+                setFilterJenjang(e.target.value as "all" | "SD" | "SMP");
+                setPage(1);
+              }}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-auto min-w-[150px] cursor-pointer h-9"
+            >
+              <option value="all">Semua Jenjang</option>
+              <option value="SD">Jenjang SD</option>
+              <option value="SMP">Jenjang SMP</option>
+            </select>
+          ) : (
+            <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-full border text-xs font-semibold text-muted-foreground shrink-0 h-9">
+              <span>Wewenang:</span>
+              <Badge
+                variant="outline"
+                className={
+                  adminJenjang === "SD"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                    : "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                }
+              >
+                Jenjang {adminJenjang}
+              </Badge>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -761,15 +798,25 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="jenjang">Jenjang Sekolah</Label>
-                <select
-                  id="jenjang"
-                  name="jenjang"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
-                  defaultValue="SD"
-                >
-                  <option value="SD">SD (Sekolah Dasar)</option>
-                  <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
-                </select>
+                {isSuperAdmin ? (
+                  <select
+                    id="jenjang"
+                    name="jenjang"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                    defaultValue="SD"
+                  >
+                    <option value="SD">SD (Sekolah Dasar)</option>
+                    <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+                  </select>
+                ) : (
+                  <div className="flex items-center justify-between p-2 rounded-md bg-muted/40 border text-xs">
+                    <span className="text-muted-foreground font-medium">Jenjang:</span>
+                    <Badge variant="outline" className={adminJenjang === "SD" ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 font-semibold" : "bg-blue-500/10 text-blue-700 border-blue-500/30 font-semibold"}>
+                      {adminJenjang}
+                    </Badge>
+                    <input type="hidden" name="jenjang" value={adminJenjang} />
+                  </div>
+                )}
               </div>
               <div className="space-y-1">
                 <Label htmlFor="tingkat">Tingkat Kelas</Label>
@@ -847,7 +894,7 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
           <DialogHeader>
             <DialogTitle>Import Data Kelas dari Excel</DialogTitle>
             <DialogDescription>
-              Upload file spreadsheet Excel (.xlsx / .xls). Format kolom mendukung: <strong>Nama Kelas</strong>, <strong>Jenjang (SD/SMP)</strong>, <strong>Tingkat (4-9)</strong>, <strong>Wali Kelas</strong>, <strong>Kapasitas Siswa</strong>, dan <strong>Code Restrict iPad</strong>.
+              Upload file spreadsheet Excel (.xlsx / .xls). Format kolom mendukung: <strong>Nama Kelas</strong>, <strong>Jenjang (SD/SMP)</strong>, <strong>Tingkat (3-9)</strong>, <strong>Wali Kelas</strong>, <strong>Kapasitas Siswa</strong>, dan <strong>Code Restrict iPad</strong>.
             </DialogDescription>
           </DialogHeader>
 
@@ -874,23 +921,33 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
           </div>
 
           <form onSubmit={handleImportExcel} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="defaultJenjang" className="text-xs font-semibold">
-                Pilih Jenjang Default (Opsional)
-              </Label>
-              <select
-                id="defaultJenjang"
-                name="defaultJenjang"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:ring-2 focus:ring-emerald-500/20"
-              >
-                <option value="">-- Deteksi Otomatis dari Nama / Kolom Excel --</option>
-                <option value="SD">SD (Sekolah Dasar)</option>
-                <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
-              </select>
-              <p className="text-[11px] text-muted-foreground">
-                Jika di dalam file Excel kolom Jenjang tidak diisi, sistem akan menggunakan pilihan default ini atau mendeteksi dari angka nama kelas.
-              </p>
-            </div>
+            {isSuperAdmin ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="defaultJenjang" className="text-xs font-semibold">
+                  Pilih Jenjang Default (Opsional)
+                </Label>
+                <select
+                  id="defaultJenjang"
+                  name="defaultJenjang"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:ring-2 focus:ring-emerald-500/20"
+                >
+                  <option value="">-- Deteksi Otomatis dari Nama / Kolom Excel --</option>
+                  <option value="SD">SD (Sekolah Dasar)</option>
+                  <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+                </select>
+                <p className="text-[11px] text-muted-foreground">
+                  Jika di dalam file Excel kolom Jenjang tidak diisi, sistem akan menggunakan pilihan default ini atau mendeteksi dari angka nama kelas.
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border text-xs">
+                <span className="text-muted-foreground font-medium">Scope Import:</span>
+                <Badge variant="outline" className={adminJenjang === "SD" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" : "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"}>
+                  Kelas Jenjang {adminJenjang}
+                </Badge>
+                <input type="hidden" name="defaultJenjang" value={adminJenjang} />
+              </div>
+            )}
 
             <div className="rounded-lg border-2 border-dashed p-6 text-center hover:bg-muted/20 transition-colors">
               <Upload className="mx-auto h-8 w-8 text-emerald-600 dark:text-emerald-400 mb-2" />
@@ -935,22 +992,39 @@ export function ClassTable({ initialClasses, teachersList }: ClassTableProps) {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="edit-jenjang">Jenjang Sekolah</Label>
-                  <select
-                    id="edit-jenjang"
-                    name="jenjang"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
-                    defaultValue={
-                      editTarget.jenjang ||
-                      (editTarget.nama_kelas.startsWith("7") ||
-                      editTarget.nama_kelas.startsWith("8") ||
-                      editTarget.nama_kelas.startsWith("9")
-                        ? "SMP"
-                        : "SD")
-                    }
-                  >
-                    <option value="SD">SD (Sekolah Dasar)</option>
-                    <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
-                  </select>
+                  {isSuperAdmin ? (
+                    <select
+                      id="edit-jenjang"
+                      name="jenjang"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                      defaultValue={
+                        editTarget.jenjang ||
+                        (editTarget.nama_kelas.startsWith("7") ||
+                        editTarget.nama_kelas.startsWith("8") ||
+                        editTarget.nama_kelas.startsWith("9")
+                          ? "SMP"
+                          : "SD")
+                      }
+                    >
+                      <option value="SD">SD (Sekolah Dasar)</option>
+                      <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+                    </select>
+                  ) : (
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted/40 border text-xs">
+                      <span className="text-muted-foreground font-medium">Jenjang:</span>
+                      <Badge
+                        variant="outline"
+                        className={
+                          adminJenjang === "SD"
+                            ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 font-semibold"
+                            : "bg-blue-500/10 text-blue-700 border-blue-500/30 font-semibold"
+                        }
+                      >
+                        {adminJenjang}
+                      </Badge>
+                      <input type="hidden" name="jenjang" value={adminJenjang} />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="edit-tingkat">Tingkat Kelas</Label>

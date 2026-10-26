@@ -3,12 +3,14 @@ import * as XLSX from "xlsx";
 import prisma from "@/lib/prisma";
 import { AppError, NotFoundError, ValidationError } from "@/lib/errors";
 import { serializeBigInt } from "@/lib/serializer";
+import { resolveUserJenjang } from "@/lib/utils";
 
 export interface CreateUserInput {
   name: string;
   email: string;
   password: string;
   role?: string;
+  jenjang?: string | null;
   kelas?: string | null;
   appleid?: string | null;
   passwordappleid?: string | null;
@@ -22,6 +24,7 @@ export interface UpdateUserInput {
   id: string;
   name?: string;
   email?: string;
+  jenjang?: string | null;
   nis?: string | null;
   nip?: string | null;
   gender?: string | null;
@@ -53,6 +56,7 @@ export class UserService {
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const roleStatus = data.role || "1"; // 1=siswa, 2=guru, 4=wali
+    const userJenjang = data.jenjang || resolveUserJenjang(null, roleStatus, data.kelas);
 
     const created = await prisma.user.create({
       data: {
@@ -61,6 +65,7 @@ export class UserService {
         password: hashedPassword,
         password1: data.password, // fallback legacy
         status: roleStatus,
+        jenjang: userJenjang,
         kelas: data.kelas || null,
         appleid: data.appleid || null,
         passwordappleid: data.passwordappleid || null,
@@ -90,6 +95,7 @@ export class UserService {
     const dataToUpdate: Record<string, unknown> = {};
     if (data.name !== undefined) dataToUpdate.name = data.name;
     if (data.email !== undefined) dataToUpdate.email = data.email;
+    if (data.jenjang !== undefined) dataToUpdate.jenjang = data.jenjang;
     if (data.nis !== undefined) dataToUpdate.nis = data.nis;
     if (data.nip !== undefined) dataToUpdate.nip = data.nip;
     if (data.gender !== undefined) dataToUpdate.gender = data.gender;
@@ -256,7 +262,11 @@ export class UserService {
    * Mengimpor data siswa secara massal dari file Excel (base64 buffer) dengan batching
    * Fleksibel terhadap urutan kolom, header dinamis, teks 'kosong', serta mendukung kelas & NIS.
    */
-  static async importStudentsFromBase64(base64Data: string, defaultKelas?: string | null): Promise<number> {
+  static async importStudentsFromBase64(
+    base64Data: string,
+    defaultKelas?: string | null,
+    defaultJenjang?: string | null
+  ): Promise<number> {
     const buffer = Buffer.from(base64Data, "base64");
     const workbook = XLSX.read(buffer, { type: "buffer" });
 
@@ -344,6 +354,8 @@ export class UserService {
             colMap["kelas"] = idx;
           } else if (norm.includes("status") || norm.includes("aktif")) {
             colMap["status"] = idx;
+          } else if (norm.includes("jenjang") || norm.includes("tingkat pendidikan")) {
+            colMap["jenjang"] = idx;
           }
         });
         break;
@@ -434,6 +446,20 @@ export class UserService {
           const kelas = rawKelas && rawKelas.toLowerCase() !== "kosong" && rawKelas !== "-" ? rawKelas : null;
           const nis = getVal(row, "nis", 9);
 
+          const rawJenjang = getVal(row, "jenjang", -1);
+          let studentJenjang = defaultJenjang || null;
+          if (rawJenjang) {
+            const normJ = rawJenjang.toUpperCase();
+            if (normJ.includes("SMP")) studentJenjang = "SMP";
+            else if (normJ.includes("SD")) studentJenjang = "SD";
+          }
+          if (!studentJenjang && kelas) {
+            studentJenjang = resolveUserJenjang(null, "1", kelas);
+          }
+          if (!studentJenjang) {
+            studentJenjang = defaultJenjang || "SD";
+          }
+
           if (kelas) {
             detectedClasses.add(kelas);
           }
@@ -454,6 +480,7 @@ export class UserService {
               passwordappleid,
               gender,
               status: rawStatus,
+              ...(studentJenjang ? { jenjang: studentJenjang } : {}),
               ...(kelas ? { kelas } : {}),
               ...(nis ? { nis } : {}),
             },
@@ -466,6 +493,7 @@ export class UserService {
               passwordappleid,
               status: rawStatus,
               gender,
+              jenjang: studentJenjang,
               kelas: kelas || null,
               nis: nis || null,
             },
@@ -525,7 +553,10 @@ export class UserService {
    * Mengimpor data guru secara massal dari file Excel (base64 buffer)
    * Fleksibel terhadap kolom kosong, urutan kolom berbeda, dan membuat akun tetap berhasil diimpor.
    */
-  static async importTeachersFromBase64(base64Data: string): Promise<number> {
+  static async importTeachersFromBase64(
+    base64Data: string,
+    defaultJenjang?: string | null
+  ): Promise<number> {
     const buffer = Buffer.from(base64Data, "base64");
     const workbook = XLSX.read(buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
@@ -589,6 +620,8 @@ export class UserService {
             colMap["role"] = idx;
           } else if (norm.includes("kelas") || norm.includes("wali")) {
             colMap["kelas"] = idx;
+          } else if (norm.includes("jenjang") || norm.includes("tingkat pendidikan")) {
+            colMap["jenjang"] = idx;
           }
         });
         break;
@@ -666,14 +699,34 @@ export class UserService {
           // Fallback nilai jika kolom kosong
           const nip = rawNip || null;
           const passwordPlain = rawPassword || "123456";
-          const gender = rawGender.startsWith("P") || rawGender.startsWith("W") ? "P" : "L";
+          const gender =
+            rawGender.startsWith("P") ||
+            rawGender.startsWith("W") ||
+            rawGender.startsWith("M") ||
+            rawGender.includes("PEREMPUAN") ||
+            rawGender.includes("MUSLIMAH")
+              ? "P"
+              : "L";
           const guru_bidang = rawBidang || null;
           const roleStatus = rawRole.includes("wali") || rawRole === "4" ? "4" : "2";
           const kelas = rawKelas || null;
           const appleid = rawAppleId || null;
           const passwordappleid = rawPasswordApple || null;
 
-          const hashedPassword = await bcrypt.hash(passwordPlain, 10);
+          const rawJenjang = getVal(row, "jenjang", -1);
+          let teacherJenjang: string = defaultJenjang || "SD";
+          if (rawJenjang) {
+            const normJ = rawJenjang.toUpperCase();
+            if (normJ.includes("ALL") || normJ.includes("SEMUA") || normJ.includes("LINTAS")) {
+              teacherJenjang = "ALL";
+            } else if (normJ.includes("SMP")) {
+              teacherJenjang = "SMP";
+            } else if (normJ.includes("SD")) {
+              teacherJenjang = "SD";
+            }
+          } else if (kelas) {
+            teacherJenjang = resolveUserJenjang(null, roleStatus, kelas);
+          }
 
           try {
             const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -689,11 +742,14 @@ export class UserService {
               if (kelas) updateData.kelas = kelas;
               if (rawGender) updateData.gender = gender;
               if (rawRole) updateData.status = roleStatus;
+              if (teacherJenjang) updateData.jenjang = teacherJenjang;
               if (appleid) updateData.appleid = appleid;
               if (passwordappleid) updateData.passwordappleid = passwordappleid;
               if (rawPassword) {
-                updateData.password = hashedPassword;
-                updateData.password1 = passwordPlain;
+                if (existingUser.password1 !== passwordPlain) {
+                  updateData.password = await bcrypt.hash(passwordPlain, 10);
+                  updateData.password1 = passwordPlain;
+                }
               }
 
               await prisma.user.update({
@@ -701,6 +757,7 @@ export class UserService {
                 data: updateData,
               });
             } else {
+              const hashedPassword = await bcrypt.hash(passwordPlain, 10);
               // Akun baru dibuat dengan nilai default untuk kolom yang kosong
               await prisma.user.create({
                 data: {
@@ -711,6 +768,7 @@ export class UserService {
                   kelas,
                   status: roleStatus,
                   gender,
+                  jenjang: teacherJenjang,
                   password: hashedPassword,
                   password1: passwordPlain,
                   appleid,

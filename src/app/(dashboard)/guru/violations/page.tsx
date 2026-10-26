@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { Badge } from "@/components/ui/badge";
 import { parseViolationKeterangan } from "@/lib/constants/violations";
 import { AddViolationModal } from "./_components/add-violation-modal";
@@ -15,7 +16,12 @@ export default async function GuruViolationsPage() {
     redirect("/login");
   }
 
+  const activeJenjang = await getActiveJenjang(session);
+  const isRestricted = activeJenjang !== "ALL";
+
   const guruClass = session.kelas || "";
+  const guruClassJenjang = guruClass && /SMP|Kelas (7|8|9)/i.test(guruClass) ? "SMP" : "SD";
+  const effectiveGuruClass = !isRestricted || activeJenjang === guruClassJenjang ? guruClass : "";
 
   interface StudentDbRecord {
     id: bigint;
@@ -30,13 +36,26 @@ export default async function GuruViolationsPage() {
   let violations: ViolationItem[] = [];
 
   try {
+    let allowedClassNames: string[] = [];
+    if (isRestricted) {
+      const allowedClasses = await prisma.kelas.findMany({
+        where: { jenjang: activeJenjang },
+        select: { nama_kelas: true },
+      });
+      allowedClassNames = allowedClasses.map((c) => c.nama_kelas);
+    }
+
     const [dbStudents, dbPelanggaran] = await Promise.all([
       prisma.user.findMany({
-        where: { status: "1" },
+        where: {
+          status: "1",
+          ...(isRestricted ? { jenjang: activeJenjang } : {}),
+        },
         select: { id: true, name: true, nis: true, kelas: true, image: true, gender: true },
         orderBy: [{ kelas: "asc" }, { name: "asc" }],
       }),
       prisma.pelanggaran.findMany({
+        where: isRestricted ? { kelas: { in: allowedClassNames } } : {},
         orderBy: [{ created_at: "desc" }, { id: "desc" }],
       }),
     ]);
@@ -121,16 +140,9 @@ export default async function GuruViolationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Kedisiplinan & Bimbingan Siswa</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Buku catatan tata tertib, muhasabah adab, dan rekam jejak pembinaan siswa Al-Azhar Cairo.
-          </p>
         </div>
-
         <div className="flex items-center gap-3">
-          <Badge variant="rose" size="sm" className="hidden sm:inline-flex">
-            {violations.length} Catatan Terdata
-          </Badge>
-          <AddViolationModal students={serializableStudents} guruClass={guruClass} />
+          <AddViolationModal students={serializableStudents} guruClass={effectiveGuruClass} />
         </div>
       </div>
 
@@ -138,7 +150,7 @@ export default async function GuruViolationsPage() {
       <ViolationsClientView
         initialViolations={violations}
         students={serializableStudents}
-        guruClass={guruClass}
+        guruClass={effectiveGuruClass}
       />
     </div>
   );

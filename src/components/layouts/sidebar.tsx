@@ -10,6 +10,7 @@ import {
   GraduationCap,
   LogOut,
   CalendarClock,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
@@ -144,6 +145,7 @@ interface SidebarProps {
   userEmail?: string;
   kelas?: string | null;
   status?: string | null;
+  jenjang?: "SD" | "SMP" | "ALL" | null;
   userImage?: string | null;
   onNavigate?: () => void;
   forceExpanded?: boolean;
@@ -157,6 +159,7 @@ export function Sidebar({
   userEmail,
   kelas,
   status,
+  jenjang,
   userImage,
   onNavigate,
   forceExpanded = false,
@@ -188,6 +191,17 @@ export function Sidebar({
     { label: "Buat Pengumuman", href: "/admin/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500" },
     { label: "Kalender Kegiatan", href: "/admin/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500" },
     { label: "Monitor Kelas Online", href: "/admin/kelas-online", icon: VideoIcon, iconColor: "text-indigo-500" },
+    // Hanya tampil untuk Super Admin (jenjang === "ALL" atau default Super Admin)
+    ...(jenjang === "ALL" || !jenjang
+      ? [
+          {
+            label: "Kelola Admin",
+            href: "/admin/manage-admins",
+            icon: ShieldCheck,
+            iconColor: "text-emerald-500",
+          },
+        ]
+      : []),
   ];
 
   const guruMenu: MenuItemType[] = [
@@ -295,6 +309,19 @@ export function Sidebar({
                 </span>
                 <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 tracking-widest uppercase mt-0.5">
                   Palembang
+                </span>
+                <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                  {role === "admin"
+                    ? jenjang === "SD"
+                      ? "Admin SD"
+                      : jenjang === "SMP"
+                        ? "Admin SMP"
+                        : "Super Admin"
+                    : role === "guru"
+                      ? jenjang === "ALL"
+                        ? "Guru SD & SMP"
+                        : `Guru ${jenjang || "SD"}`
+                      : `Siswa ${jenjang || "SD"}`}
                 </span>
               </div>
             </Link>

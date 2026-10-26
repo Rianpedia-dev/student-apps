@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,10 @@ export default async function GuruDashboardPage() {
     redirect("/login");
   }
 
+  const activeJenjang = await getActiveJenjang(session);
+  const isRestricted = activeJenjang !== "ALL";
+  const jenjangKelasFilter = isRestricted ? { jenjang: activeJenjang } : {};
+
   const dbUser = /^\d+$/.test(session.id)
     ? await prisma.user.findUnique({
         where: { id: BigInt(session.id) },
@@ -31,6 +36,10 @@ export default async function GuruDashboardPage() {
   const isWaliKelas = currentStatus === "4";
   const guruClass = isWaliKelas ? (dbUser?.kelas || session.kelas || "") : "";
   const guruBidang = dbUser?.guru_bidang || "";
+
+  // Cek apakah kelas wali cocok dengan jenjang aktif
+  const guruClassJenjang = guruClass && /SMP|Kelas (7|8|9)/i.test(guruClass) ? "SMP" : "SD";
+  const showGuruClass = !isRestricted || activeJenjang === guruClassJenjang;
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -48,6 +57,15 @@ export default async function GuruDashboardPage() {
   let announcements: any[] = [];
 
   try {
+    let allowedClassNames: string[] = [];
+    if (isRestricted) {
+      const allowedClasses = await prisma.kelas.findMany({
+        where: { jenjang: activeJenjang },
+        select: { nama_kelas: true },
+      });
+      allowedClassNames = allowedClasses.map((c) => c.nama_kelas);
+    }
+
     const [
       dbStudents,
       dbAttHadir,
@@ -59,13 +77,13 @@ export default async function GuruDashboardPage() {
       dbOnline,
       dbAnnounce,
     ] = await Promise.all([
-      guruClass
+      guruClass && showGuruClass
         ? prisma.user.findMany({
             where: { kelas: guruClass, status: "1" },
             orderBy: { name: "asc" },
           })
         : [],
-      guruClass
+      guruClass && showGuruClass
         ? prisma.absen.count({
             where: {
               kelas: guruClass,
@@ -74,35 +92,54 @@ export default async function GuruDashboardPage() {
             },
           })
         : 0,
-      guruClass
+      guruClass && showGuruClass
         ? prisma.absen.count({
             where: { kelas: guruClass, date: todayStr },
           })
         : 0,
       guruIdBigInt
         ? prisma.tugas.count({
-            where: { guru_id: guruIdBigInt, status: "aktif" },
+            where: {
+              guru_id: guruIdBigInt,
+              status: "aktif",
+              kelas: isRestricted ? jenjangKelasFilter : undefined,
+            },
           })
         : 0,
       guruIdBigInt
         ? prisma.tugasSubmission.count({
-            where: { tugas: { guru_id: guruIdBigInt }, status: "dikumpulkan" },
+            where: {
+              tugas: {
+                guru_id: guruIdBigInt,
+                kelas: isRestricted ? jenjangKelasFilter : undefined,
+              },
+              status: "dikumpulkan",
+            },
           })
         : 0,
       guruIdBigInt
         ? prisma.pertemuan.count({
-            where: { guru_id: guruIdBigInt },
+            where: {
+              guru_id: guruIdBigInt,
+              kelas: isRestricted ? jenjangKelasFilter : undefined,
+            },
           })
         : 0,
       guruIdBigInt
         ? prisma.jadwalPelajaran.count({
-            where: { guru_id: guruIdBigInt },
+            where: {
+              guru_id: guruIdBigInt,
+              kelas: isRestricted ? jenjangKelasFilter : undefined,
+            },
           })
         : 0,
       guruIdBigInt
         ? prisma.kelasOnline
             .count({
-              where: { guru_id: guruIdBigInt },
+              where: {
+                guru_id: guruIdBigInt,
+                ...(isRestricted ? { kelas: { in: allowedClassNames } } : {}),
+              },
             })
             .catch(() => 0)
         : 0,
@@ -110,7 +147,7 @@ export default async function GuruDashboardPage() {
         where: {
           OR: [
             { from: "IT" },
-            ...(guruClass ? [{ from: guruClass }] : []),
+            ...(guruClass && showGuruClass ? [{ from: guruClass }] : []),
           ],
         },
         orderBy: { id: "desc" },

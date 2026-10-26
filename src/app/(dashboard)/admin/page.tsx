@@ -1,4 +1,6 @@
 import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import {
   Users,
   GraduationCap,
@@ -8,6 +10,8 @@ import {
   Bell,
   UserCheck,
   UserX,
+  ShieldCheck,
+  Shield,
 } from "lucide-react";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
@@ -16,6 +20,9 @@ import { CalendarWidget } from "@/components/shared/calendar-widget";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
+  const session = await getSession();
+  const activeJenjang = await getActiveJenjang(session);
+
   let totalSiswa = 0;
   let totalGuru = 0;
   let totalKelas = 0;
@@ -26,7 +33,24 @@ export default async function AdminDashboardPage() {
   let totalNonAktif = 0;
   let formattedAnnouncements: any[] = [];
 
+  const isSuperAdmin = session?.jenjang === "ALL";
+  const isRestricted = !isSuperAdmin && activeJenjang !== "ALL";
+
   try {
+    const siswaWhere = isRestricted ? { status: "1", jenjang: activeJenjang } : { status: "1" };
+    const guruWhere = isRestricted
+      ? { status: { in: ["2", "4"] }, OR: [{ jenjang: activeJenjang }, { jenjang: "ALL" }] }
+      : { status: { in: ["2", "4"] } };
+    const kelasWhere = isRestricted ? { jenjang: activeJenjang } : {};
+    const mapelWhere = isRestricted ? { jenjang: { in: [activeJenjang, "SEMUA"] } } : {};
+    const jadwalWhere = isRestricted ? { kelas: { jenjang: activeJenjang } } : {};
+    const aktifWhere = isRestricted
+      ? { status: { not: "0" }, jenjang: activeJenjang }
+      : { status: { not: "0" } };
+    const nonAktifWhere = isRestricted
+      ? { status: "0", jenjang: activeJenjang }
+      : { status: "0" };
+
     const [
       siswaCount,
       guruCount,
@@ -38,14 +62,14 @@ export default async function AdminDashboardPage() {
       nonAktifCount,
       pengumumanList,
     ] = await Promise.all([
-      prisma.user.count({ where: { status: "1" } }),
-      prisma.user.count({ where: { status: { in: ["2", "4"] } } }),
-      prisma.kelas.count(),
-      prisma.mataPelajaran.count(),
-      prisma.jadwalPelajaran.count(),
+      prisma.user.count({ where: siswaWhere }),
+      prisma.user.count({ where: guruWhere }),
+      prisma.kelas.count({ where: kelasWhere }),
+      prisma.mataPelajaran.count({ where: mapelWhere }),
+      prisma.jadwalPelajaran.count({ where: jadwalWhere }),
       prisma.pengumuman.count(),
-      prisma.user.count({ where: { status: { not: "0" } } }),
-      prisma.user.count({ where: { status: "0" } }),
+      prisma.user.count({ where: aktifWhere }),
+      prisma.user.count({ where: nonAktifWhere }),
       prisma.pengumuman.findMany({
         orderBy: { id: "desc" },
         take: 20,
@@ -74,22 +98,40 @@ export default async function AdminDashboardPage() {
     console.error("Database query error in Admin Dashboard:", e);
   }
 
+  const scopeLabel =
+    isSuperAdmin && activeJenjang === "ALL"
+      ? "Semua Jenjang (SD & SMP)"
+      : activeJenjang === "SD"
+        ? "Jenjang SD Islam Al-Azhar"
+        : activeJenjang === "SMP"
+          ? "Jenjang SMP Islam Al-Azhar"
+          : "Semua Jenjang (SD & SMP)";
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header Page */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Dashboard Administrator
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-1 font-normal">
-          Selamat datang di panel kontrol Sistem Informasi SD - SMP Islam Al-Azhar Cairo Palembang.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/50 dark:border-white/10">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+              {activeJenjang === "ALL" ? (
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+              ) : (
+                <Shield className="h-3.5 w-3.5 text-amber-600" />
+              )}
+              {scopeLabel}
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Dashboard Administrator
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1 font-normal">
+            Panel kontrol data akademik dan administrasi {scopeLabel}.
+          </p>
+        </div>
       </div>
 
-      {/* 8 Folder Cards:
-          - Desktop (lg): 4 card dalam satu baris mendatar (2 baris x 4 card)
-          - Tablet (md): 3 card dalam satu baris mendatar
-          - Mobile: 2 card per baris mendatar (4 baris mendatar, responsif) */}
+      {/* 8 Folder Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-4">
         {/* Baris 1: Amber, Blue, Emerald, Rose */}
         <StatCard
@@ -101,7 +143,7 @@ export default async function AdminDashboardPage() {
           href="/admin/students"
         />
         <StatCard
-          title="Jumlah Guru"
+          title="Dewan Guru"
           value={totalGuru}
           countLabel="Guru"
           icon={Users}
@@ -109,9 +151,9 @@ export default async function AdminDashboardPage() {
           href="/admin/teachers"
         />
         <StatCard
-          title="Total Kelas"
+          title="Rombongan Belajar"
           value={totalKelas}
-          countLabel="Rombel"
+          countLabel="Kelas"
           icon={School}
           variant="emerald"
           href="/admin/classes"
@@ -125,13 +167,13 @@ export default async function AdminDashboardPage() {
           href="/admin/subjects"
         />
 
-        {/* Baris 2: Purple, Teal, Indigo, Orange */}
+        {/* Baris 2: Teal, Purple, Emerald, Rose */}
         <StatCard
-          title="Jadwal Pelajaran"
+          title="Jadwal KBM"
           value={totalJadwal}
-          countLabel="Jadwal"
+          countLabel="Sesi"
           icon={Calendar}
-          variant="purple"
+          variant="teal"
           href="/admin/schedules"
         />
         <StatCard
@@ -139,50 +181,40 @@ export default async function AdminDashboardPage() {
           value={totalPengumuman}
           countLabel="Info"
           icon={Bell}
-          variant="teal"
+          variant="purple"
           href="/admin/announcements"
         />
         <StatCard
-          title="Akun Aktif"
+          title="Pengguna Aktif"
           value={totalAktif}
           countLabel="Akun"
           icon={UserCheck}
-          variant="indigo"
+          variant="emerald"
           href="/admin/students"
         />
         <StatCard
-          title="Perlu Verifikasi"
+          title="Belum Verifikasi"
           value={totalNonAktif}
-          countLabel="Akun"
+          countLabel="Pending"
           icon={UserX}
-          variant="orange"
+          variant="rose"
           href="/admin/students"
         />
       </div>
 
-      {/* Grid: Pengumuman (7 col) & Kalender (5 col) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Timeline Pengumuman */}
-        <div className="space-y-3.5 lg:col-span-7">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Timeline Pengumuman</h2>
-          </div>
+      {/* Konten Bawah: Pengumuman Sekolah & Kalender Agenda */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
           <AnnouncementTimeline
             announcements={formattedAnnouncements}
             userRole="admin"
-            canManage={false}
+            canManage={true}
           />
         </div>
-
-        {/* Kalender Kegiatan */}
-        <div className="space-y-3.5 lg:col-span-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Kalender Kegiatan</h2>
-          </div>
-          <CalendarWidget canManage={true} />
+        <div className="lg:col-span-1">
+          <CalendarWidget />
         </div>
       </div>
-
     </div>
   );
 }

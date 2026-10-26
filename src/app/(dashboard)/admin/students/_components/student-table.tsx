@@ -73,16 +73,24 @@ interface StudentTableProps {
   initialStudents: UserItem[];
   classList: string[];
   classJenjangMap?: Record<string, string>;
+  adminJenjang?: "SD" | "SMP" | "ALL";
+  activeJenjang?: "SD" | "SMP" | "ALL";
 }
 
 export function StudentTable({
   initialStudents,
   classList,
   classJenjangMap = {},
+  adminJenjang = "ALL",
+  activeJenjang = "ALL",
 }: StudentTableProps) {
   const [students, setStudents] = useState<UserItem[]>(initialStudents);
   const [search, setSearch] = useState("");
-  const [filterJenjang, setFilterJenjang] = useState<"all" | "SD" | "SMP">("all");
+  const isSuperAdmin = adminJenjang === "ALL";
+  const defaultJenjangFilter = isSuperAdmin
+    ? (activeJenjang === "SD" || activeJenjang === "SMP" ? (activeJenjang as "SD" | "SMP") : "all")
+    : (adminJenjang as "SD" | "SMP");
+  const [filterJenjang, setFilterJenjang] = useState<"all" | "SD" | "SMP">(defaultJenjangFilter);
   const [selectedClassFilter, setSelectedClassFilter] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 15;
@@ -92,7 +100,9 @@ export function StudentTable({
   const [openImportModal, setOpenImportModal] = useState(false);
   const [openExportModal, setOpenExportModal] = useState(false);
   const [exportScope, setExportScope] = useState<"all" | "selected" | "filtered" | "custom">("all");
-  const [exportJenjang, setExportJenjang] = useState<"all" | "SD" | "SMP">("all");
+  const [exportJenjang, setExportJenjang] = useState<"all" | "SD" | "SMP">(
+    isSuperAdmin ? "all" : (adminJenjang as "SD" | "SMP")
+  );
   const [exportKelas, setExportKelas] = useState<string>("");
   const [exportStatus, setExportStatus] = useState<string>("all");
   const [exportGender, setExportGender] = useState<string>("all");
@@ -119,6 +129,7 @@ export function StudentTable({
 
   // Helper check if student belongs to SMP
   const isSmp = (s: UserItem) => {
+    if (s.jenjang) return s.jenjang === "SMP";
     if (!s.kelas) return false;
     if (classJenjangMap && classJenjangMap[s.kelas]) {
       return classJenjangMap[s.kelas] === "SMP";
@@ -367,6 +378,9 @@ export function StudentTable({
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     formData.set("role", "1"); // Siswa
+    if (!isSuperAdmin) {
+      formData.set("jenjang", adminJenjang);
+    }
 
     try {
       const res = await createUserAction(formData);
@@ -395,6 +409,7 @@ export function StudentTable({
         const updatedNis = (formData.get("nis") as string) || null;
         const updatedGender = (formData.get("gender") as string) || "L";
         const updatedKelas = (formData.get("kelas") as string) || null;
+        const updatedJenjang = (formData.get("jenjang") as string) || editTarget.jenjang;
         const updatedEmail = formData.get("email") as string;
         const updatedAppleid = (formData.get("appleid") as string) || null;
         const updatedStatus = (formData.get("status") as string) || editTarget.status;
@@ -408,6 +423,7 @@ export function StudentTable({
                   nis: updatedNis,
                   gender: updatedGender,
                   kelas: updatedKelas,
+                  jenjang: updatedJenjang,
                   email: updatedEmail,
                   appleid: updatedAppleid,
                   status: updatedStatus,
@@ -431,6 +447,7 @@ export function StudentTable({
         [
           "NIS",
           "Nama Lengkap",
+          "Jenjang (SD/SMP)",
           "Kelas",
           "Email / Username",
           "Password",
@@ -442,6 +459,7 @@ export function StudentTable({
         [
           "202604001",
           "Muhammad Rayhan Al-Fatih",
+          "SD",
           "Kelas 4 - Mehmed Al Fatih",
           "rayhan.alfatih@alazhar.sch.id",
           "Alazhar2026!",
@@ -453,6 +471,7 @@ export function StudentTable({
         [
           "202604002",
           "Zahra Amira Salsabila",
+          "SD",
           "Kelas 3 - Ibnu Batutah",
           "zahra.salsabila@alazhar.sch.id",
           "Alazhar2026!",
@@ -465,12 +484,13 @@ export function StudentTable({
 
       const ws = XLSX.utils.aoa_to_sheet(templateData);
 
-      // Sheet kedua: Referensi 23 Rombel Resmi
+      // Sheet kedua: Referensi Rombel Resmi
       const classRefData = [
         ["No", "Nama Rombel / Kelas Resmi", "Tingkat", "Jenjang"],
         ...classList.map((cls, idx) => {
-          const match = cls.match(/\b([3-6])\b/);
-          return [idx + 1, cls, match ? parseInt(match[1], 10) : 4, "SD"];
+          const match = cls.match(/\b([1-9]|1[0-2])\b/);
+          const resolvedJenjang = classJenjangMap[cls] || (isSmp({ kelas: cls } as any) ? "SMP" : "SD");
+          return [idx + 1, cls, match ? parseInt(match[1], 10) : 1, resolvedJenjang];
         }),
       ];
       const wsClasses = XLSX.utils.aoa_to_sheet(classRefData);
@@ -491,6 +511,8 @@ export function StudentTable({
     const input = e.currentTarget.elements.namedItem("excelFile") as HTMLInputElement;
     const defaultKelasInput = e.currentTarget.elements.namedItem("defaultKelas") as HTMLSelectElement;
     const defaultKelas = defaultKelasInput?.value || "";
+    const defaultJenjangInput = e.currentTarget.elements.namedItem("defaultJenjang") as HTMLSelectElement;
+    const defaultJenjang = defaultJenjangInput?.value || (!isSuperAdmin ? adminJenjang : undefined);
 
     const file = input?.files?.[0];
     if (!file) {
@@ -503,7 +525,7 @@ export function StudentTable({
     reader.onload = async (evt) => {
       try {
         const base64 = (evt.target?.result as string).split(",")[1];
-        const res = await importStudentsAction(base64, defaultKelas);
+        const res = await importStudentsAction(base64, defaultKelas, defaultJenjang);
         if (res.success) {
           toast.success(res.message);
           setOpenImportModal(false);
@@ -539,41 +561,57 @@ export function StudentTable({
           </div>
 
           {/* Filter Jenjang Pills */}
-          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-full border text-xs font-medium shrink-0">
-            <button
-              type="button"
-              onClick={() => handleFilterJenjangChange("all")}
-              className={`rounded-full px-3 py-1 transition-all cursor-pointer ${
-                filterJenjang === "all"
-                  ? "bg-gradient-to-b from-slate-800 to-slate-900 text-white dark:from-slate-100 dark:to-slate-200 dark:text-slate-900 shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Semua
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFilterJenjangChange("SD")}
-              className={`rounded-full px-3 py-1 transition-all cursor-pointer ${
-                filterJenjang === "SD"
-                  ? "bg-gradient-to-b from-emerald-400 to-teal-500 text-white shadow-sm font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              SD
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFilterJenjangChange("SMP")}
-              className={`rounded-full px-3 py-1 transition-all cursor-pointer ${
-                filterJenjang === "SMP"
-                  ? "bg-gradient-to-b from-blue-300 to-blue-500 text-black shadow-sm font-bold border border-blue-300/60 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              SMP
-            </button>
-          </div>
+          {isSuperAdmin ? (
+            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-full border text-xs font-medium shrink-0">
+              <button
+                type="button"
+                onClick={() => handleFilterJenjangChange("all")}
+                className={`rounded-full px-3 py-1 transition-all cursor-pointer ${
+                  filterJenjang === "all"
+                    ? "bg-gradient-to-b from-slate-800 to-slate-900 text-white dark:from-slate-100 dark:to-slate-200 dark:text-slate-900 shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Semua
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterJenjangChange("SD")}
+                className={`rounded-full px-3 py-1 transition-all cursor-pointer ${
+                  filterJenjang === "SD"
+                    ? "bg-gradient-to-b from-emerald-400 to-teal-500 text-white shadow-sm font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                SD
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFilterJenjangChange("SMP")}
+                className={`rounded-full px-3 py-1 transition-all cursor-pointer ${
+                  filterJenjang === "SMP"
+                    ? "bg-gradient-to-b from-blue-300 to-blue-500 text-black shadow-sm font-bold border border-blue-300/60 drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                SMP
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-full border text-xs font-semibold text-muted-foreground shrink-0">
+              <span>Wewenang:</span>
+              <Badge
+                variant="outline"
+                className={
+                  adminJenjang === "SD"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                    : "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                }
+              >
+                Jenjang {adminJenjang}
+              </Badge>
+            </div>
+          )}
 
           <select
             value={selectedClassFilter}
@@ -881,6 +919,28 @@ export function StudentTable({
               </div>
             </div>
 
+            {isSuperAdmin ? (
+              <div className="space-y-1">
+                <Label htmlFor="jenjang">Jenjang Pendidikan</Label>
+                <select
+                  name="jenjang"
+                  id="jenjang"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                >
+                  <option value="SD">SD (Sekolah Dasar)</option>
+                  <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+                </select>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-2 rounded-md bg-muted/40 border text-xs">
+                <span className="text-muted-foreground font-medium">Jenjang Siswa:</span>
+                <Badge variant="outline" className={adminJenjang === "SD" ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 font-semibold" : "bg-blue-500/10 text-blue-700 border-blue-500/30 font-semibold"}>
+                  {adminJenjang} (Otomatis)
+                </Badge>
+                <input type="hidden" name="jenjang" value={adminJenjang} />
+              </div>
+            )}
+
             <div className="space-y-1">
               <Label htmlFor="kelas">Kelas</Label>
               <select
@@ -963,6 +1023,31 @@ export function StudentTable({
           </div>
 
           <form onSubmit={handleImportExcel} className="space-y-4">
+            {isSuperAdmin ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="defaultJenjang" className="text-xs font-semibold">
+                  Pilih Jenjang Default
+                </Label>
+                <select
+                  id="defaultJenjang"
+                  name="defaultJenjang"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:ring-2 focus:ring-emerald-500/20"
+                >
+                  <option value="">-- Otomatis Deteksi dari Kolom Kelas / Jenjang Excel --</option>
+                  <option value="SD">Khusus Jenjang SD</option>
+                  <option value="SMP">Khusus Jenjang SMP</option>
+                </select>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border text-xs">
+                <span className="text-muted-foreground font-medium">Scope Import:</span>
+                <Badge variant="outline" className={adminJenjang === "SD" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" : "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"}>
+                  Siswa Jenjang {adminJenjang} Saja
+                </Badge>
+                <input type="hidden" name="defaultJenjang" value={adminJenjang} />
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label htmlFor="defaultKelas" className="text-xs font-semibold">
                 Pilih Kelas Default (Opsional)
@@ -1058,6 +1143,36 @@ export function StudentTable({
                   </select>
                 </div>
               </div>
+
+              {isSuperAdmin ? (
+                <div className="space-y-1">
+                  <Label htmlFor="edit-student-jenjang">Jenjang Pendidikan</Label>
+                  <select
+                    id="edit-student-jenjang"
+                    name="jenjang"
+                    defaultValue={editTarget.jenjang || (isSmp(editTarget) ? "SMP" : "SD")}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                  >
+                    <option value="SD">SD (Sekolah Dasar)</option>
+                    <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-2 rounded-md bg-muted/40 border text-xs">
+                  <span className="text-muted-foreground font-medium">Jenjang Siswa:</span>
+                  <Badge
+                    variant="outline"
+                    className={
+                      adminJenjang === "SD"
+                        ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 font-semibold"
+                        : "bg-blue-500/10 text-blue-700 border-blue-500/30 font-semibold"
+                    }
+                  >
+                    {adminJenjang}
+                  </Badge>
+                  <input type="hidden" name="jenjang" value={adminJenjang} />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
@@ -1336,18 +1451,27 @@ export function StudentTable({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-border/60 mt-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Filter Jenjang</Label>
-                    <select
-                      value={exportJenjang}
-                      onChange={(e) => {
-                        setExportJenjang(e.target.value as "all" | "SD" | "SMP");
-                        setExportKelas("");
-                      }}
-                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
-                    >
-                      <option value="all">Semua Jenjang (SD & SMP)</option>
-                      <option value="SD">Khusus SD Saja</option>
-                      <option value="SMP">Khusus SMP Saja</option>
-                    </select>
+                    {isSuperAdmin ? (
+                      <select
+                        value={exportJenjang}
+                        onChange={(e) => {
+                          setExportJenjang(e.target.value as "all" | "SD" | "SMP");
+                          setExportKelas("");
+                        }}
+                        className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
+                      >
+                        <option value="all">Semua Jenjang (SD & SMP)</option>
+                        <option value="SD">Khusus SD Saja</option>
+                        <option value="SMP">Khusus SMP Saja</option>
+                      </select>
+                    ) : (
+                      <div className="flex items-center justify-between p-1.5 rounded-md border bg-muted/30 text-xs">
+                        <span className="text-muted-foreground">Terkunci Scope:</span>
+                        <Badge variant="outline" className={adminJenjang === "SD" ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 text-[11px]" : "bg-blue-500/10 text-blue-700 border-blue-500/30 text-[11px]"}>
+                          {adminJenjang}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-1">

@@ -21,6 +21,7 @@ model User {
   gender            String?         @db.VarChar(255)
   kelas             String?         @db.VarChar(255)
   status            String          @default("0") @db.VarChar(255)
+  jenjang           String?         @db.VarChar(20)
   ctt_iPad          String?         @db.Text
   image             String?         @db.VarChar(255)
   address           String?         @db.VarChar(255)
@@ -43,6 +44,7 @@ model User {
 
   @@index([kelas, status])
   @@index([status])
+  @@index([jenjang, status])
   @@map("users")
 }
 

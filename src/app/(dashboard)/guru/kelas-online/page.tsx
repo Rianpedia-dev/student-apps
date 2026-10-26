@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CreateRoomForm } from "@/components/features/kelas-online/create-room-form";
@@ -41,18 +42,33 @@ export default async function GuruKelasOnlinePage() {
     redirect("/login");
   }
 
+  const activeJenjang = await getActiveJenjang(session);
+  const isRestricted = activeJenjang !== "ALL";
+
   const guruClass = session.kelas || "";
+  const guruClassJenjang = guruClass && /SMP|Kelas (7|8|9)/i.test(guruClass) ? "SMP" : "SD";
+  const effectiveGuruClass = !isRestricted || activeJenjang === guruClassJenjang ? guruClass : "";
 
   // Fetch active rooms for this guru
   let activeRooms: GuruActiveRoom[] = [];
   let endedRooms: GuruEndedRoom[] = [];
 
   try {
+    let allowedClassNames: string[] = [];
+    if (isRestricted) {
+      const allowedClasses = await prisma.kelas.findMany({
+        where: { jenjang: activeJenjang },
+        select: { nama_kelas: true },
+      });
+      allowedClassNames = allowedClasses.map((c) => c.nama_kelas);
+    }
+
     const [dbActive, dbEnded] = await Promise.all([
       prisma.kelasOnline.findMany({
         where: {
           guru_id: BigInt(session.id),
           status: "active",
+          ...(isRestricted ? { kelas: { in: allowedClassNames } } : {}),
         },
         include: {
           attendance: {
@@ -66,6 +82,7 @@ export default async function GuruKelasOnlinePage() {
         where: {
           guru_id: BigInt(session.id),
           status: "ended",
+          ...(isRestricted ? { kelas: { in: allowedClassNames } } : {}),
         },
         include: {
           attendance: {
@@ -121,15 +138,15 @@ export default async function GuruKelasOnlinePage() {
             Kelas Online
           </h1>
         </div>
-        {guruClass && (
+        {effectiveGuruClass && (
           <Badge variant="indigo">
-            {guruClass}
+            {effectiveGuruClass}
           </Badge>
         )}
       </div>
 
       {/* Create Room Form */}
-      <CreateRoomForm kelas={guruClass} />
+      <CreateRoomForm kelas={effectiveGuruClass} />
 
       {/* Active Rooms */}
       {activeRooms.length > 0 && (

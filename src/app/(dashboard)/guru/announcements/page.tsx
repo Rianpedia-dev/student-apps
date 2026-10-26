@@ -37,9 +37,6 @@ export default async function GuruAnnouncementsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border/50">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Pengumuman Kelas</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Kelola dan terbitkan pengumuman resmi untuk siswa di kelas {guruClass}.
-          </p>
         </div>
         <CreateAnnouncementDialog guruClass={guruClass} />
       </div>
@@ -48,7 +45,7 @@ export default async function GuruAnnouncementsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-foreground">
-            Pengumuman Diterbitkan ({announcements.length})
+            Pengumuman Diterbitkan
           </h2>
         </div>
 
@@ -60,9 +57,6 @@ export default async function GuruAnnouncementsPage() {
               </div>
               <div className="space-y-1">
                 <h3 className="font-semibold text-foreground text-base">Belum Ada Pengumuman</h3>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  Belum ada pengumuman yang Anda terbitkan untuk kelas ini. Klik tombol di bawah untuk membuat pengumuman baru.
-                </p>
               </div>
               <div className="pt-2">
                 <CreateAnnouncementDialog

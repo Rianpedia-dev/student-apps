@@ -68,6 +68,8 @@ export interface SubjectItem {
 
 interface SubjectsManagerProps {
   initialSubjects: SubjectItem[];
+  adminJenjang?: "SD" | "SMP" | "ALL";
+  activeJenjang?: "SD" | "SMP" | "ALL";
 }
 
 const AVAILABLE_MAPEL_EXPORT_FIELDS = [
@@ -78,8 +80,13 @@ const AVAILABLE_MAPEL_EXPORT_FIELDS = [
   { id: "deskripsi", label: "Deskripsi Pembelajaran", default: true },
 ];
 
-export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
+export function SubjectsManager({
+  initialSubjects,
+  adminJenjang = "ALL",
+  activeJenjang = "ALL",
+}: SubjectsManagerProps) {
   const router = useRouter();
+  const isSuperAdmin = adminJenjang === "ALL";
   const [subjects, setSubjects] = useState<SubjectItem[]>(initialSubjects);
   const [search, setSearch] = useState("");
   const [filterJenjang, setFilterJenjang] = useState<"SEMUA" | "SD" | "SMP" | "SD_SMP">("SEMUA");
@@ -454,19 +461,34 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
             />
           </div>
 
-          <select
-            value={filterJenjang}
-            onChange={(e) => {
-              setFilterJenjang(e.target.value as "SEMUA" | "SD" | "SMP" | "SD_SMP");
-              setPage(1);
-            }}
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-xs sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-auto min-w-[150px] cursor-pointer h-9"
-          >
-            <option value="SEMUA">Semua Jenjang</option>
-            <option value="SD">Jenjang SD</option>
-            <option value="SMP">Jenjang SMP</option>
-            <option value="SD_SMP">SD & SMP (Keduanya)</option>
-          </select>
+          {isSuperAdmin ? (
+            <select
+              value={filterJenjang}
+              onChange={(e) => {
+                setFilterJenjang(e.target.value as "SEMUA" | "SD" | "SMP" | "SD_SMP");
+                setPage(1);
+              }}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-xs sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-auto min-w-[150px] cursor-pointer h-9"
+            >
+              <option value="SEMUA">Semua Jenjang</option>
+              <option value="SD">Khusus Jenjang SD</option>
+              <option value="SMP">Khusus Jenjang SMP</option>
+              <option value="SD_SMP">SD & SMP (Keduanya)</option>
+            </select>
+          ) : (
+            <select
+              value={filterJenjang}
+              onChange={(e) => {
+                setFilterJenjang(e.target.value as "SEMUA" | "SD" | "SMP" | "SD_SMP");
+                setPage(1);
+              }}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-xs sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-auto min-w-[150px] cursor-pointer h-9"
+            >
+              <option value="SEMUA">Semua Mapel ({adminJenjang} & Umum)</option>
+              <option value={adminJenjang}>Khusus Jenjang {adminJenjang}</option>
+              <option value="SD_SMP">Mapel Umum (SD & SMP)</option>
+            </select>
+          )}
         </div>
 
         {/* Right: Actions */}
@@ -782,15 +804,26 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
 
             <div>
               <label className="text-xs font-bold block mb-1">Jenjang *</label>
-              <select
-                name="jenjang"
-                defaultValue="SEMUA"
-                className="w-full text-xs rounded-xl border border-input bg-background p-2.5"
-              >
-                <option value="SEMUA">SD & SMP (Semua)</option>
-                <option value="SD">Khusus SD</option>
-                <option value="SMP">Khusus SMP</option>
-              </select>
+              {isSuperAdmin ? (
+                <select
+                  name="jenjang"
+                  defaultValue="SEMUA"
+                  className="w-full text-xs rounded-xl border border-input bg-background p-2.5 cursor-pointer"
+                >
+                  <option value="SEMUA">SD & SMP (Semua)</option>
+                  <option value="SD">Khusus SD</option>
+                  <option value="SMP">Khusus SMP</option>
+                </select>
+              ) : (
+                <select
+                  name="jenjang"
+                  defaultValue={adminJenjang}
+                  className="w-full text-xs rounded-xl border border-input bg-background p-2.5 cursor-pointer"
+                >
+                  <option value={adminJenjang}>Khusus Jenjang {adminJenjang}</option>
+                  <option value="SEMUA">SD & SMP (Semua / Umum)</option>
+                </select>
+              )}
               <p className="text-[11px] text-muted-foreground mt-1">
                 Warna badge tema akan dipilihkan secara otomatis (acak) oleh sistem.
               </p>
@@ -855,15 +888,26 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold block mb-1">Jenjang *</label>
-                  <select
-                    name="jenjang"
-                    defaultValue={editTarget.jenjang || "SEMUA"}
-                    className="w-full text-xs rounded-xl border border-input bg-background p-2.5"
-                  >
-                    <option value="SEMUA">SD & SMP (Semua)</option>
-                    <option value="SD">Khusus SD</option>
-                    <option value="SMP">Khusus SMP</option>
-                  </select>
+                  {isSuperAdmin ? (
+                    <select
+                      name="jenjang"
+                      defaultValue={editTarget.jenjang || "SEMUA"}
+                      className="w-full text-xs rounded-xl border border-input bg-background p-2.5 cursor-pointer"
+                    >
+                      <option value="SEMUA">SD & SMP (Semua)</option>
+                      <option value="SD">Khusus SD</option>
+                      <option value="SMP">Khusus SMP</option>
+                    </select>
+                  ) : (
+                    <select
+                      name="jenjang"
+                      defaultValue={editTarget.jenjang || adminJenjang}
+                      className="w-full text-xs rounded-xl border border-input bg-background p-2.5 cursor-pointer"
+                    >
+                      <option value={adminJenjang}>Khusus Jenjang {adminJenjang}</option>
+                      <option value="SEMUA">SD & SMP (Semua / Umum)</option>
+                    </select>
+                  )}
                 </div>
 
                 <div>
@@ -1105,10 +1149,20 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
                       }
                       className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm"
                     >
-                      <option value="all">Semua Jenjang</option>
-                      <option value="SD">Khusus Jenjang SD</option>
-                      <option value="SMP">Khusus Jenjang SMP</option>
-                      <option value="SEMUA">SD & SMP (Mapel Gabungan)</option>
+                      {isSuperAdmin ? (
+                        <>
+                          <option value="all">Semua Jenjang</option>
+                          <option value="SD">Khusus Jenjang SD</option>
+                          <option value="SMP">Khusus Jenjang SMP</option>
+                          <option value="SEMUA">SD & SMP (Mapel Gabungan)</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="all">Semua Mapel ({adminJenjang} & Gabungan)</option>
+                          <option value={adminJenjang}>Khusus Jenjang {adminJenjang}</option>
+                          <option value="SEMUA">Mapel Gabungan (SD & SMP)</option>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -1270,15 +1324,25 @@ export function SubjectsManager({ initialSubjects }: SubjectsManagerProps) {
             {/* Default Jenjang Select */}
             <div className="space-y-1">
               <Label className="text-xs">Default Jenjang (Bila Kolom di Excel Kosong)</Label>
-              <select
-                name="defaultJenjang"
-                defaultValue="SEMUA"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-sm"
-              >
-                <option value="SEMUA">SD & SMP (Semua Jenjang)</option>
-                <option value="SD">Khusus SD Saja</option>
-                <option value="SMP">Khusus SMP Saja</option>
-              </select>
+              {isSuperAdmin ? (
+                <select
+                  name="defaultJenjang"
+                  defaultValue="SEMUA"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-sm cursor-pointer"
+                >
+                  <option value="SEMUA">SD & SMP (Semua Jenjang)</option>
+                  <option value="SD">Khusus SD Saja</option>
+                  <option value="SMP">Khusus SMP Saja</option>
+                </select>
+              ) : (
+                <div className="flex items-center justify-between p-2 rounded-md bg-muted/40 border text-xs">
+                  <span className="text-muted-foreground font-medium">Scope Admin:</span>
+                  <Badge variant="outline" className={adminJenjang === "SD" ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 font-semibold" : "bg-blue-500/10 text-blue-700 border-blue-500/30 font-semibold"}>
+                    Jenjang {adminJenjang}
+                  </Badge>
+                  <input type="hidden" name="defaultJenjang" value={adminJenjang} />
+                </div>
+              )}
             </div>
 
             {/* File Input */}

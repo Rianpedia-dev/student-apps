@@ -4,6 +4,7 @@ import React, { useState, useEffect, useActionState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { loginDirectAction, demoLoginDirectAction, registerTeacherAction } from "@/actions/auth";
+import type { DemoRole } from "@/lib/auth";
 import { 
   AlAzharMosaicStrip, 
   AlAzharCornerMosaic, 
@@ -19,7 +20,6 @@ import {
   BookOpen, 
   BadgeCheck, 
   Users, 
-  ShieldCheck, 
   ArrowRight,
   AlertCircle,
   CheckCircle2,
@@ -31,6 +31,31 @@ import {
 interface AuthSwitchProps {
   initialMode?: "signin" | "signup";
 }
+
+interface DemoRoleItem {
+  role: DemoRole;
+  label: string;
+  category: "admin" | "guru" | "siswa";
+  desc: string;
+}
+
+const DEMO_ROLES: DemoRoleItem[] = [
+  // Admin
+  { role: "superadmin", label: "Super Admin", category: "admin", desc: "Full akses SD & SMP + Kelola Admin" },
+  { role: "admin_sd", label: "Admin SD", category: "admin", desc: "Kelola data SD saja" },
+  { role: "admin_smp", label: "Admin SMP", category: "admin", desc: "Kelola data SMP saja" },
+
+  // Guru
+  { role: "guru_sd", label: "Guru SD", category: "guru", desc: "Guru Mapel SD" },
+  { role: "walas_sd", label: "Walas SD", category: "guru", desc: "Wali Kelas 4 Mehmed Al Fatih" },
+  { role: "guru_smp", label: "Guru SMP", category: "guru", desc: "Guru Mapel SMP" },
+  { role: "walas_smp", label: "Walas SMP", category: "guru", desc: "Wali Kelas 7 Ibnu Sina" },
+  { role: "guru_lintas", label: "Guru SD & SMP", category: "guru", desc: "Guru Mapel Lintas Jenjang" },
+
+  // Siswa
+  { role: "siswa_sd", label: "Siswa SD", category: "siswa", desc: "Siswa Kelas 4 SD (Mehmed Al Fatih)" },
+  { role: "siswa_smp", label: "Siswa SMP", category: "siswa", desc: "Siswa Kelas 7 SMP (Ibnu Sina)" },
+];
 
 export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) {
   const searchParams = useSearchParams();
@@ -69,6 +94,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
   const [showRegApplePassword, setShowRegApplePassword] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [loadingDemoRole, setLoadingDemoRole] = useState<string | null>(null);
+  const [demoCategory, setDemoCategory] = useState<"all" | "admin" | "guru" | "siswa">("all");
   const [loginError, setLoginError] = useState("");
 
   const handleSignInSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -100,9 +126,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
     }
   };
 
-  const handleDemoLogin = async (
-    role: "admin" | "guru" | "guru1" | "guru2" | "siswa" | "siswa1" | "siswa2" | "siswa3"
-  ) => {
+  const handleDemoLogin = async (role: DemoRole) => {
     setLoadingDemoRole(role);
     setLoginError("");
 
@@ -115,7 +139,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
       }
       window.location.href =
         result.redirectPath ||
-        (role.startsWith("siswa") ? "/siswa" : role.startsWith("guru") ? "/guru" : `/${role}`);
+        (role.includes("siswa") ? "/siswa" : role.includes("guru") || role.includes("walas") ? "/guru" : "/admin");
     } catch (e: any) {
       setLoginError(e?.message || "Terjadi kesalahan saat masuk demo.");
       setLoadingDemoRole(null);
@@ -192,7 +216,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           position: relative;
           width: 100%;
           max-width: 1040px;
-          min-height: 620px;
+          min-height: 660px;
           background: #ffffff;
           border-radius: 26px;
           box-shadow: 0 25px 65px -15px rgba(2, 32, 24, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.25);
@@ -234,9 +258,9 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
 
         form.sign-in-form {
           z-index: 2;
-          max-width: 430px;
+          max-width: 440px;
           margin: 0 auto;
-          padding-bottom: 2rem;
+          padding-bottom: 1.25rem;
         }
 
         form.sign-up-form {
@@ -563,16 +587,17 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
         .demo-badge {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
-          padding: 4px 11px;
-          border-radius: 20px;
-          font-size: 0.74rem;
+          justify-content: center;
+          padding: 5px 12px;
+          border-radius: 9999px;
+          font-size: 0.73rem;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.15s ease;
           border: 1px solid #e2e8f0;
           background: #f8fafc;
           color: #334155;
+          user-select: none;
         }
 
         .demo-badge:hover:not(:disabled) {
@@ -580,6 +605,7 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
           border-color: #059669;
           color: #065f46;
           transform: translateY(-1px);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .demo-badge:disabled {
@@ -926,9 +952,8 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
             gap: 4px;
           }
           .demo-badge {
-            padding: 2.5px 7px;
+            padding: 3px 8px;
             font-size: 0.68rem;
-            gap: 3.5px;
           }
           .input-row {
             display: grid;
@@ -1076,70 +1101,56 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                 {!isLoginLoading && <ArrowRight size={16} />}
               </button>
 
-              {/* Akses Cepat Demo */}
-              <div className="demo-roles-wrap">
-                <span className="demo-roles-title">Akses Cepat Demo</span>
-                <div className="demo-roles-group">
-                  <button
-                    type="button"
-                    disabled={isAnyLoginBusy}
-                    onClick={() => handleDemoLogin("admin")}
-                    className="demo-badge"
-                    title="Masuk sebagai Administrator SDIA"
-                  >
-                    <ShieldCheck size={13} className="text-emerald-700" />
-                    {loadingDemoRole === "admin" ? "..." : "Admin"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isAnyLoginBusy}
-                    onClick={() => handleDemoLogin("guru")}
-                    className="demo-badge"
-                    title="Masuk sebagai Guru 1: Ustadzah Fatimah, S.Pd (Wali Kelas 4 SD)"
-                  >
-                    <GraduationCap size={13} className="text-emerald-700" />
-                    {loadingDemoRole === "guru" || loadingDemoRole === "guru1" ? "..." : "Guru 1"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isAnyLoginBusy}
-                    onClick={() => handleDemoLogin("guru2")}
-                    className="demo-badge"
-                    title="Masuk sebagai Guru 2: Ustadz Farhan, S.Pd (Wali Kelas 7 SMP)"
-                  >
-                    <GraduationCap size={13} className="text-emerald-700" />
-                    {loadingDemoRole === "guru2" ? "..." : "Guru 2"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isAnyLoginBusy}
-                    onClick={() => handleDemoLogin("siswa1")}
-                    className="demo-badge"
-                    title="Masuk sebagai Siswa: Muhammad Rayhan (Kelas 4 SD)"
-                  >
-                    <BookOpen size={13} className="text-emerald-700" />
-                    {loadingDemoRole === "siswa1" ? "..." : "Rayhan"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isAnyLoginBusy}
-                    onClick={() => handleDemoLogin("siswa2")}
-                    className="demo-badge"
-                    title="Masuk sebagai Siswa: Khalid Al-Ghazi (Kelas 4 SD)"
-                  >
-                    <BookOpen size={13} className="text-emerald-700" />
-                    {loadingDemoRole === "siswa2" ? "..." : "Khalid"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isAnyLoginBusy}
-                    onClick={() => handleDemoLogin("siswa3")}
-                    className="demo-badge"
-                    title="Masuk sebagai Siswi: Zahra Salsabila (Kelas 4 SD)"
-                  >
-                    <BookOpen size={13} className="text-emerald-700" />
-                    {loadingDemoRole === "siswa3" ? "..." : "Zahra"}
-                  </button>
+              {/* Akses Cepat Demo (10 Demo Roles) */}
+              <div className="demo-roles-wrap w-full mt-2">
+                <div className="flex items-center justify-between w-full max-w-[390px] mb-1.5 px-0.5">
+                  <span className="demo-roles-title text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">
+                    Mode Demo
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {(
+                      [
+                        { id: "all", label: "Semua" },
+                        { id: "admin", label: "Admin" },
+                        { id: "guru", label: "Guru" },
+                        { id: "siswa", label: "Siswa" },
+                      ] as const
+                    ).map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setDemoCategory(cat.id)}
+                        className={`text-[9.5px] px-2 py-0.5 rounded-full font-semibold transition-all ${
+                          demoCategory === cat.id
+                            ? "bg-emerald-700 text-white shadow-xs"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 w-full max-w-[390px] justify-center pt-1 select-none">
+                  {(demoCategory === "all"
+                    ? DEMO_ROLES
+                    : DEMO_ROLES.filter((r) => r.category === demoCategory)
+                  ).map((item) => {
+                    const isBusy = loadingDemoRole === item.role;
+                    return (
+                      <button
+                        key={item.role}
+                        type="button"
+                        disabled={isAnyLoginBusy}
+                        onClick={() => handleDemoLogin(item.role)}
+                        className="demo-badge"
+                        title={`${item.label} (${item.desc})`}
+                      >
+                        {isBusy ? "..." : item.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </form>

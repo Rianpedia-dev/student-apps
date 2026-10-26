@@ -65,6 +65,40 @@ export function getRoleLabel(status: string | number): string {
 }
 
 /**
+ * Menentukan jenjang user (SD, SMP, ALL) dengan fallback cerdas.
+ */
+export function resolveUserJenjang(
+  dbJenjang: string | null | undefined,
+  status: string | number,
+  kelas: string | null | undefined
+): "SD" | "SMP" | "ALL" {
+  // Jika sudah terdefinisi di DB
+  if (dbJenjang === "ALL" || dbJenjang === "SD" || dbJenjang === "SMP") {
+    return dbJenjang;
+  }
+
+  const s = String(status);
+  // Admin tanpa jenjang -> Super Admin (ALL)
+  if (s === "3") return "ALL";
+
+  // Deteksi dari kelas untuk siswa/guru
+  if (kelas) {
+    if (/^Kelas (7|8|9)/i.test(kelas) || /SMP/i.test(kelas)) return "SMP";
+    return "SD";
+  }
+
+  // Default fallback
+  return "SD";
+}
+
+export function getAdminTypeLabel(jenjang: string | null | undefined): string {
+  if (jenjang === "ALL") return "Super Administrator";
+  if (jenjang === "SD") return "Admin SD";
+  if (jenjang === "SMP") return "Admin SMP";
+  return "Administrator";
+}
+
+/**
  * Mendapatkan URL foto profil default berdasarkan gender:
  * - Laki-laki ('L', 'laki-laki', 'pria', dll) -> /profil-default-laki-laki.avif
  * - Perempuan ('P', 'perempuan', 'wanita', dll) -> /profil-default-perempuan.avif

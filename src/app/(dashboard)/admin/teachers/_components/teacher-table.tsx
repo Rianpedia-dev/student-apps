@@ -65,6 +65,7 @@ const AVAILABLE_TEACHER_EXPORT_FIELDS = [
   { id: "no", label: "No (Nomor Urut)", default: true },
   { id: "nip", label: "NIP", default: true },
   { id: "name", label: "Nama Lengkap", default: true },
+  { id: "jenjang", label: "Jenjang (SD/SMP/Lintas)", default: true },
   { id: "gender", label: "Jenis Kelamin (L/P)", default: true },
   { id: "email", label: "Email Akun", default: true },
   { id: "guru_bidang", label: "Bidang Studi / Mapel", default: true },
@@ -78,15 +79,24 @@ interface TeacherTableProps {
   initialTeachers: UserItem[];
   classList?: string[];
   subjectList?: string[];
+  adminJenjang?: "SD" | "SMP" | "ALL";
+  activeJenjang?: "SD" | "SMP" | "ALL";
 }
 
 export function TeacherTable({
   initialTeachers,
   classList = [],
   subjectList = [],
+  adminJenjang = "ALL",
+  activeJenjang = "ALL",
 }: TeacherTableProps) {
   const [teachers, setTeachers] = useState<UserItem[]>(initialTeachers);
   const [search, setSearch] = useState("");
+  const isSuperAdmin = adminJenjang === "ALL";
+  const defaultJenjangFilter = isSuperAdmin
+    ? (activeJenjang === "SD" || activeJenjang === "SMP" ? activeJenjang : "ALL")
+    : (adminJenjang as "SD" | "SMP");
+  const [filterJenjang, setFilterJenjang] = useState<"ALL" | "SD" | "SMP" | "LINTAS">(defaultJenjangFilter);
   const [page, setPage] = useState(1);
   const pageSize = 15;
 
@@ -95,6 +105,9 @@ export function TeacherTable({
   const [openImportModal, setOpenImportModal] = useState(false);
   const [openExportModal, setOpenExportModal] = useState(false);
   const [exportScope, setExportScope] = useState<"all" | "selected" | "filtered" | "custom">("all");
+  const [exportJenjang, setExportJenjang] = useState<"all" | "SD" | "SMP" | "ALL">(
+    isSuperAdmin ? "all" : (adminJenjang as "SD" | "SMP")
+  );
   const [exportRole, setExportRole] = useState<string>("all");
   const [exportBidang, setExportBidang] = useState<string>("");
   const [exportKelas, setExportKelas] = useState<string>("");
@@ -103,6 +116,7 @@ export function TeacherTable({
     "no",
     "nip",
     "name",
+    "jenjang",
     "gender",
     "email",
     "guru_bidang",
@@ -142,7 +156,13 @@ export function TeacherTable({
       (t.guru_bidang && t.guru_bidang.toLowerCase().includes(search.toLowerCase())) ||
       (t.nip && t.nip.includes(search));
     const matchStatus = statusFilter === "ALL" ? true : t.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchJenjang =
+      filterJenjang === "ALL"
+        ? true
+        : filterJenjang === "LINTAS"
+          ? t.jenjang === "ALL"
+          : t.jenjang === filterJenjang;
+    return matchSearch && matchStatus && matchJenjang;
   });
 
   // Target data guru yang akan diekspor sesuai cakupan modal
@@ -166,7 +186,13 @@ export function TeacherTable({
         ? (t.kelas || "").toLowerCase() === exportKelas.toLowerCase()
         : true;
       const matchGender = exportGender === "all" ? true : t.gender === exportGender;
-      return matchRole && matchBidang && matchKelas && matchGender;
+      const matchJenjang =
+        exportJenjang === "all"
+          ? true
+          : exportJenjang === "ALL"
+            ? t.jenjang === "ALL"
+            : t.jenjang === exportJenjang;
+      return matchRole && matchBidang && matchKelas && matchGender && matchJenjang;
     });
   }, [
     exportScope,
@@ -177,6 +203,7 @@ export function TeacherTable({
     exportBidang,
     exportKelas,
     exportGender,
+    exportJenjang,
   ]);
 
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
@@ -267,6 +294,9 @@ export function TeacherTable({
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     formData.set("role", addRoleChoice);
+    if (!formData.get("jenjang")) {
+      formData.set("jenjang", !isSuperAdmin ? adminJenjang : "SD");
+    }
 
     try {
       const res = await createTeacherAction(formData);
@@ -298,6 +328,7 @@ export function TeacherTable({
     const updatedKelas = (formData.get("kelas") as string) || null;
     const updatedAppleid = (formData.get("appleid") as string) || null;
     const updatedPasswordAppleid = (formData.get("passwordappleid") as string) || null;
+    const updatedJenjang = (formData.get("jenjang") as string) || editTarget.jenjang;
 
     try {
       const res = await updateTeacherAction(editTarget.id, formData);
@@ -313,6 +344,7 @@ export function TeacherTable({
                   gender: updatedGender,
                   guru_bidang: updatedBidang,
                   status: editRoleChoice,
+                  jenjang: updatedJenjang,
                   kelas: updatedKelas,
                   appleid: updatedAppleid,
                   passwordappleid: updatedPasswordAppleid,
@@ -333,6 +365,9 @@ export function TeacherTable({
   const handleImportExcel = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const input = e.currentTarget.elements.namedItem("excelFile") as HTMLInputElement;
+    const defaultJenjangInput = e.currentTarget.elements.namedItem("defaultJenjang") as HTMLSelectElement;
+    const defaultJenjang = defaultJenjangInput?.value || (!isSuperAdmin ? adminJenjang : undefined);
+
     const file = input?.files?.[0];
     if (!file) {
       toast.error("Pilih file Excel terlebih dahulu");
@@ -344,7 +379,7 @@ export function TeacherTable({
     reader.onload = async (evt) => {
       try {
         const base64 = (evt.target?.result as string).split(",")[1];
-        const res = await importTeachersAction(base64);
+        const res = await importTeachersAction(base64, defaultJenjang);
         if (res.success) {
           toast.success(res.message);
           setOpenImportModal(false);
@@ -391,6 +426,9 @@ export function TeacherTable({
         if (exportFields.includes("no")) row["No"] = idx + 1;
         if (exportFields.includes("nip")) row["NIP"] = t.nip || "-";
         if (exportFields.includes("name")) row["Nama Lengkap"] = t.name;
+        if (exportFields.includes("jenjang")) {
+          row["Jenjang"] = t.jenjang === "ALL" ? "SD + SMP (Lintas)" : t.jenjang || "SD";
+        }
         if (exportFields.includes("gender")) {
           row["Jenis Kelamin"] = t.gender === "P" ? "Perempuan" : "Laki-laki";
         }
@@ -440,6 +478,7 @@ export function TeacherTable({
         [
           "NIP",
           "Nama Lengkap",
+          "Jenjang (SD/SMP/ALL)",
           "Email",
           "Password",
           "Jenis Kelamin (L/P)",
@@ -452,6 +491,7 @@ export function TeacherTable({
         [
           "198501152010011002",
           "Ustadzah Fatimah, S.Pd",
+          "SD",
           "fatimah@alazhar.sch.id",
           "123456",
           "P",
@@ -464,6 +504,7 @@ export function TeacherTable({
         [
           "198802202012011003",
           "Ustadz Ahmad Fauzi, S.Pd",
+          "ALL",
           "ahmad.fauzi@alazhar.sch.id",
           "123456",
           "L",
@@ -476,8 +517,22 @@ export function TeacherTable({
       ];
 
       const ws = XLSX.utils.aoa_to_sheet(templateData);
+
+      // Sheet kedua: Referensi Kelas & Mapel Resmi
+      const maxRows = Math.max(classList.length, subjectList.length);
+      const refData = [
+        ["No", "Daftar Rombel / Kelas", "Daftar Mata Pelajaran"],
+        ...Array.from({ length: maxRows }, (_, idx) => [
+          idx + 1,
+          classList[idx] || "",
+          subjectList[idx] || "",
+        ]),
+      ];
+      const wsRef = XLSX.utils.aoa_to_sheet(refData);
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Template Guru");
+      XLSX.utils.book_append_sheet(wb, wsRef, "Referensi Kelas & Mapel");
       XLSX.writeFile(wb, "Template_Import_Guru_AlAzhar.xlsx");
       toast.success("Template Excel berhasil diunduh.");
     } catch (err) {
@@ -535,10 +590,35 @@ export function TeacherTable({
             }}
             className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-auto min-w-[170px] cursor-pointer"
           >
-            <option value="ALL">Semua Guru</option>
+            <option value="ALL">Semua Peran Guru</option>
             <option value="0">Menunggu Verifikasi</option>
             <option value="2">Guru Mapel</option>
             <option value="4">Guru & Wali Kelas</option>
+          </select>
+
+          {/* Jenjang Filter */}
+          <select
+            value={filterJenjang}
+            onChange={(e) => {
+              setFilterJenjang(e.target.value as "ALL" | "SD" | "SMP" | "LINTAS");
+              setPage(1);
+            }}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-auto cursor-pointer"
+          >
+            {isSuperAdmin ? (
+              <>
+                <option value="ALL">Semua Jenjang</option>
+                <option value="SD">Khusus Guru SD</option>
+                <option value="SMP">Khusus Guru SMP</option>
+                <option value="LINTAS">Guru Lintas (SD & SMP)</option>
+              </>
+            ) : (
+              <>
+                <option value="ALL">Semua Guru ({adminJenjang} & Lintas)</option>
+                <option value={adminJenjang}>Khusus Guru {adminJenjang}</option>
+                <option value="LINTAS">Guru Lintas (SD & SMP)</option>
+              </>
+            )}
           </select>
         </div>
 
@@ -642,7 +722,7 @@ export function TeacherTable({
                     {(page - 1) * pageSize + idx + 1}
                   </TableCell>
                   <TableCell>
-                    <div className="font-semibold text-foreground">{t.name}</div>
+                    <span className="font-semibold text-foreground">{t.name}</span>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">{t.guru_bidang || "-"}</div>
@@ -843,6 +923,31 @@ export function TeacherTable({
               </div>
             </div>
 
+            {/* Pilihan Jenjang Guru */}
+            <div className="space-y-1">
+              <Label htmlFor="add-jenjang">Jenjang Guru</Label>
+              {isSuperAdmin ? (
+                <select
+                  id="add-jenjang"
+                  name="jenjang"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="SD">Jenjang SD</option>
+                  <option value="SMP">Jenjang SMP</option>
+                  <option value="ALL">Guru Lintas Jenjang (SD & SMP)</option>
+                </select>
+              ) : (
+                <select
+                  id="add-jenjang"
+                  name="jenjang"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value={adminJenjang}>Jenjang {adminJenjang}</option>
+                  <option value="ALL">Guru Lintas Jenjang ({adminJenjang} & Lintas)</option>
+                </select>
+              )}
+            </div>
+
             {/* Pilihan Peran Guru */}
             <div className="space-y-1.5 rounded-lg border p-3 bg-muted/20">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -976,6 +1081,32 @@ export function TeacherTable({
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleImportExcel} className="space-y-4 pt-1">
+            {isSuperAdmin ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="defaultTeacherJenjang" className="text-xs font-semibold">
+                  Pilih Jenjang Default jika Kolom Kosong
+                </Label>
+                <select
+                  id="defaultTeacherJenjang"
+                  name="defaultJenjang"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
+                >
+                  <option value="">-- Deteksi Otomatis dari Kelas / File --</option>
+                  <option value="SD">Khusus Jenjang SD</option>
+                  <option value="SMP">Khusus Jenjang SMP</option>
+                  <option value="ALL">Guru Lintas (SD & SMP)</option>
+                </select>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border text-xs">
+                <span className="text-muted-foreground font-medium">Scope Import:</span>
+                <Badge variant="outline" className={adminJenjang === "SD" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" : "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"}>
+                  Guru Jenjang {adminJenjang}
+                </Badge>
+                <input type="hidden" name="defaultJenjang" value={adminJenjang} />
+              </div>
+            )}
+
             <div className="flex items-center justify-between rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 p-3 text-xs">
               <div>
                 <p className="font-semibold text-emerald-900 dark:text-emerald-200">
@@ -1131,6 +1262,33 @@ export function TeacherTable({
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Pilihan Jenjang Guru */}
+              <div className="space-y-1">
+                <Label htmlFor="edit-jenjang">Jenjang Guru</Label>
+                {isSuperAdmin ? (
+                  <select
+                    id="edit-jenjang"
+                    name="jenjang"
+                    defaultValue={editTarget.jenjang || "SD"}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="SD">Jenjang SD</option>
+                    <option value="SMP">Jenjang SMP</option>
+                    <option value="ALL">Guru Lintas Jenjang (SD & SMP)</option>
+                  </select>
+                ) : (
+                  <select
+                    id="edit-jenjang"
+                    name="jenjang"
+                    defaultValue={editTarget.jenjang || adminJenjang}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value={adminJenjang}>Jenjang {adminJenjang}</option>
+                    <option value="ALL">Guru Lintas Jenjang ({adminJenjang} & Lintas)</option>
+                  </select>
+                )}
               </div>
 
               {/* Pilihan Peran Guru */}
@@ -1516,6 +1674,29 @@ export function TeacherTable({
               {/* Parameter Filter Kustom */}
               {exportScope === "custom" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-border/60 mt-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Filter Jenjang</Label>
+                    {isSuperAdmin ? (
+                      <select
+                        value={exportJenjang}
+                        onChange={(e) => setExportJenjang(e.target.value as "all" | "SD" | "SMP" | "ALL")}
+                        className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-sm cursor-pointer"
+                      >
+                        <option value="all">Semua Jenjang</option>
+                        <option value="SD">Khusus Jenjang SD</option>
+                        <option value="SMP">Khusus Jenjang SMP</option>
+                        <option value="ALL">Guru Lintas (SD & SMP)</option>
+                      </select>
+                    ) : (
+                      <div className="flex items-center justify-between p-1.5 rounded-md border bg-muted/30 text-xs">
+                        <span className="text-muted-foreground">Scope Admin:</span>
+                        <Badge variant="outline" className={adminJenjang === "SD" ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 text-[11px]" : "bg-blue-500/10 text-blue-700 border-blue-500/30 text-[11px]"}>
+                          {adminJenjang} + Lintas
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-1">
                     <Label className="text-xs">Peran / Status</Label>
                     <select

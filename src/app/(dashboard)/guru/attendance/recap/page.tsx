@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { ArrowLeft, FileText, BookOpen } from "lucide-react";
 import { RecapClient } from "./_components/recap-client";
 import { getAcademicYear } from "@/lib/utils";
@@ -25,13 +26,19 @@ export default async function GuruAttendanceRecapPage(props: {
     redirect("/login");
   }
 
+  const activeJenjang = await getActiveJenjang(session);
+  const isRestricted = activeJenjang !== "ALL";
+
   const guruId = BigInt(session.id);
   const { month: rawMonth, year: rawYear, mapelId: rawMapelId, kelas: rawKelas } = await props.searchParams;
   const { month: selectedMonth, year: selectedYear } = parsePeriod(rawMonth, rawYear);
 
   // Ambil daftar mapel & kelas yang diampu guru ini
   const schedules = await prisma.jadwalPelajaran.findMany({
-    where: session.role === "guru" ? { guru_id: guruId } : {},
+    where: {
+      ...(session.role === "guru" ? { guru_id: guruId } : {}),
+      ...(isRestricted ? { kelas: { jenjang: activeJenjang } } : {}),
+    },
     include: {
       mapel: true,
       kelas: true,
@@ -53,7 +60,8 @@ export default async function GuruAttendanceRecapPage(props: {
     classSet.add(s.kelas.nama_kelas);
   });
 
-  if (session.kelas) {
+  const guruClassJenjang = session.kelas && /SMP|Kelas (7|8|9)/i.test(session.kelas) ? "SMP" : "SD";
+  if (session.kelas && (!isRestricted || guruClassJenjang === activeJenjang)) {
     classSet.add(session.kelas);
   }
 

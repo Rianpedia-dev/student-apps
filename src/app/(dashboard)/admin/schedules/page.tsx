@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Calendar, Plus, Clock, School, User, BookOpen } from "lucide-react";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { SchedulesManager } from "./_components/schedules-manager";
 import { compareScheduleTime } from "@/lib/utils";
 
@@ -13,19 +13,49 @@ export default async function AdminSchedulesPage() {
     redirect("/login");
   }
 
+  const activeJenjang = await getActiveJenjang(session);
+  const isSuperAdmin = session?.jenjang === "ALL";
+  const isRestricted = !isSuperAdmin && activeJenjang !== "ALL";
+
+  const classWhere: any = {};
+  if (isRestricted) {
+    classWhere.jenjang = activeJenjang;
+  }
+
+  const subjectWhere: any = {};
+  if (isRestricted) {
+    subjectWhere.jenjang = { in: [activeJenjang, "SEMUA"] };
+  }
+
+  const teacherWhere: any = { status: { in: ["2", "4"] } };
+  if (isRestricted) {
+    teacherWhere.OR = [
+      { jenjang: activeJenjang },
+      { jenjang: "ALL" },
+    ];
+  }
+
+  const scheduleWhere: any = {};
+  if (isRestricted) {
+    scheduleWhere.kelas = { jenjang: activeJenjang };
+  }
+
   const [classes, subjects, teachers, schedules] = await Promise.all([
     prisma.kelas.findMany({
+      where: classWhere,
       orderBy: [{ jenjang: "asc" }, { tingkat: "asc" }, { nama_kelas: "asc" }],
     }),
     prisma.mataPelajaran.findMany({
+      where: subjectWhere,
       orderBy: { nama_mapel: "asc" },
     }),
     prisma.user.findMany({
-      where: { status: { in: ["2", "4"] } },
+      where: teacherWhere,
       select: { id: true, name: true, email: true, guru_bidang: true },
       orderBy: { name: "asc" },
     }),
     prisma.jadwalPelajaran.findMany({
+      where: scheduleWhere,
       include: {
         kelas: true,
         mapel: true,
@@ -58,32 +88,59 @@ export default async function AdminSchedulesPage() {
     mapelNama: s.mapel.nama_mapel,
     mapelKode: s.mapel.kode_mapel,
     guruId: s.guru_id.toString(),
-    guruNama: s.guru.name,
+    guruNama: s.guru?.name || "-",
     hari: s.hari,
     jamMulai: s.jam_mulai,
     jamSelesai: s.jam_selesai,
   }));
 
+  const formattedClasses = classes.map((c) => ({
+    id: c.id.toString(),
+    nama: c.nama_kelas,
+    jenjang: c.jenjang,
+  }));
+
+  const formattedSubjects = subjects.map((s) => ({
+    id: s.id.toString(),
+    nama: s.nama_mapel,
+    kode: s.kode_mapel,
+    jenjang: s.jenjang,
+  }));
+
+  const formattedTeachers = teachers.map((t) => ({
+    id: t.id.toString(),
+    nama: t.name,
+    bidang: t.guru_bidang || "",
+  }));
+
+  const scopeLabel =
+    isSuperAdmin && activeJenjang === "ALL"
+      ? "Semua Jenjang"
+      : activeJenjang === "SD"
+        ? "Jenjang SD"
+        : activeJenjang === "SMP"
+          ? "Jenjang SMP"
+          : "Semua Jenjang";
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Jadwal Pelajaran Kelas SD & SMP
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              Atur alokasi mata pelajaran, guru pengampu, hari, dan jam tatap muka untuk setiap kelas.
-            </p>
-          </div>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">Manajemen Jadwal Pelajaran</h1>
+          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+            {scopeLabel}
+          </span>
         </div>
+        <p className="text-sm text-muted-foreground">
+          Kelola alokasi jadwal mata pelajaran per kelas {scopeLabel}, penugasan guru pengampu, dan waktu KBM.
+        </p>
       </div>
 
       <SchedulesManager
         initialSchedules={formattedSchedules}
-        classes={classes.map((c) => ({ id: c.id.toString(), nama: c.nama_kelas, jenjang: c.jenjang }))}
-        subjects={subjects.map((s) => ({ id: s.id.toString(), nama: s.nama_mapel, kode: s.kode_mapel }))}
-        teachers={teachers.map((t) => ({ id: t.id.toString(), nama: t.name, bidang: t.guru_bidang }))}
+        classes={formattedClasses}
+        subjects={formattedSubjects}
+        teachers={formattedTeachers}
       />
     </div>
   );

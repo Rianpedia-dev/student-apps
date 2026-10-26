@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { authenticateUser, clearSessionCookie, type AuthResult } from "@/lib/auth";
+import { authenticateUser, clearSessionCookie, type AuthResult, type DemoRole } from "@/lib/auth";
 import { loginSchema, registerTeacherSchema } from "@/lib/validators";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -91,7 +91,7 @@ export async function logoutAction() {
   redirect("/login");
 }
 
-export async function demoLoginAction(role: "admin" | "guru" | "siswa") {
+export async function demoLoginAction(role: DemoRole) {
   if (process.env.ENABLE_DEMO_MODE === "false") {
     redirect("/login?error=demo_disabled");
   }
@@ -139,7 +139,7 @@ export async function loginDirectAction(
 }
 
 export async function demoLoginDirectAction(
-  role: "admin" | "guru" | "guru1" | "guru2" | "siswa" | "siswa1" | "siswa2" | "siswa3"
+  role: DemoRole
 ): Promise<AuthResult> {
   if (process.env.ENABLE_DEMO_MODE === "false") {
     return {

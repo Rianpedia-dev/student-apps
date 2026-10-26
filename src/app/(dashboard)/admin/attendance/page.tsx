@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { ClipboardList, ShieldAlert, Calendar, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export default async function AdminAttendancePage(props: PageProps) {
   }
 
   const { date, jenjang, kelas } = await props.searchParams;
+  const activeJenjang = await getActiveJenjang(session);
 
   const now = new Date();
   const dateStr =
@@ -33,8 +35,11 @@ export default async function AdminAttendancePage(props: PageProps) {
       now.getDate()
     ).padStart(2, "0")}`;
 
+  const isSuperAdmin = session?.jenjang === "ALL";
+  const effectiveJenjang = !isSuperAdmin && activeJenjang !== "ALL" ? activeJenjang : (jenjang || undefined);
+
   const dashboardData = await AttendanceService.getAdminAttendanceDashboard(dateStr, {
-    jenjang,
+    jenjang: effectiveJenjang,
     kelas: kelas !== "SEMUA" ? kelas : undefined,
   });
 

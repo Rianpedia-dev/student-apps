@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { compareScheduleTime } from "@/lib/utils";
@@ -17,9 +18,16 @@ export default async function GuruMapelPage() {
 
   const guruId = BigInt(session.id);
 
+  const activeJenjang = await getActiveJenjang(session);
+  const isRestricted = activeJenjang !== "ALL";
+  const kelasFilter = isRestricted ? { jenjang: activeJenjang } : undefined;
+
   // Ambil jadwal mengajar guru ini
   const rawSchedules = await prisma.jadwalPelajaran.findMany({
-    where: { guru_id: guruId },
+    where: {
+      guru_id: guruId,
+      ...(kelasFilter ? { kelas: kelasFilter } : {}),
+    },
     include: {
       kelas: true,
       mapel: true,
@@ -41,7 +49,10 @@ export default async function GuruMapelPage() {
 
   // Ambil tugas yang pernah dibuat untuk mapel-mapel ini
   const tasks = await prisma.tugas.findMany({
-    where: { guru_id: guruId },
+    where: {
+      guru_id: guruId,
+      ...(kelasFilter ? { kelas: kelasFilter } : {}),
+    },
     include: {
       kelas: true,
       mapel: true,
@@ -52,7 +63,10 @@ export default async function GuruMapelPage() {
   // Ambil data pertemuan yang telah dibuat
   const meetings = (prisma as any).pertemuan?.findMany
     ? await (prisma as any).pertemuan.findMany({
-        where: session.role === "admin" ? {} : { guru_id: guruId },
+        where: {
+          ...(session.role === "admin" ? {} : { guru_id: guruId }),
+          ...(kelasFilter ? { kelas: kelasFilter } : {}),
+        },
         select: {
           id: true,
           kelas_id: true,

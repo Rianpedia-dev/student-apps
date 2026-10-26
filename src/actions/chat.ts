@@ -2,7 +2,8 @@
 
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { getUserProfileImage } from "@/lib/utils";
+import { getUserProfileImage, resolveUserJenjang } from "@/lib/utils";
+import { getActiveJenjang } from "@/lib/jenjang";
 import { revalidatePath } from "next/cache";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
@@ -114,6 +115,7 @@ export async function getUserChatRooms() {
   if (!session) return [];
 
   const myId = BigInt(session.id);
+  const activeJenjang = await getActiveJenjang(session);
 
   try {
     const rooms = await prisma.chatRoom.findMany({
@@ -130,6 +132,7 @@ export async function getUserChatRooms() {
             email: true,
             status: true,
             kelas: true,
+            jenjang: true,
             guru_bidang: true,
           },
         },
@@ -142,6 +145,7 @@ export async function getUserChatRooms() {
             email: true,
             status: true,
             kelas: true,
+            jenjang: true,
             guru_bidang: true,
           },
         },
@@ -163,7 +167,12 @@ export async function getUserChatRooms() {
         return isOtherGuru;
       }
       if (session.role === "guru") {
-        return isOtherSiswa;
+        if (!isOtherSiswa) return false;
+        if (activeJenjang !== "ALL") {
+          const otherJenjang = otherUser.jenjang || resolveUserJenjang(otherUser.jenjang, otherUser.status, otherUser.kelas);
+          if (otherJenjang !== activeJenjang) return false;
+        }
+        return true;
       }
       return true; // Admin dapat melihat semua
     });
@@ -435,20 +444,30 @@ export async function getContactsForCurrentUser() {
         category: "guru" as const,
       }));
     } else if (session.role === "guru") {
-      // Guru HANYA mengambil kontak siswa di kelasnya atau kelas yang dia ajar
+      // Guru HANYA mengambil kontak siswa di kelasnya atau kelas yang dia ajar sesuai jenjang aktif
+      const activeJenjang = await getActiveJenjang(session);
+      const isRestricted = activeJenjang !== "ALL";
+
       const guruClass = session.kelas || "";
+      const guruClassJenjang = guruClass && /SMP|Kelas (7|8|9)/i.test(guruClass) ? "SMP" : "SD";
+      const allowedGuruClass = (!isRestricted || guruClassJenjang === activeJenjang) ? guruClass : "";
+
       const jadwal = await prisma.jadwalPelajaran.findMany({
-        where: { guru_id: myId },
+        where: {
+          guru_id: myId,
+          ...(isRestricted ? { kelas: { jenjang: activeJenjang } } : {}),
+        },
         select: { kelas: { select: { nama_kelas: true } } },
       });
       const taughtClasses = Array.from(
-        new Set([guruClass, ...jadwal.map((j) => j.kelas.nama_kelas)])
+        new Set([allowedGuruClass, ...jadwal.map((j) => j.kelas.nama_kelas)])
       ).filter(Boolean);
 
       const students = await prisma.user.findMany({
         where: {
           status: "1",
           kelas: { in: taughtClasses },
+          ...(isRestricted ? { jenjang: activeJenjang } : {}),
         },
         select: {
           id: true,

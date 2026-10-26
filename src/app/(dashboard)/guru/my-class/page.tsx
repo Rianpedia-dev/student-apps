@@ -134,9 +134,12 @@ export default async function GuruMyClassPage() {
       image: s.image,
     }));
 
+    const guruClassJenjang = guruClass && /SMP|Kelas (7|8|9)/i.test(guruClass) ? "SMP" : "SD";
+
     const availableStudents = await prisma.user.findMany({
       where: {
         status: "1",
+        jenjang: guruClassJenjang,
         OR: [{ kelas: null }, { kelas: "" }, { kelas: { not: guruClass } }],
       },
       orderBy: { name: "asc" },

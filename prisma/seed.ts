@@ -77,6 +77,11 @@ async function main() {
     { nama_kelas: "Kelas 6 - Jabir bin Abdillah", jenjang: "SD", tingkat: 6, wali_kelas: null, jumlah_siswa: "28", code_restrict: "1204" },
     { nama_kelas: "Kelas 6 - Mu'adz bin Jabal", jenjang: "SD", tingkat: 6, wali_kelas: null, jumlah_siswa: "28", code_restrict: "4952" },
     { nama_kelas: "Kelas 6 - Urwah bin Zubair", jenjang: "SD", tingkat: 6, wali_kelas: null, jumlah_siswa: "28", code_restrict: "1972" },
+
+    // SMP - Kelas 7, 8, 9 (Rombel SMP Al-Azhar)
+    { nama_kelas: "Kelas 7 - Ibnu Sina", jenjang: "SMP", tingkat: 7, wali_kelas: "Ustadz Farhan, S.Pd", jumlah_siswa: "28", code_restrict: "7101" },
+    { nama_kelas: "Kelas 8 - Al Khawarizmi", jenjang: "SMP", tingkat: 8, wali_kelas: null, jumlah_siswa: "28", code_restrict: "8101" },
+    { nama_kelas: "Kelas 9 - Al Biruni", jenjang: "SMP", tingkat: 9, wali_kelas: null, jumlah_siswa: "28", code_restrict: "9101" },
   ];
 
   for (const c of classesData) {
@@ -107,40 +112,151 @@ async function main() {
   console.log(`✅ ${classesData.length} kelas (SD & SMP) berhasil disiapkan.`);
 
   // ---------------------------------------------------------------------------
-  // 2. DATA ADMINISTRATOR
+  // 2. DATA ADMINISTRATOR (Super Admin, Admin SD, Admin SMP)
   // ---------------------------------------------------------------------------
-  console.log("\n👤 Menyiapkan data Administrator...");
-  await prisma.user.upsert({
-    where: { email: "admin@gmail.com" },
-    update: {
+  console.log("\n👤 Menyiapkan data Administrator (Super Admin, Admin SD, Admin SMP)...");
+  const adminsData = [
+    {
+      name: "Super Administrator",
+      email: "superadmin@gmail.com",
       password: hashAdmin,
       password1: "admin123",
       status: "3",
+      jenjang: "ALL",
+      gender: "L",
+      notes: "Akun Super Administrator SD & SMP",
     },
-    create: {
+    {
+      name: "Admin SD Al-Azhar",
+      email: "admin.sd@gmail.com",
+      password: hashAdmin,
+      password1: "admin123",
+      status: "3",
+      jenjang: "SD",
+      gender: "L",
+      notes: "Akun Administrator Jenjang SD",
+    },
+    {
+      name: "Admin SMP Al-Azhar",
+      email: "admin.smp@gmail.com",
+      password: hashAdmin,
+      password1: "admin123",
+      status: "3",
+      jenjang: "SMP",
+      gender: "L",
+      notes: "Akun Administrator Jenjang SMP",
+    },
+    {
       name: "Administrator SDIA",
       email: "admin@gmail.com",
       password: hashAdmin,
       password1: "admin123",
-      status: "3", // Admin
+      status: "3",
+      jenjang: "ALL",
       gender: "L",
-      notes: "Akun Super Administrator",
+      notes: "Akun Super Administrator (Legacy)",
     },
-  });
-  console.log("✅ Administrator disiapkan (email: admin@gmail.com, password: admin123).");
+  ];
+
+  for (const adm of adminsData) {
+    await prisma.user.upsert({
+      where: { email: adm.email },
+      update: {
+        name: adm.name,
+        password: adm.password,
+        password1: adm.password1,
+        status: adm.status,
+        jenjang: adm.jenjang,
+        gender: adm.gender,
+        notes: adm.notes,
+      },
+      create: adm,
+    });
+  }
+  console.log("✅ 3 Administrator disiapkan (Super Admin, Admin SD, Admin SMP).");
 
   // ---------------------------------------------------------------------------
   // 3. DATA GURU (Wali Kelas & Guru Mata Pelajaran)
   // ---------------------------------------------------------------------------
   console.log("\n👨‍🏫 Menyiapkan data Guru...");
   const teachersData = [
-    // 1. Akun Demo Utama Guru
+    // --- Akun Demo Baru Multi-Jenjang ---
+    {
+      name: "Ustadzah Nurul, S.Pd",
+      email: "guru.sd@gmail.com",
+      password: hashGuru,
+      password1: "guru123",
+      status: "2", // Guru Mapel SD
+      jenjang: "SD",
+      gender: "P",
+      nip: "198902142013012003",
+      guru_bidang: "Tematik & IPAS",
+      address: "Jl. Kolonel H. Barlian, Palembang",
+      notes: "Akun Demo Guru Mapel SD",
+    },
+    {
+      name: "Ustadzah Fatimah, S.Pd",
+      email: "walas.sd@gmail.com",
+      password: hashGuru,
+      password1: "guru123",
+      status: "4", // Guru + Walas SD
+      jenjang: "SD",
+      kelas: "Kelas 4 - Mehmed Al Fatih",
+      gender: "P",
+      nip: "198501152010012001",
+      guru_bidang: "Pendidikan Agama Islam",
+      address: "Jl. Kolonel H. Barlian KM 6.5, Palembang",
+      notes: "Akun Demo Guru & Wali Kelas SD",
+    },
+    {
+      name: "Ustadz Wildan, M.Pd",
+      email: "guru.smp@gmail.com",
+      password: hashGuru,
+      password1: "guru123",
+      status: "2", // Guru Mapel SMP
+      jenjang: "SMP",
+      gender: "L",
+      nip: "198604182012011002",
+      guru_bidang: "Matematika SMP",
+      address: "Jl. Demang Lebar Daun, Palembang",
+      notes: "Akun Demo Guru Mapel SMP",
+    },
+    {
+      name: "Ustadz Farhan, S.Pd",
+      email: "walas.smp@gmail.com",
+      password: hashGuru,
+      password1: "guru123",
+      status: "4", // Guru + Walas SMP
+      jenjang: "SMP",
+      kelas: "Kelas 7 - Ibnu Sina",
+      gender: "L",
+      nip: "198703122011011005",
+      guru_bidang: "Bahasa Inggris SMP",
+      address: "Jl. Mayor Ruslan, Palembang",
+      notes: "Akun Demo Guru & Wali Kelas SMP",
+    },
+    {
+      name: "Ustadz Ahmad, S.Pd.I",
+      email: "guru.lintas@gmail.com",
+      password: hashGuru,
+      password1: "guru123",
+      status: "2", // Guru Mapel Lintas Jenjang
+      jenjang: "ALL",
+      gender: "L",
+      nip: "198603202011011002",
+      guru_bidang: "Bahasa Arab (SD & SMP)",
+      address: "Jl. Sudirman, Palembang",
+      notes: "Akun Demo Guru Lintas Jenjang (SD & SMP)",
+    },
+
+    // 1. Akun Demo Utama Guru (Legacy)
     {
       name: "Ustadzah Fatimah, S.Pd",
       email: "guru@gmail.com",
       password: hashGuru,
       password1: "guru123",
       status: "4", // Guru + Wali Kelas
+      jenjang: "SD",
       gender: "P",
       nip: "198501152010012001",
       guru_bidang: "Pendidikan Agama Islam & Budi Pekerti",
@@ -400,6 +516,7 @@ async function main() {
   ];
 
   for (const t of teachersData) {
+    const resolvedJenjang = (t as any).jenjang || (t.kelas && /SMP|Kelas (7|8|9)/i.test(t.kelas) ? "SMP" : "SD");
     await prisma.user.upsert({
       where: { email: t.email },
       update: {
@@ -409,6 +526,7 @@ async function main() {
         gender: t.gender,
         kelas: t.kelas,
         status: t.status,
+        jenjang: resolvedJenjang,
         password: t.password,
         password1: t.password1,
         appleid: t.appleid,
@@ -416,7 +534,10 @@ async function main() {
         address: t.address,
         notes: t.notes,
       },
-      create: t,
+      create: {
+        ...t,
+        jenjang: resolvedJenjang,
+      },
     });
   }
   console.log(`✅ ${teachersData.length} data Guru berhasil disiapkan (password default: guru123).`);
@@ -426,13 +547,50 @@ async function main() {
   // ---------------------------------------------------------------------------
   console.log("\n🎓 Menyiapkan data Siswa...");
   const studentsData = [
-    // --- Akun Siswa Teladan ---
+    // --- Akun Demo Baru Multi-Jenjang Siswa ---
+    {
+      name: "Muhammad Rayhan Al-Fatih",
+      email: "siswa.sd@gmail.com",
+      password: hashSiswa,
+      password1: "siswa123",
+      status: "1",
+      jenjang: "SD",
+      gender: "L",
+      nis: "202404001",
+      kelas: "Kelas 4 - Mehmed Al Fatih",
+      appleid: "rayhan.sd@icloud.com",
+      passwordappleid: "AppleSiswa123!",
+      point: "95",
+      address: "Jl. Jenderal Sudirman No. 45, Palembang",
+      skills: "Tahfidz Juz 30, Robotika, Sains",
+      notes: "Akun Demo Siswa SD",
+    },
+    {
+      name: "Haidar Ali SMP",
+      email: "siswa.smp@gmail.com",
+      password: hashSiswa,
+      password1: "siswa123",
+      status: "1",
+      jenjang: "SMP",
+      gender: "L",
+      nis: "202407001",
+      kelas: "Kelas 7 - Ibnu Sina",
+      appleid: "haidar.smp@icloud.com",
+      passwordappleid: "AppleSiswa123!",
+      point: "90",
+      address: "Jl. Demang Lebar Daun, Palembang",
+      skills: "Olimpiade Matematika, Coding",
+      notes: "Akun Demo Siswa SMP",
+    },
+
+    // --- Akun Siswa Teladan (Legacy) ---
     {
       name: "Muhammad Rayhan",
       email: "siswa1@gmail.com",
       password: hashSiswa,
       password1: "siswa123",
       status: "1",
+      jenjang: "SD",
       gender: "L",
       nis: "202404001",
       kelas: "Kelas 4 - Mehmed Al Fatih",
@@ -940,6 +1098,7 @@ async function main() {
   ];
 
   for (const s of studentsData) {
+    const resolvedJenjang = (s as any).jenjang || (s.kelas && /SMP|Kelas (7|8|9)/i.test(s.kelas) ? "SMP" : "SD");
     await prisma.user.upsert({
       where: { email: s.email },
       update: {
@@ -948,6 +1107,7 @@ async function main() {
         gender: s.gender,
         kelas: s.kelas,
         status: s.status,
+        jenjang: resolvedJenjang,
         point: s.point,
         skills: s.skills,
         notes: s.notes,
@@ -957,7 +1117,10 @@ async function main() {
         passwordappleid: s.passwordappleid,
         address: s.address,
       },
-      create: s,
+      create: {
+        ...s,
+        jenjang: resolvedJenjang,
+      },
     });
   }
   console.log(`✅ ${studentsData.length} data Siswa berhasil disiapkan (password default: siswa123).`);

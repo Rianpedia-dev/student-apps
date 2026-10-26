@@ -19,6 +19,7 @@ export interface UserItem {
   notes?: string | null;
   skills?: string | null;
   point?: string | null;
+  jenjang?: string | null;
   created_at?: Date | string | null;
 }
 

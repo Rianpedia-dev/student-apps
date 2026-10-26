@@ -18,13 +18,14 @@ async function checkAdmin() {
 
 export async function createUserAction(formData: FormData) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
 
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const role = (formData.get("role") as string) || "1"; // 1=siswa, 2=guru, 4=wali
     const kelas = formData.get("kelas") as string;
+    const jenjangInput = formData.get("jenjang") as string | null;
     const appleid = (formData.get("appleid") as string) || null;
     const passwordappleid = (formData.get("passwordappleid") as string) || null;
     const gender = (formData.get("gender") as string) || "L";
@@ -36,11 +37,18 @@ export async function createUserAction(formData: FormData) {
       return { error: "Nama, email, dan password wajib diisi." };
     }
 
+    // Restriksi jenjang jika admin bukan Super Admin (ALL)
+    let finalJenjang = jenjangInput || null;
+    if (session.jenjang && session.jenjang !== "ALL") {
+      finalJenjang = session.jenjang;
+    }
+
     await UserService.createUser({
       name,
       email,
       password,
       role,
+      jenjang: finalJenjang,
       kelas,
       appleid,
       passwordappleid,
@@ -61,7 +69,17 @@ export async function createUserAction(formData: FormData) {
 
 export async function updateUserAction(id: string, formData: FormData) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
+
+    if (session.jenjang && session.jenjang !== "ALL") {
+      const target = await prisma.user.findUnique({
+        where: { id: BigInt(id) },
+        select: { jenjang: true },
+      });
+      if (target && target.jenjang && target.jenjang !== session.jenjang && target.jenjang !== "ALL") {
+        return { error: `Unauthorized: Anda tidak memiliki akses ke data jenjang ${target.jenjang}.` };
+      }
+    }
 
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
@@ -69,6 +87,7 @@ export async function updateUserAction(id: string, formData: FormData) {
     const gender = formData.get("gender") as string;
     const status = formData.get("status") as string;
     const kelas = formData.get("kelas") as string;
+    const jenjang = formData.get("jenjang") as string;
     const appleid = formData.get("appleid") as string;
     const passwordappleid = formData.get("passwordappleid") as string;
     const ctt_iPad = formData.get("ctt_iPad") as string;
@@ -78,6 +97,7 @@ export async function updateUserAction(id: string, formData: FormData) {
       id,
       name,
       email,
+      jenjang: jenjang || undefined,
       nis: nis !== null ? (nis || null) : undefined,
       gender: gender || undefined,
       status: status || undefined,
@@ -99,7 +119,17 @@ export async function updateUserAction(id: string, formData: FormData) {
 
 export async function deleteUserAction(id: string) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
+
+    if (session.jenjang && session.jenjang !== "ALL") {
+      const target = await prisma.user.findUnique({
+        where: { id: BigInt(id) },
+        select: { jenjang: true },
+      });
+      if (target && target.jenjang && target.jenjang !== session.jenjang && target.jenjang !== "ALL") {
+        return { error: `Unauthorized: Anda tidak memiliki akses ke data jenjang ${target.jenjang}.` };
+      }
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: BigInt(id) },
@@ -126,9 +156,21 @@ export async function deleteUserAction(id: string) {
 
 export async function deleteUsersAction(ids: string[]) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
     if (!ids || ids.length === 0) {
       return { error: "Tidak ada akun yang dipilih untuk dihapus." };
+    }
+
+    if (session.jenjang && session.jenjang !== "ALL") {
+      const foreignUsers = await prisma.user.count({
+        where: {
+          id: { in: ids.map((id) => BigInt(id)) },
+          jenjang: { not: session.jenjang },
+        },
+      });
+      if (foreignUsers > 0) {
+        return { error: `Unauthorized: Anda hanya dapat menghapus akun pada jenjang ${session.jenjang}.` };
+      }
     }
 
     const users = await prisma.user.findMany({
@@ -158,11 +200,17 @@ export async function deleteUsersAction(ids: string[]) {
 
 export async function verifyUserAction(id: string, status: string) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
 
     const teacher = await prisma.user.findUnique({
       where: { id: BigInt(id) },
     });
+
+    if (session.jenjang && session.jenjang !== "ALL") {
+      if (teacher?.jenjang && teacher.jenjang !== session.jenjang && teacher.jenjang !== "ALL") {
+        return { error: `Unauthorized: Anda tidak memiliki akses ke akun pada jenjang ${teacher.jenjang}.` };
+      }
+    }
 
     if (teacher?.kelas) {
       if (status === "4") {
@@ -190,10 +238,14 @@ export async function verifyUserAction(id: string, status: string) {
   }
 }
 
-export async function importStudentsAction(fileBufferBase64: string, defaultKelas?: string) {
+export async function importStudentsAction(fileBufferBase64: string, defaultKelas?: string, defaultJenjang?: string) {
   try {
-    await checkAdmin();
-    const importedCount = await UserService.importStudentsFromBase64(fileBufferBase64, defaultKelas);
+    const session = await checkAdmin();
+    const effectiveJenjang = (session.jenjang && session.jenjang !== "ALL")
+      ? session.jenjang
+      : defaultJenjang;
+
+    const importedCount = await UserService.importStudentsFromBase64(fileBufferBase64, defaultKelas, effectiveJenjang);
 
     if (importedCount === 0) {
       return {
@@ -215,7 +267,7 @@ export const importUsersAction = importStudentsAction;
 
 export async function createTeacherAction(formData: FormData) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
 
     const name = (formData.get("name") as string)?.trim();
     const email = (formData.get("email") as string)?.trim().toLowerCase();
@@ -227,6 +279,12 @@ export async function createTeacherAction(formData: FormData) {
     const gender = (formData.get("gender") as string) || "L";
     const appleid = (formData.get("appleid") as string)?.trim() || null;
     const passwordappleid = (formData.get("passwordappleid") as string)?.trim() || null;
+    const jenjangInput = (formData.get("jenjang") as string)?.trim() || null;
+
+    let finalJenjang = jenjangInput || "SD";
+    if (session.jenjang && session.jenjang !== "ALL") {
+      finalJenjang = session.jenjang;
+    }
 
     if (!name || !email || !password) {
       return { error: "Nama lengkap, email login, dan password wajib diisi." };
@@ -245,6 +303,7 @@ export async function createTeacherAction(formData: FormData) {
       email,
       password,
       role,
+      jenjang: finalJenjang,
       nip,
       guru_bidang,
       kelas: role === "4" ? kelas : (kelas || null),
@@ -269,10 +328,14 @@ export async function createTeacherAction(formData: FormData) {
   }
 }
 
-export async function importTeachersAction(fileBufferBase64: string) {
+export async function importTeachersAction(fileBufferBase64: string, defaultJenjang?: string) {
   try {
-    await checkAdmin();
-    const importedCount = await UserService.importTeachersFromBase64(fileBufferBase64);
+    const session = await checkAdmin();
+    const effectiveJenjang = (session.jenjang && session.jenjang !== "ALL")
+      ? session.jenjang
+      : defaultJenjang;
+
+    const importedCount = await UserService.importTeachersFromBase64(fileBufferBase64, effectiveJenjang);
 
     revalidatePath("/admin/teachers");
     return { success: true, count: importedCount, message: `Berhasil mengimpor ${importedCount} data guru.` };
@@ -284,7 +347,7 @@ export async function importTeachersAction(fileBufferBase64: string) {
 
 export async function updateTeacherAction(id: string, formData: FormData) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
 
     const name = (formData.get("name") as string)?.trim();
     const email = (formData.get("email") as string)?.trim().toLowerCase();
@@ -296,6 +359,7 @@ export async function updateTeacherAction(id: string, formData: FormData) {
     const appleid = (formData.get("appleid") as string)?.trim() || null;
     const passwordappleid = (formData.get("passwordappleid") as string)?.trim() || null;
     const password = (formData.get("password") as string)?.trim();
+    const jenjangInput = (formData.get("jenjang") as string)?.trim() || null;
 
     if (!name || !email) {
       return { error: "Nama lengkap dan email wajib diisi." };
@@ -324,6 +388,20 @@ export async function updateTeacherAction(id: string, formData: FormData) {
     const currentTeacher = await prisma.user.findUnique({
       where: { id: BigInt(id) },
     });
+
+    if (session.jenjang && session.jenjang !== "ALL") {
+      if (currentTeacher?.jenjang && currentTeacher.jenjang !== session.jenjang && currentTeacher.jenjang !== "ALL") {
+        return { error: `Unauthorized: Anda tidak memiliki akses ke akun guru pada jenjang ${currentTeacher.jenjang}.` };
+      }
+      if (jenjangInput && jenjangInput !== session.jenjang && jenjangInput !== "ALL") {
+        return { error: `Unauthorized: Admin ${session.jenjang} tidak dapat menetapkan jenjang ${jenjangInput}.` };
+      }
+    }
+
+    let finalJenjang = jenjangInput || currentTeacher?.jenjang || undefined;
+    if (session.jenjang && session.jenjang !== "ALL" && !jenjangInput) {
+      finalJenjang = currentTeacher?.jenjang || session.jenjang;
+    }
 
     // Sinkronisasi wali kelas di database rombel (tbl_kelas)
     if (role === "4" && kelas) {
@@ -360,6 +438,7 @@ export async function updateTeacherAction(id: string, formData: FormData) {
       gender,
       guru_bidang,
       status: role,
+      jenjang: finalJenjang,
       kelas: role === "4" ? kelas : (kelas || null),
       appleid,
       passwordappleid,
@@ -380,10 +459,13 @@ export async function updateTeacherAction(id: string, formData: FormData) {
 
 export async function createClassAction(formData: FormData) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
 
     const nama_kelas = formData.get("nama_kelas") as string;
-    const jenjang = (formData.get("jenjang") as string) || undefined;
+    let jenjang = (formData.get("jenjang") as string) || undefined;
+    if (session.jenjang && session.jenjang !== "ALL") {
+      jenjang = session.jenjang;
+    }
     const tingkat = formData.get("tingkat") ? parseInt(formData.get("tingkat") as string, 10) : undefined;
     const wali_kelas = formData.get("wali_kelas") as string;
     const jumlah_siswa = formData.get("jumlah_siswa") as string;
@@ -408,10 +490,23 @@ export async function createClassAction(formData: FormData) {
 
 export async function updateClassAction(id: string, formData: FormData) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
+
+    const currentClass = await prisma.kelas.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (session.jenjang && session.jenjang !== "ALL") {
+      if (currentClass?.jenjang && currentClass.jenjang !== session.jenjang) {
+        return { error: `Unauthorized: Anda tidak memiliki akses ke kelas jenjang ${currentClass.jenjang}.` };
+      }
+    }
 
     const nama_kelas = (formData.get("nama_kelas") as string)?.trim();
-    const jenjang = (formData.get("jenjang") as string) || undefined;
+    let jenjang = (formData.get("jenjang") as string) || undefined;
+    if (session.jenjang && session.jenjang !== "ALL") {
+      jenjang = session.jenjang;
+    }
     const tingkat = formData.get("tingkat") ? parseInt(formData.get("tingkat") as string, 10) : undefined;
     const wali_kelas = (formData.get("wali_kelas") as string)?.trim() || null;
     const jumlah_siswa = (formData.get("jumlah_siswa") as string)?.trim() || null;
@@ -443,7 +538,18 @@ export async function updateClassAction(id: string, formData: FormData) {
 
 export async function deleteClassAction(id: string) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
+
+    if (session.jenjang && session.jenjang !== "ALL") {
+      const cls = await prisma.kelas.findUnique({
+        where: { id: BigInt(id) },
+        select: { jenjang: true },
+      });
+      if (cls && cls.jenjang && cls.jenjang !== session.jenjang) {
+        return { error: `Unauthorized: Anda tidak memiliki akses untuk menghapus kelas jenjang ${cls.jenjang}.` };
+      }
+    }
+
     await ClassService.deleteClass(id);
 
     revalidatePath("/admin/classes");
@@ -457,10 +563,23 @@ export async function deleteClassAction(id: string) {
 
 export async function deleteClassesAction(ids: string[]) {
   try {
-    await checkAdmin();
+    const session = await checkAdmin();
     if (!ids || ids.length === 0) {
       return { error: "Tidak ada kelas yang dipilih untuk dihapus." };
     }
+
+    if (session.jenjang && session.jenjang !== "ALL") {
+      const foreignClasses = await prisma.kelas.count({
+        where: {
+          id: { in: ids.map((id) => BigInt(id)) },
+          jenjang: { not: session.jenjang },
+        },
+      });
+      if (foreignClasses > 0) {
+        return { error: `Unauthorized: Anda hanya dapat menghapus kelas pada jenjang ${session.jenjang}.` };
+      }
+    }
+
     const count = await ClassService.deleteClasses(ids);
 
     revalidatePath("/admin/classes");
@@ -474,8 +593,12 @@ export async function deleteClassesAction(ids: string[]) {
 
 export async function importClassesAction(fileBufferBase64: string, defaultJenjang?: string) {
   try {
-    await checkAdmin();
-    const importedCount = await ClassService.importClassesFromBase64(fileBufferBase64, defaultJenjang);
+    const session = await checkAdmin();
+    const effectiveJenjang = (session.jenjang && session.jenjang !== "ALL")
+      ? session.jenjang
+      : defaultJenjang;
+
+    const importedCount = await ClassService.importClassesFromBase64(fileBufferBase64, effectiveJenjang);
 
     revalidatePath("/admin/classes");
     revalidatePath("/admin/students");
