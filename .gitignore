@@ -44,3 +44,11 @@ next-env.d.ts
 /public/uploads/**/*
 !/public/uploads/**/.gitkeep
 
+# data imports & backups
+*.xlsx
+*.backup.xlsx
+
+# env templates keep, ignore real env
+!.env.example
+!.env.production.example
+

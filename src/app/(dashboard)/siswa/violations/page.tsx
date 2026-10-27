@@ -72,7 +72,7 @@ export default async function SiswaViolationsPage() {
           Buku Kedisiplinan
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Catatan tata tertib dan rekam jejak kedisiplinan santri.
+          Catatan tata tertib dan rekam jejak kedisiplinan siswa.
         </p>
       </div>
 

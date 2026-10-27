@@ -179,7 +179,7 @@ export function TeacherDocumentTaskReview({
   // Handle Request Revision
   const handleRevisionSubmit = async () => {
     if (!catatanGuru.trim()) {
-      toast.error("Mohon tuliskan instruksi revisi untuk santri pada kolom catatan.");
+      toast.error("Mohon tuliskan instruksi revisi untuk siswa pada kolom catatan.");
       return;
     }
 
@@ -380,7 +380,7 @@ export function TeacherDocumentTaskReview({
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="floating-nilai" className="font-bold text-[11px]">
-                            Nilai Santri (0 - {poinMaksimal})
+                            Nilai Siswa (0 - {poinMaksimal})
                           </Label>
                           <div className="flex items-center gap-1">
                             {[100, 90, 80, 75].filter((p) => p <= poinMaksimal).map((quickScore) => (
@@ -515,7 +515,7 @@ export function TeacherDocumentTaskReview({
 
               {submission.catatanSiswa && (
                 <div className="p-2 rounded-lg bg-card border border-border text-[11px] text-foreground">
-                  <strong>Pesan Santri:</strong> &ldquo;{submission.catatanSiswa}&rdquo;
+                  <strong>Pesan Siswa:</strong> &ldquo;{submission.catatanSiswa}&rdquo;
                 </div>
               )}
             </div>
@@ -535,7 +535,7 @@ export function TeacherDocumentTaskReview({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="nilai" className="font-bold text-foreground">
-                  Nilai Santri (0 - {poinMaksimal})
+                  Nilai Siswa (0 - {poinMaksimal})
                 </Label>
                 <span className="text-[11px] font-semibold text-muted-foreground">
                   Maks: {poinMaksimal} Poin
@@ -562,7 +562,7 @@ export function TeacherDocumentTaskReview({
                 rows={4}
                 value={catatanGuru}
                 onChange={(e) => setCatatanGuru(e.target.value)}
-                placeholder="Tuliskan catatan apresiasi atau poin perbaikan untuk santri..."
+                placeholder="Tuliskan catatan apresiasi atau poin perbaikan untuk siswa..."
                 className="text-xs"
               />
             </div>

@@ -10,6 +10,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:load": "tsx scripts/run-load-test.ts",
     "postinstall": "prisma generate",
     "seed": "tsx prisma/seed.ts",
     "seed:materi": "tsx prisma/seeds/seed_pertemuan.ts",

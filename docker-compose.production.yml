@@ -1,0 +1,139 @@
+# ===================================================================
+# Docker Compose Production Environment — Student Apps Al-Azhar Cairo
+# Merujuk ke plan-update-.md Bagian 6.2 & Fase 3 Task 3.4
+# Layanan: Next.js App, Socket.IO Server, MySQL 8.0, Redis 7, Nginx
+# ===================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sisfo_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_CONNECTION_LIMIT=30
+      - AUTH_SECRET=${AUTH_SECRET}
+      - REDIS_URL=redis://redis:6379
+      - ENABLE_DEMO_MODE=false
+      - RATE_LIMIT_ENABLED=true
+    volumes:
+      - sisfo_uploads:/app/public/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  socket:
+    build:
+      context: .
+      dockerfile: Dockerfile.socket
+    container_name: sisfo_socket
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - AUTH_SECRET=${AUTH_SECRET}
+      - SOCKET_PORT=3001
+      - SOCKET_CORS_ORIGIN=${SOCKET_CORS_ORIGIN:-https://sisfo.alazhar-palembang.sch.id}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  db:
+    image: mysql:8.0
+    container_name: sisfo_mysql
+    restart: unless-stopped
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max-connections=300
+      --innodb-buffer-pool-size=1G
+      --innodb-log-file-size=256M
+      --innodb-flush-log-at-trx-commit=2
+      --slow-query-log=ON
+      --long-query-time=2
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: sisfo_alazhar
+      MYSQL_USER: ${DB_USER:-sisfo_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - mysql_logs:/var/log/mysql
+      - ./config/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+
+  redis:
+    image: redis:7-alpine
+    container_name: sisfo_redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: sisfo_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./config/ssl:/etc/nginx/ssl:ro
+      - sisfo_uploads:/app/public/uploads:ro
+    depends_on:
+      - app
+      - socket
+
+volumes:
+  mysql_data:
+  mysql_logs:
+  redis_data:
+  sisfo_uploads:

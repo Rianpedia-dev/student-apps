@@ -63,7 +63,7 @@ export class UserService {
         name: data.name,
         email: data.email,
         password: hashedPassword,
-        password1: data.password, // fallback legacy
+        password1: null, // P0 Security: STOP storing plaintext password
         status: roleStatus,
         jenjang: userJenjang,
         kelas: data.kelas || null,
@@ -112,7 +112,7 @@ export class UserService {
 
     if (data.password && data.password.trim().length > 0) {
       dataToUpdate.password = await bcrypt.hash(data.password, 10);
-      dataToUpdate.password1 = data.password;
+      dataToUpdate.password1 = null; // P0 Security: clear plaintext password
     }
 
     const updated = await prisma.user.update({
@@ -475,7 +475,7 @@ export class UserService {
             update: {
               name,
               password: hashedPassword,
-              password1: rawPassword,
+              password1: null,
               appleid,
               passwordappleid,
               gender,
@@ -488,7 +488,7 @@ export class UserService {
               email,
               name,
               password: hashedPassword,
-              password1: rawPassword,
+              password1: null,
               appleid,
               passwordappleid,
               status: rawStatus,
@@ -746,10 +746,8 @@ export class UserService {
               if (appleid) updateData.appleid = appleid;
               if (passwordappleid) updateData.passwordappleid = passwordappleid;
               if (rawPassword) {
-                if (existingUser.password1 !== passwordPlain) {
-                  updateData.password = await bcrypt.hash(passwordPlain, 10);
-                  updateData.password1 = passwordPlain;
-                }
+                updateData.password = await bcrypt.hash(passwordPlain, 10);
+                updateData.password1 = null;
               }
 
               await prisma.user.update({
@@ -770,7 +768,7 @@ export class UserService {
                   gender,
                   jenjang: teacherJenjang,
                   password: hashedPassword,
-                  password1: passwordPlain,
+                  password1: null,
                   appleid,
                   passwordappleid,
                 },

@@ -61,11 +61,20 @@ const { Server } = require("socket.io");
 const PORT = process.env.SOCKET_PORT || process.env.PORT || 3001;
 
 // Secret harus identik dengan src/lib/auth.ts & src/app/api/socket-token/route.ts
+if (process.env.NODE_ENV === "production" && (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 32)) {
+  console.error("FATAL SECURITY ERROR: AUTH_SECRET wajib disetel minimal 32 karakter di environment production!");
+  process.exit(1);
+}
+
 const AUTH_SECRET =
   process.env.AUTH_SECRET || "alazharsdsecretkey2026modernrebuild_at_least_32_chars_long!!";
 
 // CORS: batasi via env SOCKET_CORS_ORIGIN (pisahkan koma). Default "*" agar dev mudah,
-// namun untuk production disarankan diset ke domain aplikasi.
+// namun untuk production WAJIB diset ke domain aplikasi.
+if (process.env.NODE_ENV === "production" && (!process.env.SOCKET_CORS_ORIGIN || process.env.SOCKET_CORS_ORIGIN === "*")) {
+  console.warn("[SECURITY WARNING] SOCKET_CORS_ORIGIN masih '*' di production! Disarankan mengeset domain yang spesifik.");
+}
+
 const ALLOWED_ORIGINS = (process.env.SOCKET_CORS_ORIGIN || "*")
   .split(",")
   .map((s) => s.trim())
@@ -183,7 +192,32 @@ const io = new Server(server, {
   },
   pingTimeout: 60000,
   pingInterval: 25000,
+  maxHttpBufferSize: 1e6, // 1MB max payload
+  connectTimeout: 10000, // 10s connection timeout
+  perMessageDeflate: {
+    threshold: 1024,
+  },
 });
+
+// Optional Redis Adapter support when running in multi-instance cluster
+if (process.env.REDIS_URL) {
+  try {
+    const { createAdapter } = require("@socket.io/redis-adapter");
+    const { createClient } = require("redis");
+    const pubClient = createClient({ url: process.env.REDIS_URL });
+    const subClient = pubClient.duplicate();
+    Promise.all([pubClient.connect(), subClient.connect()])
+      .then(() => {
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log("✅ Socket.IO Redis Adapter berhasil diaktifkan.");
+      })
+      .catch((err) => {
+        console.warn("⚠️ Gagal konek ke Redis untuk Socket.IO adapter:", err.message);
+      });
+  } catch (err) {
+    // Adapter module not installed, fallback to standalone
+  }
+}
 
 // Middleware: tolak koneksi tanpa token valid.
 io.use((socket, next) => {

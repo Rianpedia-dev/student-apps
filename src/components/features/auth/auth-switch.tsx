@@ -30,6 +30,7 @@ import {
 
 interface AuthSwitchProps {
   initialMode?: "signin" | "signup";
+  isDemoEnabled?: boolean;
 }
 
 interface DemoRoleItem {
@@ -57,7 +58,7 @@ const DEMO_ROLES: DemoRoleItem[] = [
   { role: "siswa_smp", label: "Siswa SMP", category: "siswa", desc: "Siswa Kelas 7 SMP (Ibnu Sina)" },
 ];
 
-export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) {
+export default function AuthSwitch({ initialMode = "signin", isDemoEnabled = true }: AuthSwitchProps) {
   const searchParams = useSearchParams();
   const isRegisteredSuccess = searchParams.get("registered") === "1";
 
@@ -1101,58 +1102,60 @@ export default function AuthSwitch({ initialMode = "signin" }: AuthSwitchProps) 
                 {!isLoginLoading && <ArrowRight size={16} />}
               </button>
 
-              {/* Akses Cepat Demo (10 Demo Roles) */}
-              <div className="demo-roles-wrap w-full mt-2">
-                <div className="flex items-center justify-between w-full max-w-[390px] mb-1.5 px-0.5">
-                  <span className="demo-roles-title text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">
-                    Mode Demo
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {(
-                      [
-                        { id: "all", label: "Semua" },
-                        { id: "admin", label: "Admin" },
-                        { id: "guru", label: "Guru" },
-                        { id: "siswa", label: "Siswa" },
-                      ] as const
-                    ).map((cat) => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setDemoCategory(cat.id)}
-                        className={`text-[9.5px] px-2 py-0.5 rounded-full font-semibold transition-all ${
-                          demoCategory === cat.id
-                            ? "bg-emerald-700 text-white shadow-xs"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        }`}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
+              {/* Akses Cepat Demo (10 Demo Roles) - Ditampilkan hanya jika isDemoEnabled bernilai true */}
+              {isDemoEnabled && (
+                <div className="demo-roles-wrap w-full mt-2 animate-in fade-in duration-300">
+                  <div className="flex items-center justify-between w-full max-w-[390px] mb-1.5 px-0.5">
+                    <span className="demo-roles-title text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">
+                      Mode Demo
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {(
+                        [
+                          { id: "all", label: "Semua" },
+                          { id: "admin", label: "Admin" },
+                          { id: "guru", label: "Guru" },
+                          { id: "siswa", label: "Siswa" },
+                        ] as const
+                      ).map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setDemoCategory(cat.id)}
+                          className={`text-[9.5px] px-2 py-0.5 rounded-full font-semibold transition-all ${
+                            demoCategory === cat.id
+                              ? "bg-emerald-700 text-white shadow-xs"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 w-full max-w-[390px] justify-center pt-1 select-none">
+                    {(demoCategory === "all"
+                      ? DEMO_ROLES
+                      : DEMO_ROLES.filter((r) => r.category === demoCategory)
+                    ).map((item) => {
+                      const isBusy = loadingDemoRole === item.role;
+                      return (
+                        <button
+                          key={item.role}
+                          type="button"
+                          disabled={isAnyLoginBusy}
+                          onClick={() => handleDemoLogin(item.role)}
+                          className="demo-badge"
+                          title={`${item.label} (${item.desc})`}
+                        >
+                          {isBusy ? "..." : item.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-1.5 w-full max-w-[390px] justify-center pt-1 select-none">
-                  {(demoCategory === "all"
-                    ? DEMO_ROLES
-                    : DEMO_ROLES.filter((r) => r.category === demoCategory)
-                  ).map((item) => {
-                    const isBusy = loadingDemoRole === item.role;
-                    return (
-                      <button
-                        key={item.role}
-                        type="button"
-                        disabled={isAnyLoginBusy}
-                        onClick={() => handleDemoLogin(item.role)}
-                        className="demo-badge"
-                        title={`${item.label} (${item.desc})`}
-                      >
-                        {isBusy ? "..." : item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              )}
             </form>
 
             {/* ================= FORM SIGN UP (TEACHER) ================= */}

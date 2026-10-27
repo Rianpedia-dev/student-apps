@@ -87,7 +87,7 @@ export function ClassMatrixClient({
   const handleOpenModal = (student: ClassSubjectMatrixItem) => {
     setSelectedStudent(student);
     setExcuseStatus("Sakit");
-    setExcuseNote("Surat dokter dari orang tua santri");
+    setExcuseNote("Surat dokter dari orang tua siswa");
     setIsModalOpen(true);
   };
 
@@ -226,14 +226,14 @@ export function ClassMatrixClient({
         {/* Mobile scroll hint */}
         <div className="md:hidden px-3.5 py-1.5 bg-muted/40 border-b border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
           <span>← Geser tabel supervisi rombel →</span>
-          <span className="font-semibold text-foreground">{filteredMatrix.length} Santri</span>
+          <span className="font-semibold text-foreground">{filteredMatrix.length} Siswa</span>
         </div>
         <div className="overflow-x-auto scrollbar-thin">
           <table className="w-full text-xs text-left min-w-[700px]">
             <thead className="bg-muted/60 border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-3 w-10 text-center">No</th>
-                <th className="py-3 px-4 min-w-[180px]">Nama Santri</th>
+                <th className="py-3 px-4 min-w-[180px]">Nama Siswa</th>
                 <th className="py-3 px-3 w-24 text-center">NIS</th>
                 {schedules.map((sch) => (
                   <th key={sch.jadwalId} className="py-3 px-3 text-center min-w-[120px]">
@@ -249,7 +249,7 @@ export function ClassMatrixClient({
               {filteredMatrix.length === 0 ? (
                 <tr>
                   <td colSpan={schedules.length + 5} className="py-8 text-center text-muted-foreground">
-                    Tidak ada data santri yang ditemukan.
+                    Tidak ada data siswa yang ditemukan.
                   </td>
                 </tr>
               ) : (
@@ -356,7 +356,7 @@ export function ClassMatrixClient({
               Terapkan Izin / Sakit Seharian
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Wali Kelas dapat menetapkan status kehadiran untuk <strong>seluruh mata pelajaran</strong> pada hari ini ({dateStr}) bagi santri yang berhalangan hadir secara resmi.
+              Wali Kelas dapat menetapkan status kehadiran untuk <strong>seluruh mata pelajaran</strong> pada hari ini ({dateStr}) bagi siswa yang berhalangan hadir secara resmi.
             </DialogDescription>
           </DialogHeader>
 

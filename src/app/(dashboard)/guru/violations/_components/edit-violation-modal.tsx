@@ -95,7 +95,7 @@ export function EditViolationModal({
                 Edit Catatan Kedisiplinan
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Santri: <strong className="text-foreground">{violation.nama}</strong> ({violation.kelas})
+                Siswa: <strong className="text-foreground">{violation.nama}</strong> ({violation.kelas})
               </DialogDescription>
             </div>
           </div>

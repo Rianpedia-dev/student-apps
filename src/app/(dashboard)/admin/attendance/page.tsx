@@ -2,9 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
-import { ClipboardList, ShieldAlert, Calendar, ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ClipboardList } from "lucide-react";
 import { AttendanceService } from "@/services/attendance.service";
 import { formatDateIndo } from "@/lib/utils";
 import { AdminAttendanceClient } from "./_components/admin-attendance-client";
@@ -53,16 +51,11 @@ export default async function AdminAttendancePage(props: PageProps) {
               <ClipboardList className="h-6 w-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                  Audit & Monitoring Presensi Siswa
-                </h1>
-                <Badge className="bg-slate-800 text-white text-[11px] font-semibold dark:bg-slate-700">
-                  Administrator
-                </Badge>
-              </div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                Audit & Monitoring Presensi Siswa
+              </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                SD - SMP Islam Al-Azhar Cairo Palembang • Pengawasan kepatuhan pengisian presensi KBM harian
+                Pengawasan dan rekap kepatuhan pengisian presensi KBM harian siswa
               </p>
             </div>
           </div>

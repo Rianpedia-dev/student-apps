@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
+import { AppCache } from "@/lib/cache";
 import {
   Users,
   GraduationCap,
@@ -51,49 +52,68 @@ export default async function AdminDashboardPage() {
       ? { status: "0", jenjang: activeJenjang }
       : { status: "0" };
 
-    const [
-      siswaCount,
-      guruCount,
-      kelasCount,
-      mapelCount,
-      jadwalCount,
-      pengumumanTotal,
-      aktifCount,
-      nonAktifCount,
-      pengumumanList,
-    ] = await Promise.all([
-      prisma.user.count({ where: siswaWhere }),
-      prisma.user.count({ where: guruWhere }),
-      prisma.kelas.count({ where: kelasWhere }),
-      prisma.mataPelajaran.count({ where: mapelWhere }),
-      prisma.jadwalPelajaran.count({ where: jadwalWhere }),
-      prisma.pengumuman.count(),
-      prisma.user.count({ where: aktifWhere }),
-      prisma.user.count({ where: nonAktifWhere }),
-      prisma.pengumuman.findMany({
-        orderBy: { id: "desc" },
-        take: 20,
-      }),
-    ]);
+    const cacheKey = `admin-dashboard-stats:${isRestricted ? activeJenjang : "ALL"}`;
+    const stats = await AppCache.getOrSet(
+      cacheKey,
+      300, // 5 menit
+      async () => {
+        const [
+          siswaCount,
+          guruCount,
+          kelasCount,
+          mapelCount,
+          jadwalCount,
+          pengumumanTotal,
+          aktifCount,
+          nonAktifCount,
+          pengumumanList,
+        ] = await Promise.all([
+          prisma.user.count({ where: siswaWhere }),
+          prisma.user.count({ where: guruWhere }),
+          prisma.kelas.count({ where: kelasWhere }),
+          prisma.mataPelajaran.count({ where: mapelWhere }),
+          prisma.jadwalPelajaran.count({ where: jadwalWhere }),
+          prisma.pengumuman.count(),
+          prisma.user.count({ where: aktifWhere }),
+          prisma.user.count({ where: nonAktifWhere }),
+          prisma.pengumuman.findMany({
+            orderBy: { id: "desc" },
+            take: 20,
+          }),
+        ]);
 
-    totalSiswa = siswaCount;
-    totalGuru = guruCount;
-    totalKelas = kelasCount;
-    totalMapel = mapelCount;
-    totalJadwal = jadwalCount;
-    totalPengumuman = pengumumanTotal;
-    totalAktif = aktifCount;
-    totalNonAktif = nonAktifCount;
+        return {
+          totalSiswa: siswaCount,
+          totalGuru: guruCount,
+          totalKelas: kelasCount,
+          totalMapel: mapelCount,
+          totalJadwal: jadwalCount,
+          totalPengumuman: pengumumanTotal,
+          totalAktif: aktifCount,
+          totalNonAktif: nonAktifCount,
+          formattedAnnouncements: pengumumanList.map((p) => ({
+            id: p.id.toString(),
+            from: p.from,
+            title: p.title,
+            file: p.file,
+            pengumuman: p.pengumuman,
+            like: p.like,
+            created_at: p.created_at,
+          })),
+        };
+      },
+      ["admin-stats", "dashboard"]
+    );
 
-    formattedAnnouncements = pengumumanList.map((p) => ({
-      id: p.id.toString(),
-      from: p.from,
-      title: p.title,
-      file: p.file,
-      pengumuman: p.pengumuman,
-      like: p.like,
-      created_at: p.created_at,
-    }));
+    totalSiswa = stats.totalSiswa;
+    totalGuru = stats.totalGuru;
+    totalKelas = stats.totalKelas;
+    totalMapel = stats.totalMapel;
+    totalJadwal = stats.totalJadwal;
+    totalPengumuman = stats.totalPengumuman;
+    totalAktif = stats.totalAktif;
+    totalNonAktif = stats.totalNonAktif;
+    formattedAnnouncements = stats.formattedAnnouncements;
   } catch (e) {
     console.error("Database query error in Admin Dashboard:", e);
   }

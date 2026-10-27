@@ -254,7 +254,7 @@ export function ClassroomHelpModal({
             <div className="space-y-3">
               <div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
                 <h4 className="font-semibold text-sm text-emerald-800 dark:text-emerald-300 mb-1">
-                  Tata Tertib Belajar Santri SD Al-Azhar Cairo:
+                  Tata Tertib Belajar Siswa SD Al-Azhar Cairo:
                 </h4>
                 <p className="text-xs text-emerald-700 dark:text-emerald-400">
                   Menjaga adab menuntut ilmu membawa keberkahan dan mempermudah pemahaman.

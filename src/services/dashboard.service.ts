@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { serializeBigInt } from "@/lib/serializer";
 import { compareScheduleTime, getUserProfileImage } from "@/lib/utils";
+import { AppCache } from "@/lib/cache";
 
 export interface StudentDashboardResult {
   studentInfo: {
@@ -72,9 +73,17 @@ export class DashboardService {
             }).catch(() => null)
           : null,
         studentClass
-          ? prisma.kelas.findFirst({
-              where: { nama_kelas: studentClass },
-            }).catch(() => null)
+          ? AppCache.getOrSet(
+              `kelas-info:${studentClass}`,
+              1800, // 30 menit
+              () =>
+                prisma.kelas
+                  .findFirst({
+                    where: { nama_kelas: studentClass },
+                  })
+                  .catch(() => null),
+              ["kelas", studentClass]
+            )
           : null,
         userIdBigInt
           ? prisma.absen.count({
@@ -85,47 +94,79 @@ export class DashboardService {
               },
             }).catch(() => 0)
           : 0,
-        prisma.event.count({
-          where: {
-            AND: [
-              {
-                OR: [
-                  { kelas: "Semua Kelas" },
-                  ...(studentClass ? [{ kelas: studentClass }] : []),
-                  { from: "admin" },
-                  { kelas: "Umum" },
-                ],
-              },
-              {
-                start: { lte: endOfMonth },
-              },
-              {
-                OR: [
-                  { end: { gte: startOfMonth } },
-                  { end: null, start: { gte: startOfMonth } },
-                ],
-              },
-            ],
-          },
-        }).catch(() => 0),
+        AppCache.getOrSet(
+          `events-month-count:${studentClass || "umum"}:${currentYearMonth}`,
+          300, // 5 menit
+          () =>
+            prisma.event
+              .count({
+                where: {
+                  AND: [
+                    {
+                      OR: [
+                        { kelas: "Semua Kelas" },
+                        ...(studentClass ? [{ kelas: studentClass }] : []),
+                        { from: "admin" },
+                        { kelas: "Umum" },
+                      ],
+                    },
+                    {
+                      start: { lte: endOfMonth },
+                    },
+                    {
+                      OR: [
+                        { end: { gte: startOfMonth } },
+                        { end: null, start: { gte: startOfMonth } },
+                      ],
+                    },
+                  ],
+                },
+              })
+              .catch(() => 0),
+          ["events"]
+        ),
         studentClass
-          ? prisma.user.findMany({
-              where: { kelas: studentClass, status: "1" },
-              select: { id: true, name: true, image: true, gender: true },
-              orderBy: { name: "asc" },
-            }).catch(() => [])
+          ? AppCache.getOrSet(
+              `classmates:${studentClass}`,
+              600, // 10 menit
+              () =>
+                prisma.user
+                  .findMany({
+                    where: { kelas: studentClass, status: "1" },
+                    select: { id: true, name: true, image: true, gender: true },
+                    orderBy: { name: "asc" },
+                  })
+                  .catch(() => []),
+              ["classmates", studentClass]
+            )
           : [],
-        prisma.pengumuman.findMany({
-          where: {
-            OR: [{ from: "IT" }, ...(studentClass ? [{ from: studentClass }] : [])],
-          },
-          orderBy: { id: "desc" },
-          take: 20,
-        }).catch(() => []),
-        prisma.prestasi.findMany({
-          orderBy: { created_at: "desc" },
-          take: 5,
-        }).catch(() => []),
+        AppCache.getOrSet(
+          `announcements:${studentClass || "umum"}`,
+          300, // 5 menit
+          () =>
+            prisma.pengumuman
+              .findMany({
+                where: {
+                  OR: [{ from: "IT" }, ...(studentClass ? [{ from: studentClass }] : [])],
+                },
+                orderBy: { id: "desc" },
+                take: 20,
+              })
+              .catch(() => []),
+          ["announcements"]
+        ),
+        AppCache.getOrSet(
+          "achievements:top5",
+          600, // 10 menit
+          () =>
+            prisma.prestasi
+              .findMany({
+                orderBy: { created_at: "desc" },
+                take: 5,
+              })
+              .catch(() => []),
+          ["achievements"]
+        ),
       ]);
 
     // Wali kelas fallback

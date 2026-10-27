@@ -48,14 +48,14 @@ export function ViolationDetailModal({
                 Rincian Catatan Kedisiplinan
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Informasi detail pelanggaran tata tertib dan bimbingan santri.
+                Informasi detail pelanggaran tata tertib dan bimbingan siswa.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
-          {/* 1. Header Profile Santri */}
+          {/* 1. Header Profile Siswa */}
           <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-muted/40 border border-border/60">
             <UserAvatar
               src={violation.studentImage}

@@ -736,6 +736,7 @@ export function StudentTable({
               </TableHead>
               <TableHead className="w-12 text-center font-bold">No</TableHead>
               <TableHead className="font-bold">Nama Siswa</TableHead>
+              <TableHead className="font-bold text-center w-24">Jenjang</TableHead>
               <TableHead className="font-bold">Kelas</TableHead>
               <TableHead className="font-bold">Email</TableHead>
               <TableHead className="font-bold">Apple ID</TableHead>
@@ -746,7 +747,7 @@ export function StudentTable({
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   Tidak ada data siswa yang cocok.
                 </TableCell>
               </TableRow>
@@ -773,6 +774,19 @@ export function StudentTable({
                   <TableCell>
                     <div className="font-semibold text-foreground">{s.name}</div>
                     {s.nis && <div className="text-xs text-muted-foreground">NIS: {s.nis}</div>}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge
+                      variant="outline"
+                      size="sm"
+                      className={
+                        (s.jenjang === "SMP" || isSmp(s))
+                          ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 font-semibold text-[11px]"
+                          : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 font-semibold text-[11px]"
+                      }
+                    >
+                      {s.jenjang || (isSmp(s) ? "SMP" : "SD")}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {s.kelas ? (
@@ -996,7 +1010,7 @@ export function StudentTable({
           <DialogHeader>
             <DialogTitle>Import Data Siswa dari Excel</DialogTitle>
             <DialogDescription>
-              Upload file spreadsheet Excel (.xlsx / .xls). Format kolom mendukung: <strong>Nama Lengkap</strong>, <strong>Kelas</strong>, <strong>Email / Username</strong>, <strong>Password</strong>, <strong>Apple ID</strong>, <strong>Password Apple ID</strong>, <strong>Jenis Kelamin (L/P)</strong>, <strong>NIS</strong>, dan <strong>Status</strong>.
+              Upload file spreadsheet Excel (.xlsx / .xls). Format kolom mendukung: <strong>Nama Lengkap</strong>, <strong>Jenjang (SD/SMP)</strong>, <strong>Kelas</strong>, <strong>Email / Username</strong>, <strong>Password</strong>, <strong>Apple ID</strong>, <strong>Password Apple ID</strong>, <strong>Jenis Kelamin (L/P)</strong>, <strong>NIS</strong>, dan <strong>Status</strong>.
             </DialogDescription>
           </DialogHeader>
 

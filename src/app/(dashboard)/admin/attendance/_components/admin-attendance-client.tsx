@@ -17,7 +17,6 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -139,9 +138,9 @@ export function AdminAttendanceClient({
               <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
                 {summary.complianceRate}%
               </span>
-              <Badge className="bg-emerald-600 text-white text-[10px] py-0">
-                {summary.filledSessionsCount} Diisi
-              </Badge>
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                {summary.filledSessionsCount} Sesi Terisi
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -325,30 +324,32 @@ export function AdminAttendanceClient({
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono">
-                          {item.jenjang}
-                        </Badge>
-                        <span className="font-bold text-foreground">{item.kelasNama}</span>
-                      </div>
+                      <span className="font-semibold text-foreground">{item.kelasNama}</span>
                     </td>
                     <td className="py-3 px-4">
-                      <p className="font-bold text-foreground">{item.mapelNama}</p>
-                      <span className="text-[10px] text-muted-foreground font-mono">{item.mapelKode}</span>
+                      <span className="font-semibold text-foreground">{item.mapelNama}</span>
                     </td>
                     <td className="py-3 px-4">
                       <p className="font-semibold text-foreground">{item.guruNama}</p>
-                      <span className="text-[10px] text-muted-foreground">NIP: {item.guruNip}</span>
+                      {item.guruNip &&
+                        item.guruNip !== "-" &&
+                        item.guruNip.toLowerCase() !== "kosong" && (
+                          <span className="text-[11px] text-muted-foreground block">
+                            NIP: {item.guruNip}
+                          </span>
+                        )}
                     </td>
                     <td className="py-3 px-3 text-center">
                       {item.isFilled ? (
-                        <Badge className="bg-emerald-600 text-white gap-1 text-[10px] py-0.5">
-                          <CheckCircle2 className="h-3 w-3" /> Sudah Diabsen
-                        </Badge>
+                        <span className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                          <span>Sudah Diabsen</span>
+                        </span>
                       ) : (
-                        <Badge className="bg-orange-500 text-white gap-1 text-[10px] py-0.5">
-                          <AlertCircle className="h-3 w-3" /> Belum Diabsen
-                        </Badge>
+                        <span className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                          <span>Belum Diabsen</span>
+                        </span>
                       )}
                     </td>
                     <td className="py-3 px-3 text-center">

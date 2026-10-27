@@ -335,7 +335,7 @@ export function RecapClient({
                 {studentStats.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="text-center py-10 text-muted-foreground font-medium text-xs">
-                      Belum ada data santri di kelas ini.
+                      Belum ada data siswa di kelas ini.
                     </td>
                   </tr>
                 ) : (

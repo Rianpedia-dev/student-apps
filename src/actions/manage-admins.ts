@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth-guard";
+import { SystemSettingService } from "@/services/system-setting.service";
+import { DemoDataService } from "@/services/demo-data.service";
 
 export async function createAdminAction(formData: FormData) {
   try {
@@ -38,7 +40,7 @@ export async function createAdminAction(formData: FormData) {
         name,
         email,
         password: hashedPassword,
-        password1: password,
+        password1: null,
         status: "3", // Admin
         jenjang,
         gender,
@@ -88,17 +90,22 @@ export async function updateAdminAction(formData: FormData) {
       }
     }
 
+    const isSuperAdminAccount =
+      existing.email.toLowerCase() === "superadmin@gmail.com" ||
+      existing.email.toLowerCase() === "admin@gmail.com";
+    const finalJenjang = isSuperAdminAccount ? "ALL" : jenjang;
+
     const updateData: any = {
       name,
       email,
-      jenjang,
+      jenjang: finalJenjang,
       gender,
-      notes: jenjang === "ALL" ? "Super Administrator" : `Admin Jenjang ${jenjang}`,
+      notes: finalJenjang === "ALL" ? "Super Administrator" : `Admin Jenjang ${finalJenjang}`,
     };
 
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
-      updateData.password1 = password;
+      updateData.password1 = null;
     }
 
     await prisma.user.update({
@@ -158,5 +165,98 @@ export async function deleteAdminAction(formData: FormData) {
     return { success: true, message: `Akun admin ${targetAdmin.name} berhasil dihapus.` };
   } catch (err: any) {
     return { success: false, error: err.message || "Gagal menghapus admin." };
+  }
+}
+
+export async function toggleDemoModeAction(enabled: boolean) {
+  try {
+    await requireSuperAdmin();
+
+    await SystemSettingService.setSetting(
+      "ENABLE_DEMO_MODE",
+      enabled ? "true" : "false",
+      "Status aktif/nonaktif akun demo di portal login utama"
+    );
+
+    revalidatePath("/admin/manage-admins");
+    revalidatePath("/login");
+
+    return {
+      success: true,
+      enabled,
+      message: enabled
+        ? "Mode Demo berhasil diaktifkan. Tombol akun demo kini tampil di halaman login."
+        : "Mode Demo berhasil dinonaktifkan. Tombol akun demo kini disembunyikan dari halaman login.",
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Gagal mengubah status mode demo.",
+    };
+  }
+}
+
+export async function getDemoModeStatusAction() {
+  try {
+    const isEnabled = await SystemSettingService.isDemoModeEnabled();
+    return { success: true, enabled: isEnabled };
+  } catch {
+    return { success: true, enabled: process.env.ENABLE_DEMO_MODE !== "false" };
+  }
+}
+
+export async function toggleDemoDataAction(activate: boolean) {
+  try {
+    await requireSuperAdmin();
+
+    let res;
+    if (activate) {
+      res = await DemoDataService.seedDemoDashboardData();
+    } else {
+      res = await DemoDataService.clearDemoDashboardData();
+    }
+
+    const stats = await DemoDataService.getDemoDataStats();
+
+    revalidatePath("/admin/manage-admins");
+    revalidatePath("/guru");
+    revalidatePath("/guru/attendance");
+    revalidatePath("/guru/calendar");
+    revalidatePath("/guru/kelas-online");
+    revalidatePath("/guru/mapel");
+    revalidatePath("/guru/my-class");
+    revalidatePath("/guru/tugas");
+    revalidatePath("/guru/achievements");
+    revalidatePath("/guru/chat");
+    revalidatePath("/siswa");
+    revalidatePath("/siswa/attendance");
+    revalidatePath("/siswa/calendar");
+    revalidatePath("/siswa/kelas-online");
+    revalidatePath("/siswa/mapel");
+    revalidatePath("/siswa/tugas");
+    revalidatePath("/siswa/chat");
+
+    return {
+      success: true,
+      message: res.message,
+      stats,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Gagal mengubah status data demo dashboard.",
+    };
+  }
+}
+
+export async function getDemoDataStatsAction() {
+  try {
+    const stats = await DemoDataService.getDemoDataStats();
+    return { success: true, stats };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "Gagal mengambil statistik data demo.",
+    };
   }
 }

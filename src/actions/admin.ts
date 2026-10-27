@@ -177,13 +177,12 @@ export async function deleteUsersAction(ids: string[]) {
       where: { id: { in: ids.map((id) => BigInt(id)) } },
       select: { name: true, kelas: true },
     });
-    for (const u of users) {
-      if (u.kelas) {
-        await prisma.kelas.updateMany({
-          where: { nama_kelas: u.kelas, wali_kelas: u.name },
-          data: { wali_kelas: null },
-        });
-      }
+    const userNames = users.filter((u) => u.name && u.kelas).map((u) => u.name);
+    if (userNames.length > 0) {
+      await prisma.kelas.updateMany({
+        where: { wali_kelas: { in: userNames } },
+        data: { wali_kelas: null },
+      });
     }
 
     const count = await UserService.deleteUsers(ids);

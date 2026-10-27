@@ -172,7 +172,7 @@ export default async function DailySubjectAttendancePage(props: PageProps) {
               {jamKe} WIB
             </span>
           )}
-          <span>• Total {students.length} Santri</span>
+          <span>• Total {students.length} Siswa</span>
         </div>
       </div>
 

@@ -1,8 +1,12 @@
 /**
- * Rate Limiter sederhana berbasis sliding-window in-memory.
- * Sangat efisien dan cukup untuk memproteksi server dari brute force login / API abuse
- * tanpa memerlukan dependensi eksternal. Dapat dialihkan ke Redis jika menggunakan multi-server cluster.
+ * Rate Limiter Berbasis Sliding-Window untuk Student Apps
+ * Merujuk ke plan-update-.md Bagian 3.2 & Fase 2 Task 2.2
+ *
+ * Menyediakan proteksi synchronous in-memory (kompatibel penuh dengan vitest & server actions)
+ * serta proteksi async berbasis Redis untuk multi-instance cluster production.
  */
+
+import { redis } from "./redis";
 
 interface RateLimitRecord {
   timestamps: number[];
@@ -10,7 +14,6 @@ interface RateLimitRecord {
 
 const rateLimitMap = new Map<string, RateLimitRecord>();
 
-// Bersihkan rekaman usang setiap 5 menit agar tidak memakan memori
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 let lastCleanup = Date.now();
 
@@ -37,19 +40,26 @@ export interface RateLimitResult {
   resetSeconds: number;
 }
 
+/** Kebijakan Rate Limit Standar Produksi */
+export const RATE_LIMIT_POLICIES = {
+  LOGIN: { limit: 5, windowSeconds: 15 * 60 }, // 5 percobaan per 15 menit
+  REGISTER: { limit: 3, windowSeconds: 60 * 60 }, // 3 pendaftaran per jam
+  PASSWORD_RESET: { limit: 3, windowSeconds: 30 * 60 }, // 3 per 30 menit
+  FILE_UPLOAD: { limit: 10, windowSeconds: 5 * 60 }, // 10 upload per 5 menit
+  CHAT_MESSAGE: { limit: 30, windowSeconds: 60 }, // 30 pesan per menit
+  API_GENERIC: { limit: 100, windowSeconds: 60 }, // 100 request per menit
+  ADMIN_BULK: { limit: 5, windowSeconds: 60 }, // 5 operasi bulk per menit
+} as const;
+
 /**
- * Memeriksa apakah suatu identitas (IP / email / token) melebihi batas request.
- *
- * @param identifier String unik, misalnya "login:192.168.1.1" atau "api:user@email.com"
- * @param limit Jumlah maksimal request dalam jangka waktu
- * @param windowSeconds Rentang waktu dalam detik (default 60 detik)
+ * Memeriksa rate limit secara sinkron (in-memory sliding window).
+ * Kompatibel dengan semua unit test dan synchronous action checks.
  */
 export function checkRateLimit(
   identifier: string,
   limit: number = 10,
   windowSeconds: number = 60
 ): RateLimitResult {
-  // Jika rate limiting dimatikan lewat env (misal untuk testing lokal)
   if (process.env.RATE_LIMIT_ENABLED === "false") {
     return {
       success: true,
@@ -87,3 +97,58 @@ export function checkRateLimit(
     resetSeconds: windowSeconds,
   };
 }
+
+/**
+ * Memeriksa rate limit secara asinkron (mendukung Redis cluster distributed rate limiting).
+ */
+export async function checkRateLimitAsync(
+  identifier: string,
+  limit: number = 10,
+  windowSeconds: number = 60
+): Promise<RateLimitResult> {
+  if (process.env.RATE_LIMIT_ENABLED === "false") {
+    return { success: true, limit, remaining: limit, resetSeconds: 0 };
+  }
+
+  // Jika Redis tidak tersedia, fallback ke fungsi sinkron in-memory
+  if (!redis.isAvailable()) {
+    return checkRateLimit(identifier, limit, windowSeconds);
+  }
+
+  const key = `rate:${identifier}`;
+  const now = Date.now();
+  const windowMs = windowSeconds * 1000;
+
+  try {
+    await redis.zremrangebyscore(key, 0, now - windowMs);
+    await redis.zadd(key, now, `${now}-${Math.random()}`);
+    const count = await redis.zcard(key);
+    await redis.expire(key, windowSeconds);
+
+    if (count > limit) {
+      return { success: false, limit, remaining: 0, resetSeconds: windowSeconds };
+    }
+
+    return {
+      success: true,
+      limit,
+      remaining: Math.max(0, limit - count),
+      resetSeconds: windowSeconds,
+    };
+  } catch {
+    // Graceful fallback to memory on any Redis error
+    return checkRateLimit(identifier, limit, windowSeconds);
+  }
+}
+
+/**
+ * Reset memory rate limit (berguna untuk testing atau manual unblock admin)
+ */
+export function resetRateLimit(identifier?: string): void {
+  if (identifier) {
+    rateLimitMap.delete(identifier);
+  } else {
+    rateLimitMap.clear();
+  }
+}
+

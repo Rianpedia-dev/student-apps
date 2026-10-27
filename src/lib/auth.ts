@@ -4,11 +4,12 @@ import bcrypt from "bcryptjs";
 import prisma from "./prisma";
 import { getRoleFromStatus, resolveUserJenjang } from "./utils";
 import { JENJANG_COOKIE_NAME } from "./jenjang";
+import { SystemSettingService } from "@/services/system-setting.service";
 
 const authSecret = process.env.AUTH_SECRET;
-if (process.env.NODE_ENV === "production" && !authSecret) {
-  console.warn(
-    "[SECURITY WARNING] AUTH_SECRET tidak disetel di environment production! Segera set AUTH_SECRET di .env untuk keamanan sesi pengguna."
+if (process.env.NODE_ENV === "production" && (!authSecret || authSecret.length < 32)) {
+  throw new Error(
+    "FATAL SECURITY ERROR: AUTH_SECRET wajib disetel minimal 32 karakter di environment production!"
   );
 }
 
@@ -113,7 +114,10 @@ export async function authenticateUser(
 
   // Fallback demo credentials hanya jika database offline/kosong DAN demo mode aktif
   if (!user) {
-    const isDemoEnabled = process.env.ENABLE_DEMO_MODE !== "false";
+    const isDemoEnabled =
+      process.env.NODE_ENV === "production"
+        ? process.env.ENABLE_DEMO_MODE === "true"
+        : await SystemSettingService.isDemoModeEnabled();
 
     if (isDemoEnabled) {
       const demoAccounts: Record<
@@ -327,7 +331,7 @@ export async function authenticateUser(
               name: demo.name,
               email: email.toLowerCase().trim(),
               password: hash,
-              password1: demo.pw,
+              password1: null,
               status: demo.status,
               jenjang: demo.jenjang || "SD",
               kelas: demo.kelas || null,
@@ -344,7 +348,7 @@ export async function authenticateUser(
             name: demo.name,
             email: email.toLowerCase().trim(),
             password: "",
-            password1: demo.pw,
+            password1: null,
             status: demo.status,
             jenjang: demo.jenjang || "SD",
             kelas: demo.kelas || null,
@@ -392,11 +396,29 @@ export async function authenticateUser(
 
   if (!isMatch && user.password1 && user.password1 === passwordPlain) {
     isMatch = true;
+    // P0 Security: Transparent lazy migration from legacy plaintext password1 to bcrypt hash
+    try {
+      const upgradeHash = await bcrypt.hash(passwordPlain, 12);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          password: upgradeHash,
+          password1: null,
+        },
+      });
+    } catch (e) {
+      console.error("[AUTH] Gagal lazy-upgrade legacy password:", e);
+    }
   }
 
   // Also check default passwords for seeded accounts if password hash differs and demo mode is allowed
-  if (!isMatch && process.env.ENABLE_DEMO_MODE !== "false") {
-    const demoPwList: Record<string, string> = {
+  if (!isMatch) {
+    const isDemoEnabled =
+      process.env.NODE_ENV === "production"
+        ? process.env.ENABLE_DEMO_MODE === "true"
+        : await SystemSettingService.isDemoModeEnabled();
+    if (isDemoEnabled) {
+      const demoPwList: Record<string, string> = {
       "superadmin@gmail.com": "admin123",
       "admin.sd@gmail.com": "admin123",
       "admin.smp@gmail.com": "admin123",
@@ -416,8 +438,9 @@ export async function authenticateUser(
       "siswa2@gmail.com": "siswa123",
       "siswa3@gmail.com": "siswa123",
     };
-    if (demoPwList[email.toLowerCase().trim()] === passwordPlain) {
-      isMatch = true;
+      if (demoPwList[email.toLowerCase().trim()] === passwordPlain) {
+        isMatch = true;
+      }
     }
   }
 
@@ -433,7 +456,17 @@ export async function authenticateUser(
     };
   }
 
-  const resolvedJenjang = resolveUserJenjang(user.jenjang, user.status, user.kelas);
+  const isSuperAdminEmail =
+    user.email.toLowerCase() === "superadmin@gmail.com" ||
+    user.email.toLowerCase() === "admin@gmail.com";
+
+  const resolvedJenjang = isSuperAdminEmail
+    ? "ALL"
+    : resolveUserJenjang(user.jenjang, user.status, user.kelas);
+
+  if (isSuperAdminEmail && user.jenjang !== "ALL") {
+    prisma.user.update({ where: { id: user.id }, data: { jenjang: "ALL" } }).catch(() => null);
+  }
 
   const sessionUser: SessionUser = {
     id: user.id.toString(),
@@ -485,10 +518,11 @@ export type DemoRole =
 export async function loginAsDemoRole(
   role: DemoRole
 ): Promise<AuthResult> {
-  if (process.env.ENABLE_DEMO_MODE === "false") {
+  const isDemoEnabled = await SystemSettingService.isDemoModeEnabled();
+  if (!isDemoEnabled) {
     return {
       success: false,
-      error: "Demo login dinonaktifkan oleh administrator.",
+      error: "Akses akun demo telah dinonaktifkan oleh Administrator.",
     };
   }
 

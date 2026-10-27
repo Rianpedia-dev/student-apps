@@ -129,7 +129,7 @@ export function ViolationsClientView({
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 {categoryFilter !== "ALL" || severityFilter !== "ALL"
                   ? "Coba sesuaikan opsi filter untuk menampilkan data catatan."
-                  : "Seluruh santri menjaga ketertiban, adab, dan tata tertib sekolah dengan sangat baik."}
+                  : "Seluruh siswa menjaga ketertiban, adab, dan tata tertib sekolah dengan sangat baik."}
               </p>
             </div>
           </CardContent>
@@ -155,7 +155,7 @@ export function ViolationsClientView({
               <TableHeader className="bg-muted/30 backdrop-blur-xs border-b border-border/60">
                 <TableRow>
                   <TableHead className="w-12 text-center font-bold">No</TableHead>
-                  <TableHead className="font-bold">Santri</TableHead>
+                  <TableHead className="font-bold">Siswa</TableHead>
                   <TableHead className="font-bold">Tanggal</TableHead>
                   <TableHead className="font-bold">Kategori & Tingkat</TableHead>
                   <TableHead className="font-bold">Deskripsi</TableHead>

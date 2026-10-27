@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 import { serializeBigInt } from "@/lib/serializer";
+import { AppCache } from "@/lib/cache";
 
 export interface CreateAnnouncementInput {
   title: string;
@@ -34,6 +35,10 @@ export class AnnouncementService {
       },
     });
 
+    AppCache.invalidateTag("announcements");
+    AppCache.invalidateTag("dashboard");
+    AppCache.invalidateTag("admin-stats");
+
     return serializeBigInt(created);
   }
 
@@ -60,6 +65,10 @@ export class AnnouncementService {
       data: dataToUpdate,
     });
 
+    AppCache.invalidateTag("announcements");
+    AppCache.invalidateTag("dashboard");
+    AppCache.invalidateTag("admin-stats");
+
     return serializeBigInt(updated);
   }
 
@@ -83,6 +92,10 @@ export class AnnouncementService {
     await prisma.like.deleteMany({
       where: { post_id: id },
     });
+
+    AppCache.invalidateTag("announcements");
+    AppCache.invalidateTag("dashboard");
+    AppCache.invalidateTag("admin-stats");
 
     return true;
   }

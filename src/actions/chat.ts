@@ -218,7 +218,7 @@ export async function getUserChatRooms() {
 /**
  * Mengambil pesan di dalam satu ruang obrolan.
  */
-export async function getRoomMessages(roomIdStr: string | bigint) {
+export async function getRoomMessages(roomIdStr: string | bigint, limit: number = 100) {
   const session = await getSession();
   if (!session) return [];
 
@@ -241,6 +241,7 @@ export async function getRoomMessages(roomIdStr: string | bigint) {
 
     const messages = await prisma.chatMessage.findMany({
       where: { room_id: roomId },
+      take: Math.min(Math.max(1, limit), 200),
       include: {
         sender: {
           select: { id: true, name: true, image: true, gender: true },

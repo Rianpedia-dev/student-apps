@@ -52,7 +52,7 @@ describe("UserService.importTeachersFromBase64", () => {
         kelas: null,
         gender: "L", // default
         status: "2", // default guru
-        password1: "123456", // default password
+        password1: null, // P0 Security: plaintext is no longer stored
         appleid: null,
         passwordappleid: null,
       }),

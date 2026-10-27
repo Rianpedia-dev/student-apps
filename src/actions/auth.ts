@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { authenticateUser, clearSessionCookie, type AuthResult, type DemoRole } from "@/lib/auth";
 import { loginSchema, registerTeacherSchema } from "@/lib/validators";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { SystemSettingService } from "@/services/system-setting.service";
 
 export async function loginAction(prevState: unknown, formData: FormData) {
   const email = (formData.get("email") as string) || "";
@@ -71,7 +72,7 @@ export async function registerTeacherAction(prevState: unknown, formData: FormDa
       email: rawData.email,
       appleid: rawData.appleid,
       password: hashedPassword,
-      password1: rawData.password, // simpan plaintext sesuai PRD catatan migrasi 19.1
+      password1: null, // P0 Security: Do not store plaintext password
       passwordappleid: rawData.passwordappleid,
       guru_bidang: rawData.guru_bidang,
       gender: rawData.gender,
@@ -92,7 +93,8 @@ export async function logoutAction() {
 }
 
 export async function demoLoginAction(role: DemoRole) {
-  if (process.env.ENABLE_DEMO_MODE === "false") {
+  const isDemoEnabled = await SystemSettingService.isDemoModeEnabled();
+  if (!isDemoEnabled) {
     redirect("/login?error=demo_disabled");
   }
   const { loginAsDemoRole } = await import("@/lib/auth");
@@ -141,10 +143,11 @@ export async function loginDirectAction(
 export async function demoLoginDirectAction(
   role: DemoRole
 ): Promise<AuthResult> {
-  if (process.env.ENABLE_DEMO_MODE === "false") {
+  const isDemoEnabled = await SystemSettingService.isDemoModeEnabled();
+  if (!isDemoEnabled) {
     return {
       success: false,
-      error: "Demo login dinonaktifkan oleh administrator.",
+      error: "Akses akun demo telah dinonaktifkan oleh Administrator.",
     };
   }
   try {

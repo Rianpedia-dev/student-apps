@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
+const authSecret = process.env.AUTH_SECRET;
+if (process.env.NODE_ENV === "production" && (!authSecret || authSecret.length < 32)) {
+  console.error("[CRITICAL] AUTH_SECRET is not configured or too short in production!");
+}
+
 const SECRET_KEY = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "alazharsdsecretkey2026modernrebuild_at_least_32_chars_long!!"
+  authSecret || "alazharsdsecretkey2026modernrebuild_at_least_32_chars_long!!"
 );
 
 interface SessionPayload {
@@ -78,8 +83,15 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  // Edge security response headers
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  return response;
 }
+
+export default proxy;
 
 export const config = {
   matcher: [
@@ -91,3 +103,4 @@ export const config = {
     "/siswa/:path*",
   ],
 };
+

@@ -63,7 +63,7 @@ export function DeleteViolationDialog({
             <AlertDialogTitle className="text-base">Hapus Catatan Pelanggaran?</AlertDialogTitle>
           </div>
           <AlertDialogDescription className="text-xs pt-1.5 leading-relaxed text-muted-foreground">
-            Apakah Anda yakin ingin menghapus catatan kedisiplinan atas nama santri{" "}
+            Apakah Anda yakin ingin menghapus catatan kedisiplinan atas nama siswa{" "}
             <strong className="text-foreground">{violation?.nama || "Siswa"}</strong> (
             {violation?.kategori})?
             <br />

@@ -240,7 +240,7 @@ export function MeetingFormDialog({
               Catatan / Ringkasan Materi <span className="text-[10px] text-muted-foreground/70 font-normal">(Opsional)</span>
             </Label>
             <Textarea
-              placeholder="Tuliskan poin penting materi, arahan belajar santri, dsb..."
+              placeholder="Tuliskan poin penting materi, arahan belajar siswa, dsb..."
               value={deskripsi}
               onChange={(e) => setDeskripsi(e.target.value)}
               rows={2}

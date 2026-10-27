@@ -117,7 +117,7 @@ export function DailySubjectAttendanceForm({
       };
     });
     setRecords(updated);
-    toast.info(`Seluruh santri diatur ke status: ${status}`);
+    toast.info(`Seluruh siswa diatur ke status: ${status}`);
   };
 
   const countHadir = Object.values(records).filter((v) => v.keterangan === "Hadir").length;
@@ -256,7 +256,7 @@ export function DailySubjectAttendanceForm({
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Cari santri berdasarkan nama atau NIS..."
+          placeholder="Cari siswa berdasarkan nama atau NIS..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 h-11 text-xs rounded-xl bg-card border-border/80 shadow-2xs"
@@ -267,7 +267,7 @@ export function DailySubjectAttendanceForm({
       <div className="space-y-2.5">
         {filteredStudents.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-card border border-border text-muted-foreground text-xs">
-            Tidak ada santri yang sesuai dengan pencarian.
+            Tidak ada siswa yang sesuai dengan pencarian.
           </div>
         ) : (
           filteredStudents.map((student, idx) => {

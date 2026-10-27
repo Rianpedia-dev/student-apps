@@ -1,0 +1,21 @@
+# ============================================
+# Dockerfile untuk Standalone Socket.IO Server
+# Al-Azhar Cairo Palembang — Merujuk ke plan-update-.md Bagian 6.2
+# ============================================
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3001
+
+# Install runtime dependencies for socket
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
+
+# Salin source server
+COPY server ./server
+
+EXPOSE 3001
+
+CMD ["node", "server/socket-server.cjs"]

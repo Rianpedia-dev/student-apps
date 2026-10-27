@@ -3,22 +3,32 @@ import prisma from "@/lib/prisma";
 import { compareScheduleTime } from "@/lib/utils";
 import { serializeBigInt } from "@/lib/serializer";
 import { AppError } from "@/lib/errors";
+import { AppCache } from "@/lib/cache";
 
 export class SubjectService {
   /**
-   * Mengambil daftar mata pelajaran, opsional filter jenjang
+   * Mengambil daftar mata pelajaran, opsional filter jenjang (cached 1 hour)
    */
   static async getMataPelajaranList(jenjang?: string) {
-    const where = jenjang && jenjang !== "SEMUA"
-      ? { OR: [{ jenjang }, { jenjang: "SEMUA" }] }
-      : {};
+    const cacheKey = `mapel-list:${jenjang || "SEMUA"}`;
+    return AppCache.getOrSet(
+      cacheKey,
+      3600, // 1 jam
+      async () => {
+        const where =
+          jenjang && jenjang !== "SEMUA"
+            ? { OR: [{ jenjang }, { jenjang: "SEMUA" }] }
+            : {};
 
-    const list = await prisma.mataPelajaran.findMany({
-      where,
-      orderBy: { nama_mapel: "asc" },
-    });
+        const list = await prisma.mataPelajaran.findMany({
+          where,
+          orderBy: { nama_mapel: "asc" },
+        });
 
-    return serializeBigInt(list);
+        return serializeBigInt(list);
+      },
+      ["mapel"]
+    );
   }
 
   /**
@@ -39,35 +49,42 @@ export class SubjectService {
    * Mengambil jadwal pelajaran berdasarkan nama kelas
    */
   static async getJadwalByKelas(namaKelas: string) {
-    const kelas = await prisma.kelas.findFirst({
-      where: { nama_kelas: namaKelas },
-    });
-    if (!kelas) return [];
+    return AppCache.getOrSet(
+      `jadwal:${namaKelas}`,
+      1800, // 30 menit
+      async () => {
+        const kelas = await prisma.kelas.findFirst({
+          where: { nama_kelas: namaKelas },
+        });
+        if (!kelas) return [];
 
-    const jadwal = await prisma.jadwalPelajaran.findMany({
-      where: { kelas_id: kelas.id },
-      include: {
-        mapel: true,
-        guru: {
-          select: { id: true, name: true, image: true, email: true, guru_bidang: true },
-        },
+        const jadwal = await prisma.jadwalPelajaran.findMany({
+          where: { kelas_id: kelas.id },
+          include: {
+            mapel: true,
+            guru: {
+              select: { id: true, name: true, image: true, email: true, guru_bidang: true },
+            },
+          },
+        });
+
+        const sorted = [...jadwal].sort((a, b) => {
+          const comp = compareScheduleTime(
+            a.hari,
+            a.jam_mulai,
+            a.jam_selesai,
+            b.hari,
+            b.jam_mulai,
+            b.jam_selesai
+          );
+          if (comp !== 0) return comp;
+          return (a.mapel?.nama_mapel || "").localeCompare(b.mapel?.nama_mapel || "");
+        });
+
+        return serializeBigInt(sorted);
       },
-    });
-
-    const sorted = [...jadwal].sort((a, b) => {
-      const comp = compareScheduleTime(
-        a.hari,
-        a.jam_mulai,
-        a.jam_selesai,
-        b.hari,
-        b.jam_mulai,
-        b.jam_selesai
-      );
-      if (comp !== 0) return comp;
-      return (a.mapel?.nama_mapel || "").localeCompare(b.mapel?.nama_mapel || "");
-    });
-
-    return serializeBigInt(sorted);
+      ["jadwal", namaKelas]
+    );
   }
 
   /**
@@ -262,6 +279,7 @@ export class SubjectService {
       importedCount++;
     }
 
+    AppCache.invalidateTag("mapel");
     return importedCount;
   }
 }

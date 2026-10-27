@@ -35,7 +35,12 @@ export default async function DashboardLayout({
         userGender = dbUser.gender || userGender;
         userStatus = dbUser.status || userStatus;
         userKelas = dbUser.kelas || userKelas;
-        userJenjang = resolveUserJenjang(dbUser.jenjang, userStatus, userKelas);
+        const isSuperAdminEmail =
+          session.email.toLowerCase() === "superadmin@gmail.com" ||
+          session.email.toLowerCase() === "admin@gmail.com";
+        userJenjang = isSuperAdminEmail
+          ? "ALL"
+          : resolveUserJenjang(dbUser.jenjang, userStatus, userKelas);
       }
     }
   } catch (e) {

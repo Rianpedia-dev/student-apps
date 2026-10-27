@@ -12,7 +12,6 @@ import { NavbarLiveClock } from "./navbar-clock";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { getAcademicYear, getRoleLabel, cn } from "@/lib/utils";
 import { AlAzharCornerMosaic } from "@/components/shared/alazhar-patterns";
-import { JenjangSwitcher } from "@/components/shared/jenjang-switcher";
 
 interface NavbarProps {
   role: "admin" | "guru" | "siswa";
@@ -25,7 +24,7 @@ interface NavbarProps {
   userImage?: string | null;
 }
 
-export function Navbar({ role, userName, userEmail, kelas, status, jenjang, activeJenjang, userImage }: NavbarProps) {
+export function Navbar({ role, userName, userEmail, kelas, status, userImage }: NavbarProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [openMobile, setOpenMobile] = useState(false);
   const [isBellHovered, setIsBellHovered] = useState(false);
@@ -145,11 +144,6 @@ export function Navbar({ role, userName, userEmail, kelas, status, jenjang, acti
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2.5 relative z-10">
-        {/* Jenjang Switcher untuk Pengguna Multi-Jenjang (Super Admin & Guru Lintas) */}
-        {jenjang === "ALL" && (
-          <JenjangSwitcher userJenjang={jenjang} activeJenjang={activeJenjang} />
-        )}
-
         {/* Theme Toggle (Light / Dark Mode) */}
         <ThemeToggle />
 
