@@ -136,7 +136,6 @@ export function GuruProfileForm({ teacher, classes }: GuruProfileFormProps) {
         <div className="flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-bold tracking-tight">{teacher.name}</h2>
-            <Badge variant="success">{getRoleLabel(teacher.status || "2")}</Badge>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
@@ -144,7 +143,6 @@ export function GuruProfileForm({ teacher, classes }: GuruProfileFormProps) {
               <Mail className="h-3.5 w-3.5" />
               <span>{teacher.email}</span>
             </span>
-            {teacher.nip && <span>• NIP: {teacher.nip}</span>}
           </div>
 
           {/* Compact Action Buttons & Feedback */}
@@ -222,7 +220,7 @@ export function GuruProfileForm({ teacher, classes }: GuruProfileFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="nip">NIP (Nomor Induk Pegawai)</Label>
+            <Label htmlFor="nip">NIY (Nomor Induk Yayasan)</Label>
             <Input
               id="nip"
               name="nip"

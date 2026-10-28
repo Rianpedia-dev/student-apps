@@ -2,7 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ListTodo } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { TeacherMeetingList } from "@/components/features/teacher-subjects/teacher-meeting-list";
 
 export const dynamic = "force-dynamic";
@@ -95,7 +96,16 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
         },
         include: {
           guru: { select: { id: true, name: true, image: true } },
-          tugas: { select: { id: true, judul: true, deadline: true } },
+          tugas: {
+            select: {
+              id: true,
+              judul: true,
+              deadline: true,
+              submissions: {
+                select: { id: true, status: true },
+              },
+            },
+          },
         },
         orderBy: [{ pertemuan_ke: "asc" }, { tanggal: "asc" }],
       })
@@ -110,6 +120,7 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
     select: {
       id: true,
       judul: true,
+      pertemuan_id: true,
     },
     orderBy: { created_at: "desc" },
   });
@@ -135,6 +146,10 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
       id: t.id.toString(),
       judul: t.judul,
       deadline: t.deadline ? new Date(t.deadline).toISOString() : new Date().toISOString(),
+      submissionCount: t.submissions ? t.submissions.length : 0,
+      pendingCount: t.submissions
+        ? t.submissions.filter((s: any) => s.status === "menunggu_penilaian" || s.status === "terlambat").length
+        : 0,
     })),
   }));
 
@@ -146,14 +161,25 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
 
   return (
     <div className="space-y-6">
-      {/* Tombol Kembali */}
-      <div>
+      {/* Tombol Navigasi Kembali & Shortcut ke Tugas */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/guru/mapel"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-all group bg-muted/40 hover:bg-muted px-3 py-1.5 rounded-xl border border-border/60"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
           <span>Kembali ke Jadwal & Mata Pelajaran Saya</span>
+        </Link>
+
+        <Link href={`/guru/tugas?mapelId=${mapel.id}&kelasId=${currentKelas.id}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8.5 text-xs font-bold gap-2 rounded-xl border-border/80 hover:border-primary/50 cursor-pointer"
+          >
+            <ListTodo className="h-3.5 w-3.5 text-primary" />
+            <span>Kelola Tugas ({tasksData.length})</span>
+          </Button>
         </Link>
       </div>
 

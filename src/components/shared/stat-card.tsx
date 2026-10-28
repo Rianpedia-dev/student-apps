@@ -20,6 +20,7 @@ export interface StatCardProps {
   aspectRatioClassName?: string;
   centered?: boolean;
   chamfer?: boolean;
+  uppercase?: boolean;
 }
 
 /**
@@ -77,6 +78,7 @@ export function StatCard({
   aspectRatioClassName,
   centered,
   chamfer,
+  uppercase,
   className,
 }: StatCardProps) {
   const parsed = parseValue(value);
@@ -102,6 +104,7 @@ export function StatCard({
       aspectRatioClassName={aspectRatioClassName}
       centered={centered}
       chamfer={chamfer}
+      uppercase={uppercase}
       className={className}
     />
   );

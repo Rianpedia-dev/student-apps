@@ -581,13 +581,14 @@ export class UserService {
         joined.includes("nama") ||
         joined.includes("email") ||
         joined.includes("nip") ||
+        joined.includes("niy") ||
         joined.includes("guru") ||
         joined.includes("mapel")
       ) {
         headerRowIdx = r;
         row.forEach((col, idx) => {
           const norm = String(col ?? "").trim().toLowerCase();
-          if (norm.includes("nip") || norm.includes("nomor induk") || norm.includes("no induk")) {
+          if (norm.includes("niy") || norm.includes("nip") || norm.includes("nomor induk") || norm.includes("yayasan") || norm.includes("no induk")) {
             colMap["nip"] = idx;
           } else if (
             norm.includes("email") ||
@@ -677,7 +678,7 @@ export class UserService {
             }
           }
 
-          // Email: jika kosong, generate email default berbasis NIP atau Nama
+          // Email: jika kosong, generate email default berbasis NIY atau Nama
           let email = rawEmail;
           if (!email) {
             const cleanSlug = name

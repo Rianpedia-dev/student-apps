@@ -90,7 +90,7 @@ interface StudentMeetingViewProps {
 
 function getYouTubeEmbedUrl(url?: string | null): string | null {
   if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*/;
   const match = url.match(regExp);
   return match && match[2].length === 11
     ? `https://www.youtube-nocookie.com/embed/${match[2]}`

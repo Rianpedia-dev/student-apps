@@ -63,7 +63,7 @@ import { getRoleLabel } from "@/lib/utils";
 
 const AVAILABLE_TEACHER_EXPORT_FIELDS = [
   { id: "no", label: "No (Nomor Urut)", default: true },
-  { id: "nip", label: "NIP", default: true },
+  { id: "nip", label: "NIY", default: true },
   { id: "name", label: "Nama Lengkap", default: true },
   { id: "jenjang", label: "Jenjang (SD/SMP/Lintas)", default: true },
   { id: "gender", label: "Jenis Kelamin (L/P)", default: true },
@@ -424,7 +424,7 @@ export function TeacherTable({
       const exportData = exportTargetTeachers.map((t, idx) => {
         const row: Record<string, any> = {};
         if (exportFields.includes("no")) row["No"] = idx + 1;
-        if (exportFields.includes("nip")) row["NIP"] = t.nip || "-";
+        if (exportFields.includes("nip")) row["NIY"] = t.nip || "-";
         if (exportFields.includes("name")) row["Nama Lengkap"] = t.name;
         if (exportFields.includes("jenjang")) {
           row["Jenjang"] = t.jenjang === "ALL" ? "SD + SMP (Lintas)" : t.jenjang || "SD";
@@ -476,7 +476,7 @@ export function TeacherTable({
       const XLSX = await import("xlsx");
       const templateData = [
         [
-          "NIP",
+          "NIY",
           "Nama Lengkap",
           "Jenjang (SD/SMP/ALL)",
           "Email",
@@ -572,7 +572,7 @@ export function TeacherTable({
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cari nama, NIP, mapel, email..."
+              placeholder="Cari nama, NIY, mapel, email..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -687,7 +687,7 @@ export function TeacherTable({
               </TableHead>
               <TableHead className="w-12 text-center font-bold">No</TableHead>
               <TableHead className="font-bold">Nama Guru</TableHead>
-              <TableHead className="font-bold">Bidang Studi / NIP</TableHead>
+              <TableHead className="font-bold">Bidang Studi / NIY</TableHead>
               <TableHead className="font-bold">Email</TableHead>
               <TableHead className="font-bold">Kelas Diampu</TableHead>
               <TableHead className="font-bold text-center">Status</TableHead>
@@ -726,7 +726,7 @@ export function TeacherTable({
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">{t.guru_bidang || "-"}</div>
-                    {t.nip && <div className="text-xs text-muted-foreground">NIP: {t.nip}</div>}
+                    {t.nip && <div className="text-xs text-muted-foreground">NIY: {t.nip}</div>}
                   </TableCell>
                   <TableCell className="text-sm font-mono">{t.email}</TableCell>
                   <TableCell>
@@ -868,7 +868,7 @@ export function TeacherTable({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="add-nip">NIP (Nomor Induk)</Label>
+                <Label htmlFor="add-nip">NIY (Nomor Induk Yayasan)</Label>
                 <Input id="add-nip" name="nip" placeholder="19850115..." />
               </div>
               <div className="space-y-1">
@@ -1077,7 +1077,7 @@ export function TeacherTable({
           <DialogHeader>
             <DialogTitle>Import Data Guru dari Excel</DialogTitle>
             <DialogDescription>
-              Upload file spreadsheet Excel (.xlsx / .xls). Kolom opsional (NIP, Bidang Studi, Kelas, Apple ID, Password, dll.) boleh dikosongkan dan dapat dilengkapi mandiri di profil masing-masing guru.
+              Upload file spreadsheet Excel (.xlsx / .xls). Kolom opsional (NIY, Bidang Studi, Kelas, Apple ID, Password, dll.) boleh dikosongkan dan dapat dilengkapi mandiri di profil masing-masing guru.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleImportExcel} className="space-y-4 pt-1">
@@ -1203,7 +1203,7 @@ export function TeacherTable({
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="edit-nip">NIP (Nomor Induk)</Label>
+                  <Label htmlFor="edit-nip">NIY (Nomor Induk Yayasan)</Label>
                   <Input
                     id="edit-nip"
                     name="nip"

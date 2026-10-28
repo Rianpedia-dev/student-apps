@@ -45,7 +45,7 @@ Aplikasi Student Apps Al-Azhar Cairo Palembang menangani operasional harian seko
 | Area Fungsional | Status Saat Ini | Kesenjangan (Gap yang Harus Ditambahkan) | Prioritas |
 |---|---|---|---|
 | **Auth & Session** | 🟢 Sebagian (32 tests) | Verifikasi akun status 0 (pending), switch activeJenjang superadmin, brute force lock | P0 |
-| **User & Teacher Import** | 🟢 Dasar (4 tests) | Validasi duplikasi NIP/NIS, normalisasi gender, fallback password aman | P1 |
+| **User & Teacher Import** | 🟢 Dasar (4 tests) | Validasi duplikasi NIY/NIS, normalisasi gender, fallback password aman | P1 |
 | **Absensi (Attendance)** | 🟡 Terbatas (6 tests) | Matriks absensi wali kelas, rekap bulanan, kalkulasi persentase kehadiran, izin/sakit seharian | P0 |
 | **Tugas & Lembar Kerja** | 🟡 Terbatas (7 tests) | Penilaian otomatis pilihan ganda/esai, pengacakan opsi, revisi berkas berulang | P0 |
 | **Materi & Pertemuan** | 🔴 Belum Ada | Tracking `is_completed` siswa, publish/unpublish materi, link eksternal video | P1 |
@@ -177,7 +177,7 @@ Aplikasi Student Apps Al-Azhar Cairo Palembang menangani operasional harian seko
 **Target File**: `test/unit/zod-validators-extended.test.ts`  
 **Modul Diuji**: Seluruh skema di `src/lib/validators/`
 
-- [x] **Test 9.1**: Validasi format email institusi dan nomor induk (NIP 18 digit, NIS 9-10 digit).
+- [x] **Test 9.1**: Validasi format email institusi dan nomor induk (NIY 18 digit, NIS 9-10 digit).
 - [x] **Test 9.2**: Validasi jam jadwal pelajaran (Format wajib `"HH:mm"`, misal `"07:30"` s/d `"09:00"`).
 - [x] **Test 9.3**: Validasi input sanitasi: Mengamankan karakter HTML berbahaya (anti-XSS) pada judul materi dan deskripsi pengumuman.
 

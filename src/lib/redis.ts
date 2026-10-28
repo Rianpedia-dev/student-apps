@@ -95,12 +95,13 @@ let isRedisConnected = false;
   }
 
   try {
-    // Dynamic import agar tidak error jika ioredis belum diinstall di node_modules
-    const { default: Redis } = await import("ioredis");
+    // Dynamic import dengan webpackIgnore agar bundler Next.js tidak memunculkan warning jika modul belum diinstall
+    const moduleName = "ioredis";
+    const { default: Redis } = (await import(/* webpackIgnore: true */ moduleName)) as any;
     const client = redisUrl
       ? new Redis(redisUrl, {
           maxRetriesPerRequest: 3,
-          retryStrategy: (times) => Math.min(times * 50, 2000),
+          retryStrategy: (times: number) => Math.min(times * 50, 2000),
           lazyConnect: true,
         })
       : new Redis({
@@ -108,7 +109,7 @@ let isRedisConnected = false;
           port: parseInt(process.env.REDIS_PORT || "6379", 10),
           password: process.env.REDIS_PASSWORD || undefined,
           maxRetriesPerRequest: 3,
-          retryStrategy: (times) => Math.min(times * 50, 2000),
+          retryStrategy: (times: number) => Math.min(times * 50, 2000),
           lazyConnect: true,
         });
 
@@ -117,7 +118,7 @@ let isRedisConnected = false;
       logger.info("[Redis] Berhasil terhubung ke server Redis");
     });
 
-    client.on("error", (err) => {
+    client.on("error", (err: any) => {
       logger.warn(`[Redis Connection Warning] ${err.message}`);
     });
 

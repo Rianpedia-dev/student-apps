@@ -68,7 +68,7 @@ export default async function AdminTeacherDetailPage(props: {
             <CardTitle>Profil & Data Pengajar</CardTitle>
           </div>
           <CardDescription>
-            Perbarui data pribadi, NIP, mata pelajaran, dan penugasan kelas.
+            Perbarui data pribadi, NIY, mata pelajaran, dan penugasan kelas.
           </CardDescription>
         </CardHeader>
         <CardContent>

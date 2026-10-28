@@ -25,9 +25,9 @@ describe("UserService.importTeachersFromBase64", () => {
     vi.clearAllMocks();
   });
 
-  it("should successfully import teachers even when optional columns are empty", async () => {
+  it("should successfully import teachers even when optional columns are empty using NIY header", async () => {
     const data = [
-      ["NIP", "Nama Lengkap", "Email", "Password", "Jenis Kelamin", "Bidang Studi", "Peran", "Kelas Wali", "Apple ID", "Password Apple ID"],
+      ["NIY", "Nama Lengkap", "Email", "Password", "Jenis Kelamin", "Bidang Studi", "Peran", "Kelas Wali", "Apple ID", "Password Apple ID"],
       ["", "Ustadz Budi", "budi@alazhar.sch.id", "", "", "", "", "", "", ""],
     ];
 
@@ -59,9 +59,9 @@ describe("UserService.importTeachersFromBase64", () => {
     });
   });
 
-  it("should generate a fallback email when email column is empty but name is provided", async () => {
+  it("should generate a fallback email and parse NIY column when email is empty", async () => {
     const data = [
-      ["NIP", "Nama Lengkap", "Email"],
+      ["NIY", "Nama Lengkap", "Email"],
       ["19850115", "Ustadzah Aisyah", ""],
     ];
 
@@ -82,6 +82,33 @@ describe("UserService.importTeachersFromBase64", () => {
         name: "Ustadzah Aisyah",
         email: "ustadzah.aisyah@alazhar.sch.id",
         nip: "19850115",
+      }),
+    });
+  });
+
+  it("should still support legacy NIP column header for backward compatibility", async () => {
+    const data = [
+      ["NIP", "Nama Lengkap", "Email"],
+      ["19890214", "Ustadz Ahmad", "ahmad@alazhar.sch.id"],
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    const base64 = Buffer.from(buffer).toString("base64");
+
+    (prisma.user.findUnique as any).mockResolvedValue(null);
+    (prisma.user.create as any).mockResolvedValue({ id: BigInt(103), name: "Ustadz Ahmad" });
+
+    const count = await UserService.importTeachersFromBase64(base64);
+
+    expect(count).toBe(1);
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        name: "Ustadz Ahmad",
+        email: "ahmad@alazhar.sch.id",
+        nip: "19890214",
       }),
     });
   });

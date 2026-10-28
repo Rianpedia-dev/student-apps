@@ -1301,7 +1301,7 @@ export default function AuthSwitch({ initialMode = "signin", isDemoEnabled = tru
                 </div>
               </div>
 
-              {/* Row 5: Jenis Kelamin & NIP (2 Kolom) */}
+              {/* Row 5: Jenis Kelamin & NIY (2 Kolom) */}
               <div className="input-row">
                 <div className="input-field compact">
                   <div className="input-icon">
@@ -1321,7 +1321,7 @@ export default function AuthSwitch({ initialMode = "signin", isDemoEnabled = tru
                   <input
                     type="text"
                     name="nip"
-                    placeholder="NIP (Opsional)"
+                    placeholder="NIY (Opsional)"
                     disabled={isRegisterPending}
                   />
                 </div>

@@ -10,7 +10,7 @@ import {
 import { z } from "zod";
 
 describe("Suite 9: Validasi Schema Zod & Sanitasi Input Extended", () => {
-  describe("9.1: Validasi Format Email & Nomor Induk (NIP & NIS)", () => {
+  describe("9.1: Validasi Format Email & Nomor Induk (NIY & NIS)", () => {
     it("harus menerima email valid dan menolak format email yang salah", () => {
       const validData = {
         name: "Ahmad Siswa",
@@ -31,11 +31,11 @@ describe("Suite 9: Validasi Schema Zod & Sanitasi Input Extended", () => {
       }
     });
 
-    it("harus memvalidasi nomor induk pegawai (NIP) dan nomor induk siswa (NIS)", () => {
-      // Skema validator NIP spesifik standar nasional 18 digit
-      const nipSchema = z
+    it("harus memvalidasi nomor induk yayasan (NIY) dan nomor induk siswa (NIS)", () => {
+      // Skema validator NIY spesifik standar 18 digit
+      const niySchema = z
         .string()
-        .regex(/^\d{18}$/, "NIP harus berupa 18 digit angka")
+        .regex(/^\d{18}$/, "NIY harus berupa 18 digit angka")
         .optional()
         .or(z.literal(""));
 
@@ -46,13 +46,13 @@ describe("Suite 9: Validasi Schema Zod & Sanitasi Input Extended", () => {
         .optional()
         .or(z.literal(""));
 
-      // Valid NIP & NIS
-      expect(nipSchema.safeParse("198501012010011001").success).toBe(true);
+      // Valid NIY & NIS
+      expect(niySchema.safeParse("198501012010011001").success).toBe(true);
       expect(nisSchema.safeParse("2024001234").success).toBe(true);
 
-      // Invalid NIP (huruf atau kurang dari 18 digit)
-      expect(nipSchema.safeParse("19850101ABC").success).toBe(false);
-      expect(nipSchema.safeParse("12345").success).toBe(false);
+      // Invalid NIY (huruf atau kurang dari 18 digit)
+      expect(niySchema.safeParse("19850101ABC").success).toBe(false);
+      expect(niySchema.safeParse("12345").success).toBe(false);
 
       // Invalid NIS
       expect(nisSchema.safeParse("1234").success).toBe(false);

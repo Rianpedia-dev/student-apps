@@ -89,40 +89,46 @@ export default async function SiswaDashboardPage() {
       {/* 6 Folder Cards:
           - Desktop (lg): 4 card dalam satu baris mendatar (Baris 1: 4 card, Baris 2: 2 card)
           - Tablet (md): 3 card dalam satu baris mendatar (2 baris x 3 card)
-          - Mobile: 2 card per baris mendatar (3 baris mendatar, responsif) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5 md:gap-4">
-        {/* Baris 1: Amber, Blue, Emerald */}
+          - Mobile: 2 card per baris mendatar (3 baris x 2 card, responsif) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-4">
+        {/* Baris 1: Rose, Amber, Emerald, Blue */}
+        <StatCard
+          title="Mata Pelajaran"
+          variant="rose"
+          href="/siswa/mapel"
+          aspectRatioClassName="aspect-[1.18/1]"
+        />
         <StatCard
           title="Presensi"
           variant="amber"
           href="/siswa/attendance"
+          aspectRatioClassName="aspect-[1.18/1]"
+        />
+        <StatCard
+          title="Chat Guru"
+          variant="emerald"
+          href="/siswa/chat"
+          aspectRatioClassName="aspect-[1.18/1]"
         />
         <StatCard
           title="Kalender Kegiatan"
           variant="blue"
           href="/siswa/calendar"
-        />
-        <StatCard
-          title="Tugas Saya"
-          variant="emerald"
-          href="/siswa/mapel"
+          aspectRatioClassName="aspect-[1.18/1]"
         />
 
-        {/* Baris 2: Rose, Purple, Teal */}
-        <StatCard
-          title="Mata Pelajaran"
-          variant="rose"
-          href="/siswa/mapel"
-        />
+        {/* Baris 2: Purple, Teal */}
         <StatCard
           title="Pelanggaran"
           variant="purple"
           href="/siswa/violations"
+          aspectRatioClassName="aspect-[1.18/1]"
         />
         <StatCard
           title="Kelas Online"
           variant="teal"
           href="/siswa/kelas-online"
+          aspectRatioClassName="aspect-[1.18/1]"
         />
       </div>
 

@@ -48,7 +48,7 @@ erDiagram
 1. **`users` (`User`)**:
    - `id`: Primary key unik (BigInt).
    - `name`: Nama lengkap beserta gelar akademik guru (contoh: *Ustadzah Fatimah, S.Pd*).
-   - `nip`: Nomor Induk Pegawai resmi yayasan/sekolah.
+   - `nip`: Nomor Induk Yayasan (NIY) resmi sekolah/yayasan.
    - `guru_bidang`: Bidang studi resmi pengampu (contoh: *Pendidikan Agama Islam*, *Matematika*, *Bahasa Inggris*).
    - `status`: Penentu peran utama di sistem:
      - `"0"` = Akun baru menunggu verifikasi Admin.
@@ -126,12 +126,12 @@ Administrator memiliki kendali mutlak atas penetapan identitas kepegawaian, veri
 
 #### 1. Registrasi & Verifikasi Status Akun Guru
 - **Registrasi Manual**:
-  - Admin menginput Nama Lengkap + Gelar, Email Login, Password (min. 6 karakter), NIP, Gender, Bidang Studi (`guru_bidang`), Apple ID, dan Password Apple ID untuk iPad guru.
+  - Admin menginput Nama Lengkap + Gelar, Email Login, Password (min. 6 karakter), NIY, Gender, Bidang Studi (`guru_bidang`), Apple ID, dan Password Apple ID untuk iPad guru.
   - Memilih peran melalui radio button:
     - `addRoleChoice = "2"` ➔ **Guru Mata Pelajaran** (tanpa kelas binaan).
     - `addRoleChoice = "4"` ➔ **Guru & Wali Kelas** (wajib memilih rombel *Kelas Wali* dari dropdown).
 - **Import Massal via Excel (`.xlsx`)**:
-  - Tersedia template unduhan standar (`Template_Import_Guru_AlAzhar.xlsx`) dengan kolom terstruktur: Nama, NIP, Email, Password, Gender, Bidang Studi, Status/Peran (`Guru` atau `Wali Kelas`), dan Nama Kelas Wali.
+  - Tersedia template unduhan standar (`Template_Import_Guru_AlAzhar.xlsx`) dengan kolom terstruktur: Nama, NIY, Email, Password, Gender, Bidang Studi, Status/Peran (`Guru` atau `Wali Kelas`), dan Nama Kelas Wali.
 - **Verifikasi Akun Baru (`verifyUserAction`)**:
   - Akun guru baru yang mendaftar secara mandiri memiliki status awal `"0"` (*Pending Verifikasi*).
   - Admin membuka modal verifikasi dan menentukan status akhir guru: langsung diaktifkan sebagai Guru Mapel (`2`) atau Guru & Wali Kelas (`4`).

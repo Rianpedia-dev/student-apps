@@ -38,7 +38,7 @@ sequenceDiagram
     actor DB as Database (Prisma)
 
     Note over Guru, Sistem: 1. Registrasi Mandiri di /login
-    Guru->>Sistem: Isi formulir registrasi (Nama, Email, Password, NIP, Bidang)
+    Guru->>Sistem: Isi formulir registrasi (Nama, Email, Password, NIY, Bidang)
     Sistem->>DB: Simpan akun baru dengan status = "0" (Pending)
     Sistem-->>Guru: Notifikasi pendaftaran sukses (Menunggu verifikasi admin)
 

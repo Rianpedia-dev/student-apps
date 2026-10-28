@@ -105,7 +105,7 @@ async function generateTeacherExcel() {
 
   // Sheet 1: Template Guru (Format baku import)
   const headers = [
-    "NIP",
+    "NIY",
     "Nama Lengkap",
     "Jenjang (SD/SMP/ALL)",
     "Status",
@@ -120,7 +120,7 @@ async function generateTeacherExcel() {
   ];
 
   const dataRows = teachers.map((t) => [
-    "", // NIP dikosongkan sesuai permintaan
+    "", // NIY dikosongkan sesuai permintaan
     t.nama,
     "SMP", // Jenjang SMP
     "Guru", // Status pengguna: Guru
@@ -139,7 +139,7 @@ async function generateTeacherExcel() {
 
   // Atur lebar kolom
   wsTeachers["!cols"] = [
-    { wch: 18 }, // NIP
+    { wch: 18 }, // NIY
     { wch: 42 }, // Nama Lengkap
     { wch: 22 }, // Jenjang (SD/SMP/ALL)
     { wch: 15 }, // Status
@@ -169,7 +169,7 @@ async function generateTeacherExcel() {
   // Sheet 3: Panduan Pengisian
   const guideRows = [
     ["Kolom", "Keterangan", "Wajib / Opsional", "Aturan / Nilai Pada File Ini"],
-    ["NIP", "Nomor Induk Pegawai", "Opsional", "Dikosongkan sesuai permintaan"],
+    ["NIY", "Nomor Induk Yayasan", "Opsional", "Dikosongkan sesuai permintaan"],
     ["Nama Lengkap", "Nama guru lengkap beserta gelar akademik", "Wajib", "Terisi 65 nama guru resmi"],
     ["Jenjang (SD/SMP/ALL)", "Pilihan: SD, SMP, atau ALL (lintas jenjang)", "Opsional", "Diset SMP untuk seluruh guru"],
     ["Status", "Status pengguna di sistem Al-Azhar", "Opsional", "Terisi 'Guru'"],

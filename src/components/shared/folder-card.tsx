@@ -69,6 +69,8 @@ export interface FolderCardProps
   centered?: boolean;
   /** Whether the top-right corner is chamfered / cut diagonally. Default: true. */
   chamfer?: boolean;
+  /** Whether to uppercase title text. Default: true. */
+  uppercase?: boolean;
 }
 
 /**
@@ -236,6 +238,7 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
       aspectRatioClassName,
       centered,
       chamfer = true,
+      uppercase = true,
       className,
       style,
       ...props
@@ -367,12 +370,13 @@ export const FolderCard = React.forwardRef<HTMLDivElement, FolderCardProps>(
               >
                 <h3
                   className={cn(
-                    "m-0 font-bold tracking-[0.01em] text-[var(--folder-card-title)]",
+                    "m-0 font-bold sm:font-extrabold tracking-normal text-[var(--folder-card-title)]",
+                    uppercase && "uppercase",
                     isCentered
-                      ? "text-[clamp(16.5px,7.5cqw,25px)] font-bold sm:font-extrabold line-clamp-2 leading-snug sm:leading-tight text-center"
+                      ? "text-[clamp(14px,6cqw,19px)] sm:text-[clamp(15px,6.5cqw,21px)] line-clamp-2 leading-snug sm:leading-tight text-center"
                       : subtitle
-                      ? "text-[clamp(12.5px,4.8cqw,17.5px)] line-clamp-1"
-                      : "text-[clamp(15px,6.5cqw,22px)] font-bold sm:font-extrabold line-clamp-2 leading-snug sm:leading-tight"
+                      ? "text-[clamp(11.5px,4.5cqw,16px)] line-clamp-1"
+                      : "text-[clamp(13.5px,5.8cqw,18px)] line-clamp-2 leading-snug sm:leading-tight"
                   )}
                 >
                   {title}

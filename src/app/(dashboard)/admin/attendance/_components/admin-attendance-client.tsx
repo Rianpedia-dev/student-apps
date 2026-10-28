@@ -335,7 +335,7 @@ export function AdminAttendanceClient({
                         item.guruNip !== "-" &&
                         item.guruNip.toLowerCase() !== "kosong" && (
                           <span className="text-[11px] text-muted-foreground block">
-                            NIP: {item.guruNip}
+                            NIY: {item.guruNip}
                           </span>
                         )}
                     </td>
