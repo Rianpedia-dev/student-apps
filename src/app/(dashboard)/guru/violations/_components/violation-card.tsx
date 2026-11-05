@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Eye, Pencil, Trash2, Calendar } from "lucide-react";
+import { Eye, Pencil, Trash2, Calendar, UserCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ interface ViolationCardProps {
   onViewDetail: (v: ViolationItem) => void;
   onEdit: (v: ViolationItem) => void;
   onDelete: (v: ViolationItem) => void;
+  canEditDelete?: boolean;
 }
 
 export function ViolationCard({
@@ -22,9 +23,9 @@ export function ViolationCard({
   onViewDetail,
   onEdit,
   onDelete,
+  canEditDelete = false,
 }: ViolationCardProps) {
-  const severity = violation.severity || "RINGAN";
-  const points = violation.points ?? 5;
+  const severity = (violation.tingkatan || violation.severity || "RINGAN").toUpperCase() as "RINGAN" | "SEDANG" | "BERAT";
   const severityConfig = VIOLATION_SEVERITY_CONFIG[severity] || VIOLATION_SEVERITY_CONFIG.RINGAN;
 
   // Accent border line based on severity
@@ -41,7 +42,7 @@ export function ViolationCard({
       <div className={`h-1.5 w-full ${accentGradient}`} />
 
       <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full gap-3">
-        {/* Top: Student Profile & Points Badge */}
+        {/* Top: Student Profile & Tingkat Badge */}
         <div className="flex items-start justify-between gap-2.5">
           <div className="flex items-center gap-3 min-w-0">
             <UserAvatar
@@ -65,15 +66,20 @@ export function ViolationCard({
             size="sm"
             className="shrink-0 text-[11px] font-semibold"
           >
-            {severityConfig.label} (-{points} Poin)
+            {severityConfig.label}
           </Badge>
         </div>
 
-        {/* Badge: Kategori */}
-        <div>
-          <Badge variant="outline" size="sm" className="text-xs bg-muted/40 font-normal">
+        {/* Badges: Kategori & Semester */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline" size="sm" className="text-[11px] bg-muted/40 font-normal">
             {violation.kategori || "Pelanggaran Umum"}
           </Badge>
+          {violation.semester && (
+            <Badge variant="secondary" size="sm" className="text-[10px] font-medium bg-muted/60">
+              {violation.semester}
+            </Badge>
+          )}
         </div>
 
         {/* Deskripsi Kejadian */}
@@ -81,15 +87,11 @@ export function ViolationCard({
           {violation.cleanKeterangan || violation.keterangan || "-"}
         </div>
 
-        {/* Tindakan Pembinaan (jika ada) */}
-        {violation.tindakan && (
-          <div className="rounded-xl bg-muted/40 p-2.5 text-xs border border-border/50 space-y-0.5">
-            <span className="font-semibold text-foreground text-[11px] block">
-              Catatan Bimbingan:
-            </span>
-            <p className="text-muted-foreground leading-relaxed text-[11px] line-clamp-2">
-              {violation.tindakan}
-            </p>
+        {/* Guru Pembuat Catatan (Otomatis) */}
+        {violation.guru_nama && (
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted/20 px-2 py-1 rounded-lg border border-border/30">
+            <UserCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="truncate">Dicatat oleh: <strong className="font-medium text-foreground">{violation.guru_nama}</strong></span>
           </div>
         )}
 
@@ -104,30 +106,34 @@ export function ViolationCard({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
               onClick={() => onViewDetail(violation)}
               title="Lihat Detail"
             >
               <Eye className="h-3.5 w-3.5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => onEdit(violation)}
-              title="Edit Catatan"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-              onClick={() => onDelete(violation)}
-              title="Hapus Catatan"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            {canEditDelete && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                  onClick={() => onEdit(violation)}
+                  title="Edit Catatan"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                  onClick={() => onDelete(violation)}
+                  title="Hapus Catatan"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </CardContent>

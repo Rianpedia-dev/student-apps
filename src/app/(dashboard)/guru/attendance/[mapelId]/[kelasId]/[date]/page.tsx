@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, BookOpen, Clock } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { BuildingLibraryIcon } from "@/components/icons/building-library-icon";
 import { Badge } from "@/components/ui/badge";
 import { formatDateIndo } from "@/lib/utils";
@@ -59,6 +59,7 @@ export default async function DailySubjectAttendancePage(props: PageProps) {
       name: true,
       nis: true,
       gender: true,
+      image: true,
     },
   });
 
@@ -111,6 +112,7 @@ export default async function DailySubjectAttendancePage(props: PageProps) {
       name: s.name,
       nis: s.nis || "-",
       gender: s.gender || "L",
+      image: s.image || null,
       keterangan: found?.keterangan || ("Hadir" as const),
       catatan: found?.catatan || "",
     };

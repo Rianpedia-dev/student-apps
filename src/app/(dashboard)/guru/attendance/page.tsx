@@ -3,10 +3,11 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AttendanceService } from "@/services/attendance.service";
+import { AttendanceQuickActions } from "./_components/attendance-quick-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -80,52 +81,12 @@ export default async function GuruAttendancePage() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto w-full px-2 sm:px-4 md:px-0">
-      {/* Quick Action Cards */}
-      {isWaliKelas ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <Link href="/guru/attendance/recap" className="group">
-            <Card enableHover className="cursor-pointer group-hover:border-teal-500/50 transition-all">
-              <CardContent className="p-4 text-center sm:text-left">
-                <p className="text-sm font-bold text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                  Rekap Presensi Mapel
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/guru/attendance/matrix" className="group">
-            <Card enableHover className="cursor-pointer group-hover:border-emerald-500/50 transition-all">
-              <CardContent className="p-4 text-center sm:text-left">
-                <p className="text-sm font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  Supervisi Kelas {guruClass}
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href={`/guru/attendance/table/${todayFormatted}`} className="group">
-            <Card enableHover className="cursor-pointer group-hover:border-sky-500/50 transition-all">
-              <CardContent className="p-4 text-center sm:text-left">
-                <p className="text-sm font-bold text-foreground group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                  Tabel Presensi Bulanan
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-      ) : (
-        <div className="flex">
-          <Link href="/guru/attendance/recap" className="group w-full sm:w-auto">
-            <Card enableHover className="cursor-pointer group-hover:border-teal-500/50 transition-all">
-              <CardContent className="py-3 px-5 text-center sm:text-left">
-                <p className="text-sm font-bold text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                  Rekap Presensi Mapel
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-      )}
+      {/* Quick Action Cards (Interactive Animated Folders) */}
+      <AttendanceQuickActions
+        isWaliKelas={isWaliKelas}
+        guruClass={guruClass}
+        todayFormatted={todayFormatted}
+      />
 
       {/* Section 1: Today's Teaching Schedule & Attendance Status */}
       <div className="space-y-3.5">

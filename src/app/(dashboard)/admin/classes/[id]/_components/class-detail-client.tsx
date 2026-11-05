@@ -87,7 +87,6 @@ const AVAILABLE_PDF_FIELDS: PdfColumnOption[] = [
   { id: "appleid", label: "Apple ID", defaultChecked: true, align: "left", width: 45 },
   { id: "passwordappleid", label: "Password Apple ID", defaultChecked: false, align: "left", width: 35 },
   { id: "email", label: "Email Akun Siswa", defaultChecked: false, align: "left", width: 45 },
-  { id: "point", label: "Poin Siswa", defaultChecked: true, align: "center", width: 18 },
   { id: "paraf", label: "Kolom Tanda Tangan / Paraf", defaultChecked: false, align: "center", width: 25 },
   { id: "catatan", label: "Kolom Keterangan / Catatan", defaultChecked: false, align: "left", width: 30 },
 ];
@@ -113,7 +112,6 @@ export function ClassDetailClient({
     "name",
     "gender",
     "appleid",
-    "point",
   ]);
 
   // Filter students based on search
@@ -242,7 +240,6 @@ export function ClassDetailClient({
       if (selectedFields.includes("appleid")) row.push(s.appleid || "-");
       if (selectedFields.includes("passwordappleid")) row.push(s.passwordappleid || "-");
       if (selectedFields.includes("email")) row.push(s.email);
-      if (selectedFields.includes("point")) row.push(`${s.point || "0"} Poin`);
       if (selectedFields.includes("paraf")) row.push(""); // empty space for signature
       if (selectedFields.includes("catatan")) row.push(""); // empty space for notes
       return row;
@@ -490,14 +487,13 @@ export function ClassDetailClient({
                   <TableHead className="font-bold">NIS</TableHead>
                   <TableHead className="font-bold text-center">Gender</TableHead>
                   <TableHead className="font-bold">Apple ID</TableHead>
-                  <TableHead className="font-bold text-center">Poin</TableHead>
                   <TableHead className="w-20 text-center font-bold">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredStudents.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground text-sm">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground text-sm">
                       {search
                         ? "Tidak ada siswa yang cocok dengan pencarian."
                         : "Belum ada siswa yang dimasukkan ke dalam kelas ini."}
@@ -518,11 +514,6 @@ export function ClassDetailClient({
                       </TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">
                         {s.appleid || "-"}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="warning" size="sm" className="font-mono text-xs">
-                          {s.point || "0"} Poin
-                        </Badge>
                       </TableCell>
                       <TableCell className="text-center">
                         <Link

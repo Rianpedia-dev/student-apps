@@ -1,6 +1,8 @@
 export type ViolationSeverity = "RINGAN" | "SEDANG" | "BERAT";
 export type ViolationStatus = "TERCATAT" | "DIBINA" | "SELESAI";
 
+export const VIOLATION_SEVERITY_OPTIONS: ViolationSeverity[] = ["RINGAN", "SEDANG"];
+
 export interface ViolationPresetItem {
   id: string;
   label: string;
@@ -131,8 +133,11 @@ export interface ParsedViolation {
   tindakan?: string;
 }
 
-export function parseViolationKeterangan(rawKeterangan?: string | null): ParsedViolation {
-  if (!rawKeterangan) {
+export function parseViolationKeterangan(
+  rawKeterangan?: string | null,
+  dbTingkatan?: string | null
+): ParsedViolation {
+  if (!rawKeterangan && !dbTingkatan) {
     return {
       status: "TERCATAT",
       severity: "RINGAN",
@@ -141,7 +146,7 @@ export function parseViolationKeterangan(rawKeterangan?: string | null): ParsedV
     };
   }
 
-  let text = rawKeterangan.trim();
+  let text = (rawKeterangan || "").trim();
   const status: ViolationStatus = "TERCATAT";
   let severity: ViolationSeverity = "RINGAN";
   let points = 5;
@@ -156,6 +161,15 @@ export function parseViolationKeterangan(rawKeterangan?: string | null): ParsedV
     severity = sevMatch[1].toUpperCase() as ViolationSeverity;
     text = text.replace(sevMatch[0], "").trim();
     points = VIOLATION_SEVERITY_CONFIG[severity]?.points ?? 5;
+  }
+
+  // Jika ada kolom database tingkatan, prioritaskan nilai kolom database
+  if (dbTingkatan) {
+    const normalized = dbTingkatan.trim().toUpperCase() as ViolationSeverity;
+    if (VIOLATION_SEVERITY_CONFIG[normalized]) {
+      severity = normalized;
+      points = VIOLATION_SEVERITY_CONFIG[normalized]?.points ?? 5;
+    }
   }
 
   // Cek Points Tag: [PTS:15]
@@ -176,7 +190,7 @@ export function parseViolationKeterangan(rawKeterangan?: string | null): ParsedV
     status,
     severity,
     points,
-    cleanKeterangan: text || rawKeterangan,
+    cleanKeterangan: text || rawKeterangan || "-",
     tindakan,
   };
 }

@@ -1,11 +1,8 @@
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, Clock, ShieldCheck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { formatDateIndo } from "@/lib/utils";
-import { DailySubjectAttendanceForm } from "@/app/(dashboard)/guru/attendance/[mapelId]/[kelasId]/[date]/_components/daily-subject-attendance-form";
+import { getUserProfileImage } from "@/lib/utils";
+import { AdminAttendanceDetailClient } from "./_components/admin-attendance-detail-client";
 
 export const dynamic = "force-dynamic";
 
@@ -42,32 +39,53 @@ export default async function AdminAttendanceDetailPage(props: PageProps) {
     notFound();
   }
 
-  const students = await prisma.user.findMany({
-    where: {
-      kelas: kelas.nama_kelas,
-      status: "1",
-    },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      nis: true,
-      gender: true,
-    },
-  });
+  // Cek otorisasi jenjang jika admin bukan Super Admin
+  const isSuperAdmin = session.jenjang === "ALL";
+  if (!isSuperAdmin && session.jenjang && kelas.jenjang && kelas.jenjang !== session.jenjang) {
+    redirect(`/admin/attendance?date=${date}`);
+  }
 
-  const existingAbsen = await prisma.absen.findMany({
-    where: {
-      mapel_id: mapel.id,
-      kelas: kelas.nama_kelas,
-      date,
-    },
-    select: {
-      user_id: true,
-      keterangan: true,
-      catatan: true,
-    },
-  });
+  // Indonesian day name for date
+  const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const parsedDate = new Date(date + "T00:00:00");
+  const dayName = !isNaN(parsedDate.getTime()) ? dayNames[parsedDate.getDay()] : "Senin";
+
+  const [students, existingAbsen, jadwal] = await Promise.all([
+    prisma.user.findMany({
+      where: {
+        kelas: kelas.nama_kelas,
+        status: "1",
+      },
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        nis: true,
+        gender: true,
+        image: true,
+      },
+    }),
+    prisma.absen.findMany({
+      where: {
+        mapel_id: mapel.id,
+        kelas: kelas.nama_kelas,
+        date,
+      },
+      include: {
+        guru: { select: { id: true, name: true, nip: true } },
+      },
+    }),
+    prisma.jadwalPelajaran.findFirst({
+      where: {
+        kelas_id: kelas.id,
+        mapel_id: mapel.id,
+        hari: dayName,
+      },
+      include: {
+        guru: { select: { id: true, name: true, nip: true } },
+      },
+    }),
+  ]);
 
   const existingMap = new Map();
   existingAbsen.forEach((a) => {
@@ -79,67 +97,41 @@ export default async function AdminAttendanceDetailPage(props: PageProps) {
 
   const initialStudents = students.map((s) => {
     const found = existingMap.get(s.id.toString());
+    const profileImg = getUserProfileImage(s.image, s.gender, s.name);
     return {
       id: s.id.toString(),
       name: s.name,
       nis: s.nis || "-",
       gender: s.gender || "L",
+      image: profileImg,
       keterangan: found?.keterangan || ("Hadir" as const),
       catatan: found?.catatan || "",
     };
   });
 
+  // Determine teacher name: from recorder or from schedule
+  const recorderTeacher = existingAbsen.find((a) => a.guru?.name)?.guru?.name;
+  const scheduleTeacher = jadwal?.guru?.name;
+  const teacherName = recorderTeacher || scheduleTeacher || null;
+
+  const jamKbm =
+    jadwal?.jam_mulai && jadwal?.jam_selesai
+      ? `${jadwal.jam_mulai} - ${jadwal.jam_selesai}`
+      : null;
+
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
-        <Link
-          href={`/admin/attendance?date=${date}`}
-          className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" /> Kembali ke Monitoring Presensi
-        </Link>
-        <Badge className="bg-slate-800 text-white text-xs font-semibold">
-          Audit Otoritas Administrator
-        </Badge>
-      </div>
-
-      <div className="p-5 sm:p-6 rounded-2xl border border-border/80 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="text-[11px] font-mono border-orange-500/40 text-orange-600">
-                {mapel.kode_mapel}
-              </Badge>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Audit Presensi: {mapel.nama_mapel}
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Rombel Kelas: <strong>{kelas.nama_kelas}</strong> • Tanggal: <strong>{formatDateIndo(date)}</strong>
-            </p>
-          </div>
-          <div>
-            {existingAbsen.length > 0 ? (
-              <Badge className="bg-emerald-600 text-white text-xs font-semibold">
-                Tercatat ({existingAbsen.length} Siswa)
-              </Badge>
-            ) : (
-              <Badge className="bg-orange-500 text-white text-xs font-semibold">
-                Belum Diisi Guru
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <DailySubjectAttendanceForm
+    <div className="max-w-4xl mx-auto px-1 sm:px-0">
+      <AdminAttendanceDetailClient
         dateStr={date}
         kelasId={kelas.id.toString()}
         kelasNama={kelas.nama_kelas}
+        kelasJenjang={kelas.jenjang || "SD"}
         mapelId={mapel.id.toString()}
         mapelNama={mapel.nama_mapel}
         mapelKode={mapel.kode_mapel}
-        mapelWarna={mapel.warna || "emerald"}
+        teacherName={teacherName}
+        jamKbm={jamKbm}
+        jadwalId={jadwal?.id.toString() || null}
         initialStudents={initialStudents}
         isAlreadyFilled={existingAbsen.length > 0}
       />

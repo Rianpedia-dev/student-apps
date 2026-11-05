@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { CalendarClient } from "@/components/features/calendar/calendar-client";
 
@@ -10,21 +11,45 @@ export default async function GuruCalendarPage() {
     redirect("/login");
   }
 
-  const guruClass = session.kelas || "Umum";
+  const guruJenjang = session.jenjang || "ALL";
+  const guruClass = session.kelas || null;
+  const isWaliKelas = Boolean(session.kelas);
+
+  // Ambil kelas binaan atau daftar kelas sesuai jenjang guru
+  const classRecords = await prisma.kelas.findMany({
+    where:
+      guruJenjang && guruJenjang !== "ALL"
+        ? { jenjang: guruJenjang }
+        : {},
+    orderBy: { nama_kelas: "asc" },
+    select: {
+      id: true,
+      nama_kelas: true,
+      jenjang: true,
+    },
+  });
+
+  const classList = classRecords.map((c) => ({
+    id: c.id.toString(),
+    nama_kelas: c.nama_kelas,
+    jenjang: c.jenjang || undefined,
+  }));
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Kalender Kegiatan Kelas</h1>
-      </div>
-
-      <div className="w-full">
-        <CalendarClient
-          canManage={true}
-          categories={["Akademik", "Keagamaan", "Ujian", "Libur", "Ekstrakurikuler", guruClass]}
-        />
-      </div>
+    <div className="w-full">
+      <CalendarClient
+        canManage={true}
+        userRole="guru"
+        userJenjang={guruJenjang}
+        userClass={guruClass}
+        classList={classList}
+        pageTitle="Kalender Kegiatan Akademik & Kelas"
+        pageSubtitle={
+          isWaliKelas
+            ? `Pantau agenda resmi sekolah dan publikasikan kegiatan khusus untuk ${guruClass}.`
+            : "Pantau agenda resmi sekolah dan tambahkan kegiatan pembelajaran mapel Anda."
+        }
+      />
     </div>
   );
 }
-

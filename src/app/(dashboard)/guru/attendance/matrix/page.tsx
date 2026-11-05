@@ -31,7 +31,11 @@ export default async function GuruAttendanceMatrixPage(props: PageProps) {
 
   const currentStatus = dbUser?.status || session.status;
   const isWaliKelas = currentStatus === "4" || session.role === "admin";
-  const guruClass = kelas || dbUser?.kelas || session.kelas || "";
+  // Khusus role admin yang dapat membuka supervisi kelas manapun via param query.
+  // Guru Wali Kelas hanya diizinkan membuka kelas binaannya sendiri.
+  const guruClass = session.role === "admin" && kelas
+    ? kelas
+    : (dbUser?.kelas || session.kelas || "");
 
   if (!isWaliKelas) {
     redirect("/guru/attendance");

@@ -10,21 +10,23 @@ export default async function SiswaCalendarPage() {
     redirect("/login");
   }
 
-  const siswaClass = session.kelas || "Umum";
+  const siswaJenjang = session.jenjang || "ALL";
+  const siswaClass = session.kelas || null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Kalender Kegiatan Sekolah</h1>
-      </div>
-
-      <div className="w-full">
-        <CalendarClient
-          canManage={false}
-          categories={["Akademik", "Keagamaan", "Ujian", "Libur", "Ekstrakurikuler", siswaClass]}
-        />
-      </div>
+    <div className="w-full">
+      <CalendarClient
+        canManage={false}
+        userRole="siswa"
+        userJenjang={siswaJenjang}
+        userClass={siswaClass}
+        pageTitle="Kalender Kegiatan Sekolah"
+        pageSubtitle={
+          siswaClass
+            ? `Jadwal kegiatan belajar, ujian, ibadah bersama, dan libur untuk ${siswaClass}.`
+            : "Jadwal kegiatan belajar, ujian, ibadah bersama, dan hari libur sekolah."
+        }
+      />
     </div>
   );
 }
-

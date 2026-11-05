@@ -4,6 +4,9 @@ import React from "react";
 import {
   Calendar,
   ShieldAlert,
+  UserCheck,
+  GraduationCap,
+  BookOpen,
 } from "lucide-react";
 import {
   Dialog,
@@ -31,8 +34,7 @@ export function ViolationDetailModal({
 }: ViolationDetailModalProps) {
   if (!violation) return null;
 
-  const severity = violation.severity || "RINGAN";
-  const points = violation.points ?? 5;
+  const severity = (violation.tingkatan || violation.severity || "RINGAN").toUpperCase() as "RINGAN" | "SEDANG" | "BERAT";
   const severityConfig = VIOLATION_SEVERITY_CONFIG[severity] || VIOLATION_SEVERITY_CONFIG.RINGAN;
 
   return (
@@ -45,10 +47,10 @@ export function ViolationDetailModal({
             </div>
             <div>
               <DialogTitle className="text-base font-semibold">
-                Rincian Catatan Kedisiplinan
+                Rincian Catatan Kedisiplinan Siswa
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Informasi detail pelanggaran tata tertib dan bimbingan siswa.
+                Informasi lengkap catatan pelanggaran tata tertib dan riwayat bimbingan.
               </DialogDescription>
             </div>
           </div>
@@ -67,11 +69,16 @@ export function ViolationDetailModal({
               <h4 className="font-bold text-sm text-foreground truncate">{violation.nama}</h4>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Kelas: <span className="font-medium text-foreground">{violation.kelas || "-"}</span>
+                {violation.jenjang && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary">
+                    Jenjang {violation.jenjang}
+                  </span>
+                )}
               </p>
             </div>
           </div>
 
-          {/* 2. Informasi Kategori & Tingkat */}
+          {/* 2. Informasi Kategori & Tingkatan */}
           <div className="grid grid-cols-2 gap-2.5">
             <div className="bg-muted/20 border border-border/50 rounded-xl p-3">
               <span className="text-[11px] font-medium text-muted-foreground block">Kategori Pelanggaran</span>
@@ -81,42 +88,50 @@ export function ViolationDetailModal({
             </div>
 
             <div className="bg-muted/20 border border-border/50 rounded-xl p-3">
-              <span className="text-[11px] font-medium text-muted-foreground block">Tingkat Keparahan</span>
+              <span className="text-[11px] font-medium text-muted-foreground block">Tingkatan Pelanggaran</span>
               <div className="flex items-center gap-1.5 mt-1">
                 <Badge variant={severityConfig.badgeVariant} size="sm" className="text-[11px]">
                   {severityConfig.label}
                 </Badge>
-                <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
-                  -{points} Poin
-                </span>
               </div>
             </div>
           </div>
 
-          {/* 3. Deskripsi Kejadian */}
+          {/* 3. Info Semester & Guru Pembuat Catatan (Otomatis) */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="bg-muted/20 border border-border/50 rounded-xl p-3 space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="font-medium">Semester</span>
+              </div>
+              <p className="text-xs font-semibold text-foreground truncate">
+                {violation.semester || "Semester Berjalan"}
+              </p>
+            </div>
+
+            <div className="bg-muted/20 border border-border/50 rounded-xl p-3 space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                <UserCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                <span className="font-medium">Guru Pembuat</span>
+              </div>
+              <p className="text-xs font-semibold text-foreground truncate">
+                {violation.guru_nama || "Guru Pengampu"}
+              </p>
+            </div>
+          </div>
+
+          {/* 4. Deskripsi Kejadian */}
           <div className="space-y-1.5">
-            <span className="text-xs font-semibold text-foreground">Deskripsi Kejadian:</span>
+            <span className="text-xs font-semibold text-foreground">Deskripsi Pelanggaran:</span>
             <div className="p-3 rounded-xl bg-card border border-border text-xs sm:text-sm leading-relaxed text-foreground whitespace-pre-wrap">
               {violation.cleanKeterangan || violation.keterangan}
             </div>
           </div>
 
-          {/* 4. Tindakan Pembinaan */}
-          {violation.tindakan && (
-            <div className="space-y-1.5">
-              <span className="text-xs font-semibold text-foreground">
-                Catatan Bimbingan Wali Kelas:
-              </span>
-              <div className="p-3 rounded-xl bg-muted/40 border border-border/60 text-xs text-foreground/90 leading-relaxed">
-                {violation.tindakan}
-              </div>
-            </div>
-          )}
-
           {/* 5. Stempel Waktu */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/20 p-2.5 rounded-xl border border-border/40">
-            <Calendar className="h-3.5 w-3.5" />
-            <span>Waktu Kejadian / Pencatatan: <strong>{formatDateIndo(violation.created_at)}</strong></span>
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span>Tanggal Dicatat: <strong className="text-foreground">{formatDateIndo(violation.created_at)}</strong></span>
           </div>
         </div>
       </DialogContent>

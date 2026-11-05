@@ -3,19 +3,36 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
 import { SchedulesManager } from "./_components/schedules-manager";
-import { compareScheduleTime } from "@/lib/utils";
+import { compareScheduleTime, getAcademicYear } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminSchedulesPage() {
+interface PageProps {
+  searchParams: Promise<{
+    tahun?: string;
+    semester?: string;
+    scope?: string;
+    kelasId?: string;
+  }>;
+}
+
+export default async function AdminSchedulesPage(props: PageProps) {
   const session = await getSession();
   if (!session || session.role !== "admin") {
     redirect("/login");
   }
 
+  const { tahun, semester, scope, kelasId } = await props.searchParams;
+
+  const academic = getAcademicYear();
+  const currentTahun = tahun || academic.tahunPelajaran;
+  const currentSemester = semester || String(academic.semesterNum);
+
   const activeJenjang = await getActiveJenjang(session);
   const isSuperAdmin = session?.jenjang === "ALL";
   const isRestricted = !isSuperAdmin && activeJenjang !== "ALL";
+
+  const currentScope = scope || (isRestricted ? activeJenjang : "ALL");
 
   const classWhere: any = {};
   if (isRestricted) {
@@ -35,12 +52,29 @@ export default async function AdminSchedulesPage() {
     ];
   }
 
-  const scheduleWhere: any = {};
-  if (isRestricted) {
-    scheduleWhere.kelas = { jenjang: activeJenjang };
+  const scheduleWhere: any = {
+    AND: [
+      {
+        OR: [
+          { tahun_pelajaran: currentTahun, semester: currentSemester },
+          // Tetap tampilkan jadwal legacy yang belum terisi tahun_pelajarannya di semester aktif
+          { tahun_pelajaran: null },
+        ],
+      },
+    ],
+  };
+
+  if (currentScope === "SD") {
+    scheduleWhere.AND.push({ kelas: { jenjang: "SD" } });
+  } else if (currentScope === "SMP") {
+    scheduleWhere.AND.push({ kelas: { jenjang: "SMP" } });
+  } else if (currentScope === "CLASS" && kelasId) {
+    scheduleWhere.AND.push({ kelas_id: BigInt(kelasId) });
+  } else if (isRestricted) {
+    scheduleWhere.AND.push({ kelas: { jenjang: activeJenjang } });
   }
 
-  const [classes, subjects, teachers, schedules] = await Promise.all([
+  const [classes, subjects, teachers, schedules, distinctYears] = await Promise.all([
     prisma.kelas.findMany({
       where: classWhere,
       orderBy: [{ jenjang: "asc" }, { tingkat: "asc" }, { nama_kelas: "asc" }],
@@ -51,7 +85,7 @@ export default async function AdminSchedulesPage() {
     }),
     prisma.user.findMany({
       where: teacherWhere,
-      select: { id: true, name: true, email: true, guru_bidang: true },
+      select: { id: true, name: true, email: true, guru_bidang: true, nip: true },
       orderBy: { name: "asc" },
     }),
     prisma.jadwalPelajaran.findMany({
@@ -59,10 +93,21 @@ export default async function AdminSchedulesPage() {
       include: {
         kelas: true,
         mapel: true,
-        guru: { select: { id: true, name: true } },
+        guru: { select: { id: true, name: true, nip: true } },
       },
     }),
+    prisma.jadwalPelajaran.findMany({
+      select: { tahun_pelajaran: true },
+      distinct: ["tahun_pelajaran"],
+    }),
   ]);
+
+  const yearSet = new Set<string>(["2026/2027", "2025/2026", "2024/2025", "2023/2024"]);
+  yearSet.add(academic.tahunPelajaran);
+  distinctYears.forEach((y) => {
+    if (y.tahun_pelajaran) yearSet.add(y.tahun_pelajaran);
+  });
+  const availableYears = Array.from(yearSet).sort().reverse();
 
   const sortedSchedules = [...schedules].sort((a, b) => {
     const comp = compareScheduleTime(
@@ -83,57 +128,52 @@ export default async function AdminSchedulesPage() {
     id: s.id.toString(),
     kelasId: s.kelas_id.toString(),
     kelasNama: s.kelas.nama_kelas,
-    jenjang: s.kelas.jenjang,
+    jenjang: s.kelas.jenjang || "SD",
     mapelId: s.mapel_id.toString(),
     mapelNama: s.mapel.nama_mapel,
     mapelKode: s.mapel.kode_mapel,
     guruId: s.guru_id.toString(),
     guruNama: s.guru?.name || "-",
+    guruNiy: s.guru?.nip || "-",
     hari: s.hari,
     jamMulai: s.jam_mulai,
     jamSelesai: s.jam_selesai,
+    tahunPelajaran: s.tahun_pelajaran || currentTahun,
+    semester: s.semester || currentSemester,
   }));
 
   const formattedClasses = classes.map((c) => ({
     id: c.id.toString(),
     nama: c.nama_kelas,
-    jenjang: c.jenjang,
+    jenjang: c.jenjang || "SD",
   }));
 
   const formattedSubjects = subjects.map((s) => ({
     id: s.id.toString(),
     nama: s.nama_mapel,
     kode: s.kode_mapel,
-    jenjang: s.jenjang,
+    jenjang: s.jenjang || "SEMUA",
   }));
 
   const formattedTeachers = teachers.map((t) => ({
     id: t.id.toString(),
     nama: t.name,
     bidang: t.guru_bidang || "",
+    nip: t.nip || "-",
   }));
-
-  const scopeLabel =
-    isSuperAdmin && activeJenjang === "ALL"
-      ? "Semua Jenjang"
-      : activeJenjang === "SD"
-        ? "Jenjang SD"
-        : activeJenjang === "SMP"
-          ? "Jenjang SMP"
-          : "Semua Jenjang";
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Manajemen Jadwal Pelajaran</h1>
-          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-            {scopeLabel}
-          </span>
+      {/* Page Header (Bersih, Rapi, Tanpa Badge Berlebihan) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-foreground">
+            Manajemen Jadwal Pelajaran
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Kelola jadwal KBM per kelas, penugasan guru pengampu, serta import/export format Excel & PDF resmi.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Kelola alokasi jadwal mata pelajaran per kelas {scopeLabel}, penugasan guru pengampu, dan waktu KBM.
-        </p>
       </div>
 
       <SchedulesManager
@@ -141,6 +181,13 @@ export default async function AdminSchedulesPage() {
         classes={formattedClasses}
         subjects={formattedSubjects}
         teachers={formattedTeachers}
+        currentTahun={currentTahun}
+        currentSemester={currentSemester}
+        availableYears={availableYears}
+        adminJenjang={session.jenjang || "ALL"}
+        activeJenjang={activeJenjang}
+        initialScope={currentScope}
+        initialKelasId={kelasId || ""}
       />
     </div>
   );

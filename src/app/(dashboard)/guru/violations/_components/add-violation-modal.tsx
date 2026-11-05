@@ -50,9 +50,6 @@ export function AddViolationModal({
   const [selectedCategory, setSelectedCategory] = useState(VIOLATION_CATEGORIES[0]?.name || "");
   const [keterangan, setKeterangan] = useState("");
   const [severity, setSeverity] = useState<ViolationSeverity>("RINGAN");
-  const [points, setPoints] = useState<number>(5);
-  const [tindakan, setTindakan] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -81,9 +78,6 @@ export function AddViolationModal({
 
   const handleSeverityChange = (newSev: ViolationSeverity) => {
     setSeverity(newSev);
-    if (newSev === "RINGAN") setPoints(5);
-    else if (newSev === "SEDANG") setPoints(15);
-    else if (newSev === "BERAT") setPoints(25);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,9 +104,6 @@ export function AddViolationModal({
       formData.set("kategori", selectedCategory);
       formData.set("keterangan", keterangan.trim());
       formData.set("severity", severity);
-      formData.set("points", points.toString());
-      formData.set("tindakan", tindakan.trim());
-      formData.set("date", date);
 
       const res = await createViolationAction(formData);
 
@@ -123,9 +114,7 @@ export function AddViolationModal({
         setOpen(false);
         // Reset form
         setKeterangan("");
-        setTindakan("");
         setSeverity("RINGAN");
-        setPoints(5);
         setStudentSearch("");
         if (!defaultStudentId) setSelectedStudentId("");
       }
@@ -340,65 +329,20 @@ export function AddViolationModal({
             />
           </div>
 
-          {/* 5. Tingkat Keparahan & Poin & Tanggal */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="severity" className="text-xs font-semibold">
-                Tingkat Keparahan
-              </Label>
-              <select
-                id="severity"
-                value={severity}
-                onChange={(e) => handleSeverityChange(e.target.value as ViolationSeverity)}
-                className="w-full h-9 rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rose-500"
-              >
-                <option value="RINGAN">Ringan (5 Poin)</option>
-                <option value="SEDANG">Sedang (15 Poin)</option>
-                <option value="BERAT">Berat (25 Poin)</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="points" className="text-xs font-semibold">
-                Bobot Poin Sanksi
-              </Label>
-              <Input
-                id="points"
-                type="number"
-                min={1}
-                max={50}
-                value={points}
-                onChange={(e) => setPoints(Number(e.target.value) || 5)}
-                className="h-9 text-xs rounded-xl"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="date" className="text-xs font-semibold">
-                Tanggal Kejadian
-              </Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-9 text-xs rounded-xl"
-              />
-            </div>
-          </div>
-
-          {/* 6. Rekomendasi Nasihat / Tindakan Awal (Opsional) */}
+          {/* 4. Tingkatan Pelanggaran */}
           <div className="space-y-1.5">
-            <Label htmlFor="tindakan" className="text-xs font-semibold">
-              Rekomendasi Nasihat / Tindakan Pembinaan (Opsional)
+            <Label htmlFor="severity" className="text-xs font-semibold">
+              Tingkatan Pelanggaran <span className="text-rose-500">*</span>
             </Label>
-            <Input
-              id="tindakan"
-              value={tindakan}
-              onChange={(e) => setTindakan(e.target.value)}
-              placeholder="Contoh: Diberi nasihat lisan & diingatkan untuk mengunci iPad saat guru menerangkan"
-              className="h-9 text-xs rounded-xl"
-            />
+            <select
+              id="severity"
+              value={severity}
+              onChange={(e) => handleSeverityChange(e.target.value as ViolationSeverity)}
+              className="w-full h-9 rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rose-500"
+            >
+              <option value="RINGAN">Ringan</option>
+              <option value="SEDANG">Sedang</option>
+            </select>
           </div>
 
           <div className="flex justify-end items-center gap-2 pt-2 border-t border-border">

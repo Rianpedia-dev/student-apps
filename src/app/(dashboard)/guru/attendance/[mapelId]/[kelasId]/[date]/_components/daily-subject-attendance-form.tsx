@@ -19,15 +19,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { createSubjectAttendanceAction, deleteSubjectAttendanceAction } from "@/actions/guru";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getUserProfileImage } from "@/lib/utils";
 
 interface StudentRecordItem {
   id: string;
   name: string;
   nis: string;
   gender: string;
+  image?: string | null;
   keterangan: "Hadir" | "Sakit" | "Izin" | "Alpha";
   catatan?: string;
 }
@@ -62,6 +68,7 @@ export function DailySubjectAttendanceForm({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState(dateStr);
+  const [previewStudent, setPreviewStudent] = useState<StudentRecordItem | null>(null);
 
   const [records, setRecords] = useState<
     Record<string, { keterangan: "Hadir" | "Sakit" | "Izin" | "Alpha"; catatan: string }>
@@ -292,9 +299,26 @@ export function DailySubjectAttendanceForm({
                     <span className="text-xs font-bold text-muted-foreground/60 w-5 text-right shrink-0">
                       {idx + 1}.
                     </span>
-                    <div className="h-9 w-9 shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-foreground">
-                      {student.gender === "P" ? "P" : "L"}
-                    </div>
+
+                    {/* Clickable Profile Photo */}
+                    <button
+                      type="button"
+                      onClick={() => setPreviewStudent(student)}
+                      className="relative h-9.5 w-9.5 sm:h-10 sm:w-10 rounded-full shrink-0 overflow-hidden ring-2 ring-border/80 hover:ring-primary hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs group"
+                      title={`Klik untuk melihat foto profil ${student.name}`}
+                    >
+                      <img
+                        src={getUserProfileImage(student.image, student.gender, student.name)}
+                        alt={student.name}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.src = getUserProfileImage(null, student.gender, student.name);
+                        }}
+                      />
+                    </button>
+
                     <div className="min-w-0">
                       <p className="text-xs sm:text-sm font-bold text-foreground truncate">
                         {student.name}
@@ -429,6 +453,28 @@ export function DailySubjectAttendanceForm({
           </Button>
         </div>
       </div>
+
+      {/* Student Photo Preview Modal (Hanya Foto, Tanpa Teks Lainnya) */}
+      <Dialog
+        open={!!previewStudent}
+        onOpenChange={(open) => !open && setPreviewStudent(null)}
+      >
+        <DialogContent className="max-w-[280px] sm:max-w-xs rounded-3xl p-0 gap-0 overflow-hidden border border-border/80 shadow-2xl bg-card">
+          <DialogTitle className="sr-only">Foto Profil Siswa</DialogTitle>
+
+          {previewStudent && (
+            <img
+              src={getUserProfileImage(
+                previewStudent.image,
+                previewStudent.gender,
+                previewStudent.name
+              )}
+              alt={previewStudent.name}
+              className="w-full aspect-square object-cover block"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

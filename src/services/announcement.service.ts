@@ -8,6 +8,9 @@ export interface CreateAnnouncementInput {
   from: string;
   pengumuman: string;
   file?: string | null;
+  jenjang?: string | null;
+  target_role?: string | null;
+  target_kelas?: string | null;
 }
 
 export interface UpdateAnnouncementInput {
@@ -16,6 +19,9 @@ export interface UpdateAnnouncementInput {
   from?: string;
   pengumuman?: string;
   file?: string | null;
+  jenjang?: string | null;
+  target_role?: string | null;
+  target_kelas?: string | null;
 }
 
 export class AnnouncementService {
@@ -29,6 +35,9 @@ export class AnnouncementService {
         from: data.from,
         pengumuman: data.pengumuman,
         file: data.file || null,
+        jenjang: data.jenjang || "ALL",
+        target_role: data.target_role || "ALL",
+        target_kelas: data.target_kelas || null,
         like: "0",
         created_at: new Date(),
         updated_at: new Date(),
@@ -59,6 +68,9 @@ export class AnnouncementService {
     if (data.from !== undefined) dataToUpdate.from = data.from;
     if (data.pengumuman !== undefined) dataToUpdate.pengumuman = data.pengumuman;
     if (data.file !== undefined) dataToUpdate.file = data.file;
+    if (data.jenjang !== undefined) dataToUpdate.jenjang = data.jenjang;
+    if (data.target_role !== undefined) dataToUpdate.target_role = data.target_role;
+    if (data.target_kelas !== undefined) dataToUpdate.target_kelas = data.target_kelas;
 
     const updated = await prisma.pengumuman.update({
       where: { id: BigInt(data.id) },

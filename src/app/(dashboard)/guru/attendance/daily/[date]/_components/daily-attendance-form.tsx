@@ -10,7 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { createAttendanceAction, deleteAttendanceAction } from "@/actions/guru";
 import { toast } from "sonner";
 import { UserItem } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, getUserProfileImage } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface StudentAttendanceRecord {
   user: UserItem;
@@ -32,6 +37,7 @@ export function DailyAttendanceForm({
 }: DailyAttendanceFormProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [previewUser, setPreviewUser] = useState<UserItem | null>(null);
   const [records, setRecords] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     initialRecords.forEach((r) => {
@@ -81,7 +87,10 @@ export function DailyAttendanceForm({
       const res = await createAttendanceAction(dateStr, guruClass, payload);
       if (res.success) {
         toast.success(res.message);
-        router.push(`/guru/attendance/table/${dateStr}`);
+        const [y, m] = (dateStr || "").split("-");
+        const monthNum = parseInt(m, 10) || (new Date().getMonth() + 1);
+        const yearNum = parseInt(y, 10) || new Date().getFullYear();
+        router.push(`/guru/attendance/recap?mapelId=ROMBEL&month=${monthNum}&year=${yearNum}&kelas=${encodeURIComponent(guruClass)}&view=matrix`);
       } else {
         toast.error(res.error || "Gagal menyimpan presensi.");
       }
@@ -205,6 +214,24 @@ export function DailyAttendanceForm({
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted font-bold text-xs text-muted-foreground">
                     {idx + 1}
                   </span>
+                  {/* Clickable Profile Photo */}
+                  <button
+                    type="button"
+                    onClick={() => setPreviewUser(u)}
+                    className="relative h-9.5 w-9.5 sm:h-10 sm:w-10 rounded-full shrink-0 overflow-hidden ring-2 ring-border/80 hover:ring-primary hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs group"
+                    title={`Klik untuk melihat foto profil ${u.name}`}
+                  >
+                    <img
+                      src={getUserProfileImage(u.image, u.gender, u.name)}
+                      alt={u.name}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.src = getUserProfileImage(null, u.gender, u.name);
+                      }}
+                    />
+                  </button>
                   <div className="overflow-hidden">
                     <h3 className="font-bold text-sm text-foreground truncate">{u.name}</h3>
                     <p className="text-xs text-muted-foreground font-mono">
@@ -278,6 +305,26 @@ export function DailyAttendanceForm({
           </Button>
         </div>
       </div>
+      {/* Student Photo Preview Modal (Hanya Foto, Tanpa Teks Lainnya) */}
+      <Dialog
+        open={!!previewUser}
+        onOpenChange={(open) => !open && setPreviewUser(null)}
+      >
+        <DialogContent className="max-w-[280px] sm:max-w-xs rounded-3xl p-0 gap-0 overflow-hidden border border-border/80 shadow-2xl bg-card">
+          <DialogTitle className="sr-only">Foto Profil Siswa</DialogTitle>
+          {previewUser && (
+            <img
+              src={getUserProfileImage(
+                previewUser.image,
+                previewUser.gender,
+                previewUser.name
+              )}
+              alt={previewUser.name}
+              className="w-full aspect-square object-cover block"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

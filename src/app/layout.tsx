@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { GlobalBackground } from "@/components/shared/global-background";
+import { NetworkProvider } from "@/components/shared/network-provider";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
@@ -54,9 +55,11 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
         >
-          <GlobalBackground />
+          <NetworkProvider>
+            <GlobalBackground />
           {children}
-          <Toaster richColors position="top-right" />
+            <Toaster richColors position="top-right" />
+          </NetworkProvider>
         </ThemeProvider>
       </body>
     </html>

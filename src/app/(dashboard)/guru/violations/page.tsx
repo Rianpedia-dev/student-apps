@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
 import { Badge } from "@/components/ui/badge";
 import { parseViolationKeterangan } from "@/lib/constants/violations";
+import { getActiveSemester } from "@/lib/semester";
 import { AddViolationModal } from "./_components/add-violation-modal";
 import { ViolationsClientView } from "./_components/violations-client-view";
 import type { ViolationItem } from "@/types";
@@ -22,6 +23,8 @@ export default async function GuruViolationsPage() {
   const guruClass = session.kelas || "";
   const guruClassJenjang = guruClass && /SMP|Kelas (7|8|9)/i.test(guruClass) ? "SMP" : "SD";
   const effectiveGuruClass = !isRestricted || activeJenjang === guruClassJenjang ? guruClass : "";
+
+  const activeSemesterInfo = await getActiveSemester();
 
   interface StudentDbRecord {
     id: bigint;
@@ -55,7 +58,14 @@ export default async function GuruViolationsPage() {
         orderBy: [{ kelas: "asc" }, { name: "asc" }],
       }),
       prisma.pelanggaran.findMany({
-        where: isRestricted ? { kelas: { in: allowedClassNames } } : {},
+        where: isRestricted
+          ? {
+              OR: [
+                { jenjang: activeJenjang },
+                ...(allowedClassNames.length > 0 ? [{ kelas: { in: allowedClassNames } }] : []),
+              ],
+            }
+          : {},
         orderBy: [{ created_at: "desc" }, { id: "desc" }],
       }),
     ]);
@@ -101,7 +111,7 @@ export default async function GuruViolationsPage() {
     // Process & Parse Violations
     violations = dbPelanggaran.map((p) => {
       const studentUser = userById.get(p.user_id) || userByName.get((p.nama || "").trim().toLowerCase());
-      const parsed = parseViolationKeterangan(p.keterangan);
+      const parsed = parseViolationKeterangan(p.keterangan, p.tingkatan);
 
       return {
         id: p.id.toString(),
@@ -119,6 +129,13 @@ export default async function GuruViolationsPage() {
         tindakan: parsed.tindakan,
         studentImage: studentUser?.image || null,
         studentGender: studentUser?.gender || null,
+        // Database fields
+        tingkatan: p.tingkatan || parsed.severity,
+        semester: p.semester || null,
+        tahun_pelajaran: p.tahun_pelajaran || null,
+        jenjang: p.jenjang || null,
+        guru_id: p.guru_id ? p.guru_id.toString() : null,
+        guru_nama: p.guru_nama || null,
       };
     });
   } catch (e) {
@@ -134,15 +151,36 @@ export default async function GuruViolationsPage() {
     gender: s.gender,
   }));
 
+  // Ekstrak daftar unik semester dan kelas untuk filter toolbar
+  const availableSemesters = Array.from(
+    new Set([
+      ...(activeSemesterInfo?.semester ? [activeSemesterInfo.semester] : []),
+      ...violations.map((v) => v.semester).filter((s): s is string => Boolean(s)),
+    ])
+  );
+
+  const availableClasses = Array.from(
+    new Set([
+      ...students.map((s) => s.kelas).filter((k): k is string => Boolean(k)),
+      ...violations.map((v) => v.kelas).filter((k): k is string => Boolean(k)),
+    ])
+  ).sort();
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Kedisiplinan & Bimbingan Siswa</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            Pencatatan tata tertib, pembinaan santri jenjang {activeJenjang === "ALL" ? "SD & SMP" : activeJenjang}, dan laporan wali kelas.
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <AddViolationModal students={serializableStudents} guruClass={effectiveGuruClass} />
+          <AddViolationModal
+            students={serializableStudents}
+            guruClass={effectiveGuruClass}
+          />
         </div>
       </div>
 
@@ -151,6 +189,12 @@ export default async function GuruViolationsPage() {
         initialViolations={violations}
         students={serializableStudents}
         guruClass={effectiveGuruClass}
+        isWaliKelas={session.status === "4" && Boolean(effectiveGuruClass)}
+        availableSemesters={availableSemesters}
+        availableClasses={availableClasses}
+        currentUserId={session.id}
+        currentUserName={session.name}
+        userRole={session.role}
       />
     </div>
   );

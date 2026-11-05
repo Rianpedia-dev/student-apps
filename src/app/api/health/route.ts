@@ -69,3 +69,16 @@ export async function GET() {
     }
   );
 }
+
+/**
+ * Lightweight HEAD endpoint untuk ping & deteksi offline/konektivitas cepat.
+ * Tidak mengeksekusi kueri database sehingga sangat hemat sumber daya.
+ */
+export async function HEAD() {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+    },
+  });
+}

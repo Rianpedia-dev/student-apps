@@ -332,7 +332,7 @@ export function Sidebar({
     { label: "Mata Pelajaran", href: "/admin/subjects", icon: BookOpenCheckIcon, iconColor: "text-teal-600", fx: "glow" },
     { label: "Jadwal Pelajaran", href: "/admin/schedules", icon: CalendarClock, iconColor: "text-cyan-600", fx: "spin" },
     { label: "Presensi Siswa", href: "/admin/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500", fx: "drop" },
-    { label: "Buat Pengumuman", href: "/admin/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500", fx: "pop" },
+    { label: "Pengumuman", href: "/admin/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500", fx: "pop" },
     { label: "Kalender Kegiatan", href: "/admin/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500", fx: "spin" },
     { label: "Monitor Kelas Online", href: "/admin/kelas-online", icon: VideoIcon, iconColor: "text-indigo-500", fx: "wave" },
     ...(jenjang === "ALL" || !jenjang

@@ -5,17 +5,23 @@ import { getSession } from "@/lib/auth";
 import {
   ArrowLeft,
   ShieldAlert,
+  ShieldCheck,
   Mail,
   Hash,
   GraduationCap,
   User,
   Tablet,
   MapPin,
-  Award,
+  UserCheck,
+  BookOpen,
+  Calendar,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { formatDateIndo } from "@/lib/utils";
+import { parseViolationKeterangan, VIOLATION_SEVERITY_CONFIG } from "@/lib/constants/violations";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -31,13 +37,22 @@ export default async function GuruStudentDetailPage(props: {
   const { id } = await props.params;
 
   let student: any = null;
+  let studentViolations: any[] = [];
 
   try {
     const isNum = /^\d+$/.test(id);
     if (isNum) {
-      student = await prisma.user.findUnique({
-        where: { id: BigInt(id) },
-      });
+      const [dbStudent, dbViolations] = await Promise.all([
+        prisma.user.findUnique({
+          where: { id: BigInt(id) },
+        }),
+        prisma.pelanggaran.findMany({
+          where: { user_id: id },
+          orderBy: [{ created_at: "desc" }, { id: "desc" }],
+        }),
+      ]);
+      student = dbStudent;
+      studentViolations = dbViolations;
     }
   } catch (e) {
     console.warn("DB error in guru student detail:", e);
@@ -90,14 +105,6 @@ export default async function GuruStudentDetailPage(props: {
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
                   {student.name}
                 </h1>
-              </div>
-            </div>
-
-            {/* Poin Reward Badge */}
-            <div className="self-start sm:self-auto shrink-0">
-              <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-                <Award className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="text-xs font-semibold">Poin Reward: {student.point || "0"}</span>
               </div>
             </div>
           </div>
@@ -194,6 +201,90 @@ export default async function GuruStudentDetailPage(props: {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Histori Catatan Kedisiplinan Siswa (Wali Kelas Monitoring) */}
+      <Card className="border-border shadow-xs overflow-hidden rounded-2xl bg-card">
+        <CardHeader className="pb-3 border-b border-border/40">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-rose-500" />
+              <CardTitle className="text-sm font-bold">
+                Riwayat Catatan Kedisiplinan Siswa
+              </CardTitle>
+            </div>
+            <Badge
+              variant={studentViolations.length === 0 ? "emerald" : "outline"}
+              size="sm"
+              className="text-[10px] font-semibold"
+            >
+              {studentViolations.length === 0 ? "Rekam Jejak Bersih" : `${studentViolations.length} Catatan`}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-5">
+          {studentViolations.length === 0 ? (
+            <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
+              <ShieldCheck className="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto" />
+              <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                Alhamdulillah, Rekam Jejak Siswa Bersih
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Belum ada catatan pelanggaran kedisiplinan yang tercatat untuk {student.name}.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {studentViolations.map((v) => {
+                const parsed = parseViolationKeterangan(v.keterangan, v.tingkatan);
+                const severity = (v.tingkatan || parsed.severity || "RINGAN").toUpperCase() as "RINGAN" | "SEDANG" | "BERAT";
+                const sevConfig = VIOLATION_SEVERITY_CONFIG[severity] || VIOLATION_SEVERITY_CONFIG.RINGAN;
+
+                return (
+                  <div
+                    key={v.id.toString()}
+                    className="p-3.5 rounded-2xl bg-muted/30 border border-border/60 space-y-2 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-foreground">
+                          {v.kategori || "Pelanggaran"}
+                        </span>
+                        <Badge variant={sevConfig.badgeVariant} size="sm" className="text-[10px]">
+                          {sevConfig.label}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                        {v.semester && (
+                          <span className="flex items-center gap-1">
+                            <BookOpen className="h-3 w-3 text-primary" />
+                            <span>{v.semester}</span>
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDateIndo(v.created_at)}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-foreground leading-relaxed">
+                      {parsed.cleanKeterangan || v.keterangan}
+                    </p>
+
+                    {v.guru_nama && (
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground pt-1 border-t border-border/30">
+                        <UserCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                        <span>Dicatat oleh: <strong className="text-foreground">{v.guru_nama}</strong></span>
+                        {v.kelas && <span className="ml-auto">Kelas saat kejadian: <strong>{v.kelas}</strong></span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

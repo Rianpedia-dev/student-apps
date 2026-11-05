@@ -24,6 +24,20 @@ export function getAcademicYear(dateInput: Date = new Date()) {
   }
 }
 
+/**
+ * Memastikan nama kelas tertulis rapi dengan awalan "Kelas " tanpa duplikasi kata "Kelas"
+ * Contoh: "Kelas 7 - Khalid bin Walid" -> "Kelas 7 - Khalid bin Walid"
+ *         "7A" -> "Kelas 7A"
+ */
+export function formatClassDisplay(name?: string | null): string {
+  if (!name) return "";
+  const trimmed = name.trim();
+  if (/^kelas\s+/i.test(trimmed)) {
+    return trimmed;
+  }
+  return `Kelas ${trimmed}`;
+}
+
 export function formatDateIndo(dateStrOrObj: string | Date | null | undefined): string {
   if (!dateStrOrObj) return "-";
   const date = typeof dateStrOrObj === "string" ? new Date(dateStrOrObj) : dateStrOrObj;

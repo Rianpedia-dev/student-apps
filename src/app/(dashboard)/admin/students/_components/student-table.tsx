@@ -65,7 +65,7 @@ const AVAILABLE_EXPORT_FIELDS = [
   { id: "appleid", label: "Apple ID", default: true },
   { id: "status", label: "Status Akun", default: true },
   { id: "passwordappleid", label: "Password Apple ID", default: false },
-  { id: "point", label: "Poin Siswa", default: false },
+
   { id: "notes", label: "Catatan Profil", default: false },
 ];
 
@@ -338,7 +338,7 @@ export function StudentTable({
         if (exportFields.includes("status")) {
           row["Status"] = s.status === "1" ? "Aktif" : s.status === "0" ? "Pending" : "Non-Aktif";
         }
-        if (exportFields.includes("point")) row["Poin"] = s.point || "0";
+
         if (exportFields.includes("notes")) row["Catatan"] = s.notes || "-";
         return row;
       });

@@ -145,9 +145,14 @@ export default async function GuruDashboardPage() {
         : 0,
       prisma.pengumuman.findMany({
         where: {
+          AND: [{ OR: [{ jenjang: "ALL" }, { jenjang: null }, ...(isRestricted ? [{ jenjang: activeJenjang }] : [])] }],
           OR: [
+            { target_role: "GURU" },
+            { target_role: "ALL" },
+            { target_role: null },
             { from: "IT" },
-            ...(guruClass && showGuruClass ? [{ from: guruClass }] : []),
+            { from: session.name },
+            ...(guruClass && showGuruClass ? [{ from: guruClass }, { target_kelas: guruClass }] : []),
           ],
         },
         orderBy: { id: "desc" },

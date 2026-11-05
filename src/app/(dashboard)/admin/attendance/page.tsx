@@ -1,10 +1,7 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
-import { ClipboardList } from "lucide-react";
 import { AttendanceService } from "@/services/attendance.service";
-import { formatDateIndo } from "@/lib/utils";
 import { AdminAttendanceClient } from "./_components/admin-attendance-client";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +31,12 @@ export default async function AdminAttendancePage(props: PageProps) {
     ).padStart(2, "0")}`;
 
   const isSuperAdmin = session?.jenjang === "ALL";
-  const effectiveJenjang = !isSuperAdmin && activeJenjang !== "ALL" ? activeJenjang : (jenjang || undefined);
+  const adminJenjang = session?.jenjang || "ALL";
+
+  // Jika bukan Super Admin (misal: admin jenjang SD atau SMP), paksa jenjang ke hak aksesnya
+  const effectiveJenjang = !isSuperAdmin
+    ? (session.jenjang || (activeJenjang !== "ALL" ? activeJenjang : "SD"))
+    : (jenjang || (activeJenjang !== "ALL" ? activeJenjang : undefined));
 
   const dashboardData = await AttendanceService.getAdminAttendanceDashboard(dateStr, {
     jenjang: effectiveJenjang,
@@ -43,34 +45,6 @@ export default async function AdminAttendancePage(props: PageProps) {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Page Header */}
-      <div className="p-5 sm:p-6 rounded-2xl border border-border/80 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent shadow-xs">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-md shadow-orange-500/20">
-              <ClipboardList className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Audit & Monitoring Presensi Siswa
-              </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Pengawasan dan rekap kepatuhan pengisian presensi KBM harian siswa
-              </p>
-            </div>
-          </div>
-
-          <div className="text-right">
-            <span className="text-xs font-bold text-foreground block">
-              {formatDateIndo(dateStr)}
-            </span>
-            <span className="text-[11px] text-muted-foreground block">
-              Hari: {dashboardData.hari}
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Admin Attendance Client */}
       <AdminAttendanceClient
         dateStr={dateStr}
@@ -78,7 +52,13 @@ export default async function AdminAttendancePage(props: PageProps) {
         summary={dashboardData.summary}
         scheduleCompliance={dashboardData.scheduleCompliance}
         classList={dashboardData.classList}
-        currentJenjang={jenjang || "SEMUA"}
+        isSuperAdmin={isSuperAdmin}
+        adminJenjang={adminJenjang}
+        currentJenjang={
+          isSuperAdmin
+            ? (jenjang || (activeJenjang !== "ALL" ? activeJenjang : "SEMUA"))
+            : effectiveJenjang
+        }
         currentKelas={kelas || "SEMUA"}
       />
     </div>

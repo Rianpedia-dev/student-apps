@@ -71,7 +71,7 @@ function createPrismaClient() {
   }
 }
 
-const PRISMA_SCHEMA_BUILD = "2026-10-27-system-settings-v2";
+const PRISMA_SCHEMA_BUILD = "2026-11-04-pelanggaran-detail-fields-v2";
 
 // Pastikan instansiasi ulang jika schema berubah atau belum memiliki build version saat ini
 const isPrismaValid =

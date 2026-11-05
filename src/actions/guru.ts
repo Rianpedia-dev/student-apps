@@ -7,6 +7,7 @@ import { saveUploadedFile } from "@/lib/upload";
 import { AttendanceService } from "@/services/attendance.service";
 import { UserService } from "@/services/user.service";
 import { formatViolationKeterangan, parseViolationKeterangan } from "@/lib/constants/violations";
+import { getActiveSemester } from "@/lib/semester";
 
 async function checkGuruOrAdmin() {
   const session = await getSession();
@@ -187,7 +188,7 @@ export async function applyWaliKelasFullDayAction(params: {
 
 export async function createViolationAction(formData: FormData) {
   try {
-    await checkGuruOrAdmin();
+    const session = await checkGuruOrAdmin();
 
     const user_id = formData.get("user_id") as string;
     const nama = (formData.get("nama") as string) || "";
@@ -203,23 +204,78 @@ export async function createViolationAction(formData: FormData) {
       return { error: "Siswa, kategori, dan deskripsi pelanggaran wajib diisi." };
     }
 
-    // Format keterangan with structured tags
+    const createdAt = dateStr ? new Date(dateStr) : new Date();
+
+    // 1. Fetch info siswa & tentukan jenjang siswa
+    let studentJenjang = "SD";
+    let targetStudent: {
+      id: bigint;
+      name: string;
+      kelas: string | null;
+      jenjang: string | null;
+    } | null = null;
+
+    if (/^\d+$/.test(user_id)) {
+      targetStudent = await prisma.user.findUnique({
+        where: { id: BigInt(user_id) },
+        select: { id: true, name: true, kelas: true, jenjang: true },
+      });
+    }
+
+    if (targetStudent) {
+      if (targetStudent.jenjang) {
+        studentJenjang = targetStudent.jenjang;
+      } else if (targetStudent.kelas) {
+        studentJenjang = /SMP|Kelas (7|8|9)/i.test(targetStudent.kelas) ? "SMP" : "SD";
+      }
+    } else if (kelas) {
+      studentJenjang = /SMP|Kelas (7|8|9)/i.test(kelas) ? "SMP" : "SD";
+    }
+
+    // Validasi pembagian jenjang guru:
+    // Guru jenjang SD hanya boleh mencatat siswa jenjang SD
+    // Guru jenjang SMP hanya boleh mencatat siswa jenjang SMP
+    if (session.role !== "admin" && session.jenjang && session.jenjang !== "ALL") {
+      if (session.jenjang !== studentJenjang) {
+        return {
+          error: `Akses ditolak: Anda adalah guru jenjang ${session.jenjang}, hanya dapat mencatat pelanggaran untuk siswa jenjang ${session.jenjang}.`,
+        };
+      }
+    }
+
+    // 2. Semester otomatis saat catatan dibuat
+    const activeSemester = await getActiveSemester(createdAt);
+    const semester = activeSemester.semester;
+    const tahun_pelajaran = activeSemester.tahunPelajaran;
+
+    // 3. Nama guru & Guru ID otomatis dari akun guru pembuat
+    const guru_id = /^\d+$/.test(session.id) ? BigInt(session.id) : null;
+    const guru_nama = session.name || "Guru";
+
+    // 4. Tingkatan pelanggaran (RINGAN / SEDANG)
+    const tingkatan = severity === "SEDANG" ? "SEDANG" : "RINGAN";
+
+    // Format keterangan with structured tags (for backwards compatibility)
     const formattedKeterangan = formatViolationKeterangan({
       keterangan: rawKeterangan,
-      severity,
+      severity: tingkatan,
       points,
       tindakan,
     });
 
-    const createdAt = dateStr ? new Date(dateStr) : new Date();
-
     await prisma.pelanggaran.create({
       data: {
         user_id,
-        nama,
-        kelas,
+        nama: targetStudent?.name || nama,
+        kelas: targetStudent?.kelas || kelas,
         kategori,
         keterangan: formattedKeterangan,
+        tingkatan,
+        semester,
+        tahun_pelajaran,
+        jenjang: studentJenjang,
+        guru_id,
+        guru_nama,
         created_at: createdAt,
       },
     });
@@ -228,6 +284,7 @@ export async function createViolationAction(formData: FormData) {
     revalidatePath(`/guru/my-class/${user_id}`);
     revalidatePath("/guru/my-class");
     revalidatePath("/siswa/violations");
+    revalidatePath("/siswa/profile");
     revalidatePath("/siswa");
     return { success: true, message: "Catatan kedisiplinan siswa berhasil disimpan." };
   } catch (err: unknown) {
@@ -252,9 +309,30 @@ export async function updateViolationStatusAction(
   }
 }
 
+function canManageViolationRecord(
+  record: { guru_id?: bigint | null; guru_nama?: string | null },
+  session: { id: string; name?: string; role?: string }
+): boolean {
+  if (session.role === "admin") return true;
+
+  // 1. Cek berdasarkan guru_id
+  if (record.guru_id != null && String(record.guru_id) === String(session.id)) {
+    return true;
+  }
+
+  // 2. Fallback untuk data historis berdasarkan guru_nama
+  if (record.guru_nama && session.name) {
+    if (record.guru_nama.trim().toLowerCase() === session.name.trim().toLowerCase()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export async function updateViolationAction(formData: FormData) {
   try {
-    await checkGuruOrAdmin();
+    const session = await checkGuruOrAdmin();
 
     const id = formData.get("id") as string;
     const kategori = formData.get("kategori") as string;
@@ -262,14 +340,31 @@ export async function updateViolationAction(formData: FormData) {
     const severity = (formData.get("severity") as any) || "RINGAN";
     const points = Number(formData.get("points")) || undefined;
     const tindakan = (formData.get("tindakan") as string) || "";
+    const tingkatan = severity === "SEDANG" ? "SEDANG" : "RINGAN";
 
     if (!id || !kategori || !rawKeterangan) {
       return { error: "ID, kategori, dan deskripsi pelanggaran wajib diisi." };
     }
 
+    // Validasi kepemilikan catatan: Hanya guru pembuat atau admin yang boleh mengedit
+    const existing = await prisma.pelanggaran.findUnique({
+      where: { id: BigInt(id) },
+      select: { id: true, guru_id: true, guru_nama: true, user_id: true },
+    });
+
+    if (!existing) {
+      return { error: "Catatan pelanggaran tidak ditemukan." };
+    }
+
+    if (!canManageViolationRecord(existing, session)) {
+      return {
+        error: "Akses ditolak: Hanya guru pembuat catatan ini yang memiliki izin untuk mengubah data.",
+      };
+    }
+
     const formattedKeterangan = formatViolationKeterangan({
       keterangan: rawKeterangan,
-      severity,
+      severity: tingkatan,
       points,
       tindakan,
     });
@@ -279,6 +374,7 @@ export async function updateViolationAction(formData: FormData) {
       data: {
         kategori,
         keterangan: formattedKeterangan,
+        tingkatan,
       },
     });
 
@@ -286,7 +382,9 @@ export async function updateViolationAction(formData: FormData) {
     if (record.user_id) {
       revalidatePath(`/guru/my-class/${record.user_id}`);
     }
+    revalidatePath("/guru/my-class");
     revalidatePath("/siswa/violations");
+    revalidatePath("/siswa/profile");
     revalidatePath("/siswa");
     return { success: true, message: "Catatan pelanggaran berhasil diperbarui." };
   } catch (err: unknown) {
@@ -297,7 +395,27 @@ export async function updateViolationAction(formData: FormData) {
 
 export async function deleteViolationAction(id: string, studentId?: string) {
   try {
-    await checkGuruOrAdmin();
+    const session = await checkGuruOrAdmin();
+
+    if (!id) {
+      return { error: "ID catatan pelanggaran wajib disertakan." };
+    }
+
+    // Validasi kepemilikan catatan: Hanya guru pembuat atau admin yang boleh menghapus
+    const existing = await prisma.pelanggaran.findUnique({
+      where: { id: BigInt(id) },
+      select: { id: true, guru_id: true, guru_nama: true, user_id: true },
+    });
+
+    if (!existing) {
+      return { error: "Catatan pelanggaran tidak ditemukan." };
+    }
+
+    if (!canManageViolationRecord(existing, session)) {
+      return {
+        error: "Akses ditolak: Hanya guru pembuat catatan ini yang memiliki izin untuk menghapusnya.",
+      };
+    }
 
     const deleted = await prisma.pelanggaran.delete({
       where: { id: BigInt(id) },

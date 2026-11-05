@@ -676,7 +676,22 @@ export class AttendanceService {
       whereKelas.nama_kelas = filters.kelas;
     }
 
-    const [allSchedules, allAbsenToday, classes] = await Promise.all([
+    const classes = await prisma.kelas.findMany({
+      where: whereKelas,
+      orderBy: { nama_kelas: "asc" },
+    });
+    const classNames = classes.map((c) => c.nama_kelas);
+
+    const whereAbsen: Prisma.AbsenWhereInput = {
+      date: dateStr,
+    };
+    if (filters?.kelas) {
+      whereAbsen.kelas = filters.kelas;
+    } else if (filters?.jenjang && filters.jenjang !== "SEMUA") {
+      whereAbsen.kelas = { in: classNames };
+    }
+
+    const [allSchedules, allAbsenToday] = await Promise.all([
       prisma.jadwalPelajaran.findMany({
         where: {
           hari,
@@ -690,10 +705,7 @@ export class AttendanceService {
         orderBy: [{ kelas: { nama_kelas: "asc" } }, { jam_mulai: "asc" }],
       }),
       prisma.absen.findMany({
-        where: {
-          date: dateStr,
-          ...(filters?.kelas ? { kelas: filters.kelas } : {}),
-        },
+        where: whereAbsen,
         select: {
           id: true,
           mapel_id: true,
@@ -701,10 +713,6 @@ export class AttendanceService {
           keterangan: true,
           user_id: true,
         },
-      }),
-      prisma.kelas.findMany({
-        where: whereKelas,
-        orderBy: { nama_kelas: "asc" },
       }),
     ]);
 

@@ -1,14 +1,12 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import {
   ShieldCheck,
-  TrendingDown,
   FileText,
-  Award,
-  Sparkles,
+  Clock,
   CheckCircle2,
-  AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,73 +19,29 @@ import {
 } from "@/components/shared/alazhar-patterns";
 
 export interface DisciplineSummaryCardProps {
-  score: number;
+  score?: number; // kept as optional for backward compatibility
   studentName?: string;
   studentNis?: string | null;
   studentKelas?: string | null;
   studentImage?: string | null;
   studentGender?: string | null;
   totalViolations: number;
-  totalDeductedPoints: number;
+  activeViolationsCount: number;
+  resolvedViolationsCount: number;
+  totalDeductedPoints?: number; // optional deprecated
 }
 
 export function DisciplineSummaryCard({
-  score,
   studentName,
   studentNis,
   studentKelas,
   studentImage,
   studentGender,
   totalViolations,
-  totalDeductedPoints,
+  activeViolationsCount,
+  resolvedViolationsCount,
 }: DisciplineSummaryCardProps) {
-  // Predikat Karakter & Kedisiplinan
-  const getGrade = (pts: number) => {
-    if (pts >= 90) {
-      return {
-        label: "Mumtaz (Sangat Baik)",
-        shortLabel: "Mumtaz",
-        variant: "emerald" as const,
-        description:
-          "Alhamdulillah, Anda senantiasa menjaga ketertiban ibadah, etika iPad, dan adab mulia di lingkungan sekolah.",
-        colorClass: "text-emerald-400",
-        progressColor: "bg-emerald-400",
-      };
-    }
-    if (pts >= 75) {
-      return {
-        label: "Jayyid Jiddan (Baik)",
-        shortLabel: "Jayyid Jiddan",
-        variant: "purple" as const,
-        description:
-          "Catatan kedisiplinan baik. Senantiasa pertahankan ketertiban dan tingkatkan adab belajar sehari-hari.",
-        colorClass: "text-purple-400",
-        progressColor: "bg-purple-400",
-      };
-    }
-    if (pts >= 60) {
-      return {
-        label: "Maqbul (Cukup)",
-        shortLabel: "Maqbul",
-        variant: "amber" as const,
-        description:
-          "Perlu meningkatkan kepatuhan tata tertib sekolah dan memanfaatkan bimbingan ustadz/ustadzah.",
-        colorClass: "text-amber-400",
-        progressColor: "bg-amber-400",
-      };
-    }
-    return {
-      label: "Perlu Pendampingan",
-      shortLabel: "Bimbingan",
-      variant: "destructive" as const,
-      description:
-        "Memerlukan pendampingan intensif dari wali kelas dan guru BK untuk perbaikan karakter santri.",
-      colorClass: "text-rose-400",
-      progressColor: "bg-rose-500",
-    };
-  };
-
-  const grade = getGrade(score);
+  const isClean = activeViolationsCount === 0;
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -128,8 +82,16 @@ export function DisciplineSummaryCard({
                 className="h-14 w-14 sm:h-18 sm:w-18 rounded-2xl border-2 border-emerald-300/40 shadow-xl object-cover"
                 previewable={false}
               />
-              <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-[#064e3b] flex items-center justify-center text-white">
-                <ShieldCheck className="h-3 w-3" />
+              <span
+                className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-[#064e3b] flex items-center justify-center text-white ${
+                  isClean ? "bg-emerald-500" : "bg-amber-500"
+                }`}
+              >
+                {isClean ? (
+                  <ShieldCheck className="h-3 w-3" />
+                ) : (
+                  <Clock className="h-3 w-3" />
+                )}
               </span>
             </div>
 
@@ -137,7 +99,7 @@ export function DisciplineSummaryCard({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-300/30 text-[10px] sm:text-xs font-semibold text-emerald-200 uppercase tracking-wide">
                   <Sparkles className="h-3 w-3" />
-                  Buku Kedisiplinan & Adab
+                  Buku Pembinaan Karakter & Adab
                 </span>
                 {studentKelas && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-white/10 text-[10px] sm:text-xs font-medium text-emerald-100 border border-white/15">
@@ -157,42 +119,49 @@ export function DisciplineSummaryCard({
               )}
 
               <p className="text-xs sm:text-sm text-emerald-50/90 font-normal leading-relaxed pt-0.5 line-clamp-2">
-                {grade.description}
+                {isClean
+                  ? "Alhamdulillah, catatan kedisiplinan dan adab Anda saat ini tertib. Pertahankan akhlak mulia dan keteladanan sehari-hari di lingkungan sekolah."
+                  : `Terdapat ${activeViolationsCount} catatan pembinaan yang sedang dalam pendampingan wali kelas dan guru. Senantiasa berusaha memperbaiki diri dengan penuh keikhlasan.`}
               </p>
             </div>
           </div>
 
-          {/* Sisi Kanan: Frosted Glass Score Card */}
+          {/* Sisi Kanan: Frosted Glass Status Card */}
           <div className="shrink-0 w-full md:w-auto md:min-w-[240px] lg:min-w-[260px] bg-white/10 dark:bg-black/25 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/20 shadow-xl">
             <div className="flex items-center justify-between gap-3 mb-2">
               <span className="text-[11px] sm:text-xs font-medium text-emerald-200 uppercase tracking-wider">
-                Indeks Karakter
+                Status Kedisiplinan
               </span>
-              <Badge variant={grade.variant} size="sm" className="text-[10px] sm:text-xs font-semibold">
-                {grade.shortLabel}
+              <Badge
+                variant={isClean ? "emerald" : "amber"}
+                size="sm"
+                className="text-[10px] sm:text-xs font-semibold"
+              >
+                {isClean ? "Tertib & Beradab" : "Dalam Pembinaan"}
               </Badge>
             </div>
 
             <div className="flex items-baseline gap-1.5 mb-2.5">
-              <span className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
-                {score}
+              <span className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
+                {isClean ? "Tertib" : `${activeViolationsCount} Catatan`}
               </span>
               <span className="text-xs sm:text-sm font-semibold text-emerald-200/80">
-                / 100 Poin
+                {isClean ? "Kondusif" : "Aktif"}
               </span>
             </div>
 
-            {/* Visual Progress Bar */}
+            {/* Visual Status Indicator */}
             <div className="space-y-1">
               <div className="h-2.5 w-full bg-black/25 rounded-full overflow-hidden p-0.5 border border-white/10">
                 <div
-                  className={`h-full rounded-full transition-all duration-700 ease-out ${grade.progressColor}`}
-                  style={{ width: `${Math.min(100, Math.max(5, score))}%` }}
+                  className={`h-full rounded-full transition-all duration-700 ease-out ${
+                    isClean ? "bg-emerald-400 w-full" : "bg-amber-400 w-3/4"
+                  }`}
                 />
               </div>
               <div className="flex justify-between text-[10px] text-emerald-200/70 font-mono">
-                <span>0</span>
-                <span>Standar 100</span>
+                <span>{isClean ? "Akhlak Terpuji" : "Tahap Bimbingan"}</span>
+                <span>Al-Azhar Cairo</span>
               </div>
             </div>
           </div>
@@ -201,58 +170,76 @@ export function DisciplineSummaryCard({
 
       {/* 2. Responsive 4 Stat KPI Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-4">
-        {/* Card 1: Skor Kedisiplinan */}
+        {/* Card 1: Status Kedisiplinan */}
         <Card className="rounded-2xl sm:rounded-3xl p-3.5 sm:p-4.5 bg-card/85 dark:bg-card/50 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg hover:shadow-xl transition-all duration-300">
           <div className="flex items-center gap-3">
             <div
               className={`h-10 w-10 sm:h-12 sm:w-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                score >= 90
+                isClean
                   ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : score >= 75
-                  ? "bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                  : score >= 60
-                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
               }`}
             >
               <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
-                Skor Kedisiplinan
+                Status Kedisiplinan
               </p>
-              <h3 className="text-base sm:text-xl font-bold tracking-tight text-foreground truncate mt-0.5">
-                {score} <span className="text-xs font-normal text-muted-foreground">/ 100</span>
+              <h3 className="text-sm sm:text-base font-bold tracking-tight text-foreground truncate mt-0.5">
+                {isClean ? "Tertib & Beradab" : "Dalam Pembinaan"}
               </h3>
             </div>
           </div>
         </Card>
 
-        {/* Card 2: Poin Terpotong */}
+        {/* Card 2: Dalam Pembinaan */}
         <Card className="rounded-2xl sm:rounded-3xl p-3.5 sm:p-4.5 bg-card/85 dark:bg-card/50 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg hover:shadow-xl transition-all duration-300">
           <div className="flex items-center gap-3">
             <div
               className={`h-10 w-10 sm:h-12 sm:w-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                totalDeductedPoints === 0
+                activeViolationsCount === 0
                   ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
               }`}
             >
-              <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6" />
+              {activeViolationsCount === 0 ? (
+                <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
+              ) : (
+                <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
-                Poin Terpotong
+                Dalam Pembinaan
               </p>
               <h3 className="text-base sm:text-xl font-bold tracking-tight text-foreground truncate mt-0.5">
-                {totalDeductedPoints > 0 ? `-${totalDeductedPoints}` : "0"}{" "}
-                <span className="text-xs font-normal text-muted-foreground">Poin</span>
+                {activeViolationsCount}{" "}
+                <span className="text-xs font-normal text-muted-foreground">Catatan</span>
               </h3>
             </div>
           </div>
         </Card>
 
-        {/* Card 3: Total Riwayat Catatan */}
+        {/* Card 3: Pembinaan Selesai */}
+        <Card className="rounded-2xl sm:rounded-3xl p-3.5 sm:p-4.5 bg-card/85 dark:bg-card/50 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
+                Pembinaan Tuntas
+              </p>
+              <h3 className="text-base sm:text-xl font-bold tracking-tight text-foreground truncate mt-0.5">
+                {resolvedViolationsCount}{" "}
+                <span className="text-xs font-normal text-muted-foreground">Catatan</span>
+              </h3>
+            </div>
+          </div>
+        </Card>
+
+        {/* Card 4: Total Riwayat Catatan */}
         <Card className="rounded-2xl sm:rounded-3xl p-3.5 sm:p-4.5 bg-card/85 dark:bg-card/50 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg hover:shadow-xl transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
@@ -265,33 +252,6 @@ export function DisciplineSummaryCard({
               <h3 className="text-base sm:text-xl font-bold tracking-tight text-foreground truncate mt-0.5">
                 {totalViolations}{" "}
                 <span className="text-xs font-normal text-muted-foreground">Catatan</span>
-              </h3>
-            </div>
-          </div>
-        </Card>
-
-        {/* Card 4: Predikat Karakter & Adab */}
-        <Card className="rounded-2xl sm:rounded-3xl p-3.5 sm:p-4.5 bg-card/85 dark:bg-card/50 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div
-              className={`h-10 w-10 sm:h-12 sm:w-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                score >= 90
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : score >= 75
-                  ? "bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                  : score >= 60
-                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-              }`}
-            >
-              <Award className="h-5 w-5 sm:h-6 sm:w-6" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
-                Predikat Akhlak
-              </p>
-              <h3 className="text-xs sm:text-sm font-bold tracking-tight text-foreground truncate mt-0.5">
-                {grade.label}
               </h3>
             </div>
           </div>

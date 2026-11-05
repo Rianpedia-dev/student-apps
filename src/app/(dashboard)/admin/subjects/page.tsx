@@ -68,9 +68,6 @@ export default async function AdminSubjectsPage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Master Data Mata Pelajaran
             </h1>
-            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-              {scopeLabel}
-            </span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Kelola kurikulum dan mata pelajaran untuk {scopeLabel}.

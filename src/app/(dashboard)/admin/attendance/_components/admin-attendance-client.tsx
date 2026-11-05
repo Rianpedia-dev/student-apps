@@ -64,6 +64,8 @@ interface AdminAttendanceClientProps {
   classList: { id: string; nama: string }[];
   currentJenjang?: string;
   currentKelas?: string;
+  isSuperAdmin?: boolean;
+  adminJenjang?: string;
 }
 
 export function AdminAttendanceClient({
@@ -74,6 +76,8 @@ export function AdminAttendanceClient({
   classList,
   currentJenjang = "SEMUA",
   currentKelas = "SEMUA",
+  isSuperAdmin = false,
+  adminJenjang = "ALL",
 }: AdminAttendanceClientProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,12 +86,14 @@ export function AdminAttendanceClient({
 
   const updateFilters = (newParams: { date?: string; jenjang?: string; kelas?: string }) => {
     const d = newParams.date !== undefined ? newParams.date : dateStr;
-    const j = newParams.jenjang !== undefined ? newParams.jenjang : currentJenjang;
+    const j = isSuperAdmin
+      ? (newParams.jenjang !== undefined ? newParams.jenjang : currentJenjang)
+      : (adminJenjang || currentJenjang);
     const k = newParams.kelas !== undefined ? newParams.kelas : currentKelas;
 
     const query = new URLSearchParams();
     query.set("date", d);
-    if (j && j !== "SEMUA") query.set("jenjang", j);
+    if (isSuperAdmin && j && j !== "SEMUA") query.set("jenjang", j);
     if (k && k !== "SEMUA") query.set("kelas", k);
 
     router.push(`/admin/attendance?${query.toString()}`);
@@ -170,9 +176,6 @@ export function AdminAttendanceClient({
               <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400">
                 {summary.totalAlpha}
               </span>
-              <span className="text-[11px] text-muted-foreground">
-                Sakit: {summary.totalSakit} • Izin: {summary.totalIzin}
-              </span>
             </div>
           </CardContent>
         </Card>
@@ -198,32 +201,50 @@ export function AdminAttendanceClient({
               />
             </div>
 
-            {/* Jenjang Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-muted-foreground">Jenjang:</span>
-              <Select
-                value={currentJenjang}
-                onValueChange={(val) => updateFilters({ jenjang: val ?? undefined })}
-              >
-                <SelectTrigger className="h-9 text-xs rounded-xl w-28">
-                  <SelectValue placeholder="Jenjang" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SEMUA">Semua</SelectItem>
-                  <SelectItem value="SD">SD</SelectItem>
-                  <SelectItem value="SMP">SMP</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Jenjang Filter (Pilihan dropdown hanya muncul untuk Super Admin) */}
+            {isSuperAdmin ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-muted-foreground">Jenjang:</span>
+                <Select
+                  value={currentJenjang}
+                  onValueChange={(val) =>
+                    updateFilters({ jenjang: val ?? undefined, kelas: "SEMUA" })
+                  }
+                >
+                  <SelectTrigger className="h-9 text-xs rounded-xl w-28 cursor-pointer">
+                    <SelectValue placeholder="Jenjang" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SEMUA">Semua</SelectItem>
+                    <SelectItem value="SD">SD</SelectItem>
+                    <SelectItem value="SMP">SMP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-muted/40 px-3 py-1 rounded-xl border border-border/80 text-xs font-semibold text-muted-foreground shrink-0 h-9">
+                <span>Jenjang:</span>
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded-lg text-xs font-bold border",
+                    (adminJenjang || currentJenjang) === "SMP"
+                      ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                      : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                  )}
+                >
+                  {adminJenjang || currentJenjang}
+                </span>
+              </div>
+            )}
 
             {/* Kelas Filter */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-muted-foreground">Kelas:</span>
               <Select
-                value={currentKelas}
+                value={classList.some((c) => c.nama === currentKelas) ? currentKelas : "SEMUA"}
                 onValueChange={(val) => updateFilters({ kelas: val ?? undefined })}
               >
-                <SelectTrigger className="h-9 text-xs rounded-xl w-44">
+                <SelectTrigger className="h-9 text-xs rounded-xl w-44 cursor-pointer">
                   <SelectValue placeholder="Semua Kelas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -248,7 +269,7 @@ export function AdminAttendanceClient({
                 statusFilter === "ALL" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
               )}
             >
-              Semua ({scheduleCompliance.length})
+              Semua
             </button>
             <button
               type="button"
@@ -258,7 +279,7 @@ export function AdminAttendanceClient({
                 statusFilter === "FILLED" ? "bg-emerald-600 text-white shadow-2xs" : "text-muted-foreground"
               )}
             >
-              Sudah ({summary.filledSessionsCount})
+              Sudah 
             </button>
             <button
               type="button"
@@ -268,7 +289,7 @@ export function AdminAttendanceClient({
                 statusFilter === "UNFILLED" ? "bg-orange-500 text-white shadow-2xs" : "text-muted-foreground"
               )}
             >
-              Belum ({summary.unfilledSessionsCount})
+              Belum 
             </button>
           </div>
         </CardContent>
@@ -297,14 +318,13 @@ export function AdminAttendanceClient({
                 <th className="py-3 px-4 min-w-[180px]">Mata Pelajaran</th>
                 <th className="py-3 px-4 min-w-[180px]">Guru Pengampu</th>
                 <th className="py-3 px-3 text-center w-32">Status Absensi</th>
-                <th className="py-3 px-3 text-center min-w-[140px]">Rincian Kehadiran</th>
                 <th className="py-3 px-3 text-center w-24">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
               {filteredSchedules.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-muted-foreground text-xs">
+                  <td colSpan={7} className="py-10 text-center text-muted-foreground text-xs">
                     Tidak ada jadwal KBM yang sesuai dengan kriteria filter.
                   </td>
                 </tr>
@@ -350,18 +370,6 @@ export function AdminAttendanceClient({
                           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                           <span>Belum Diabsen</span>
                         </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      {item.isFilled ? (
-                        <div className="inline-flex items-center gap-2 text-[11px] font-mono">
-                          <span className="text-emerald-600 font-bold" title="Hadir">{item.hadir} H</span>
-                          <span className="text-sky-600 font-bold" title="Sakit">{item.sakit} S</span>
-                          <span className="text-amber-600 font-bold" title="Izin">{item.izin} I</span>
-                          <span className="text-rose-600 font-bold" title="Alpha">{item.alpha} A</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground/50 text-[11px] italic">-</span>
                       )}
                     </td>
                     <td className="py-3 px-3 text-center">

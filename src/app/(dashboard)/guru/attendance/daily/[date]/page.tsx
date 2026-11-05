@@ -12,12 +12,25 @@ export default async function GuruDailyAttendancePage(props: {
   params: Promise<{ date: string }>;
 }) {
   const session = await getSession();
-  if (!session || session.role !== "guru") {
+  if (!session || (session.role !== "guru" && session.role !== "admin")) {
     redirect("/login");
   }
 
   const { date } = await props.params;
-  const guruClass = session.kelas || "";
+  const dbUser = /^\d+$/.test(session.id)
+    ? await prisma.user.findUnique({
+        where: { id: BigInt(session.id) },
+        select: { status: true, kelas: true },
+      })
+    : null;
+
+  const currentStatus = dbUser?.status || session.status;
+  const isWaliKelas = currentStatus === "4" || session.role === "admin";
+  if (!isWaliKelas) {
+    redirect("/guru/attendance");
+  }
+
+  const guruClass = dbUser?.kelas || session.kelas || "";
 
   let students: any[] = [];
   let existingAbsen: any[] = [];
@@ -56,6 +69,7 @@ export default async function GuruDailyAttendancePage(props: {
       gender: s.gender,
       email: s.email,
       status: s.status,
+      image: s.image,
     },
     keterangan: absenMap.get(s.id.toString()) || "Hadir",
   }));

@@ -628,6 +628,23 @@ export async function deleteAnnouncementAction(id: string) {
       throw new Error("Unauthorized");
     }
 
+    if (session.role === "guru") {
+      const existing = await prisma.pengumuman.findUnique({
+        where: { id: BigInt(id) },
+        select: { from: true, target_kelas: true },
+      });
+      if (!existing) {
+        return { error: "Pengumuman tidak ditemukan." };
+      }
+      const isOwner =
+        existing.from === session.name ||
+        (session.kelas && existing.from === session.kelas) ||
+        (session.kelas && existing.target_kelas === session.kelas);
+      if (!isOwner) {
+        return { error: "Unauthorized: Anda hanya dapat menghapus pengumuman yang Anda buat sendiri." };
+      }
+    }
+
     await AnnouncementService.deleteAnnouncement(id);
 
     revalidatePath("/admin");
@@ -642,6 +659,22 @@ export async function deleteAnnouncementAction(id: string) {
   }
 }
 
+function formatPengumumanContent(raw: string): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (/^<(p|div|table|h[1-6]|ul|ol)[\s>]/i.test(trimmed)) {
+    return trimmed;
+  }
+  return trimmed
+    .split(/\n\s*\n/)
+    .map((para) => {
+      const withBrs = para.trim().replace(/\n/g, "<br/>");
+      return withBrs ? `<p>${withBrs}</p>` : "";
+    })
+    .filter(Boolean)
+    .join("");
+}
+
 export async function createAnnouncementAction(formData: FormData) {
   try {
     const session = await getSession();
@@ -650,8 +683,11 @@ export async function createAnnouncementAction(formData: FormData) {
     }
 
     const title = formData.get("title") as string;
-    const from = (formData.get("from") as string) || (session.role === "admin" ? "IT" : session.kelas || "Guru");
-    const pengumuman = formData.get("pengumuman") as string;
+    const fromInput = formData.get("from") as string | null;
+    const defaultFrom = session.role === "admin" ? "IT" : (session.kelas || session.name || "Guru");
+    const from = fromInput?.trim() || defaultFrom;
+    const rawPengumuman = formData.get("pengumuman") as string | null;
+    const pengumuman = rawPengumuman ? formatPengumumanContent(rawPengumuman) : undefined;
 
     const fileUpload = formData.get("file_upload") as File | null;
     const fileUrl = formData.get("file") as string | null;
@@ -671,11 +707,39 @@ export async function createAnnouncementAction(formData: FormData) {
       return { error: "Judul dan konten pengumuman wajib diisi." };
     }
 
+    const targetKelasRaw = (formData.get("target_kelas") as string)?.trim() || (session.role === "guru" && session.kelas ? session.kelas : null);
+    
+    let finalJenjang = "ALL";
+    if (session.role === "admin" && (session.jenjang === "SD" || session.jenjang === "SMP")) {
+      finalJenjang = session.jenjang;
+    } else if (session.role === "guru") {
+      if (targetKelasRaw) {
+        if (/^(Kelas\s*)?(7|8|9)/i.test(targetKelasRaw)) {
+          finalJenjang = "SMP";
+        } else if (/^(Kelas\s*)?[1-6]/i.test(targetKelasRaw)) {
+          finalJenjang = "SD";
+        } else if (session.jenjang && session.jenjang !== "ALL") {
+          finalJenjang = session.jenjang;
+        }
+      } else if (session.jenjang && session.jenjang !== "ALL") {
+        finalJenjang = session.jenjang;
+      }
+    } else {
+      finalJenjang = (formData.get("jenjang") as string) || "ALL";
+    }
+
+    const finalTargetRole = session.role === "guru" 
+      ? "SISWA" 
+      : ((formData.get("target_role") as string) || "ALL");
+
     await AnnouncementService.createAnnouncement({
       title,
       from,
       pengumuman,
       file: filePath,
+      jenjang: finalJenjang,
+      target_role: finalTargetRole,
+      target_kelas: targetKelasRaw,
     });
 
     revalidatePath("/admin");
@@ -697,9 +761,27 @@ export async function updateAnnouncementAction(id: string, formData: FormData) {
       throw new Error("Unauthorized");
     }
 
+    if (session.role === "guru") {
+      const existing = await prisma.pengumuman.findUnique({
+        where: { id: BigInt(id) },
+        select: { from: true, target_kelas: true },
+      });
+      if (!existing) {
+        return { error: "Pengumuman tidak ditemukan." };
+      }
+      const isOwner =
+        existing.from === session.name ||
+        (session.kelas && existing.from === session.kelas) ||
+        (session.kelas && existing.target_kelas === session.kelas);
+      if (!isOwner) {
+        return { error: "Unauthorized: Anda hanya dapat mengubah pengumuman yang Anda buat sendiri." };
+      }
+    }
+
     const title = formData.get("title") as string;
     const from = formData.get("from") as string;
-    const pengumuman = formData.get("pengumuman") as string;
+    const rawPengumuman = formData.get("pengumuman") as string | null;
+    const pengumuman = rawPengumuman ? formatPengumumanContent(rawPengumuman) : undefined;
 
     const dataToUpdate: Record<string, unknown> = {};
     if (title) dataToUpdate.title = title;
@@ -717,6 +799,32 @@ export async function updateAnnouncementAction(id: string, formData: FormData) {
       dataToUpdate.file = uploadRes.filePath;
     } else if (typeof fileUrl === "string") {
       dataToUpdate.file = fileUrl.trim() || null;
+    }
+
+    const jenjangVal = formData.get("jenjang") as string | null;
+    if (jenjangVal !== null) {
+      dataToUpdate.jenjang =
+        session.role === "admin" && (session.jenjang === "SD" || session.jenjang === "SMP")
+          ? session.jenjang
+          : jenjangVal;
+    }
+
+    const targetRoleVal = formData.get("target_role") as string | null;
+    if (targetRoleVal !== null) {
+      dataToUpdate.target_role = targetRoleVal;
+    }
+
+    const targetKelasVal = formData.get("target_kelas") as string | null;
+    if (targetKelasVal !== null) {
+      const trimmedTargetKelas = targetKelasVal.trim() || null;
+      dataToUpdate.target_kelas = trimmedTargetKelas;
+      if (session.role === "guru" && trimmedTargetKelas) {
+        if (/^(Kelas\s*)?(7|8|9)/i.test(trimmedTargetKelas)) {
+          dataToUpdate.jenjang = "SMP";
+        } else if (/^(Kelas\s*)?[1-6]/i.test(trimmedTargetKelas)) {
+          dataToUpdate.jenjang = "SD";
+        }
+      }
     }
 
     await AnnouncementService.updateAnnouncement({

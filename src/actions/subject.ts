@@ -354,6 +354,9 @@ export async function createJadwalAction(formData: FormData) {
       };
     }
 
+    const tahun_pelajaran = (formData.get("tahun_pelajaran") as string)?.trim() || "2026/2027";
+    const semester = (formData.get("semester") as string)?.trim() || "1";
+
     await prisma.jadwalPelajaran.create({
       data: {
         kelas_id,
@@ -362,6 +365,8 @@ export async function createJadwalAction(formData: FormData) {
         hari,
         jam_mulai,
         jam_selesai,
+        tahun_pelajaran,
+        semester,
       },
     });
 
@@ -428,6 +433,9 @@ export async function updateJadwalAction(formData: FormData) {
       };
     }
 
+    const tahun_pelajaran = (formData.get("tahun_pelajaran") as string)?.trim() || undefined;
+    const semester = (formData.get("semester") as string)?.trim() || undefined;
+
     await prisma.jadwalPelajaran.update({
       where: { id },
       data: {
@@ -437,6 +445,8 @@ export async function updateJadwalAction(formData: FormData) {
         hari,
         jam_mulai,
         jam_selesai,
+        ...(tahun_pelajaran ? { tahun_pelajaran } : {}),
+        ...(semester ? { semester } : {}),
       },
     });
 

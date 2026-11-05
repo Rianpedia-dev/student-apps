@@ -1,37 +1,48 @@
+import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import { CalendarClient } from "@/components/features/calendar/calendar-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminCalendarPage() {
-  const classes = await prisma.kelas.findMany({
-    orderBy: { nama_kelas: "asc" },
+  const session = await getSession();
+  if (!session || session.role !== "admin") {
+    redirect("/login");
+  }
+
+  const adminJenjang = session.jenjang || "ALL";
+
+  // Ambil data kelas sesuai jenjang admin
+  const classRecords = await prisma.kelas.findMany({
+    where:
+      adminJenjang !== "ALL"
+        ? { jenjang: adminJenjang }
+        : {},
+    orderBy: [{ jenjang: "asc" }, { tingkat: "asc" }, { nama_kelas: "asc" }],
+    select: {
+      id: true,
+      nama_kelas: true,
+      jenjang: true,
+    },
   });
 
-  const categories = [
-    "Akademik",
-    "Keagamaan",
-    "Ujian",
-    "Libur",
-    "Ekstrakurikuler",
-    "Meeting",
-    "Semua Kelas",
-    ...classes.map((c) => c.nama_kelas),
-  ];
+  const classList = classRecords.map((c) => ({
+    id: c.id.toString(),
+    nama_kelas: c.nama_kelas,
+    jenjang: c.jenjang || undefined,
+  }));
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Kalender Kegiatan Akademik</h1>
-        <p className="text-sm text-muted-foreground">
-          Kelola agenda kegiatan sekolah, jadwal ujian, field trip, dan kegiatan khusus per jenjang kelas.
-        </p>
-      </div>
-
-      <div className="w-full">
-        <CalendarClient canManage={true} categories={categories} />
-      </div>
+    <div className="w-full">
+      <CalendarClient
+        canManage={true}
+        userRole="admin"
+        userJenjang={adminJenjang}
+        classList={classList}
+        pageTitle="Kalender Kegiatan Akademik"
+        pageSubtitle="Kelola agenda resmi sekolah, jadwal penilaian/ujian, kegiatan keagamaan, dan kalender libur akademik."
+      />
     </div>
   );
 }
-

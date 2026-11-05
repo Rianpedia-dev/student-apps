@@ -41,7 +41,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Trigger dev server reload for prisma client update
+  // Trigger dev server reload: 2026-11-02-announcements-jenjang-v1
   // output: "standalone" hanya untuk Docker container / self-hosted VPS.
   // Pada platform Vercel, output standalone menyebabkan error nft.json pada tahap onBuildComplete.
   ...(process.env.VERCEL ? {} : { output: "standalone" }),

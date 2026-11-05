@@ -5,12 +5,10 @@ import { Loader2, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -34,16 +32,13 @@ export function EditViolationModal({
   const [category, setCategory] = useState("");
   const [keterangan, setKeterangan] = useState("");
   const [severity, setSeverity] = useState<ViolationSeverity>("RINGAN");
-  const [points, setPoints] = useState<number>(5);
-  const [tindakan, setTindakan] = useState("");
 
   useEffect(() => {
     if (violation) {
       setCategory(violation.kategori || VIOLATION_CATEGORIES[0]?.name || "");
       setKeterangan(violation.cleanKeterangan || violation.keterangan || "");
-      setSeverity((violation.severity as ViolationSeverity) || "RINGAN");
-      setPoints(violation.points ?? 5);
-      setTindakan(violation.tindakan || "");
+      const currentSev = (violation.tingkatan || violation.severity || "RINGAN").toUpperCase();
+      setSeverity(currentSev === "SEDANG" ? "SEDANG" : "RINGAN");
     }
   }, [violation]);
 
@@ -64,8 +59,6 @@ export function EditViolationModal({
       formData.set("kategori", category);
       formData.set("keterangan", keterangan.trim());
       formData.set("severity", severity);
-      formData.set("points", points.toString());
-      formData.set("tindakan", tindakan.trim());
 
       const res = await updateViolationAction(formData);
 
@@ -76,7 +69,7 @@ export function EditViolationModal({
         onOpenChange(false);
       }
     } catch {
-      toast.error("Gagal memperbarui catatan pelanggaran.");
+      toast.error("Terjadi kendala saat memperbarui catatan.");
     } finally {
       setLoading(false);
     }
@@ -87,25 +80,32 @@ export function EditViolationModal({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
               <Pencil className="h-4 w-4" />
             </div>
             <div>
               <DialogTitle className="text-base font-semibold">
                 Edit Catatan Kedisiplinan
               </DialogTitle>
-              <DialogDescription className="text-xs">
-                Siswa: <strong className="text-foreground">{violation.nama}</strong> ({violation.kelas})
-              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          {/* 1. Kategori */}
+          {/* Siswa Terpilih (Read-only) */}
+          <div className="rounded-xl p-3 bg-muted/40 border border-border/60">
+            <p className="text-xs font-semibold text-foreground">{violation.nama}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Kelas: {violation.kelas || "-"}
+              {violation.semester ? ` • ${violation.semester}` : ""}
+              {violation.guru_nama ? ` • Dicatat oleh: ${violation.guru_nama}` : ""}
+            </p>
+          </div>
+
+          {/* 1. Kategori Pelanggaran */}
           <div className="space-y-1.5">
             <Label htmlFor="edit-kategori" className="text-xs font-semibold">
-              Kategori Pelanggaran
+              Kategori Pelanggaran <span className="text-rose-500">*</span>
             </Label>
             <select
               id="edit-kategori"
@@ -125,7 +125,7 @@ export function EditViolationModal({
           {/* 2. Deskripsi Kejadian */}
           <div className="space-y-1.5">
             <Label htmlFor="edit-keterangan" className="text-xs font-semibold">
-              Deskripsi Kejadian / Kronologi
+              Deskripsi Pelanggaran <span className="text-rose-500">*</span>
             </Label>
             <Textarea
               id="edit-keterangan"
@@ -137,52 +137,20 @@ export function EditViolationModal({
             />
           </div>
 
-          {/* 3. Tingkat Keparahan & Poin */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-severity" className="text-xs font-semibold">
-                Tingkat Keparahan
-              </Label>
-              <select
-                id="edit-severity"
-                value={severity}
-                onChange={(e) => setSeverity(e.target.value as ViolationSeverity)}
-                className="w-full h-9 rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rose-500"
-              >
-                <option value="RINGAN">Ringan</option>
-                <option value="SEDANG">Sedang</option>
-                <option value="BERAT">Berat</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-points" className="text-xs font-semibold">
-                Poin Pengurang
-              </Label>
-              <Input
-                id="edit-points"
-                type="number"
-                min={1}
-                max={50}
-                value={points}
-                onChange={(e) => setPoints(Number(e.target.value) || 5)}
-                className="h-9 text-xs rounded-xl"
-              />
-            </div>
-          </div>
-
-          {/* 4. Rekomendasi Nasihat / Tindakan */}
+          {/* 3. Tingkatan Pelanggaran */}
           <div className="space-y-1.5">
-            <Label htmlFor="edit-tindakan" className="text-xs font-semibold">
-              Catatan / Tindakan Pembinaan
+            <Label htmlFor="edit-severity" className="text-xs font-semibold">
+              Tingkatan Pelanggaran <span className="text-rose-500">*</span>
             </Label>
-            <Input
-              id="edit-tindakan"
-              value={tindakan}
-              onChange={(e) => setTindakan(e.target.value)}
-              placeholder="Catatan konseling wali kelas..."
-              className="h-9 text-xs rounded-xl"
-            />
+            <select
+              id="edit-severity"
+              value={severity}
+              onChange={(e) => setSeverity(e.target.value as ViolationSeverity)}
+              className="w-full h-9 rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rose-500"
+            >
+              <option value="RINGAN">Ringan</option>
+              <option value="SEDANG">Sedang</option>
+            </select>
           </div>
 
           <div className="flex justify-end items-center gap-2 pt-2 border-t border-border">
@@ -200,7 +168,7 @@ export function EditViolationModal({
               type="submit"
               size="sm"
               disabled={loading}
-              className="bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1.5"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-1.5"
             >
               {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               <span>Simpan Perubahan</span>

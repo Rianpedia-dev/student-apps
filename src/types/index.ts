@@ -90,6 +90,13 @@ export interface ViolationItem {
   tindakan?: string;
   studentImage?: string | null;
   studentGender?: string | null;
+  // Database fields
+  tingkatan?: string | null;
+  semester?: string | null;
+  tahun_pelajaran?: string | null;
+  jenjang?: string | null;
+  guru_id?: string | null;
+  guru_nama?: string | null;
 }
 
 export interface RestrictItem {

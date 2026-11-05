@@ -143,16 +143,48 @@ export class DashboardService {
         AppCache.getOrSet(
           `announcements:${studentClass || "umum"}`,
           300, // 5 menit
-          () =>
-            prisma.pengumuman
+          () => {
+            const jenjang = (sessionUser as any)?.jenjang || (studentClass
+              ? (/^(Kelas\s*)?(7|8|9)/i.test(studentClass) || /SMP/i.test(studentClass)
+                ? "SMP"
+                : "SD")
+              : null);
+
+            return prisma.pengumuman
               .findMany({
                 where: {
-                  OR: [{ from: "IT" }, ...(studentClass ? [{ from: studentClass }] : [])],
+                  AND: [
+                    {
+                      OR: [
+                        { jenjang: "ALL" },
+                        { jenjang: null },
+                        ...(jenjang ? [{ jenjang }] : []),
+                      ],
+                    },
+                    {
+                      OR: [
+                        { target_role: "ALL" },
+                        { target_role: "SISWA" },
+                        { target_role: null },
+                      ],
+                    },
+                    {
+                      OR: [
+                        { target_kelas: null },
+                        { target_kelas: "" },
+                        { from: "IT" },
+                        ...(studentClass
+                          ? [{ target_kelas: studentClass }, { from: studentClass }]
+                          : []),
+                      ],
+                    },
+                  ],
                 },
                 orderBy: { id: "desc" },
                 take: 20,
               })
-              .catch(() => []),
+              .catch(() => []);
+          },
           ["announcements"]
         ),
         AppCache.getOrSet(

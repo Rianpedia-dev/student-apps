@@ -18,6 +18,7 @@ vi.mock("@/lib/prisma", () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      findUnique: vi.fn(),
     },
     prestasi: {
       create: vi.fn(),
@@ -27,6 +28,9 @@ vi.mock("@/lib/prisma", () => ({
     user: {
       findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    tahunAjar: {
+      findFirst: vi.fn(),
     },
   },
 }));
@@ -165,6 +169,13 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
         id: "202",
         name: "Ustadz Budi",
         role: "guru",
+      } as any);
+
+      vi.mocked(prisma.pelanggaran.findUnique).mockResolvedValueOnce({
+        id: BigInt(99),
+        guru_id: BigInt(202),
+        guru_nama: "Ustadz Budi",
+        user_id: "101",
       } as any);
 
       vi.mocked(prisma.pelanggaran.delete).mockResolvedValueOnce({

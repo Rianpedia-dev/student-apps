@@ -77,9 +77,6 @@ export default async function AdminStudentsPage() {
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight">Kelola Akun Siswa</h1>
-          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-            {scopeLabel}
-          </span>
         </div>
         <p className="text-sm text-muted-foreground">
           Kelola data pendaftaran siswa {scopeLabel}, verifikasi akun baru, dan import massal melalui Excel.
