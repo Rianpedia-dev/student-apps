@@ -200,8 +200,18 @@ export default async function AdminStudentDetailPage(props: {
                       className="flex items-start justify-between rounded-lg border p-3 text-xs"
                     >
                       <div>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/20">
+                            +{ach.poin ?? 1} Poin
+                          </span>
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            {ach.tingkat} • {ach.peringkat}
+                          </span>
+                        </div>
                         <p className="font-bold text-foreground">{ach.prestasi}</p>
-                        <p className="text-muted-foreground mt-0.5">{ach.kelas}</p>
+                        <p className="text-muted-foreground mt-0.5 text-[11px]">
+                          Saat di {ach.kelas_saat_prestasi || ach.kelas}
+                        </p>
                       </div>
                       <form
                         action={async () => {
@@ -224,7 +234,7 @@ export default async function AdminStudentDetailPage(props: {
 
               {/* Form Tambah Prestasi Baru */}
               <div className="border-t pt-3">
-                <p className="text-xs font-semibold mb-2">Tambah Prestasi</p>
+                <p className="text-xs font-semibold mb-2">Tambah Prestasi Siswa</p>
                 <form
                   action={async (formData: FormData) => {
                     "use server";
@@ -235,9 +245,41 @@ export default async function AdminStudentDetailPage(props: {
                   }}
                   className="space-y-2"
                 >
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      name="tingkat"
+                      defaultValue="Nasional"
+                      className="w-full text-xs rounded-md border border-input bg-background px-2.5 py-1.5"
+                    >
+                      <option value="Internasional">Internasional</option>
+                      <option value="Nasional">Nasional</option>
+                      <option value="Daerah/Kota">Daerah/Kota</option>
+                      <option value="Dalam Sekolah">Dalam Sekolah</option>
+                    </select>
+
+                    <select
+                      name="peringkat"
+                      defaultValue="Juara 1"
+                      className="w-full text-xs rounded-md border border-input bg-background px-2.5 py-1.5"
+                    >
+                      <option value="Juara 1">Juara 1</option>
+                      <option value="Juara 2">Juara 2</option>
+                      <option value="Juara 3">Juara 3</option>
+                      <option value="Harapan">Harapan</option>
+                    </select>
+                  </div>
+
+                  <Input
+                    name="kelas_saat_prestasi"
+                    placeholder="Diraih saat di kelas (misal: Kelas 4)"
+                    defaultValue={student.kelas || "Kelas 4"}
+                    className="text-xs"
+                    required
+                  />
+
                   <Input
                     name="prestasi"
-                    placeholder="Contoh: Juara 1 Tahfidz Qur'an Se-Sumsel"
+                    placeholder="Nama Kejuaraan / Lomba"
                     required
                     className="text-xs"
                   />
@@ -248,7 +290,7 @@ export default async function AdminStudentDetailPage(props: {
                     className="text-xs"
                   />
                   <Button type="submit" size="sm" variant="outline" className="w-full gap-1 text-xs">
-                    <Plus className="h-3 w-3" /> Tambah Prestasi
+                    <Plus className="h-3 w-3" /> Catat Prestasi Siswa
                   </Button>
                 </form>
               </div>

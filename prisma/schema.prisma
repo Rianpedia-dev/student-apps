@@ -144,17 +144,28 @@ model Pelanggaran {
 }
 
 model Prestasi {
-  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  id_user    String    @db.VarChar(255)
-  nama       String    @db.VarChar(255)
-  kelas      String    @db.VarChar(255)
-  fotoanak   String    @db.VarChar(255)
-  prestasi   String    @db.VarChar(255)
-  created_at DateTime? @db.Timestamp(0)
-  updated_at DateTime? @updatedAt @db.Timestamp(0)
+  id                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  id_user             String    @db.VarChar(255)
+  nama                String    @db.VarChar(255)
+  kelas               String    @db.VarChar(255)
+  kelas_saat_prestasi String?   @map("kelas_saat_prestasi") @db.VarChar(100)
+  tahun_ajaran        String?   @map("tahun_ajaran") @db.VarChar(30)
+  tingkat             String    @default("Dalam Sekolah") @db.VarChar(50)
+  peringkat           String    @default("Juara 1") @db.VarChar(50)
+  poin                Int       @default(1)
+  fotoanak            String    @db.VarChar(255)
+  prestasi            String    @db.VarChar(255)
+  jenjang             String?   @default("SD") @db.VarChar(10)
+  tanggal_prestasi    DateTime? @map("tanggal_prestasi") @db.Date
+  created_at          DateTime? @db.Timestamp(0)
+  updated_at          DateTime? @updatedAt @db.Timestamp(0)
 
   @@index([id_user])
   @@index([kelas])
+  @@index([jenjang])
+  @@index([tingkat])
+  @@index([peringkat])
+  @@index([poin])
   @@map("tb_prestasi")
 }
 

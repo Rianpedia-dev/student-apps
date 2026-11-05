@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
 import { DashboardService } from "@/services/dashboard.service";
+import { AchievementService } from "@/services/achievement.service";
+import { BestStudentSlider } from "@/components/features/achievements/best-student-slider";
 import {
   IslamicMosaicPattern,
   IslamicStarGeometricPattern,
@@ -31,6 +33,18 @@ export default async function SiswaDashboardPage() {
   } = dashboardData;
 
   const studentName = studentInfo.name;
+
+  const studentJenjang: "SD" | "SMP" =
+    (session.jenjang && session.jenjang !== "ALL")
+      ? (session.jenjang as "SD" | "SMP")
+      : /smp|kelas\s*(7|8|9)/i.test(session.kelas || "")
+      ? "SMP"
+      : "SD";
+
+  const [bestStudentsSchool, bestStudentsPerRombel] = await Promise.all([
+    AchievementService.getBestStudentSchool(studentJenjang, 8),
+    AchievementService.getBestStudentPerRombel(studentJenjang),
+  ]);
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
@@ -117,7 +131,7 @@ export default async function SiswaDashboardPage() {
           aspectRatioClassName="aspect-[1.18/1]"
         />
 
-        {/* Baris 2: Purple, Teal */}
+        {/* Baris 2: Purple, Teal, Gold */}
         <StatCard
           title="Pelanggaran"
           variant="purple"
@@ -130,7 +144,31 @@ export default async function SiswaDashboardPage() {
           href="/siswa/kelas-online"
           aspectRatioClassName="aspect-[1.18/1]"
         />
+        <StatCard
+          title="Prestasi"
+          variant="amber"
+          href="/siswa/achievements"
+          aspectRatioClassName="aspect-[1.18/1]"
+        />
       </div>
+
+      {/* Slider 1: Best Student Sekolah */}
+      <BestStudentSlider
+        title={`Best Student Sekolah (${studentJenjang})`}
+        subtitle="Siswa peraih akumulasi poin prestasi tertinggi tingkat sekolah"
+        items={bestStudentsSchool}
+        variant="school"
+        badgeText="Top Prestasi Sekolah"
+      />
+
+      {/* Slider 2: Best Student Semua Rombel */}
+      <BestStudentSlider
+        title={`Best Student Semua Rombel (${studentJenjang})`}
+        subtitle="Jawara peraih poin prestasi tertinggi dari masing-masing kelas binaan"
+        items={bestStudentsPerRombel}
+        variant="rombel"
+        badgeText="Jawara Rombel"
+      />
 
       {/* Timeline Pengumuman */}
       <div className="space-y-3.5">

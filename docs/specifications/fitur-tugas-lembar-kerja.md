@@ -9,7 +9,7 @@
 Dokumen ini memuat perencanaan lengkap, arsitektur teknis, dan panduan implementasi untuk moda penugasan baru pada modul Tugas di **Student Apps SD & SMP Islam Al-Azhar Cairo Palembang**:
 
 > **Fitur: Penugasan Lembar Kerja Berkas Interaktif (Worksheet PDF & Image)**
-> Memungkinkan dewan guru mengunggah soal dalam format dokumen PDF atau gambar (LKS/worksheet), memberikan pilihan fleksibel bagi santri untuk mengerjakan baik secara luring (unduh lalu unggah berkas) maupun langsung di dalam aplikasi melalui *In-App Canvas & PDF Annotation Editor* (coret-coret digital & pengetikan teks), koreksi interaktif oleh guru, alur revisi tugas, serta pengunduhan rekap nilai per kelas dalam format Excel (.xlsx) dan PDF resmi.
+> Memungkinkan dewan guru mengunggah soal dalam format dokumen PDF atau gambar (LKS/worksheet), memberikan pilihan fleksibel bagi siswa untuk mengerjakan baik secara luring (unduh lalu unggah berkas) maupun langsung di dalam aplikasi melalui *In-App Canvas & PDF Annotation Editor* (coret-coret digital & pengetikan teks), koreksi interaktif oleh guru, alur revisi tugas, serta pengunduhan rekap nilai per kelas dalam format Excel (.xlsx) dan PDF resmi.
 
 Fitur ini melengkapi moda **Kuis Interaktif CBT** yang sudah ada sebelumnya, sehingga sistem memiliki dua opsi penugasan utama:
 1. **Moda Ujian CBT Interaktif (Pilihan Ganda, Isian, & Esai Online)** — *Sudah Aktif*
@@ -67,17 +67,17 @@ flowchart TD
    - Opsi izin pengerjaan: Izinkan Unduh (aktif) & Izinkan Coret In-App (aktif).
 5. Sistem menyimpan file soal ke direktori publik `/uploads/tugas/soal/` dan menerbitkan tugas ke rombel kelas terkait.
 
-### B. Alur Santri: Pilihan Moda Pengerjaan
-Santri membuka `/siswa/tugas/[id]` dan disambut dua opsi pengerjaan fleksibel:
+### B. Alur Siswa: Pilihan Moda Pengerjaan
+Siswa membuka `/siswa/tugas/[id]` dan disambut dua opsi pengerjaan fleksibel:
 - **Opsi 1 — Unduh & Kerjakan Mandiri (Download & Offline Submission)**:
-  - Santri menekan tombol **"Unduh Lembar Soal"**.
+  - Siswa menekan tombol **"Unduh Lembar Soal"**.
   - File soal PDF/Image diunduh melalui `/api/download?file=...`.
-  - Santri dapat mencetak lembar soal, mengerjakannya di buku catatan/kertas, atau mengeditnya di aplikasi stylus pihak ketiga (seperti GoodNotes / Apple Notes).
-  - Santri memotret / memindai berkas jawaban dan mengunggahnya (*upload file*) kembali ke aplikasi.
+  - Siswa dapat mencetak lembar soal, mengerjakannya di buku catatan/kertas, atau mengeditnya di aplikasi stylus pihak ketiga (seperti GoodNotes / Apple Notes).
+  - Siswa memotret / memindai berkas jawaban dan mengunggahnya (*upload file*) kembali ke aplikasi.
 - **Opsi 2 — Kerjakan Langsung di Aplikasi (In-App Canvas & PDF Editor)**:
-  - Santri menekan tombol **"Kerjakan Langsung di Aplikasi"**.
+  - Siswa menekan tombol **"Kerjakan Langsung di Aplikasi"**.
   - Lembar soal terbuka di kanvas interaktif layar penuh (*iPad-optimized*).
-  - Santri memanfaatkan peralatan digital:
+  - Siswa memanfaatkan peralatan digital:
     - ✏️ **Pena Digital (Pen)**: Untuk menulis tangan atau menggambar jawaban dengan beragam pilihan warna dan ketebalan goresan.
     - 🖍️ **Stabilo (Highlighter)**: Untuk menandai teks atau poin penting pada soal.
     - 🔤 **Tambahkan Teks (Text Box)**: Mengetuk area manapun pada soal untuk mengetikkan jawaban dengan teks rapi.
@@ -87,17 +87,17 @@ Santri membuka `/siswa/tugas/[id]` dan disambut dua opsi pengerjaan fleksibel:
     - 📄 **Navigasi Multi-Halaman**: Berpindah halaman jika soal berbentuk PDF multi-halaman.
   - Sistem secara berkala menjalankan **Autosave Draft** menyimpan data coretan (*strokes & text layer*) sehingga pekerjaan aman meskipun koneksi terputus.
 - **Pengumpulan Akhir**:
-  - Santri meninjau hasil pekerjaannya, menyertakan catatan siswa jika diperlukan, lalu menekan **"Kumpulkan Tugas"**.
-  - Sistem merender hasil kanvas dan menyimpannya sebagai file submission santri. Status pengerjaan berubah menjadi `menunggu_penilaian`.
+  - Siswa meninjau hasil pekerjaannya, menyertakan catatan siswa jika diperlukan, lalu menekan **"Kumpulkan Tugas"**.
+  - Sistem merender hasil kanvas dan menyimpannya sebagai file submission siswa. Status pengerjaan berubah menjadi `menunggu_penilaian`.
 
 ### C. Alur Guru: Koreksi Berkas Digital (Speed-Grader)
-1. Guru membuka `/guru/tugas/[id]` dan melihat daftar submisi santri.
-2. Guru memilih santri yang berstatus `menunggu_penilaian` dan masuk ke halaman koreksi `/guru/tugas/[id]/review/[subId]`.
+1. Guru membuka `/guru/tugas/[id]` dan melihat daftar submisi siswa.
+2. Guru memilih siswa yang berstatus `menunggu_penilaian` dan masuk ke halaman koreksi `/guru/tugas/[id]/review/[subId]`.
 3. Guru memeriksa lembar pengerjaan siswa langsung di kanvas interaktif:
    - Guru mengaktifkan alat coreksi:
      - 🔴 **Pena Merah**: Memberikan garis bawah atau catatan perbaikan.
      - 🟢 **Stempel Centang (✓) & Silang (✗)**: Menandai nomor soal yang benar atau salah secara visual.
-     - 💬 **Catatan Sticky / Teks Komentar**: Menuliskan pesan bimbingan tepat di sebelah jawaban santri.
+     - 💬 **Catatan Sticky / Teks Komentar**: Menuliskan pesan bimbingan tepat di sebelah jawaban siswa.
 4. Coretan dan catatan guru disimpan ke sistem sebagai `annotated_file_url` dan `annotated_data`.
 
 ### D. Alur Guru: Keputusan Evaluasi (Nilai vs Revisi)
@@ -106,12 +106,12 @@ Pada panel evaluasi di sisi kanan layar, guru memiliki 2 opsi tindakan:
   - Guru menginput skor angka (0 - Poin Maksimal).
   - Guru menuliskan komentar umum apresiasi.
   - Menekan tombol **"Simpan & Beri Nilai"**.
-  - Status berubah menjadi `sudah_dinilai`. Santri menerima nilai dan dapat melihat lembar hasil koreksi lengkap dengan coretan guru.
+  - Status berubah menjadi `sudah_dinilai`. Siswa menerima nilai dan dapat melihat lembar hasil koreksi lengkap dengan coretan guru.
 - **Tindakan B — Minta Siswa Revisi**:
   - Jika tugas belum memenuhi kriteria kelulusan minimal, guru menekan **"Minta Siswa Revisi"**.
   - Guru menuliskan instruksi revisi spesifik (*"Perbaiki nomor 3 dan lengkapi cara perhitungannya ya nak"*).
   - Status berubah menjadi `perlu_revisi`.
-  - Santri menerima notifikasi revisi di dasbor, membuka kembali lembar pengerjaan yang sudah berisi coretan panduan dari guru, memperbaikinya, dan mengumpulkan ulang (*re-submit*).
+  - Siswa menerima notifikasi revisi di dasbor, membuka kembali lembar pengerjaan yang sudah berisi coretan panduan dari guru, memperbaikinya, dan mengumpulkan ulang (*re-submit*).
 
 ### E. Alur Guru: Unduh Rekap Nilai per Kelas
 1. Pada halaman daftar tugas `/guru/tugas/[id]`, guru memiliki tombol dropdown **"Unduh Rekap Nilai"**.
@@ -151,9 +151,9 @@ Penggunaan kolom untuk tipe penugasan lembar kerja berkas:
 
 ### 2. Model `TugasSubmission` (`tbl_tugas_submission`)
 Menyimpan riwayat berkas pengerjaan, layer anotasi coretan, nilai, dan status revisi:
-- `file_url`: URL lembar jawaban santri (berkas hasil upload siswa atau hasil ekspor kanvas awal).
+- `file_url`: URL lembar jawaban siswa (berkas hasil upload siswa atau hasil ekspor kanvas awal).
 - `file_name` & `file_type`: Metadata berkas (misal: `"jawaban-ananda.pdf"`, `"image/webp"`).
-- `catatan_siswa`: Pesan pengantar dari santri saat mengumpulkan tugas.
+- `catatan_siswa`: Pesan pengantar dari siswa saat mengumpulkan tugas.
 - `status`:
   - `"belum_mengumpulkan"`: Siswa belum mengumpulkan tugas.
   - `"sedang_mengerjakan"`: Siswa sedang membuka kanvas editor (ada draft pengerjaan tersimpan).
@@ -186,7 +186,7 @@ Lokasi: `src/app/(dashboard)/siswa/tugas/[tugasId]/page.tsx`
   - Jika belum dikerjakan: Muncul 2 tombol aksi:
     - 📥 **Unduh Soal** (Download file soal asli untuk dicetak atau dikerjakan manual).
     - ✏️ **Kerjakan Langsung di Aplikasi** (Membuka In-App Canvas Editor).
-  - Jika ada tombol **"Unggah Berkas Pengerjaan"** untuk santri yang memilih pengerjaan manual luring.
+  - Jika ada tombol **"Unggah Berkas Pengerjaan"** untuk siswa yang memilih pengerjaan manual luring.
   - Jika status `perlu_revisi`: Muncul banner peringatan oranye (*"Ustadz/Ustadzah meminta revisi pada tugas ini"*), menampilkan catatan perbaikan, serta tombol **"Perbaiki Tugas Sekarang"**.
 
 ### C. Komponen Inti: In-App Document & Canvas Editor
@@ -197,26 +197,26 @@ Lokasi baru: `src/components/features/assignment/canvas/document-canvas-editor.t
   - 🔤 **Teks Jawaban**: Klik pada lembar soal untuk menambahkan kotak teks, ketik jawaban dengan keyboard fisik atau keyboard sentuh iPad.
   - 🧹 **Penghapus**: Hapus goresan coret atau hapus elemen teks.
   - ↩️ / ↪️ **Undo & Redo**: Riwayat aksi 30 langkah.
-  - 🔍 **Zoom (50% - 300%) & Pan**: Memperbesar bagian soal tertentu agar santri leluasa menulis.
+  - 🔍 **Zoom (50% - 300%) & Pan**: Memperbesar bagian soal tertentu agar siswa leluasa menulis.
   - 📄 **Navigasi Halaman PDF**: Tombol panah Sebelumnya / Selanjutnya dengan indikator Halaman X dari Y.
   - 💾 **Status Penyimpanan**: Indikator *"Tersimpan otomatis"* / *"Menyimpan..."*.
   - 🚀 **Tombol Aksi**: *"Kumpulkan Tugas"* (untuk siswa) atau *"Simpan Koreksi"* (untuk guru).
 - **Fitur Khusus Mode Guru (Teacher Correction Toolbar)**:
-  - 🔴 **Pena Merah Koreksi**: Default pena berwarna merah terang untuk mengoreksi lembar santri.
+  - 🔴 **Pena Merah Koreksi**: Default pena berwarna merah terang untuk mengoreksi lembar siswa.
   - ✔️ **Stempel Centang Hijau** & ❌ **Stempel Silang Merah**: Sekali ketuk untuk menaruh tanda benar/salah pada lembar.
   - 💬 **Catatan Koreksi Cepat**: Bubble teks koreksi guru.
 
 ### D. Lembar Penilaian Guru (Speed-Grader Panel)
 Lokasi: `src/app/(dashboard)/guru/tugas/[tugasId]/review/[subId]/page.tsx`
 - Tampilan berdampingan (*Side-by-Side View*):
-  - **Sisi Kiri (70%)**: Lembar kerja pengerjaan santri dengan In-App Canvas Editor aktif untuk dicoret langsung oleh guru.
+  - **Sisi Kiri (70%)**: Lembar kerja pengerjaan siswa dengan In-App Canvas Editor aktif untuk dicoret langsung oleh guru.
   - **Sisi Kanan (30%)**: Panel input penilaian:
-    - Informasi santri (Nama, NIS, Waktu Kumpul, Keterangan Tepat Waktu/Terlambat).
+    - Informasi siswa (Nama, NIS, Waktu Kumpul, Keterangan Tepat Waktu/Terlambat).
     - Input Nilai (skala 0 - Poin Maksimal).
     - Textarea Catatan Guru.
     - Tombol Hijau: **"Beri Nilai & Selesaikan"** (Status -> `sudah_dinilai`).
     - Tombol Oranye: **"Minta Siswa Revisi"** (Status -> `perlu_revisi`).
-    - Tombol Navigasi Santri Berikutnya / Sebelumnya.
+    - Tombol Navigasi Siswa Berikutnya / Sebelumnya.
 
 ---
 
@@ -248,7 +248,7 @@ Menggunakan library `jspdf` dan `jspdf-autotable` yang telah terpasang:
 - Format dokumen berorientasi **Landscape A4**.
 - Layout Dokumen Resmi:
   - **Kop Surat Resmi**: *"YAYASAN ASUH ASOSIASI ISLAM AL-AZHAR CAIRO PALEMBANG"* beserta alamat, nomor kontak, dan garis pembatas ganda.
-  - **Judul Rekap**: *"REKAPITULASI EVALUASI PENUGASAN SANTRI"*.
+  - **Judul Rekap**: *"REKAPITULASI EVALUASI PENUGASAN SISWA"*.
   - **Metadata Identitas**: Mata Pelajaran, Rombel Kelas, Tanggal Tugas Diterbitkan, Tenggat Waktu, dan Nama Guru Pengampu.
   - **Tabel Nilai Rapi**: Diformat dengan tema hijau emerald Al-Azhar, nomor urut teratur, nilai tebal, dan catatan guru.
   - **Statistik Nilai**: Kotak ringkasan rata-rata kelas, total siswa dinilai, dan siswa yang belum mengumpulkan.
@@ -263,8 +263,8 @@ Berikut adalah daftar fungsi *Server Actions* baru atau penyempurnaan yang perlu
 | Nama Fungsi Server Action | Berkas Target | Deskripsi & Peran Teknis |
 | :--- | :--- | :--- |
 | `createDocumentTaskAction` | `src/actions/assignment.ts` | Menyimpan tugas baru bertipe `LEMBAR_KERJA`, mengunggah file soal PDF/gambar guru via `saveUploadedFile`, dan mendistribusikan ke kelas. |
-| `saveStudentDraftAnnotationAction` | `src/actions/assignment.ts` | Menyimpan autosave draft coretan pengerjaan santri (`annotated_data` JSON) sebelum dikumpulkan. |
-| `submitDocumentTaskAction` | `src/actions/assignment.ts` | Finalisasi pengerjaan santri, mengunggah berkas render jawaban, mengubah status menjadi `menunggu_penilaian`. |
+| `saveStudentDraftAnnotationAction` | `src/actions/assignment.ts` | Menyimpan autosave draft coretan pengerjaan siswa (`annotated_data` JSON) sebelum dikumpulkan. |
+| `submitDocumentTaskAction` | `src/actions/assignment.ts` | Finalisasi pengerjaan siswa, mengunggah berkas render jawaban, mengubah status menjadi `menunggu_penilaian`. |
 | `gradeDocumentTaskAction` | `src/actions/assignment.ts` | Guru menyimpan nilai angka, catatan evaluasi, dan berkas lembar teranotasi (`annotated_file_url`), status menjadi `sudah_dinilai`. |
 | `requestTaskRevisionAction` | `src/actions/assignment.ts` | Guru mengirimkan instruksi revisi dan berkas coretan perbaikan, mengubah status submission menjadi `perlu_revisi`. |
 | `resubmitTaskRevisionAction` | `src/actions/assignment.ts` | Siswa mengumpulkan ulang hasil perbaikan revisi, status kembali menjadi `menunggu_penilaian`. |
@@ -312,9 +312,9 @@ gantt
 - Menyimpan tugas dengan tipe `LEMBAR_KERJA` dan merekam tautan file soal ke kolom `file_petunjuk`.
 
 #### 🔹 Fase 3: Antarmuka Siswa (Unduh Soal & In-App Canvas Editor)
-- Memperbarui halaman lobby tugas santri `/siswa/tugas/[tugasId]`:
+- Memperbarui halaman lobby tugas siswa `/siswa/tugas/[tugasId]`:
   - Menampilkan tombol **"Unduh Lembar Soal"** (mengarah ke `/api/download`).
-  - Menampilkan form upload berkas jawaban untuk santri yang memilih pengerjaan offline/manual.
+  - Menampilkan form upload berkas jawaban untuk siswa yang memilih pengerjaan offline/manual.
   - Menampilkan tombol **"Kerjakan Langsung di Aplikasi"**.
 - Membangun komponen **Document Canvas Editor**:
   - Render background lembar soal (gambar atau halaman PDF).
@@ -335,7 +335,7 @@ gantt
 #### 🔹 Fase 5: Ekspor Rekap Nilai Kelas (Excel & PDF)
 - Menambahkan tombol **"Unduh Rekap Nilai"** pada halaman `/guru/tugas/[tugasId]`.
 - Mengimplementasikan ekspor **Excel (.xlsx)** dengan pustaka `xlsx`:
-  - Menghasilkan daftar nilai seluruh santri di kelas beserta ringkasan statistik kelas.
+  - Menghasilkan daftar nilai seluruh siswa di kelas beserta ringkasan statistik kelas.
 - Mengimplementasikan ekspor **PDF Resmi (.pdf)** dengan `jspdf` dan `jspdf-autotable`:
   - Desain layout resmi ber-kop sekolah Al-Azhar Cairo Palembang dengan tabel rapi dan kolom tanda tangan guru.
 
@@ -350,7 +350,7 @@ gantt
 
 Tabel matriks hak akses pada fitur penugasan lembar kerja berkas:
 
-| Tindakan / Aksi Fitur | Guru Pengampu | Santri / Siswa | Wali Kelas | Administrator |
+| Tindakan / Aksi Fitur | Guru Pengampu | Siswa / Siswa | Wali Kelas | Administrator |
 | :--- | :---: | :---: | :---: | :---: |
 | **Upload Soal PDF/Image & Buat Tugas** | ✅ Ya (Kelas Ampuan) | ❌ Tidak | ❌ Tidak | ✅ Ya |
 | **Unduh Berkas Lembar Soal** | ✅ Ya | ✅ Ya (Kelas Terdaftar) | 👁️ Pratinjau | ✅ Ya |
@@ -368,9 +368,9 @@ Tabel matriks hak akses pada fitur penugasan lembar kerja berkas:
 
 Dengan diimplementasikannya fitur **Penugasan Lembar Kerja Berkas (PDF/Image) Interaktif** ini:
 1. **Guru Lebih Efisien & Fleksibel**: Guru tidak lagi terbebani mengetik ulang ratusan butir soal ke form CBT bila sudah memiliki materi LKS PDF atau foto buku paket. Cukup unggah dokumen soal sekali klik.
-2. **Koreksi Digital Paperless**: Guru dapat mengoreksi lembar jawaban santri secara visual layaknya mencoret buku tugas fisik menggunakan pena merah dan stempel digital di atas iPad tanpa perlu mencetak kertas (*zero paper waste*).
-3. **Pengalaman Santri yang Menyenangkan**: Santri dapat memilih cara pengerjaan yang paling nyaman bagi mereka—apakah mencetak lembar soal atau langsung mencoret dan mengetik jawaban di layar iPad.
-4. **Siklus Pembelajaran Berkelanjutan melalui Revisi**: Fitur revisi memastikan proses evaluasi bersifat formatif dan mendidik, membimbing santri hingga benar-benar memahami materi.
+2. **Koreksi Digital Paperless**: Guru dapat mengoreksi lembar jawaban siswa secara visual layaknya mencoret buku tugas fisik menggunakan pena merah dan stempel digital di atas iPad tanpa perlu mencetak kertas (*zero paper waste*).
+3. **Pengalaman Siswa yang Menyenangkan**: Siswa dapat memilih cara pengerjaan yang paling nyaman bagi mereka—apakah mencetak lembar soal atau langsung mencoret dan mengetik jawaban di layar iPad.
+4. **Siklus Pembelajaran Berkelanjutan melalui Revisi**: Fitur revisi memastikan proses evaluasi bersifat formatif dan mendidik, membimbing siswa hingga benar-benar memahami materi.
 5. **Kemudahan Administrasi**: Rekapitulasi nilai otomatis per kelas dalam format Excel dan PDF resmi menghemat waktu dewan guru dalam penyusunan laporan penilaian ke wali kelas dan pimpinan sekolah.
 
 ---

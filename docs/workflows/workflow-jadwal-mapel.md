@@ -66,7 +66,7 @@ sequenceDiagram
     actor Admin as Administrator (Kurikulum)
     actor Engine as Conflict Engine
     actor Guru as Dewan Guru
-    actor Siswa as Santri / Siswa
+    actor Siswa as Siswa / Siswa
 
     Note over Admin: 1. Penyusunan Jadwal (/admin/schedules)
     Admin->>Admin: Pilih Kelas, Mapel, Guru, Hari, & Jam
@@ -141,12 +141,12 @@ Bagi dewan guru, jadwal pelajaran menjadi panduan kerja harian:
 
 ### C. Peran Siswa: Panduan Belajar Harian & Mingguan
 
-Bagi santri, jadwal pelajaran menjadi penuntun persiapan belajar mandiri:
+Bagi siswa, jadwal pelajaran menjadi penuntun persiapan belajar mandiri:
 1. **Kartu Pintar "Mapel Hari Ini" di Dashboard (`/siswa`)**:
    - Secara otomatis mendeteksi hari kalender berjalan (misal: Hari Kamis).
    - Menampilkan mata pelajaran apa saja yang akan dipelajari hari ini, jam KBM, nama guru pengampu, serta badge tugas yang belum diselesaikan.
 2. **Matriks Silabus Mingguan (`/siswa/mapel`)**:
-   - Santri dapat melihat seluruh mata pelajaran yang diikutinya selama satu semester penuh lengkap dengan foto profil guru pengampu.
+   - Siswa dapat melihat seluruh mata pelajaran yang diikutinya selama satu semester penuh lengkap dengan foto profil guru pengampu.
 
 ---
 
@@ -188,18 +188,18 @@ Berikut adalah skenario penerapan alur kerja penjadwalan di SD - SMP Islam Al-Az
   2. Peringatan kelas bentrok muncul seketika:
      `"Kelas 4 - Mehmed Al Fatih bentrok: sudah terjadwal mapel PAI bersama Ustadzah Fatimah (10.00 - 11.30 WIB)."`
   3. Staf kurikulum segera membatalkan jadwal tersebut dan mencari jam kosong lainnya.
-- **Hasil**: Santri tidak mengalami kebingungan karena kedatangan dua guru berbeda di satu ruang kelas.
+- **Hasil**: Siswa tidak mengalami kebingungan karena kedatangan dua guru berbeda di satu ruang kelas.
 
 ---
 
-### 🎭 Skenario 3: Santri Mempersiapkan Modul Belajar Melalui Kartu "Mapel Hari Ini"
+### 🎭 Skenario 3: Siswa Mempersiapkan Modul Belajar Melalui Kartu "Mapel Hari Ini"
 - **Situasi**: Ananda Rayhan bangun tidur di pagi hari dan ingin memeriksa jadwal pelajaran hari ini di tablet iPad miliknya.
 - **Workflow Sistem**:
   1. Rayhan membuka aplikasi Student Apps di `/siswa`.
   2. Kartu pintar **"Mata Pelajaran Hari Ini"** otomatis mendeteksi hari ini adalah hari Rabu.
   3. Rayhan melihat jadwal urut: Jam 07.30–09.00 adalah IPA, dilanjutkan jam 09.30–11.00 adalah Bahasa Arab.
   4. Rayhan langsung mengklik kartu IPA untuk membaca modul pertemuan yang disiapkan ustadz pengampunya.
-- **Hasil**: Santri mandiri, siap belajar, dan membawa perlengkapan KBM yang tepat.
+- **Hasil**: Siswa mandiri, siap belajar, dan membawa perlengkapan KBM yang tepat.
 
 ---
 

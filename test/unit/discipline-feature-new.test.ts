@@ -209,7 +209,7 @@ describe("New Discipline Violation Features (Jenjang, Auto-fields, Wali Kelas, S
 
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
         id: BigInt(666),
-        name: "Santri Cilik",
+        name: "Siswa Cilik",
         kelas: "Kelas 2 - Tariq bin Ziyad",
         jenjang: "SD",
       } as any);

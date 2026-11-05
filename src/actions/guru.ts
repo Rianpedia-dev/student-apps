@@ -466,114 +466,22 @@ export async function updateNotesAction(studentId: string, notes: string) {
   }
 }
 
+import {
+  createAchievementAction as handleCreateAch,
+  updateAchievementAction as handleUpdateAch,
+  deleteAchievementAction as handleDeleteAch,
+} from "./achievement";
+
 export async function createAchievementAction(formData: FormData) {
-  try {
-    await checkGuruOrAdmin();
-
-    const id_user = (formData.get("id_user") as string) || "0";
-    const nama = formData.get("nama") as string;
-    const kelas = (formData.get("kelas") as string) || "";
-    const prestasi = formData.get("prestasi") as string;
-
-    if (!nama || !prestasi) {
-      return { error: "Nama dan deskripsi prestasi wajib diisi." };
-    }
-
-    let fotoanak = "/images/trophy.png";
-    const rawFile = formData.get("foto_upload") || formData.get("fotoanak");
-    if (rawFile && typeof rawFile === "object" && "size" in rawFile && (rawFile as Blob).size > 0) {
-      const uploadRes = await saveUploadedFile(rawFile as Blob, { category: "achievement" });
-      if (!uploadRes.success) {
-        return { error: uploadRes.error };
-      }
-      fotoanak = uploadRes.filePath || "/images/trophy.png";
-    } else if (typeof rawFile === "string" && rawFile.trim().length > 0) {
-      fotoanak = rawFile.trim();
-    }
-
-    await prisma.prestasi.create({
-      data: {
-        id_user,
-        nama,
-        kelas,
-        fotoanak,
-        prestasi,
-        created_at: new Date(),
-      },
-    });
-
-    revalidatePath("/guru/achievements");
-    revalidatePath("/guru");
-    revalidatePath("/siswa");
-    return { success: true, message: "Prestasi berhasil ditambahkan." };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Gagal menambahkan prestasi.";
-    return { error: errorMsg };
-  }
+  return handleCreateAch(formData);
 }
 
 export async function updateAchievementAction(id: string, formData: FormData) {
-  try {
-    await checkGuruOrAdmin();
-
-    const id_user = (formData.get("id_user") as string) || "0";
-    const nama = formData.get("nama") as string;
-    const kelas = (formData.get("kelas") as string) || "";
-    const prestasi = formData.get("prestasi") as string;
-
-    if (!nama || !prestasi) {
-      return { error: "Nama dan deskripsi prestasi wajib diisi." };
-    }
-
-    const updateData: Record<string, string> = {
-      id_user,
-      nama,
-      kelas,
-      prestasi,
-    };
-
-    const rawFile = formData.get("foto_upload") || formData.get("fotoanak");
-    if (rawFile && typeof rawFile === "object" && "size" in rawFile && (rawFile as Blob).size > 0) {
-      const uploadRes = await saveUploadedFile(rawFile as Blob, { category: "achievement" });
-      if (!uploadRes.success || !uploadRes.filePath) {
-        return { error: uploadRes.error || "Gagal mengunggah foto." };
-      }
-      updateData.fotoanak = uploadRes.filePath;
-    } else if (typeof rawFile === "string" && rawFile.trim().length > 0) {
-      updateData.fotoanak = rawFile.trim();
-    }
-
-    await prisma.prestasi.update({
-      where: { id: BigInt(id) },
-      data: updateData,
-    });
-
-    revalidatePath("/guru/achievements");
-    revalidatePath("/guru");
-    revalidatePath("/siswa");
-    return { success: true, message: "Prestasi berhasil diperbarui." };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Gagal memperbarui prestasi.";
-    return { error: errorMsg };
-  }
+  return handleUpdateAch(id, formData);
 }
 
 export async function deleteAchievementAction(id: string) {
-  try {
-    await checkGuruOrAdmin();
-
-    await prisma.prestasi.delete({
-      where: { id: BigInt(id) },
-    });
-
-    revalidatePath("/guru/achievements");
-    revalidatePath("/guru");
-    revalidatePath("/siswa");
-    return { success: true, message: "Prestasi berhasil dihapus." };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Gagal menghapus prestasi.";
-    return { error: errorMsg };
-  }
+  return handleDeleteAch(id);
 }
 
 export async function updateProfileAction(formData: FormData) {

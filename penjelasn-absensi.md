@@ -8,7 +8,7 @@
 
 Sistem Presensi Siswa di aplikasi **Student Apps Al-Azhar Cairo Palembang** adalah sistem absensi digital modern **berbasis Mata Pelajaran (Per-Mapel KBM)** yang terhubung langsung dengan **Jadwal Pelajaran Sekolah**.
 
-Sebelumnya, absensi hanya dicatat sekali sehari di pagi hari oleh Wali Kelas. Sekarang, sistem telah diperbarui sehingga **setiap guru mata pelajaran mencatat kehadiran siswa di setiap jam pelajarannya**. Hal ini memastikan transparansi penuh, kedisiplinan belajar santri, dan kemudahan rekapitulasi nilai rapor serta syarat kelayakan asesmen akhir.
+Sebelumnya, absensi hanya dicatat sekali sehari di pagi hari oleh Wali Kelas. Sekarang, sistem telah diperbarui sehingga **setiap guru mata pelajaran mencatat kehadiran siswa di setiap jam pelajarannya**. Hal ini memastikan transparansi penuh, kedisiplinan belajar siswa, dan kemudahan rekapitulasi nilai rapor serta syarat kelayakan asesmen akhir.
 
 ### 4 Status Kehadiran Baku:
 1. **Hadir (H)**: Siswa hadir dan mengikuti kegiatan belajar mengajar (KBM).
@@ -127,10 +127,10 @@ Wali Kelas memiliki semua hak akses Guru Mapel di atas, **ditambah menu khusus p
 3. **Deteksi Otomatis Siswa Bolos (*Truancy Detection*)**:
    - Sistem otomatis menganalisis baris kehadiran siswa:
      - Jika siswa berstatus **Hadir** di jam pagi tetapi **Alpha** di jam siang tanpa izin, status keseluruhan siswa otomatis ditandai badge merah: **"Bolos Terdeteksi"**.
-     - Ini memudahkan Wali Kelas segera memanggil atau menindaklanjuti santri bersangkutan.
+     - Ini memudahkan Wali Kelas segera memanggil atau menindaklanjuti siswa bersangkutan.
 4. **Tabel Spreadsheet Bulanan Tanggal 1 s.d. 31 (`/guru/attendance/table/[date]`)**:
    - Tampilan matriks satu bulan penuh dengan inisial **H** (Hadir), **S** (Sakit), **I** (Izin), dan **A** (Alpha).
-   - Memudahkan melihat pola santri yang sering izin di hari tertentu atau sering sakit berturut-turut.
+   - Memudahkan melihat pola siswa yang sering izin di hari tertentu atau sering sakit berturut-turut.
 5. **Cetak Rekap Presensi Rombel & Matriks Tanggal 1–31 (`/guru/attendance/recap`)**:
    - **Mode Khusus Wali Kelas**: Opsi `"⭐ Rekap Harian Kelas Rombel (Wali Kelas)"` yang secara otomatis mengonsolidasikan data kehadiran per hari masuk sekolah (*1 tanggal = 1 status*).
    - **Tombol Ekspor 1: "Export Rekap Rapor (A4)"**: Menghasilkan dokumen rekapitulasi kehadiran bulanan berisi kolom Hadir, Sakit, Izin, Alpha, Total Hari Masuk, dan % Kehadiran beserta tanda tangan resmi Nama & NIY Wali Kelas.

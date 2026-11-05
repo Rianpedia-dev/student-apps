@@ -10,11 +10,11 @@ Fitur **Materi Pembelajaran (Pertemuan & Modul Digital)** merupakan poros inti d
 
 Alih-alih menyebarkan file secara terpisah melalui grup pesan instan (WhatsApp) yang rawan tertimbun dan membebani memori penyimpanan tablet siswa, sistem menyatukan seluruh siklus bahan ajar ke dalam **Silabus Modular Berbasis Pertemuan (`tbl_pertemuan`)**. Setiap pertemuan bertindak sebagai satu kesatuan ruang belajar (*digital learning capsule*) yang memadukan:
 1. **Pesan & Arahan Guru**: Pengantar belajar, tujuan instruksional, dan panduan belajar dari Ustadz/Ustadzah.
-2. **Modul Dokumen Multi-Format**: Berkas presentasi (PPT/PPTX), modul buku saku (PDF), lembar kerja santri (DOCX/XLSX), dan infografis gambar.
+2. **Modul Dokumen Multi-Format**: Berkas presentasi (PPT/PPTX), modul buku saku (PDF), lembar kerja siswa (DOCX/XLSX), dan infografis gambar.
 3. **Pratinjau Dokumen In-Browser (*In-Browser Document Viewer*)**: Membaca dokumen langsung di peramban tanpa memaksa siswa mengunduh file atau menginstal aplikasi pihak ketiga.
 4. **Video Pembelajaran Interaktif**: Pemutar video terintegrasi (YouTube dan Cloud Video) yang bebas dari gangguan rekomendasi luar.
 5. **Referensi Tautan Web Eksternal**: Tautan ensiklopedia, laboratorium virtual sains, atau bahan bacaan pengayaan.
-6. **Integrasi Tugas & Kuis Interaktif**: Keterikatan langsung antara materi ajar dengan evaluasi pemahaman santri.
+6. **Integrasi Tugas & Kuis Interaktif**: Keterikatan langsung antara materi ajar dengan evaluasi pemahaman siswa.
 7. **Kontrol Publikasi (Draft vs Terbit)** & **Duplikasi 1-Klik ke Rombel Paralel**: Memangkas waktu kerja administratif guru tanpa mengurangi mutu pembelajaran.
 
 ---
@@ -56,10 +56,10 @@ erDiagram
 2. **`tbl_pertemuan_progress` (`PertemuanProgress`)**:
    - `id`: Primary key unik (BigInt).
    - `pertemuan_id`: Pertemuan yang dipelajari.
-   - `siswa_id`: Akun santri yang telah menuntaskan pembelajaran.
-   - `is_completed`: Status penyelesaian mandiri santri (Boolean).
-   - `completed_at`: Stempel waktu saat santri menandai selesai belajar.
-   - `@@unique([pertemuan_id, siswa_id])`: Menjamin satu santri hanya memiliki satu rekaman status per pertemuan.
+   - `siswa_id`: Akun siswa yang telah menuntaskan pembelajaran.
+   - `is_completed`: Status penyelesaian mandiri siswa (Boolean).
+   - `completed_at`: Stempel waktu saat siswa menandai selesai belajar.
+   - `@@unique([pertemuan_id, siswa_id])`: Menjamin satu siswa hanya memiliki satu rekaman status per pertemuan.
 
 3. **`tbl_tugas` (`Tugas`)**:
    - Terikat dengan `mapel_id`, `kelas_id`, dan opsional terikat langsung dengan `pertemuan_id`.
@@ -75,7 +75,7 @@ Alur penyusunan, distribusi, dan pemanfaatan materi melibatkan interaksi antara 
 sequenceDiagram
     autonumber
     actor Guru as Guru Pengampu
-    actor Siswa as Santri / Siswa
+    actor Siswa as Siswa / Siswa
     actor Admin as Administrator
 
     Note over Guru: 1. Penyusunan Materi & Silabus Pertemuan
@@ -111,7 +111,7 @@ Guru memiliki kontrol penuh atas silabus materi pada seluruh kelas rombel yang d
 
 #### 1. Pemilihan Rombel Kelas Aktif
 - Guru yang mengajar mata pelajaran sama di beberapa kelas (misal: *Matematika di Kelas 4A, 4B, dan 4C*) disajikan antarmuka pemilihan tab rombel yang intuitif.
-- Setiap rombel memiliki daftar pertemuannya masing-masing, memungkinkan guru menyesuaikan ritme KBM per kelas bila ada perbedaan hari libur atau kecepatan serap santri.
+- Setiap rombel memiliki daftar pertemuannya masing-masing, memungkinkan guru menyesuaikan ritme KBM per kelas bila ada perbedaan hari libur atau kecepatan serap siswa.
 
 #### 2. Pembuatan Pertemuan Baru (`createPertemuanAction`)
 - **Nomor Pertemuan Cerdas (*Suggested Pertemuan Ke*)**:
@@ -147,7 +147,7 @@ Antarmuka siswa di `/siswa/mapel/[mapelId]` dirancang bersih, modern, dan optima
 #### 1. Garis Waktu Pertemuan (*Timeline & Session Number Squircle*)
 - Setiap pertemuan ditampilkan dalam format kartu terstruktur dengan nomor sesi bergaya *squircle* modern (01, 02, 03...).
 - **Badge Cerdas**:
-  - *Materi Pekan Ini* (dilengkapi animasi *sparkles* lembut) untuk memandu santri langsung ke materi yang sedang aktif diajarkan guru minggu ini.
+  - *Materi Pekan Ini* (dilengkapi animasi *sparkles* lembut) untuk memandu siswa langsung ke materi yang sedang aktif diajarkan guru minggu ini.
   - *Tanggal KBM*, *Badge Modul Dokumen*, *Badge Video*, dan *Badge Jumlah Tugas*.
 - Pertemuan pertama secara otomatis terbuka (*auto-expanded*), sementara pertemuan lain dapat dibuka-tutup (*accordion toggle*) untuk menghemat ruang layar.
 
@@ -163,23 +163,23 @@ Fitur unggulan sistem yang menghilangkan kebutuhan instalasi aplikasi pembaca do
 - **Fitur Kontrol Penampil iPad**:
   - **Zoom In / Zoom Out**: Perbesaran tampilan dari 0.5x hingga 3.0x.
   - **Rotasi Dokumen (90° Increments)**: Menyesuaikan orientasi modul landscape atau portrait.
-  - **Mode Layar Penuh (*Fullscreen Mode*)**: Memaksimalkan kenyamanan membaca santri di iPad.
+  - **Mode Layar Penuh (*Fullscreen Mode*)**: Memaksimalkan kenyamanan membaca siswa di iPad.
   - **Navigasi Keyboard / Touch**: Mendukung tombol ESC untuk keluar dan panah navigasi.
   - **Unduh Opsional**: Tombol unduh tetap disediakan jika siswa ingin menyimpan salinan offline di memori iPad.
 
 #### 4. Pemutar Video Edukasi Terintegrasi
 - Siswa menonton penjelasan materi langsung di dalam ruang belajar tanpa perlu diarahkan ke aplikasi YouTube luar.
-- Hal ini menjaga konsentrasi belajar santri dari godaan algoritma rekomendasi tontonan lain yang tidak edukatif.
+- Hal ini menjaga konsentrasi belajar siswa dari godaan algoritma rekomendasi tontonan lain yang tidak edukatif.
 
 #### 5. Kartu Tugas Terintegrasi Pertemuan
 - Tugas yang ditautkan ke pertemuan langsung menampilkan kartu status:
   - Badge *Belum Dikerjakan* (dengan tombol langsung ke lembar pengerjaan tugas).
-  - Badge *Sedang Dinilai* (jika santri sudah mengirimkan jawaban).
+  - Badge *Sedang Dinilai* (jika siswa sudah mengirimkan jawaban).
   - Badge *Nilai Diperoleh* (contoh: *Nilai: 95 / 100 ⭐*).
 
 #### 6. Pelacak Progress Mandiri (*Mark as Studied*)
-- Santri dapat menekan tombol **"Tandai Sudah Dipelajari"** setelah selesai membaca modul.
-- Sistem merekam pencapaian santri ke dalam `tbl_pertemuan_progress` dan memberikan umpan balik motivasi Islami: *"Alhamdulillah! Pertemuan ini telah kamu selesaikan ⭐"*.
+- Siswa dapat menekan tombol **"Tandai Sudah Dipelajari"** setelah selesai membaca modul.
+- Sistem merekam pencapaian siswa ke dalam `tbl_pertemuan_progress` dan memberikan umpan balik motivasi Islami: *"Alhamdulillah! Pertemuan ini telah kamu selesaikan ⭐"*.
 
 ---
 
@@ -202,9 +202,9 @@ Materi pembelajaran menjadi pengikat utama antar-modul di Student Apps:
 | **Mata Pelajaran (`/admin/subjects`, `/guru/mapel`)** | Materi selalu terikat pada kurikulum mata pelajaran tertentu (`mapel_id`) dan rombel kelas tertentu (`kelas_id`). |
 | **Jadwal Pelajaran (`/admin/schedules`)** | Guru yang memiliki SK jadwal mengajar pada suatu rombel berhak mengelola seluruh materi pertemuan di rombel tersebut. |
 | **Tugas & Kuis Interaktif (`/guru/tugas`, `/siswa/tugas`)** | Tugas dapat disematkan langsung ke dalam pertemuan pembelajaran tertentu (`pertemuan_id`), menciptakan kesinambungan antara teori dan latihan. |
-| **Kelas Online Tatap Muka Virtual (`/guru/kelas-online`)** | Ketika guru membuka sesi tatap maya video Daily.co, guru dan santri merujuk pada nomor pertemuan materi yang sedang dibahas bersama. |
-| **Chat Konsultasi Privat Guru-Siswa (`/guru/chat`)** | Santri yang mengalami kesulitan saat membaca modul materi dapat langsung mengklik tombol konsultasi ke guru pengampu. |
-| **Perangkat iPad Edukasi Sekolah** | Format file, viewer, dan pemutar video dirancang ringan guna memaksimalkan performa baterai dan kapasitas memori iPad santri. |
+| **Kelas Online Tatap Muka Virtual (`/guru/kelas-online`)** | Ketika guru membuka sesi tatap maya video Daily.co, guru dan siswa merujuk pada nomor pertemuan materi yang sedang dibahas bersama. |
+| **Chat Konsultasi Privat Guru-Siswa (`/guru/chat`)** | Siswa yang mengalami kesulitan saat membaca modul materi dapat langsung mengklik tombol konsultasi ke guru pengampu. |
+| **Perangkat iPad Edukasi Sekolah** | Format file, viewer, dan pemutar video dirancang ringan guna memaksimalkan performa baterai dan kapasitas memori iPad siswa. |
 
 ---
 
@@ -223,8 +223,8 @@ Berikut adalah skenario penerapan fitur materi KBM dalam keseharian sekolah di S
 
 ---
 
-### 🎭 Skenario 2: Santri Membaca Modul IPA di iPad Tanpa Aplikasi Office
-- **Situasi**: Ananda Faris (santri Kelas 5) sedang berada di asrama/rumah dan ingin mempelajari modul IPA bab *"Siklus Air"* di tablet iPad miliknya. iPad santri memiliki kebijakan pembatasan instalasi aplikasi luar (*device management*).
+### 🎭 Skenario 2: Siswa Membaca Modul IPA di iPad Tanpa Aplikasi Office
+- **Situasi**: Ananda Faris (siswa Kelas 5) sedang berada di asrama/rumah dan ingin mempelajari modul IPA bab *"Siklus Air"* di tablet iPad miliknya. iPad siswa memiliki kebijakan pembatasan instalasi aplikasi luar (*device management*).
 - **Workflow Sistem**:
   1. Faris membuka portal `/siswa/mapel` dan memilih pelajaran IPA.
   2. Faris mengklik kartu **Pertemuan 2: Siklus Hidrologi Bumi**.
@@ -232,7 +232,7 @@ Berikut adalah skenario penerapan fitur materi KBM dalam keseharian sekolah di S
   4. Modul slide presentasi langsung terbuka di peramban iPad menggunakan **In-Browser Document Viewer**.
   5. Faris dapat memperbesar teks (*zoom-in*), menggeser halaman slide, dan membaca dengan nyaman tanpa perlu mengunduh file dokumen atau memasang Microsoft PowerPoint.
   6. Setelah selesai, Faris menekan tombol **"Tandai Sudah Dipelajari"**.
-- **Hasil**: Santri belajar mandiri dengan lancar, memori iPad tetap lega, dan tidak terkendala lisensi aplikasi tambahan.
+- **Hasil**: Siswa belajar mandiri dengan lancar, memori iPad tetap lega, dan tidak terkendala lisensi aplikasi tambahan.
 
 ---
 
@@ -249,7 +249,7 @@ Berikut adalah skenario penerapan fitur materi KBM dalam keseharian sekolah di S
 ---
 
 ### 🎭 Skenario 4: Integrasi Modul Teori dengan Kuis Langsung
-- **Situasi**: Pada mata pelajaran Fiqih bab *"Tata Cara Sholat Jenazah"*, Ustadzah Maryam ingin santri membaca panduan bacaan niat dan doa terlebih dahulu sebelum mengerjakan kuis evaluasi pemahaman.
+- **Situasi**: Pada mata pelajaran Fiqih bab *"Tata Cara Sholat Jenazah"*, Ustadzah Maryam ingin siswa membaca panduan bacaan niat dan doa terlebih dahulu sebelum mengerjakan kuis evaluasi pemahaman.
 - **Workflow Sistem**:
   1. Ustadzah Maryam menyusun Pertemuan 4 dengan melampirkan modul PDF panduan doa sholat jenazah dan video peragaan takbir.
   2. Pada opsi form materi, beliau memilih tugas yang telah dibuat: *"Kuis Pemahaman Sholat Jenazah"*.
@@ -264,11 +264,11 @@ Sebelum adanya modul materi terpadu ini, kegiatan pembelajaran digital sekolah m
 
 | Masalah Konvensional | Solusi Cerdas yang Dihadirkan Sistem Ini |
 | :--- | :--- |
-| **Materi Tercecer di Grup WhatsApp**<br>File modul PDF dan rekaman video terselip di obrolan chat grup wali murid sehingga sulit ditemukan kembali saat ujian. | **Repositori Silabus Terstruktur Berbasis Pertemuan**<br>Semua bahan ajar tersusun rapi dari Pertemuan 1 hingga akhir semester dan dapat diakses santri kapan saja. |
-| **Memori Penyimpanan iPad Siswa Cepat Penuh**<br>Siswa terpaksa mengunduh puluhan berkas PDF dan PPT berukuran besar ke memori lokal tablet. | **Pratinjau Dokumen In-Browser (*Zero-Download Viewer*)**<br>Santri membaca dokumen langsung di dalam aplikasi browser dengan kontrol zoom, rotasi, dan layar penuh. |
-| **Ketergantungan Aplikasi Pihak Ketiga di iPad**<br>iPad santri harus dipasangi berbagai aplikasi viewer terpisah (Word, PowerPoint, PDF reader) yang membutuhkan lisensi. | **Universal Web Doc Engine**<br>Mendukung format PDF, PPT, Word, Excel, dan gambar tanpa membutuhkan instalasi aplikasi tambahan. |
+| **Materi Tercecer di Grup WhatsApp**<br>File modul PDF dan rekaman video terselip di obrolan chat grup wali murid sehingga sulit ditemukan kembali saat ujian. | **Repositori Silabus Terstruktur Berbasis Pertemuan**<br>Semua bahan ajar tersusun rapi dari Pertemuan 1 hingga akhir semester dan dapat diakses siswa kapan saja. |
+| **Memori Penyimpanan iPad Siswa Cepat Penuh**<br>Siswa terpaksa mengunduh puluhan berkas PDF dan PPT berukuran besar ke memori lokal tablet. | **Pratinjau Dokumen In-Browser (*Zero-Download Viewer*)**<br>Siswa membaca dokumen langsung di dalam aplikasi browser dengan kontrol zoom, rotasi, dan layar penuh. |
+| **Ketergantungan Aplikasi Pihak Ketiga di iPad**<br>iPad siswa harus dipasangi berbagai aplikasi viewer terpisah (Word, PowerPoint, PDF reader) yang membutuhkan lisensi. | **Universal Web Doc Engine**<br>Mendukung format PDF, PPT, Word, Excel, dan gambar tanpa membutuhkan instalasi aplikasi tambahan. |
 | **Kerja Berulang Mengunggah File Sama di Rombel Paralel**<br>Guru yang mengajar 4 kelas paralel harus upload materi yang sama berulang kali. | **Fitur Duplikasi 1-Klik (*One-Click Copy Meeting*)**<br>Cukup buat di satu kelas, lalu gandakan ke seluruh kelas paralel dalam waktu 3 detik. |
-| **Gangguan Distraksi Tontonan di YouTube**<br>Membagikan link video YouTube biasa membuat santri teralihkan ke video hiburan atau iklan yang tidak pantas. | **Pemutar Video Khusus Terintegrasi**<br>Video disematkan langsung di dalam ruang belajar Al-Azhar tanpa rekomendasi video luar. |
+| **Gangguan Distraksi Tontonan di YouTube**<br>Membagikan link video YouTube biasa membuat siswa teralihkan ke video hiburan atau iklan yang tidak pantas. | **Pemutar Video Khusus Terintegrasi**<br>Video disematkan langsung di dalam ruang belajar Al-Azhar tanpa rekomendasi video luar. |
 | **Kuis dan Materi Terpisah Tanpa Konteks**<br>Siswa bingung tugas PR yang diberikan guru mengacu pada materi atau bab yang mana. | **Penautan Tugas Terpadu (*Task Linkage*)**<br>Tugas dan kuis ditempelkan langsung di dalam kartu pertemuan materi bersangkutan. |
 
 ---

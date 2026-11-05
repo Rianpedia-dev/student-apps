@@ -109,7 +109,7 @@ export function DisciplineSummaryCard({
               </div>
 
               <h1 className="text-lg sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight truncate">
-                {studentName || "Santri Al-Azhar Cairo"}
+                {studentName || "Siswa Al-Azhar Cairo"}
               </h1>
 
               {studentNis && (

@@ -359,7 +359,7 @@ async function main() {
       student: siswaSMP,
       guru: guruLintas,
       kelas: "Kelas 7 - Ibnu Sina",
-      kategori: "Adab, Sikap & Etika Santri",
+      kategori: "Adab, Sikap & Etika Siswa",
       tingkatan: "RINGAN",
       semester: "Semester 1 - 2026/2027",
       tahun_pelajaran: "2026/2027",

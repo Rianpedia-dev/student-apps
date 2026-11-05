@@ -31,8 +31,13 @@ export default async function SiswaProfilePage() {
           })
         : null,
       prisma.prestasi.findMany({
-        where: { id_user: session.id },
-        orderBy: { created_at: "desc" },
+        where: {
+          OR: [
+            { id_user: session.id },
+            ...(session.name ? [{ nama: session.name }] : []),
+          ],
+        },
+        orderBy: [{ created_at: "desc" }, { id: "desc" }],
       }),
       prisma.pelanggaran.findMany({
         where: {
@@ -46,6 +51,7 @@ export default async function SiswaProfilePage() {
     ]);
     student = dbStudent;
     myAchievements = dbAchieve;
+    const totalPrestasiPoints = (dbAchieve || []).reduce((acc, ach) => acc + (ach.poin || 1), 0);
     myViolations = dbViolations;
     totalViolationsCount = dbViolations.length;
   } catch (e) {
@@ -87,7 +93,7 @@ export default async function SiswaProfilePage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Profil Siswa</h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Kelola data diri, pantau riwayat prestasi, dan histori kedisiplinan santri.
+          Kelola data diri, pantau riwayat prestasi, dan histori kedisiplinan siswa.
         </p>
       </div>
 
@@ -173,14 +179,17 @@ export default async function SiswaProfilePage() {
           </Card>
 
           {/* 2. Prestasi Saya */}
-          <Card className="shadow-2xl rounded-3xl card-elevation">
-            <CardHeader className="pb-3 border-b border-border/40">
+          <Card className="shadow-2xl rounded-3xl card-elevation border border-border/70">
+            <CardHeader className="pb-3 border-b border-border/40 flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-amber-500" />
                 <CardTitle className="text-sm font-bold">Prestasi Saya</CardTitle>
               </div>
+              <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                {myAchievements.reduce((acc, ach) => acc + (ach.poin || 1), 0)} Poin
+              </span>
             </CardHeader>
-            <CardContent className="space-y-3 pt-3">
+            <CardContent className="space-y-2.5 pt-3">
               {myAchievements.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4 italic">
                   Belum ada catatan prestasi terdaftar.
@@ -189,15 +198,30 @@ export default async function SiswaProfilePage() {
                 myAchievements.map((ach) => (
                   <div
                     key={ach.id.toString()}
-                    className="rounded-2xl p-3 text-xs glass-subpanel shadow-2xs space-y-1"
+                    className="rounded-2xl p-3 text-xs glass-subpanel shadow-2xs space-y-1.5 border border-border/50"
                   >
-                    <div className="flex items-center gap-2 font-bold text-foreground">
-                      <span>🏆</span>
-                      <span>{ach.prestasi}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 font-bold text-foreground">
+                        <span>🏆</span>
+                        <span className="line-clamp-1">{ach.prestasi}</span>
+                      </div>
+                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 shrink-0">
+                        +{ach.poin ?? 1} Poin
+                      </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {ach.kelas} • {formatDateIndo(ach.created_at)}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <span className="font-semibold text-foreground">
+                        {ach.tingkat || "Sekolah"} • {ach.peringkat || "Juara"}
+                      </span>
+                      <span>•</span>
+                      <span>Saat di {ach.kelas_saat_prestasi || ach.kelas}</span>
+                      {ach.created_at && (
+                        <>
+                          <span>•</span>
+                          <span>{formatDateIndo(ach.created_at)}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))
               )}

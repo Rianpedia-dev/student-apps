@@ -907,71 +907,20 @@ export async function deleteEventAction(id: string) {
   }
 }
 
+import {
+  createAchievementAction as handleAdminCreateAch,
+  updateAchievementAction as handleAdminUpdateAch,
+  deleteAchievementAction as handleAdminDeleteAch,
+} from "./achievement";
+
 export async function createAchievementAction(formData: FormData) {
-  try {
-    const session = await getSession();
-    if (!session || (session.role !== "admin" && session.role !== "guru")) {
-      throw new Error("Unauthorized");
-    }
+  return handleAdminCreateAch(formData);
+}
 
-    const id_user = (formData.get("id_user") as string) || "0";
-    const nama = formData.get("nama") as string;
-    const kelas = (formData.get("kelas") as string) || "";
-    const prestasi = formData.get("prestasi") as string;
-
-    if (!nama || !prestasi) {
-      return { error: "Nama dan deskripsi prestasi wajib diisi." };
-    }
-
-    let fotoanak = "/images/trophy.png";
-    const rawFile = formData.get("foto_upload") || formData.get("fotoanak");
-    if (rawFile && typeof rawFile === "object" && "size" in rawFile && (rawFile as Blob).size > 0) {
-      const uploadRes = await saveUploadedFile(rawFile as Blob, { category: "achievement" });
-      if (!uploadRes.success) {
-        return { error: uploadRes.error };
-      }
-      fotoanak = uploadRes.filePath || "/images/trophy.png";
-    } else if (typeof rawFile === "string" && rawFile.trim().length > 0) {
-      fotoanak = rawFile.trim();
-    }
-
-    await prisma.prestasi.create({
-      data: {
-        id_user,
-        nama,
-        kelas,
-        fotoanak,
-        prestasi,
-      },
-    });
-
-    revalidatePath("/guru/achievements");
-    revalidatePath("/admin/students");
-    revalidatePath("/guru");
-    revalidatePath("/siswa");
-    return { success: true, message: "Prestasi berhasil ditambahkan." };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Gagal menambahkan prestasi.";
-    return { error: errorMsg };
-  }
+export async function updateAchievementAction(id: string, formData: FormData) {
+  return handleAdminUpdateAch(id, formData);
 }
 
 export async function deleteAchievementAction(id: string) {
-  try {
-    const session = await getSession();
-    if (!session || (session.role !== "admin" && session.role !== "guru")) {
-      throw new Error("Unauthorized");
-    }
-
-    await prisma.prestasi.delete({
-      where: { id: BigInt(id) },
-    });
-
-    revalidatePath("/guru/achievements");
-    revalidatePath("/admin/students");
-    return { success: true, message: "Prestasi berhasil dihapus." };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Gagal menghapus prestasi.";
-    return { error: errorMsg };
-  }
+  return handleAdminDeleteAch(id);
 }

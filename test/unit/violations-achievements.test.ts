@@ -81,14 +81,14 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
       vi.mocked(prisma.pelanggaran.create).mockResolvedValueOnce({
         id: BigInt(1),
         user_id: "101",
-        nama: "Ahmad Santri",
+        nama: "Ahmad Siswa",
         kelas: "4 Abu Bakar",
         kategori: "Kedisiplinan",
       } as any);
 
       const formData = new FormData();
       formData.set("user_id", "101");
-      formData.set("nama", "Ahmad Santri");
+      formData.set("nama", "Ahmad Siswa");
       formData.set("kelas", "4 Abu Bakar");
       formData.set("kategori", "Kedisiplinan");
       formData.set("keterangan", "Lupa membawa buku panduan tilawah");
@@ -103,7 +103,7 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
         expect.objectContaining({
           data: expect.objectContaining({
             user_id: "101",
-            nama: "Ahmad Santri",
+            nama: "Ahmad Siswa",
             kelas: "4 Abu Bakar",
             kategori: "Kedisiplinan",
           }),
@@ -138,13 +138,13 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
       vi.mocked(prisma.prestasi.create).mockResolvedValueOnce({
         id: BigInt(7),
         id_user: "101",
-        nama: "Ahmad Santri",
+        nama: "Ahmad Siswa",
         prestasi: "Juara 1 Lomba Tahfidz Al-Qur'an Juz 30 Tingkat Kota",
       } as any);
 
       const formData = new FormData();
       formData.set("id_user", "101");
-      formData.set("nama", "Ahmad Santri");
+      formData.set("nama", "Ahmad Siswa");
       formData.set("kelas", "4 Abu Bakar");
       formData.set("prestasi", "Juara 1 Lomba Tahfidz Al-Qur'an Juz 30 Tingkat Kota");
 
@@ -155,7 +155,7 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
         expect.objectContaining({
           data: expect.objectContaining({
             id_user: "101",
-            nama: "Ahmad Santri",
+            nama: "Ahmad Siswa",
             prestasi: "Juara 1 Lomba Tahfidz Al-Qur'an Juz 30 Tingkat Kota",
           }),
         })

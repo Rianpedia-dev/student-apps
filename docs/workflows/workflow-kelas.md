@@ -6,7 +6,7 @@
 
 ## 📌 1. Pendahuluan & Gambaran Umum
 
-Dalam struktur kelembagaan pendidikan **SD & SMP Islam Al-Azhar Cairo Palembang**, **Rombongan Belajar (Kelas / Rombel)** merupakan wadah organisasi fundamental yang menaungi seluruh aktivitas akademik, pembinaan adab santri, jadwal Kegiatan Belajar Mengajar (KBM), presensi kehadiran, hingga manajemen perangkat tablet edukasi Apple iPad.
+Dalam struktur kelembagaan pendidikan **SD & SMP Islam Al-Azhar Cairo Palembang**, **Rombongan Belajar (Kelas / Rombel)** merupakan wadah organisasi fundamental yang menaungi seluruh aktivitas akademik, pembinaan adab siswa, jadwal Kegiatan Belajar Mengajar (KBM), presensi kehadiran, hingga manajemen perangkat tablet edukasi Apple iPad.
 
 Sistem **Student Apps** merancang manajemen kelas tidak sekadar sebagai label administratif, melainkan sebagai **poros relasi data (*data hub*)** yang menghubungkan kurikulum sekolah dengan warga belajar:
 1. **Identitas Rombel Berkarakter Islami**:
@@ -14,9 +14,9 @@ Sistem **Student Apps** merancang manajemen kelas tidak sekadar sebagai label ad
 2. **Cakupan Berjenjang SD & SMP**:
    Mendukung struktur berjenjang dari **SD (Kelas 4–6)** hingga **SMP (Kelas 7–9)**, dengan deteksi otomatis jenjang (*Jenjang Detection Engine*) dan tingkatan kelas berbasis nama rombel.
 3. **Pengelolaan Perangkat iPad (*Apple Classroom & Restrict Code*)**:
-   Setiap rombel kelas dilengkapi dengan atribut khusus **Kode Restrict iPad (`code_restrict`)**, yaitu PIN 4-digit yang berfungsi mengatur profil pembatasan aplikasi pada iPad santri saat KBM berlangsung di ruangan kelas.
+   Setiap rombel kelas dilengkapi dengan atribut khusus **Kode Restrict iPad (`code_restrict`)**, yaitu PIN 4-digit yang berfungsi mengatur profil pembatasan aplikasi pada iPad siswa saat KBM berlangsung di ruangan kelas.
 4. **Sentralisasi Distribusi Belajar**:
-   Menjadi acuan tunggal bagi alokasi jadwal pelajaran mingguan, silabus modul pertemuan materi KBM, tugas & kuis interaktif, presensi harian rombel, serta pencatatan kedisiplinan dan mutasi santri.
+   Menjadi acuan tunggal bagi alokasi jadwal pelajaran mingguan, silabus modul pertemuan materi KBM, tugas & kuis interaktif, presensi harian rombel, serta pencatatan kedisiplinan dan mutasi siswa.
 
 ---
 
@@ -32,7 +32,7 @@ erDiagram
     Kelas ||--o{ Pertemuan : "menerima materi"
     Kelas ||--o{ Tugas : "menerima tugas/kuis"
     Kelas ||--o{ Absen : "mencatat presensi rombel"
-    Kelas ||--o{ Pelanggaran : "rekaman disiplin santri"
+    Kelas ||--o{ Pelanggaran : "rekaman disiplin siswa"
     Kelas ||--o{ Restrict : "memiliki kode PIN iPad"
     
     User ||--o{ JadwalPelajaran : "mengajar (guru)"
@@ -48,8 +48,8 @@ erDiagram
    - `jenjang`: Jenjang pendidikan (`SD` atau `SMP`), otomatis dideteksi dari format nama kelas.
    - `tingkat`: Angka tingkat kelas (`4`, `5`, `6` untuk SD; `7`, `8`, `9` untuk SMP).
    - `wali_kelas`: Nama lengkap dewan guru yang bertugas sebagai Wali Kelas. Tersinkronisasi otomatis dengan akun `User` berstatus `"4"`.
-   - `jumlah_siswa`: Daya tampung atau kuantitas santri aktif di dalam rombel.
-   - `code_restrict`: Kode PIN 4-digit untuk pembatasan perangkat iPad santri di kelas.
+   - `jumlah_siswa`: Daya tampung atau kuantitas siswa aktif di dalam rombel.
+   - `code_restrict`: Kode PIN 4-digit untuk pembatasan perangkat iPad siswa di kelas.
 
 2. **`tbl_restrict` (`Restrict`)**:
    - Menyimpan kode PIN pembatasan iPad per rombel: `nama_kelas` dan `code_restrict`.
@@ -74,7 +74,7 @@ sequenceDiagram
     actor Admin as Administrator
     actor Wali as Wali Kelas (Status 4)
     actor GuruMapel as Guru Mapel (Status 2)
-    actor Siswa as Santri / Siswa
+    actor Siswa as Siswa / Siswa
 
     Note over Admin: 1. Konfigurasi Master Rombel & Kode Restrict
     Admin->>Admin: Buat Kelas Baru (/admin/classes)
@@ -93,7 +93,7 @@ sequenceDiagram
     GuruMapel->>GuruMapel: Terbitkan Pertemuan & Modul iPad
     GuruMapel->>GuruMapel: Berikan Tugas & Evaluasi Nilai
 
-    Note over Siswa: 4. Interaksi Belajar Santri
+    Note over Siswa: 4. Interaksi Belajar Siswa
     Siswa->>Siswa: Akses Dashboard Rombel (/siswa)
     Siswa->>Siswa: Lihat Jadwal Hari Ini & Teman Sekelas
     Siswa->>Siswa: Terapkan Kode Restrict iPad saat Jam KBM
@@ -123,7 +123,7 @@ Administrator memiliki hak tertinggi dalam menciptakan, mengubah, dan mengontrol
   - **Jenjang SMP**: Menyaring khusus rombel SMP (Kelas 7–9).
 - **Pencarian Cepat**: Filter *real-time* berdasarkan nama kelas atau nama wali kelas.
 - **Statistik Siswa Real-Time**:
-  Sistem menghitung jumlah santri terdaftar secara dinamis dengan mengagregasi data santri aktif (`status = "1"` dan `kelas = nama_kelas`).
+  Sistem menghitung jumlah siswa terdaftar secara dinamis dengan mengagregasi data siswa aktif (`status = "1"` dan `kelas = nama_kelas`).
 
 #### 3. Halaman Detail Rombel (`/admin/classes/[id]`)
 Ketika Admin membuka salah satu rombel kelas:
@@ -132,7 +132,7 @@ Ketika Admin membuka salah satu rombel kelas:
   2. *Wali Kelas*: Nama lengkap beserta email login wali kelas yang bertugas.
   3. *Kode Restrict iPad*: PIN pembatasan aktif perangkat kelas tersebut.
 - **Tabel Seluruh Siswa Terdaftar**:
-  Menampilkan tabel lengkap seluruh santri rombel tersebut (Foto avatar, Nama, NIS, Email, Gender, Status Akun) dengan penghitung total siswa otomatis.
+  Menampilkan tabel lengkap seluruh siswa rombel tersebut (Foto avatar, Nama, NIS, Email, Gender, Status Akun) dengan penghitung total siswa otomatis.
 
 #### 4. Pengelolaan Cepat Kode Restrict iPad (`/admin`)
 - Di dashboard utama admin, tersedia tabel khusus **Restrict iPad (`restrict-table`)**.
@@ -142,27 +142,27 @@ Ketika Admin membuka salah satu rombel kelas:
 
 ### B. Peran Guru & Wali Kelas: Pengelola Operasional Rombel (`/guru/my-class`)
 
-Wali Kelas (guru dengan status `"4"`) bertindak sebagai pengayom dan penanggung jawab langsung santri di rombel binaannya.
+Wali Kelas (guru dengan status `"4"`) bertindak sebagai pengayom dan penanggung jawab langsung siswa di rombel binaannya.
 
 #### 1. Penerimaan Otoritas Rombel Otomatis
 - Ketika Admin menetapkan seorang guru sebagai Wali Kelas *Kelas 4 - Mehmed Al Fatih*, menu **Kelas Saya (`/guru/my-class`)** dan **Absensi Kelas (`/guru/attendance`)** otomatis terbuka di bilah navigasi sidebar guru.
 - Jika guru berstatus Guru Mapel biasa (status `"2"`) mencoba mengakses rute tersebut, sistem menyajikan kartu edukasi yang menjelaskan bahwa fitur tersebut dikhususkan bagi Wali Kelas.
 
-#### 2. Pendaftaran Santri Baru (*Enroll Student to Class*)
-- Jika ada santri baru, santri mutasi pindahan, atau santri yang belum memiliki rombel:
+#### 2. Pendaftaran Siswa Baru (*Enroll Student to Class*)
+- Jika ada siswa baru, siswa mutasi pindahan, atau siswa yang belum memiliki rombel:
   - Wali Kelas membuka modal **"Tambah Siswa ke Kelas"**.
-  - Sistem menampilkan daftar santri yang belum terdaftar di rombel manapun.
-  - Wali Kelas memilih santri dan mengeksekusi pendaftaran (`enrollStudentAction`). Santri tersebut seketika resmi terdaftar di rombel binaannya.
+  - Sistem menampilkan daftar siswa yang belum terdaftar di rombel manapun.
+  - Wali Kelas memilih siswa dan mengeksekusi pendaftaran (`enrollStudentAction`). Siswa tersebut seketika resmi terdaftar di rombel binaannya.
 
-#### 3. Mutasi / Pengeluaran Santri dari Rombel (*Remove Student*)
-- Wali Kelas dapat memilih satu atau beberapa santri sekaligus menggunakan fitur *multi-select checkbox*.
+#### 3. Mutasi / Pengeluaran Siswa dari Rombel (*Remove Student*)
+- Wali Kelas dapat memilih satu atau beberapa siswa sekaligus menggunakan fitur *multi-select checkbox*.
 - Tombol **"Keluarkan dari Kelas"** mengeksekusi `removeStudentsAction`.
-- **Proteksi Otoritas Keamanan**: Wali Kelas dilarang keras memanipulasi atau mengeluarkan santri dari rombel lain. Sistem memverifikasi kecocokan rombel di level server.
+- **Proteksi Otoritas Keamanan**: Wali Kelas dilarang keras memanipulasi atau mengeluarkan siswa dari rombel lain. Sistem memverifikasi kecocokan rombel di level server.
 
-#### 4. Kartu Bimbingan Santri Rombel (`/guru/my-class/[studentId]`)
-- Wali Kelas dapat membuka kartu kendali pribadi santri binaannya:
+#### 4. Kartu Bimbingan Siswa Rombel (`/guru/my-class/[studentId]`)
+- Wali Kelas dapat membuka kartu kendali pribadi siswa binaannya:
   - **Catatan Wali Kelas (*Notes*)**: Memberikan catatan perkembangan karakter, akhlak, dan catatan bimbingan berkala.
-  - **Pencatatan Pelanggaran Kedisiplinan**: Mencatat jenis pelanggaran santri di buku disiplin digital sekolah.
+  - **Pencatatan Pelanggaran Kedisiplinan**: Mencatat jenis pelanggaran siswa di buku disiplin digital sekolah.
 
 ---
 
@@ -172,7 +172,7 @@ Guru Mata Pelajaran menggunakan entitas kelas sebagai target penyampaian materi 
 1. **Navigasi Rombel yang Diampu**:
    Guru dapat berpindah antar rombel kelas yang diajarnya (misal: beralih dari Kelas 7A ke Kelas 7B) melalui tab pilihan kelas di `/guru/mapel/[mapelId]`.
 2. **Penyusunan Materi per Rombel**:
-   Setiap rombel memiliki silabus pertemuannya sendiri sehingga materi dapat disesuaikan dengan ritme belajar santri di kelas tersebut.
+   Setiap rombel memiliki silabus pertemuannya sendiri sehingga materi dapat disesuaikan dengan ritme belajar siswa di kelas tersebut.
 3. **Duplikasi Materi Antar Rombel Paralel**:
    Guru dapat menyalin pertemuan dan modul PDF dari satu kelas ke rombel paralel lainnya hanya dalam 3 detik menggunakan fitur *Copy Meeting*.
 
@@ -180,13 +180,13 @@ Guru Mata Pelajaran menggunakan entitas kelas sebagai target penyampaian materi 
 
 ### D. Peran Siswa: Peserta Didik Rombel
 
-Bagi santri, kelas menjadi identitas belajar mereka di dalam aplikasi:
+Bagi siswa, kelas menjadi identitas belajar mereka di dalam aplikasi:
 1. **Dashboard Khusus Rombel (`/siswa`)**:
-   Santri disajikan jadwal pelajaran harian, nama guru pengampu, serta identitas wali kelas mereka.
+   Siswa disajikan jadwal pelajaran harian, nama guru pengampu, serta identitas wali kelas mereka.
 2. **Kepatuhan Pembatasan iPad**:
-   Santri menggunakan `code_restrict` rombel mereka untuk menyinkronkan profil keamanan iPad saat jam KBM di bawah arahan guru/instruktur IT.
+   Siswa menggunakan `code_restrict` rombel mereka untuk menyinkronkan profil keamanan iPad saat jam KBM di bawah arahan guru/instruktur IT.
 3. **Penyaringan Tugas & Materi Otomatis**:
-   Seluruh modul ajar, tugas PR, kuis, dan pengumuman sekolah yang tampil di portal santri disaring otomatis sesuai dengan rombel kelas yang mereka tempati.
+   Seluruh modul ajar, tugas PR, kuis, dan pengumuman sekolah yang tampil di portal siswa disaring otomatis sesuai dengan rombel kelas yang mereka tempati.
 
 ---
 
@@ -197,10 +197,10 @@ Kelas menjadi poros penghubung bagi hampir seluruh fitur di Student Apps:
 | Modul Terkait | Bentuk Integrasi dengan Manajemen Kelas |
 | :--- | :--- |
 | **Kelola Guru & Wali Kelas (`/admin/teachers`)** | Penugasan status `"4"` mewajibkan pemilihan kelas binaan. Sistem menyinkronkan nama guru ke `tbl_kelas.wali_kelas` secara otomatis. |
-| **Kelola Siswa (`/admin/students`)** | Setiap akun santri wajib memiliki atribut kelas. Import Excel siswa otomatis menempatkan anak ke rombel yang sesuai. |
+| **Kelola Siswa (`/admin/students`)** | Setiap akun siswa wajib memiliki atribut kelas. Import Excel siswa otomatis menempatkan anak ke rombel yang sesuai. |
 | **Jadwal Pelajaran (`/admin/schedules`)** | Jadwal KBM disusun berdasarkan irisan: Rombel Kelas + Mata Pelajaran + Guru Pengampu + Hari & Jam. |
 | **Presensi & Rekap PDF (`/guru/attendance`)** | Presensi harian dicatat per rombel kelas. Dokumen cetak rekap PDF A4 Landscape mencantumkan nama rombel dan tanda tangan wali kelas. |
-| **Buku Disiplin & Pelanggaran (`/guru/my-class/[id]`)** | Pelanggaran santri dikelompokkan berdasarkan rombel kelas santri untuk memudahkan evaluasi wali kelas. |
+| **Buku Disiplin & Pelanggaran (`/guru/my-class/[id]`)** | Pelanggaran siswa dikelompokkan berdasarkan rombel kelas siswa untuk memudahkan evaluasi wali kelas. |
 | **Integrasi iPad & MDM (`tbl_restrict`)** | Kode restrict per rombel disinkronkan ke sistem pembatasan aplikasi iPad kelas Al-Azhar Cairo Palembang. |
 | **Live Tatap Muka Virtual (`/guru/kelas-online`)** | Ruang Daily.co video conference dibuka dengan target rombel kelas tertentu. |
 
@@ -222,29 +222,29 @@ Berikut adalah skenario penerapan fitur manajemen kelas dalam operasional sekola
 
 ---
 
-### 🎭 Skenario 2: Santri Pindahan Baru Masuk di Pertengahan Semester (Enrollment)
-- **Situasi**: Ananda Zaki adalah santri pindahan baru yang baru menyelesaikan administrasi sekolah di bulan Oktober dan ditempatkan di *Kelas 4 - Mehmed Al Fatih*.
+### 🎭 Skenario 2: Siswa Pindahan Baru Masuk di Pertengahan Semester (Enrollment)
+- **Situasi**: Ananda Zaki adalah siswa pindahan baru yang baru menyelesaikan administrasi sekolah di bulan Oktober dan ditempatkan di *Kelas 4 - Mehmed Al Fatih*.
 - **Workflow Sistem**:
   1. Admin mendaftarkan akun ananda Zaki di menu `/admin/students` tanpa langsung mengunci kelasnya.
   2. Wali Kelas Kelas 4 (Ustadz Ridwan) membuka menu **Kelas Saya** (`/guru/my-class`).
   3. Beliau mengklik tombol **"Tambah Siswa ke Kelas"**.
-  4. Pada daftar santri yang belum memiliki rombel, Ustadz Ridwan memilih nama *Zaki* lalu menekan tombol **"Daftarkan"**.
+  4. Pada daftar siswa yang belum memiliki rombel, Ustadz Ridwan memilih nama *Zaki* lalu menekan tombol **"Daftarkan"**.
 - **Hasil**: Ananda Zaki resmi terdaftar di rombel Kelas 4. Seluruh jadwal pelajaran, materi KBM, dan absensi Kelas 4 langsung muncul di tablet iPad milik Zaki.
 
 ---
 
 ### 🎭 Skenario 3: Penegakan Kedisiplinan iPad Menggunakan Kode Restrict Rombel
-- **Situasi**: Pukul 08.00 WIB jam pelajaran Matematika di *Kelas 8 - Ibnu Rusyd* dimulai. Guru meminta santri mengaktifkan mode pembatasan iPad agar santri tidak membuka aplikasi game atau media sosial.
+- **Situasi**: Pukul 08.00 WIB jam pelajaran Matematika di *Kelas 8 - Ibnu Rusyd* dimulai. Guru meminta siswa mengaktifkan mode pembatasan iPad agar siswa tidak membuka aplikasi game atau media sosial.
 - **Workflow Sistem**:
   1. Guru mengumumkan kode restrict kelas: `2739` (yang tertera di informasi kelas).
-  2. Santri memasukkan kode restrict tersebut pada profil Apple Classroom iPad mereka.
+  2. Siswa memasukkan kode restrict tersebut pada profil Apple Classroom iPad mereka.
   3. Jika suatu hari kode tersebut bocor atau ingin diganti, Admin cukup membuka `/admin` dan memperbarui kode PIN di tabel **Restrict iPad** menjadi kode baru dalam waktu 5 detik.
-- **Hasil**: Penggunaan iPad santri terkontrol penuh, aman, dan terarah untuk media belajar KBM sekolah.
+- **Hasil**: Penggunaan iPad siswa terkontrol penuh, aman, dan terarah untuk media belajar KBM sekolah.
 
 ---
 
-### 🎭 Skenario 4: Mutasi Santri Antar Rombel Paralel
-- **Situasi**: Untuk penyeimbangan jumlah murid, santri bernama Rayhan dipindahkan dari *Kelas 4A* ke *Kelas 4B*.
+### 🎭 Skenario 4: Mutasi Siswa Antar Rombel Paralel
+- **Situasi**: Untuk penyeimbangan jumlah murid, siswa bernama Rayhan dipindahkan dari *Kelas 4A* ke *Kelas 4B*.
 - **Workflow Sistem**:
   1. Wali Kelas 4A membuka menu `/guru/my-class`, mencentang nama Rayhan, dan menekan tombol **"Keluarkan dari Kelas"**. Status kelas Rayhan kembali netral.
   2. Wali Kelas 4B membuka menu `/guru/my-class`, memilih modal pendaftaran siswa baru, memilih nama Rayhan, dan mendaftarkannya ke Kelas 4B.
@@ -259,10 +259,10 @@ Manajemen kelas terpadu ini memecahkan berbagai tantangan operasional klasik sek
 | Masalah Konvensional | Solusi Cerdas yang Dihadirkan Sistem Ini |
 | :--- | :--- |
 | **Duplikasi & Kerancuan Rombel Kelas**<br>Nama kelas di daftar absen, daftar rapor, dan jadwal pelajaran berbeda ejaan (misal: *4A* vs *IV-A* vs *Kelas 4 Al-Fatih*). | **Standardisasi Entitas Master Tunggal**<br>Satu nama rombel resmi terdaftar di `tbl_kelas` dan digunakan konsisten di seluruh jadwal, tugas, absen, dan rapor. |
-| **Penyalahgunaan iPad Santri Saat Jam KBM**<br>Santri bermain game atau berselancar di internet di luar materi pelajaran. | **Manajemen Kode Restrict iPad per Rombel**<br>Setiap kelas memiliki `code_restrict` resmi yang dapat diperbarui secara dinamis oleh sekolah. |
+| **Penyalahgunaan iPad Siswa Saat Jam KBM**<br>Siswa bermain game atau berselancar di internet di luar materi pelajaran. | **Manajemen Kode Restrict iPad per Rombel**<br>Setiap kelas memiliki `code_restrict` resmi yang dapat diperbarui secara dinamis oleh sekolah. |
 | **Ketidaksinkronan Data Wali Kelas**<br>Wali kelas berganti tetapi nama di lembar rapor dan presensi masih tercetak nama guru lama. | **Sinkronisasi Dua Arah (*Two-Way Automatic Sync*)**<br>Perubahan wali kelas di data guru atau di data kelas langsung meng-update kedua entitas secara instan. |
-| **Santri "Tersesat" Tanpa Rombel**<br>Santri baru tidak terdata di presensi guru karena belum dimasukkan ke rombel kelas. | **Fitur Pendaftaran Cepat (*Enroll Student Modal*)**<br>Wali kelas dapat melihat daftar santri tanpa rombel dan memasukkannya ke kelas binaan dengan 1 klik. |
-| **Kesalahan Akses Antar Kelas**<br>Guru mengutak-atik daftar siswa di rombel yang bukan hak perwaliannya. | **Proteksi Berlapis di Tingkat Server**<br>Fungsi `checkWaliKelasOrAdmin()` memblokir akses manipulasi santri dari rombel lain. |
+| **Siswa "Tersesat" Tanpa Rombel**<br>Siswa baru tidak terdata di presensi guru karena belum dimasukkan ke rombel kelas. | **Fitur Pendaftaran Cepat (*Enroll Student Modal*)**<br>Wali kelas dapat melihat daftar siswa tanpa rombel dan memasukkannya ke kelas binaan dengan 1 klik. |
+| **Kesalahan Akses Antar Kelas**<br>Guru mengutak-atik daftar siswa di rombel yang bukan hak perwaliannya. | **Proteksi Berlapis di Tingkat Server**<br>Fungsi `checkWaliKelasOrAdmin()` memblokir akses manipulasi siswa dari rombel lain. |
 
 ---
 

@@ -332,6 +332,7 @@ export function Sidebar({
     { label: "Mata Pelajaran", href: "/admin/subjects", icon: BookOpenCheckIcon, iconColor: "text-teal-600", fx: "glow" },
     { label: "Jadwal Pelajaran", href: "/admin/schedules", icon: CalendarClock, iconColor: "text-cyan-600", fx: "spin" },
     { label: "Presensi Siswa", href: "/admin/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500", fx: "drop" },
+    { label: "Prestasi Siswa", href: "/admin/achievements", icon: TrophyIcon, iconColor: "text-amber-500", fx: "pop" },
     { label: "Pengumuman", href: "/admin/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500", fx: "pop" },
     { label: "Kalender Kegiatan", href: "/admin/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500", fx: "spin" },
     { label: "Monitor Kelas Online", href: "/admin/kelas-online", icon: VideoIcon, iconColor: "text-indigo-500", fx: "wave" },
@@ -368,6 +369,7 @@ export function Sidebar({
   const siswaMenu: MenuItemType[] = [
     { label: "Dashboard", href: "/siswa", icon: LayoutDashboardIcon, iconColor: "text-amber-500", fx: "glow" },
     { label: "Mata Pelajaran", href: "/siswa/mapel", icon: BookOpenCheckIcon, iconColor: "text-teal-600", fx: "glow" },
+    { label: "Prestasi", href: "/siswa/achievements", icon: TrophyIcon, iconColor: "text-amber-500", fx: "pop" },
     { label: "Chat Guru", href: "/siswa/chat", icon: ChatIcon, iconColor: "text-cyan-600", fx: "wave" },
     { label: "Kalender Kegiatan", href: "/siswa/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500", fx: "spin" },
     { label: "Riwayat Presensi", href: "/siswa/attendance", icon: ClipboardListIcon, iconColor: "text-orange-500", fx: "drop" },

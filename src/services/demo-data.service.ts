@@ -676,7 +676,7 @@ export class DemoDataService {
         mapel_id: mapelPAI.id,
         guru_id: walasSD.id,
         judul: "Uji Pemahaman PAI: Rukun Iman & Adab Muslim",
-        deskripsi: "Pilihlah satu jawaban yang paling tepat mengenai rukun iman dan adab santri Al-Azhar.",
+        deskripsi: "Pilihlah satu jawaban yang paling tepat mengenai rukun iman dan adab siswa Al-Azhar.",
         deadline: new Date(now.getTime() + 6 * 86400000),
         poin_maksimal: 100,
         status: "aktif",
@@ -715,7 +715,7 @@ export class DemoDataService {
         pertanyaan: "Adab yang benar saat berbicara kepada guru dan orang tua adalah...",
         bobot_poin: 50,
         kunci_jawaban: "A",
-        pembahasan: "Islam mengajarkan santri berbicara dengan sopan, suara santun, dan menatap dengan hormat.",
+        pembahasan: "Islam mengajarkan siswa berbicara dengan sopan, suara santun, dan menatap dengan hormat.",
       },
     });
     await prisma.tugasSoalOpsi.createMany({
@@ -950,7 +950,7 @@ export class DemoDataService {
         status: "sudah_dinilai",
         nilai: 100,
         nilai_otomatis: 100,
-        catatan_guru: "Mumtaz! Pemahaman rukun iman dan adab sangat baik. Pertahankan terus ya santri teladan.",
+        catatan_guru: "Mumtaz! Pemahaman rukun iman dan adab sangat baik. Pertahankan terus ya siswa teladan.",
         total_soal: 2,
         total_benar: 2,
         total_salah: 0,

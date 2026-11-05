@@ -295,18 +295,12 @@ export default async function GuruAttendanceRecapPage(props: {
         >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Hub Presensi
         </Link>
-        <span className="text-xs font-semibold text-muted-foreground font-mono tracking-tight">
-          SD - SMP Islam Al-Azhar Cairo
-        </span>
       </div>
 
       <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
           Rekapitulasi Presensi
         </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Laporan rekap kehadiran siswa dan cetak berkas presensi resmi
-        </p>
       </div>
 
       <RecapClient

@@ -4,6 +4,8 @@ import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
 import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
+import { AchievementService } from "@/services/achievement.service";
+import { BestStudentSlider } from "@/components/features/achievements/best-student-slider";
 import { Badge } from "@/components/ui/badge";
 import {
   IslamicMosaicPattern,
@@ -206,6 +208,12 @@ export default async function GuruDashboardPage() {
 
   const todayFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
+  const sliderJenjang: "SD" | "SMP" | "ALL" = activeJenjang;
+  const [bestStudentsSchool, bestStudentsPerRombel] = await Promise.all([
+    AchievementService.getBestStudentSchool(sliderJenjang === "ALL" ? "SD" : sliderJenjang, 8),
+    AchievementService.getBestStudentPerRombel(sliderJenjang === "ALL" ? "SD" : sliderJenjang),
+  ]);
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Premium Hero Banner Guru — Gradasi Mewah, Motif Islami & Siluet Masjid Warna-Warni */}
@@ -347,6 +355,24 @@ export default async function GuruDashboardPage() {
           </>
         )}
       </div>
+
+      {/* Slider 1: Best Student Sekolah */}
+      <BestStudentSlider
+        title={`Best Student Sekolah (${sliderJenjang === "ALL" ? "SD" : sliderJenjang})`}
+        subtitle="Siswa peraih akumulasi poin prestasi tertinggi tingkat sekolah"
+        items={bestStudentsSchool}
+        variant="school"
+        badgeText="Top Prestasi Sekolah"
+      />
+
+      {/* Slider 2: Best Student Semua Rombel */}
+      <BestStudentSlider
+        title={`Best Student Semua Rombel (${sliderJenjang === "ALL" ? "SD" : sliderJenjang})`}
+        subtitle="Jawara peraih poin prestasi tertinggi dari masing-masing kelas binaan"
+        items={bestStudentsPerRombel}
+        variant="rombel"
+        badgeText="Jawara Rombel"
+      />
 
       {/* Timeline Pengumuman */}
       <div className="space-y-3.5">

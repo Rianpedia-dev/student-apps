@@ -9,10 +9,10 @@
 Dalam tradisi pendidikan **SD & SMP Islam Al-Azhar Cairo Palembang**, penegakan kedisiplinan dan pembiasaan adab (*ta'dib*) dimulai dari ketepatan waktu hadir di sekolah sebelum rangkaian ibadah sholat Dhuha, dzikir pagi, dan tadarus Al-Qur'an. Oleh karena itu, **Sistem Presensi Kehadiran Siswa (Sistem Absensi)** dirancang sebagai pilar monitoring harian yang akurat, transparan, dan terintegrasi penuh ke dalam ekosistem digital **Student Apps**.
 
 Sistem absensi ini menggantikan buku absen fisik konvensional yang rentan hilang, rusak, atau lambat direkap. Menggunakan arsitektur modern berbasis web yang responsif di tablet iPad maupun smartphone guru, sistem menyediakan **4 pilar status kehadiran baku**:
-1. **Hadir (H)**: Santri hadir tepat waktu mengikuti seluruh rangkaian KBM dan ibadah.
-2. **Sakit (S)**: Santri berhalangan hadir disertai surat keterangan dokter atau konfirmasi wali murid.
-3. **Izin (I)**: Santri berhalangan hadir karena kepentingan keluarga/syar'i dengan pemberitahuan resmi.
-4. **Alpha (A)**: Santri tidak hadir tanpa keterangan (*unexcused absence*).
+1. **Hadir (H)**: Siswa hadir tepat waktu mengikuti seluruh rangkaian KBM dan ibadah.
+2. **Sakit (S)**: Siswa berhalangan hadir disertai surat keterangan dokter atau konfirmasi wali murid.
+3. **Izin (I)**: Siswa berhalangan hadir karena kepentingan keluarga/syar'i dengan pemberitahuan resmi.
+4. **Alpha (A)**: Siswa tidak hadir tanpa keterangan (*unexcused absence*).
 
 Fitur ini dirancang dengan empat sudut pandang antarmuka yang saling melengkapi: **Form Input Harian Cepat** dengan tombol *1-Click Set All Hadir*, **Kalender Presensi Bulanan Interaktif**, **Tabel Matriks Bulanan Spreadsheet (Tanggal 1–31)**, serta **Mesin Export PDF Resmi (A4 Landscape)** berstandar cetak dinas dan yayasan Al-Azhar.
 
@@ -30,7 +30,7 @@ erDiagram
     
     Absen {
         bigint id PK
-        bigint user_id FK "ID Santri"
+        bigint user_id FK "ID Siswa"
         varchar kelas "Nama Rombel Kelas"
         varchar date "Format YYYY-MM-DD"
         varchar month "Bulan (1-12)"
@@ -44,15 +44,15 @@ erDiagram
 
 1. **`tbl_absen` (`Absen`)**:
    - `id`: Primary key unik record absensi (BigInt autoincrement).
-   - `user_id`: Foreign key merujuk ke tabel `users` (ID akun santri).
-   - `kelas`: String nama rombel kelas santri saat presensi diambil (misal: `Kelas 4 - Mehmed Al Fatih`).
+   - `user_id`: Foreign key merujuk ke tabel `users` (ID akun siswa).
+   - `kelas`: String nama rombel kelas siswa saat presensi diambil (misal: `Kelas 4 - Mehmed Al Fatih`).
    - `date`: Tanggal presensi dalam format standar ISO `YYYY-MM-DD` (contoh: `2026-10-08`).
    - `month`: Indeks bulan kalender (`1` sampai `12`) untuk akselerasi query rekapitulasi bulanan.
-   - `keterangan`: Nilai status kehadiran santri: `'Hadir'`, `'Sakit'`, `'Izin'`, atau `'Alpha'`.
-   - `@@unique([user_id, date])`: Menjamin satu santri hanya memiliki satu status kehadiran per tanggal (mencegah duplikasi data absensi).
+   - `keterangan`: Nilai status kehadiran siswa: `'Hadir'`, `'Sakit'`, `'Izin'`, atau `'Alpha'`.
+   - `@@unique([user_id, date])`: Menjamin satu siswa hanya memiliki satu status kehadiran per tanggal (mencegah duplikasi data absensi).
 
 2. **Mekanisme Transaksi Batch Atomic (`prisma.$transaction`)**:
-   - Saat Wali Kelas menyimpan presensi untuk seluruh santri di rombelnya (25–30 santri sekaligus), sistem mengeksekusi operasi `upsert` secara batch di dalam transaksi tunggal (`AttendanceService.recordAttendance`).
+   - Saat Wali Kelas menyimpan presensi untuk seluruh siswa di rombelnya (25–30 siswa sekaligus), sistem mengeksekusi operasi `upsert` secara batch di dalam transaksi tunggal (`AttendanceService.recordAttendance`).
    - Hal ini menjamin integritas data: seluruh data kehadiran rombel tersimpan sempurna, atau dibatalkan sepenuhnya jika terjadi kendala jaringan (*ACID compliance*).
 
 ---
@@ -65,7 +65,7 @@ Alur kerja presensi mencakup siklus harian, bulanan, hingga pelaporan semesteran
 sequenceDiagram
     autonumber
     actor Wali as Wali Kelas (Status 4)
-    actor Siswa as Santri / Wali Murid
+    actor Siswa as Siswa / Wali Murid
     actor Admin as Admin / Tata Usaha
     actor Kepsek as Kepala Sekolah
 
@@ -75,7 +75,7 @@ sequenceDiagram
     Wali->>Wali: Sesuaikan Siswa Sakit/Izin/Alpha jika Ada
     Wali->>Wali: Klik "Simpan Presensi" (Batch Upsert)
 
-    Note over Siswa: 2. Transparansi Portal Santri
+    Note over Siswa: 2. Transparansi Portal Siswa
     Siswa->>Siswa: Login ke /siswa/attendance
     Siswa->>Siswa: Pantau Kartu Statistik (Hadir, Sakit, Izin, Alpha)
     Siswa->>Siswa: Cek Kalender Kehadiran Pribadi
@@ -111,13 +111,13 @@ Ketika membuka menu presensi, Wali Kelas disajikan navigasi visual yang informat
 
 #### 2. Form Presensi Harian Cepat (`/guru/attendance/[date]`)
 Form ini dirancang untuk kecepatan dan kepraktisan pengisian di pagi hari (selesai dalam waktu kurang dari 30 detik):
-- **Otomasi Daftar Siswa**: Seluruh santri aktif di rombel binaan otomatis ditampilkan berurutan sesuai abjad nama.
+- **Otomasi Daftar Siswa**: Seluruh siswa aktif di rombel binaan otomatis ditampilkan berurutan sesuai abjad nama.
 - **Tombol Sakti "Semua Hadir" (*1-Click Set All*)**:
-  Wali Kelas cukup mengklik tombol *Semua Hadir*, maka seluruh santri seketika tersetel berstatus Hadir.
+  Wali Kelas cukup mengklik tombol *Semua Hadir*, maka seluruh siswa seketika tersetel berstatus Hadir.
 - **Penyesuaian Fleksibel**:
-  Wali Kelas cukup mengubah opsi santri yang tidak masuk menjadi **Sakit**, **Izin**, atau **Alpha**.
+  Wali Kelas cukup mengubah opsi siswa yang tidak masuk menjadi **Sakit**, **Izin**, atau **Alpha**.
 - **Ringkasan Real-Time (*Live Counter Badges*)**:
-  Menampilkan jumlah santri Hadir, Sakit, Izin, dan Alpha secara langsung di bagian atas form sebelum data disimpan.
+  Menampilkan jumlah siswa Hadir, Sakit, Izin, dan Alpha secara langsung di bagian atas form sebelum data disimpan.
 - **Pencarian Cepat Siswa**: Input pencarian nama atau NIS untuk rombel berkapasitas besar.
 - **Hapus Data Presensi Tanggal**: Tombol hapus aman jika terjadi kesalahan input tanggal.
 
@@ -129,12 +129,12 @@ Form ini dirancang untuk kecepatan dan kepraktisan pengisian di pagi hari (seles
   - **I** (Kuning): Izin
   - **A** (Merah): Alpha
   - **-** (Abu-abu): Hari libur atau belum ada KBM
-- Memudahkan wali kelas melihat santri yang sering sakit berturut-turut atau santri yang terindikasi sering membolos (*alpha*).
+- Memudahkan wali kelas melihat siswa yang sering sakit berturut-turut atau siswa yang terindikasi sering membolos (*alpha*).
 
 #### 4. Generator Dokumen Rekapitulasi PDF Resmi (`/guru/attendance/recap`)
 Modul pembuatan laporan cetak resmi berstandar tata kelola Al-Azhar:
 - **Kalkulasi Otomatis**:
-  Sistem menghitung total Hadir, Sakit, Izin, Alpha, serta **Persentase Kehadiran (%)** per santri:
+  Sistem menghitung total Hadir, Sakit, Izin, Alpha, serta **Persentase Kehadiran (%)** per siswa:
   $$\text{Persentase Kehadiran} = \left( \frac{\text{Total Hadir}}{\text{Total Hari KBM}} \right) \times 100\%$$
 - **Spesifikasi Dokumen PDF Berstandar Cetak**:
   - Format: **A4 Landscape**.
@@ -148,7 +148,7 @@ Modul pembuatan laporan cetak resmi berstandar tata kelola Al-Azhar:
 
 ### B. Alur Kerja Siswa & Orang Tua: Pemantauan Kehadiran Mandiri
 
-Portal santri di `/siswa/attendance` memberikan akses transparansi penuh terhadap kehadiran diri sendiri:
+Portal siswa di `/siswa/attendance` memberikan akses transparansi penuh terhadap kehadiran diri sendiri:
 1. **Empat Kartu Metrik Kehadiran Bulanan**:
    - *Total Hari Hadir* (Angka besar dengan badge hijau).
    - *Total Hari Sakit* (Badge biru).
@@ -156,7 +156,7 @@ Portal santri di `/siswa/attendance` memberikan akses transparansi penuh terhada
    - *Total Hari Alpha* (Badge merah).
 2. **Kalender Kehadiran Personal**:
    - Menampilkan kalender visual bulan berjalan dengan titik penanda status di setiap tanggal.
-   - Santri dan orang tua dapat memverifikasi bahwa izin sakit yang dikirimkan telah tercatat dengan benar oleh pihak sekolah.
+   - Siswa dan orang tua dapat memverifikasi bahwa izin sakit yang dikirimkan telah tercatat dengan benar oleh pihak sekolah.
 
 ---
 
@@ -178,9 +178,9 @@ Sistem presensi menjadi rujukan penting bagi berbagai modul lain di Student Apps
 | :--- | :--- |
 | **Manajemen Rombel Kelas (`/admin/classes`, `/guru/my-class`)** | Presensi terikat erat pada rombel kelas (`tbl_absen.kelas`). Mutasi siswa otomatis memindahkan rekam presensi ke rombel baru. |
 | **Status Guru & Perwalian (`/admin/teachers`)** | Hanya guru berstatus `"4"` yang berwenang membuka form dan mengisi absensi rombel binaan. |
-| **Buku Disiplin Santri (`/guru/my-class/[id]`)** | Santri yang terakumulasi status Alpha tanpa keterangan dapat ditindaklanjuti dengan pencatatan pembinaan kedisiplinan. |
-| **Laporan Rapor & Evaluasi Semester** | Total sakit, izin, dan alpa ditarik otomatis dari rekapitulasi `tbl_absen` ke lembar rapor semester santri. |
-| **Dashboard Siswa (`/siswa`)** | Rekap persentase kehadiran santri tampil di dashboard utama santri sebagai pengingat motivasi adab belajar. |
+| **Buku Disiplin Siswa (`/guru/my-class/[id]`)** | Siswa yang terakumulasi status Alpha tanpa keterangan dapat ditindaklanjuti dengan pencatatan pembinaan kedisiplinan. |
+| **Laporan Rapor & Evaluasi Semester** | Total sakit, izin, dan alpa ditarik otomatis dari rekapitulasi `tbl_absen` ke lembar rapor semester siswa. |
+| **Dashboard Siswa (`/siswa`)** | Rekap persentase kehadiran siswa tampil di dashboard utama siswa sebagai pengingat motivasi adab belajar. |
 
 ---
 
@@ -189,11 +189,11 @@ Sistem presensi menjadi rujukan penting bagi berbagai modul lain di Student Apps
 Berikut adalah skenario penerapan alur kerja presensi dalam rutinitas sekolah di SD - SMP Islam Al-Azhar Cairo Palembang:
 
 ### 🎭 Skenario 1: Rutinitas Pagi Wali Kelas Sebelum Sholat Dhuha Berjamaah
-- **Situasi**: Pukul 07.15 WIB, bel masuk berbunyi di *Kelas 4 - Mehmed Al Fatih*. Wali Kelas (Ustadzah Fatimah) melakukan presensi sebelum mendampingi santri ke masjid sekolah.
+- **Situasi**: Pukul 07.15 WIB, bel masuk berbunyi di *Kelas 4 - Mehmed Al Fatih*. Wali Kelas (Ustadzah Fatimah) melakukan presensi sebelum mendampingi siswa ke masjid sekolah.
 - **Workflow Sistem**:
   1. Ustadzah Fatimah membuka iPad miliknya dan menuju menu **Absensi Kelas** (`/guru/attendance`).
   2. Beliau mengklik kartu **"Form Absen Hari Ini"** (`/guru/attendance/2026-10-08`).
-  3. Beliau menekan tombol **"Semua Hadir"**. Seketika 28 santri berstatus Hadir.
+  3. Beliau menekan tombol **"Semua Hadir"**. Seketika 28 siswa berstatus Hadir.
   4. Beliau memeriksa pesan WhatsApp dari wali murid ananda Zaidan yang melampirkan surat dokter. Ustadzah Fatimah mengubah status Zaidan menjadi **Sakit**.
   5. Beliau menekan tombol **"Simpan Presensi"**.
 - **Hasil**: Proses presensi 28 siswa selesai dalam 20 detik. Kalender kehadiran tanggal tersebut langsung berubah warna hijau di dashboard guru.
@@ -205,17 +205,17 @@ Berikut adalah skenario penerapan alur kerja presensi dalam rutinitas sekolah di
 - **Workflow Sistem**:
   1. Wali Kelas membuka `/guru/attendance/recap`.
   2. Beliau memilih bulan *September 2026*.
-  3. Sistem secara otomatis menghitung kehadiran 28 santri selama 22 hari efektif KBM.
+  3. Sistem secara otomatis menghitung kehadiran 28 siswa selama 22 hari efektif KBM.
   4. Wali Kelas menekan tombol **"Export PDF Resmi"**.
   5. File PDF A4 Landscape langsung terunduh rapi, ber-kop surat resmi Al-Azhar Cairo Palembang, lengkap dengan kolom persentase dan tempat tanda tangan.
 - **Hasil**: Wali kelas cukup mencetak atau mengirimkan file PDF tersebut ke bagian Tata Usaha tanpa perlu menyusun tabel Excel manual.
 
 ---
 
-### 🎭 Skenario 3: Santri dan Orang Tua Memantau Akumulasi Izin dari Rumah
+### 🎭 Skenario 3: Siswa dan Orang Tua Memantau Akumulasi Izin dari Rumah
 - **Situasi**: Orang tua ananda Rayhan ingin memastikan apakah surat izin yang dititipkan saat kepulangan ke luar kota sudah dicatat dengan benar oleh pihak sekolah.
 - **Workflow Sistem**:
-  1. Rayhan bersama orang tuanya login ke portal santri di tablet iPad `/siswa/attendance`.
+  1. Rayhan bersama orang tuanya login ke portal siswa di tablet iPad `/siswa/attendance`.
   2. Pada kartu statistik, terlihat: *Hadir: 20 Hari*, *Izin: 2 Hari*, *Sakit: 0 Hari*, *Alpha: 0 Hari*.
   3. Pada kalender interaktif, tanggal saat izin ditandai dengan badge kuning.
 - **Hasil**: Terjalin transparansi dan kepercayaan penuh antara wali murid dan pihak sekolah.
@@ -242,7 +242,7 @@ Sistem presensi terpadu ini menuntaskan berbagai masalah klasik pada pengelolaan
 | :--- | :--- |
 | **Pencatatan Manual di Kertas yang Lambat**<br>Guru membutuhkan waktu 10–15 menit di awal jam pelajaran hanya untuk mencentang daftar absen kertas satu per satu. | **Tombol Sakti "Semua Hadir" (*1-Click Batch*)**<br>Wali kelas cukup menekan satu tombol, lalu hanya perlu mengubah nama murid yang tidak masuk. Selesai dalam 20 detik. |
 | **Rekapitulasi Manual Akhir Bulan yang Rawan Salah**<br>Wali kelas menghabiskan waktu berjam-jam menghitung manual rumus total kehadiran di Excel pada akhir bulan. | **Kalkulasi Otomatis & Export PDF Resmi A4**<br>Sistem otomatis mengagregasi total Hadir, Sakit, Izin, Alpha, serta persentase kehadiran ke dalam dokumen PDF resmi siap cetak. |
-| **Orang Tua Tidak Tahu Anak Membolos (Alpha)**<br>Orang tua mengira anak berangkat ke sekolah, padahal anak tidak masuk kelas tanpa keterangan. | **Transparansi Portal Santri (*Real-Time Access*)**<br>Riwayat kehadiran dapat dipantau langsung dari rumah melalui dashboard siswa dan orang tua. |
+| **Orang Tua Tidak Tahu Anak Membolos (Alpha)**<br>Orang tua mengira anak berangkat ke sekolah, padahal anak tidak masuk kelas tanpa keterangan. | **Transparansi Portal Siswa (*Real-Time Access*)**<br>Riwayat kehadiran dapat dipantau langsung dari rumah melalui dashboard siswa dan orang tua. |
 | **Manipulasi Absensi Antar Guru**<br>Guru mata pelajaran tanpa sengaja mengotak-atik absensi rombel kelas yang bukan wewenangnya. | **Proteksi Ketat (*Server-Level Guard*)**<br>Fungsi `checkWaliKelasOrAdmin()` mengunci hak edit presensi hanya untuk Wali Kelas resmi rombel bersangkutan. |
 | **Data Absensi Hilang atau Rusak**<br>Buku jurnal absen fisik kelas terselip, basah, atau rusak saat semester berjalan. | **Database MySQL Terpusat & Terenkripsi**<br>Seluruh data presensi tersimpan permanen di basis data server dengan backup berkala. |
 

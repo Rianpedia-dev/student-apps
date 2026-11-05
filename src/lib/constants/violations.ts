@@ -107,7 +107,7 @@ export const VIOLATION_CATEGORIES: ViolationCategoryMeta[] = [
   },
   {
     id: "akhlak",
-    name: "Adab, Sikap & Etika Santri",
+    name: "Adab, Sikap & Etika Siswa",
     description: "Sopan santun kepada guru, tutur kata terpuji, dan ukhuwah sesama teman",
     color: "rose",
     iconName: "HeartHandshake",
@@ -249,11 +249,11 @@ export const SCHOOL_RULES_GUIDE = [
     ],
   },
   {
-    title: "Seragam & Identitas Diri Santri",
+    title: "Seragam & Identitas Diri Siswa",
     rules: [
       "Mengenakan seragam resmi harian Al-Azhar Cairo sesuai jadwal yang telah ditentukan.",
       "Memakai atribut upacara lengkap (topi, dasi, ikat pinggang, dan sepatu hitam tertutup).",
-      "Menjaga kerapian potongan rambut bagi santri ikhwan dan ketertiban jilbab bagi santri akhwat.",
+      "Menjaga kerapian potongan rambut bagi siswa ikhwan dan ketertiban jilbab bagi siswa akhwat.",
     ],
   },
   {

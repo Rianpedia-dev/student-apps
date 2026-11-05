@@ -23,7 +23,7 @@ Untuk menjaga integritas dan keamanan kurikulum akademik sekolah:
 | **`"1"`** | **Siswa** | Peserta didik aktif. Berhak mengakses jadwal, modul materi, kuis/tugas, riwayat absensi, dan poin sikap. | ✅ **Aktif** |
 | **`"2"`** | **Guru Mata Pelajaran** | Dewan guru pengampu kurikulum KBM. Berhak mengelola silabus, tugas, ujian, dan video conference. | ✅ **Aktif** |
 | **`"3"`** | **Administrator** | Pengelola sistem dan pimpinan kurikulum. Berhak atas seluruh manajemen data master sekolah. | ✅ **Aktif** |
-| **`"4"`** | **Guru & Wali Kelas** | Guru pengampu KBM sekaligus pembina rombel kelas. Memiliki akses presensi rombel, rekap PDF, dan pembinaan santri. | ✅ **Aktif** |
+| **`"4"`** | **Guru & Wali Kelas** | Guru pengampu KBM sekaligus pembina rombel kelas. Memiliki akses presensi rombel, rekap PDF, dan pembinaan siswa. | ✅ **Aktif** |
 
 ---
 

@@ -13,7 +13,7 @@ Untuk mendukung fleksibilitas operasional sekolah tanpa menciptakan redundansi a
 1. **Status `"2"` — Guru Mata Pelajaran**:
    Fokus pada kegiatan belajar mengajar (KBM), pembuatan silabus pertemuan, distribusi modul ajar digital di iPad, bank soal, evaluasi tugas/kuis, serta tatap muka virtual interaktif (*live conference*).
 2. **Status `"4"` — Guru & Wali Kelas**:
-   Memiliki seluruh kewenangan Guru Mata Pelajaran, **ditambah** otoritas perwalian penuh: mengelola daftar peserta didik di rombel binaan (`/guru/my-class`), mencatat presensi harian, memantau matriks kehadiran bulanan, mengekspor dokumen rekapitulasi PDF resmi berstandar Al-Azhar (`/guru/attendance`), mencatat pelanggaran kedisiplinan santri, serta memberikan catatan pembinaan berkala.
+   Memiliki seluruh kewenangan Guru Mata Pelajaran, **ditambah** otoritas perwalian penuh: mengelola daftar peserta didik di rombel binaan (`/guru/my-class`), mencatat presensi harian, memantau matriks kehadiran bulanan, mengekspor dokumen rekapitulasi PDF resmi berstandar Al-Azhar (`/guru/attendance`), mencatat pelanggaran kedisiplinan siswa, serta memberikan catatan pembinaan berkala.
 3. **Status `"0"` — Pending Verifikasi**:
    Akun guru baru yang mendaftar atau didaftarkan namun belum diverifikasi secara resmi oleh Administrator sekolah.
 
@@ -58,7 +58,7 @@ erDiagram
      - `"4"` = Guru & Wali Kelas.
    - `kelas`: Nama rombel binaan jika guru bertindak sebagai Wali Kelas (contoh: *Kelas 4 - Mehmed Al Fatih*). Jika hanya Guru Mapel, bernilai `null` atau kosong.
    - `appleid` & `passwordappleid`: Kredensial sinkronisasi perangkat iPad edukasi guru.
-   - `notes`: Catatan kepribadian / rekam jejak santri (pada akun siswa yang dikurasi oleh wali kelas).
+   - `notes`: Catatan kepribadian / rekam jejak siswa (pada akun siswa yang dikurasi oleh wali kelas).
 
 2. **`tbl_kelas` (`Kelas`)**:
    - `id`: Primary key unik kelas (BigInt).
@@ -66,16 +66,16 @@ erDiagram
    - `jenjang`: Jenjang pendidikan (`SD` atau `SMP`).
    - `tingkat`: Tingkat jenjang kelas (angka `4` sampai `9`).
    - `wali_kelas`: Nama lengkap guru yang sedang bertugas sebagai Wali Kelas di rombel tersebut. Tersinkronisasi otomatis dengan akun User berstatus `"4"`.
-   - `jumlah_siswa`: Daya tampung atau kuantitas santri dalam rombel.
+   - `jumlah_siswa`: Daya tampung atau kuantitas siswa dalam rombel.
 
 3. **`tbl_absen` (`Absen`)**:
-   - Menyimpan rekaman presensi santri per hari: `date` (`YYYY-MM-DD`), `month`, `year`, `user_id` (ID siswa), `kelas`, serta status kehadiran `keterangan` (`Hadir`, `Sakit`, `Izin`, `Alpa`).
+   - Menyimpan rekaman presensi siswa per hari: `date` (`YYYY-MM-DD`), `month`, `year`, `user_id` (ID siswa), `kelas`, serta status kehadiran `keterangan` (`Hadir`, `Sakit`, `Izin`, `Alpa`).
 
 4. **`tbl_pelanggaran` (`Pelanggaran`)**:
-   - Buku catatan disiplin santri: `user_id`, `nama`, `kelas`, `kategori` (contoh: *Kedisiplinan*, *Ibadah*, *Seragam*), `keterangan`, dan stempel waktu `created_at`.
+   - Buku catatan disiplin siswa: `user_id`, `nama`, `kelas`, `kategori` (contoh: *Kedisiplinan*, *Ibadah*, *Seragam*), `keterangan`, dan stempel waktu `created_at`.
 
 5. **`tbl_prestasi` (`Prestasi`)**:
-   - Apresiasi pencapaian santri: `id_user`, `nama`, `kelas`, `prestasi`, `fotoanak`, dan tanggal perolehan.
+   - Apresiasi pencapaian siswa: `id_user`, `nama`, `kelas`, `prestasi`, `fotoanak`, dan tanggal perolehan.
 
 ---
 
@@ -156,7 +156,7 @@ Sistem menerapkan otomasi database mutakhir untuk mencegah inkonsistensi nama wa
 
 ### B. Peran Guru Mata Pelajaran (Status `"2"`): Pendidik Fokus KBM
 
-Guru Mata Pelajaran murni berfokus penuh pada kualitas pembelajaran akademik santri tanpa dibebani urusan perwalian rombel harian.
+Guru Mata Pelajaran murni berfokus penuh pada kualitas pembelajaran akademik siswa tanpa dibebani urusan perwalian rombel harian.
 
 #### 1. Ruang Lingkup Kerja & Navigasi Menu
 - **Dashboard Personal (`/guru`)**:
@@ -166,9 +166,9 @@ Guru Mata Pelajaran murni berfokus penuh pada kualitas pembelajaran akademik san
 - **Kelas Online Tatap Muka Virtual (`/guru/kelas-online`)**:
   - Membuka ruang tatap maya (Daily.co Video Conference) berkeamanan tinggi dengan nama mata pelajaran yang diampu.
 - **Pesan Chat Interaktif (`/guru/chat`)**:
-  - Melayani konsultasi akademik 1-on-1 dengan seluruh santri yang diajarnya.
+  - Melayani konsultasi akademik 1-on-1 dengan seluruh siswa yang diajarnya.
 - **Pencatatan Prestasi Siswa (`/guru/achievements`)**:
-  - Berhak mencatatkan prestasi akademik santri yang menonjol pada mata pelajaran bersangkutan.
+  - Berhak mencatatkan prestasi akademik siswa yang menonjol pada mata pelajaran bersangkutan.
 
 #### 2. Proteksi & Guard Halaman Perwalian
 Jika Guru Mata Pelajaran murni (status `"2"`) sengaja atau tidak sengaja mengakses URL perwalian (`/guru/my-class` atau `/guru/attendance`):
@@ -182,7 +182,7 @@ Jika Guru Mata Pelajaran murni (status `"2"`) sengaja atau tidak sengaja mengaks
 
 ### C. Peran Guru & Wali Kelas (Status `"4"`): Pembina Rombel Holistik
 
-Dewan guru berstatus `"4"` memiliki peran ganda: mengajar mata pelajaran resmi sekaligus menjadi pimpinan pembina bagi satu rombel kelas santri.
+Dewan guru berstatus `"4"` memiliki peran ganda: mengajar mata pelajaran resmi sekaligus menjadi pimpinan pembina bagi satu rombel kelas siswa.
 
 #### 1. Menu Eksklusif Sidebar
 Pada bilah navigasi sidebar, sistem secara dinamis menampilkan 2 menu penting tambahan:
@@ -195,27 +195,27 @@ Wali Kelas bertindak sebagai manajer utama rombel binaannya:
   - Menampilkan avatar foto siswa, NIS, nama lengkap, gender, poin sikap, serta catatan ringkas.
   - Pencarian instan dan penyaringan berdasarkan NIS atau nama anak.
 - **Pendaftaran Siswa Baru (*Enroll Student*)**:
-  - Memasukkan santri baru atau santri pindahan yang belum memiliki rombel ke dalam kelas binaan dengan 1 klik.
+  - Memasukkan siswa baru atau siswa pindahan yang belum memiliki rombel ke dalam kelas binaan dengan 1 klik.
 - **Pengeluaran Siswa Massal (*Bulk Remove from Class*)**:
   - Memilih beberapa siswa sekaligus menggunakan *checkbox* untuk dikeluarkan dari kelas binaan (misal karena mutasi rombel).
-  - Dilengkapi sistem validasi: Wali Kelas dilarang keras mengeluarkan santri dari rombel lain.
+  - Dilengkapi sistem validasi: Wali Kelas dilarang keras mengeluarkan siswa dari rombel lain.
 - **Profil Siswa & Catatan Pembinaan (`/guru/my-class/[studentId]`)**:
-  - **Catatan Wali Kelas (*Notes*)**: Wali Kelas dapat menuliskan evaluasi kepribadian, akhlak, adaptasi belajar, atau pesan pembinaan khusus yang tersimpan permanen di profil santri.
-  - **Buku Pelanggaran Santri (*Violations Log*)**: Wali Kelas dapat mencatat jenis pelanggaran santri (kategori kedisiplinan, keterlambatan, perlengkapan sholat, seragam), memberi deskripsi tindakan pembinaan, serta menghapus rekaman jika santri telah memperbaiki perilakunya.
+  - **Catatan Wali Kelas (*Notes*)**: Wali Kelas dapat menuliskan evaluasi kepribadian, akhlak, adaptasi belajar, atau pesan pembinaan khusus yang tersimpan permanen di profil siswa.
+  - **Buku Pelanggaran Siswa (*Violations Log*)**: Wali Kelas dapat mencatat jenis pelanggaran siswa (kategori kedisiplinan, keterlambatan, perlengkapan sholat, seragam), memberi deskripsi tindakan pembinaan, serta menghapus rekaman jika siswa telah memperbaiki perilakunya.
 
 #### 3. Sistem Presensi Harian & Rekapitulasi Komprehensif (`/guru/attendance`)
 Fitur presensi dirancang sangat lengkap dan fleksibel untuk kebutuhan harian maupun pelaporan bulanan:
 - **Kalender Presensi Interaktif**:
   - Menampilkan visual kalender bulanan dengan indikator tanggal mana yang sudah diisi presensinya (*Hijau*) dan tanggal mana yang belum diisi (*Abu-abu*).
 - **Form Presensi Harian Cepat (`/guru/attendance/[date]`)**:
-  - Mengambil daftar seluruh santri di rombel secara otomatis.
+  - Mengambil daftar seluruh siswa di rombel secara otomatis.
   - Opsi status kehadiran per anak: `Hadir`, `Sakit`, `Izin`, dan `Alpa`.
   - Default kehadiran bernilai `Hadir` untuk mempercepat proses pencatatan.
 - **Tabel Matriks Presensi Bulanan (`/guru/attendance/table/[date]`)**:
-  - Tampilan layaknya spreadsheet matriks kalender dari tanggal 1 hingga 31, merangkum kehadiran setiap santri dalam satu layar penuh.
+  - Tampilan layaknya spreadsheet matriks kalender dari tanggal 1 hingga 31, merangkum kehadiran setiap siswa dalam satu layar penuh.
 - **Export Dokumen Rekapitulasi PDF Resmi (`/guru/attendance/recap`)**:
   - Menghasilkan dokumen cetak resmi berstandar kurikulum Al-Azhar dalam format **PDF A4 Landscape**.
-  - Dilengkapi Kop Surat Sekolah resmi SD/SMP Islam Al-Azhar Cairo Palembang, tabel data kehadiran santri lengkap dengan persentase kehadiran, serta kolom tanda tangan basah resmi untuk **Kepala Sekolah** dan **Wali Kelas**.
+  - Dilengkapi Kop Surat Sekolah resmi SD/SMP Islam Al-Azhar Cairo Palembang, tabel data kehadiran siswa lengkap dengan persentase kehadiran, serta kolom tanda tangan basah resmi untuk **Kepala Sekolah** dan **Wali Kelas**.
 
 #### 4. Reaktivitas Sinkronisasi Nama Profil
 Jika Wali Kelas memperbarui nama lengkap atau gelarnya di halaman `/guru/profile` (misalnya setelah menyelesaikan jenjang magister menjadi *Ustadz Farhan, M.Pd*), sistem secara otomatis mendeteksi status `"4"` dan memperbarui nilai `wali_kelas` di tabel `tbl_kelas` secara *real-time*.
@@ -230,7 +230,7 @@ Siswa menikmati pengalaman terpadu dari bimbingan Wali Kelas dan Guru Mata Pelaj
 2. **Transparansi Riwayat Kehadiran (`/siswa/attendance`)**:
    - Siswa dapat melihat rekapitulasi kehadiran dirinya sendiri (berapa kali Hadir, Sakit, Izin, atau Alpa) secara terbuka dan jujur.
 3. **Pusat Evaluasi Diri (`/siswa/violations`)**:
-   - Santri dapat memantau catatan pelanggaran kedisiplinan yang pernah dicatat oleh guru/wali kelas sebagai sarana introspeksi diri (*muhasabah*).
+   - Siswa dapat memantau catatan pelanggaran kedisiplinan yang pernah dicatat oleh guru/wali kelas sebagai sarana introspeksi diri (*muhasabah*).
 4. **Saluran Konsultasi Pribadi (`/siswa/chat`)**:
    - Membuka ruang percakapan privat dengan Wali Kelas untuk menceritakan kendala belajar, kesehatan, atau bimbingan konseling.
 
@@ -243,12 +243,12 @@ Status kepegawaian guru dan perwalian kelas menjadi pondasi bagi kelancaran selu
 | Fitur Terkait | Bentuk Integrasi dengan Status Guru & Wali Kelas |
 | :--- | :--- |
 | **Kelola Data Kelas (`/admin/classes`)** | Setiap rombel di `tbl_kelas` menampilkan nama Wali Kelas aktif. Perubahan data guru langsung merefleksikan perubahan di master kelas. |
-| **Presensi Siswa (`/guru/attendance`, `/siswa/attendance`)** | Pengisian presensi dibatasi hanya untuk Wali Kelas yang bersangkutan (`checkWaliKelasOrAdmin`). Data absensi langsung tampil di portal santri. |
-| **Buku Disiplin & Pelanggaran (`/guru/my-class/[id]`, `/siswa/violations`)** | Wali Kelas mencatatkan catatan pelanggaran santri rombel binaannya. Santri dapat melihat rekam jejak perilakunya untuk bahan evaluasi diri. |
-| **Catatan Karakter & Rapor (`users.notes`)** | Wali kelas menginput catatan pembinaan santri yang akan diintegrasikan ke dalam laporan perkembangan santri semesteran. |
+| **Presensi Siswa (`/guru/attendance`, `/siswa/attendance`)** | Pengisian presensi dibatasi hanya untuk Wali Kelas yang bersangkutan (`checkWaliKelasOrAdmin`). Data absensi langsung tampil di portal siswa. |
+| **Buku Disiplin & Pelanggaran (`/guru/my-class/[id]`, `/siswa/violations`)** | Wali Kelas mencatatkan catatan pelanggaran siswa rombel binaannya. Siswa dapat melihat rekam jejak perilakunya untuk bahan evaluasi diri. |
+| **Catatan Karakter & Rapor (`users.notes`)** | Wali kelas menginput catatan pembinaan siswa yang akan diintegrasikan ke dalam laporan perkembangan siswa semesteran. |
 | **Jadwal Pelajaran (`/admin/schedules`, `/guru/mapel`)** | Baik Guru Mapel (status 2) maupun Wali Kelas (status 4) dapat dijadwalkan mengajar mata pelajaran tertentu di berbagai rombel kelas yang berbeda. |
 | **Live Tatap Muka (`/guru/kelas-online`)** | Guru dapat membuka ruang video conference terenkripsi untuk jam pelajaran atau sesi perwalian kelas online. |
-| **Chat Konsultasi (`/guru/chat`, `/siswa/chat`)** | Sistem otomatis memvalidasi hubungan perwalian dan jadwal KBM saat santri memulai obrolan dengan guru atau wali kelasnya. |
+| **Chat Konsultasi (`/guru/chat`, `/siswa/chat`)** | Sistem otomatis memvalidasi hubungan perwalian dan jadwal KBM saat siswa memulai obrolan dengan guru atau wali kelasnya. |
 | **Manajemen iPad & Apple ID (`users.appleid`)** | Akun guru menyimpan kredensial Apple ID terstandarisasi untuk mendistribusikan aplikasi edukasi dan modul ajar ke perangkat iPad guru. |
 
 ---
@@ -279,21 +279,21 @@ Berikut adalah skenario praktis penerapan alur kerja status guru dan wali kelas 
 
 ---
 
-### 🎭 Skenario 3: Rutinitas Presensi Pagi & Deteksi Santri Tidak Masuk
-- **Situasi**: Setiap pukul 07.15 WIB sebelum dimulainya jam sholat Dhuha dan tadarus Al-Qur'an, Wali Kelas Kelas 7 - Ibnu Sina (Ustadz Farhan) melakukan pengecekan kehadiran santri.
+### 🎭 Skenario 3: Rutinitas Presensi Pagi & Deteksi Siswa Tidak Masuk
+- **Situasi**: Setiap pukul 07.15 WIB sebelum dimulainya jam sholat Dhuha dan tadarus Al-Qur'an, Wali Kelas Kelas 7 - Ibnu Sina (Ustadz Farhan) melakukan pengecekan kehadiran siswa.
 - **Workflow Sistem**:
   1. Ustadz Farhan membuka iPad miliknya, login ke Student Apps, lalu membuka menu **Absensi Kelas** (`/guru/attendance`).
-  2. Beliau mengklik kartu **"Form Absen Hari Ini"**. Seluruh santri Kelas 7 secara otomatis tampil dengan status default *Hadir*.
+  2. Beliau mengklik kartu **"Form Absen Hari Ini"**. Seluruh siswa Kelas 7 secara otomatis tampil dengan status default *Hadir*.
   3. Ustadz Farhan melihat ananda Zaidan izin sakit melalui surat dokter dari orang tua. Beliau cukup mengubah opsi Zaidan menjadi **Sakit**.
   4. Ustadz Farhan menekan tombol **"Simpan Presensi"**.
 - **Hasil**: Data presensi tersimpan dalam hitungan detik. Di portal ananda Zaidan dan orang tuanya, status kehadiran hari itu langsung terverifikasi sebagai *Sakit*, dan tanggal hari itu di kalender wali kelas berubah menjadi hijau.
 
 ---
 
-### 🎭 Skenario 4: Pembinaan Kedisiplinan & Pencatatan Pelanggaran Santri
-- **Situasi**: Ketika pemeriksaan kelengkapan ibadah, seorang santri lupa membawa mushaf Al-Qur'an dan sajadah sholat selama dua hari berturut-turut.
+### 🎭 Skenario 4: Pembinaan Kedisiplinan & Pencatatan Pelanggaran Siswa
+- **Situasi**: Ketika pemeriksaan kelengkapan ibadah, seorang siswa lupa membawa mushaf Al-Qur'an dan sajadah sholat selama dua hari berturut-turut.
 - **Workflow Sistem**:
-  1. Wali Kelas membuka menu **Kelas Saya** (`/guru/my-class`) dan mengklik nama santri bersangkutan untuk membuka halaman detail (`/guru/my-class/[id]`).
+  1. Wali Kelas membuka menu **Kelas Saya** (`/guru/my-class`) dan mengklik nama siswa bersangkutan untuk membuka halaman detail (`/guru/my-class/[id]`).
   2. Pada tab **Pelanggaran**, Wali Kelas menekan tombol **"Tambah Pelanggaran"**.
   3. Memilih kategori *Kedisiplinan / Perlengkapan Ibadah* dan menulis keterangan: *"Tidak membawa mushaf dan sajadah pribadi saat sholat Dhuha berjamaah"*.
   4. Wali Kelas juga menambahkan catatan pembinaan di tab **Catatan Wali Kelas**: *"Diberikan nasihat santun & diingatkan untuk menyiapkan perlengkapan ibadah di malam hari."*
@@ -302,10 +302,10 @@ Berikut adalah skenario praktis penerapan alur kerja status guru dan wali kelas 
 ---
 
 ### 🎭 Skenario 5: Cetak Laporan Rekap Presensi Bulanan Resmi untuk Kepala Sekolah
-- **Situasi**: Pada akhir bulan September, Bagian Tata Usaha dan Kepala Sekolah meminta laporan rekapitulasi presensi seluruh santri Kelas 4 untuk arsip bulanan.
+- **Situasi**: Pada akhir bulan September, Bagian Tata Usaha dan Kepala Sekolah meminta laporan rekapitulasi presensi seluruh siswa Kelas 4 untuk arsip bulanan.
 - **Workflow Sistem**:
   1. Wali Kelas Kelas 4 membuka `/guru/attendance/recap`.
-  2. Sistem otomatis menghitung total Hadir, Sakit, Izin, dan Alpa setiap santri sepanjang bulan berjalan beserta persentase kehadirannya.
+  2. Sistem otomatis menghitung total Hadir, Sakit, Izin, dan Alpa setiap siswa sepanjang bulan berjalan beserta persentase kehadirannya.
   3. Wali Kelas menekan tombol **"Cetak / Simpan PDF"**.
   4. Sistem menghasilkan dokumen resmi format PDF A4 Landscape berlogo Al-Azhar Cairo, lengkap dengan tanggal cetak dan kolom tanda tangan Kepala Sekolah serta Wali Kelas.
 - **Hasil**: Laporan presensi rapi, formal, siap cetak tanpa perlu olah rumus manual di Microsoft Excel.
@@ -320,9 +320,9 @@ Sebelum standarisasi fitur status guru dan wali kelas ini diimplementasikan, sek
 | :--- | :--- |
 | **Kerancuan Akun Ganda Guru**<br>Guru yang merangkap Wali Kelas harus memiliki dua akun berbeda untuk mengajar dan mengelola rombel. | **Akun Tunggal Berbasis Dynamic Status**<br>Cukup satu akun login. Sistem otomatis menampilkan menu mengajar dan menu perwalian secara harmonis berdasarkan status pengguna. |
 | **Ketidaksinkronan Nama Wali Kelas di Rombel**<br>Pergantian wali kelas di profil guru sering lupa diperbarui pada master data kelas sehingga rapor salah cetak nama. | **Sinkronisasi Otomatis Dua Arah (*Two-Way Sync*)**<br>Perubahan status dan kelas binaan di Admin atau perubahan nama di profil guru otomatis meng-update tabel `tbl_kelas.wali_kelas`. |
-| **Klaim Sepihak & Kesalahan Akses Data Kelas**<br>Guru mengedit presensi atau mengubah data siswa di rombel yang bukan hak perwaliannya. | **Proteksi Ketat (*Server-Level Guard*)**<br>Fungsi `checkWaliKelasOrAdmin()` memastikan guru hanya berhak mengelola santri di kelas binaan resminya. |
+| **Klaim Sepihak & Kesalahan Akses Data Kelas**<br>Guru mengedit presensi atau mengubah data siswa di rombel yang bukan hak perwaliannya. | **Proteksi Ketat (*Server-Level Guard*)**<br>Fungsi `checkWaliKelasOrAdmin()` memastikan guru hanya berhak mengelola siswa di kelas binaan resminya. |
 | **Rekapitulasi Absensi Akhir Bulan yang Menyita Waktu**<br>Wali kelas menghitung manual hari hadir siswa dari buku absensi fisik untuk membuat laporan bulanan. | **Rekap Otomatis & Export PDF 1-Klik**<br>Sistem otomatis mengagregasi total kehadiran dan mencetak dokumen resmi PDF landscape lengkap dengan tanda tangan pengesahan. |
-| **Riwayat Pelanggaran Santri Tercecer**<br>Catatan pelanggaran santri dicatat di kertas lepas atau grup WhatsApp sehingga tidak terpantau perkembangannya. | **Buku Pelanggaran Digital Terpusat**<br>Setiap santri memiliki rekam jejak digital terkait kedisiplinan dan pembinaan yang dapat dipantau langsung oleh wali kelas. |
+| **Riwayat Pelanggaran Siswa Tercecer**<br>Catatan pelanggaran siswa dicatat di kertas lepas atau grup WhatsApp sehingga tidak terpantau perkembangannya. | **Buku Pelanggaran Digital Terpusat**<br>Setiap siswa memiliki rekam jejak digital terkait kedisiplinan dan pembinaan yang dapat dipantau langsung oleh wali kelas. |
 | **Keterlambatan Verifikasi Guru Baru**<br>Guru baru yang didaftarkan langsung bisa mengacak-acak kurikulum tanpa persetujuan pimpinan. | **Status `"0"` Pending Verifikasi**<br>Akun guru baru dibekukan hak aksesnya hingga pimpinan/admin memverifikasi dan menetapkan status resminya. |
 
 ---

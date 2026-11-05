@@ -173,7 +173,7 @@ export default async function GuruViolationsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Kedisiplinan & Bimbingan Siswa</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Pencatatan tata tertib, pembinaan santri jenjang {activeJenjang === "ALL" ? "SD & SMP" : activeJenjang}, dan laporan wali kelas.
+            Pencatatan tata tertib, pembinaan siswa jenjang {activeJenjang === "ALL" ? "SD & SMP" : activeJenjang}, dan laporan wali kelas.
           </p>
         </div>
         <div className="flex items-center gap-3">
