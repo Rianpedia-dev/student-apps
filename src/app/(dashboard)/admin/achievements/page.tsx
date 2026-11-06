@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
-import { AddAchievementModal } from "../../guru/achievements/_components/add-achievement-modal";
 import { AchievementsClientView } from "../../guru/achievements/_components/achievements-client-view";
 import { AchievementService } from "@/services/achievement.service";
 
@@ -60,20 +59,6 @@ export default async function AdminAchievementsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Page & Action Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Manajemen Prestasi & Kejuaraan Siswa</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Kelola pencapaian siswa skala 1–16, pantau podium kejuaraan, dan leaderboard sekolah.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <AddAchievementModal students={students} guruClass="" />
-        </div>
-      </div>
-
       {/* Interactive Client View */}
       <AchievementsClientView
         initialAchievements={achievements}

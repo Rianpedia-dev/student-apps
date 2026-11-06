@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, UserCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface LeaderboardRankingItem {
   userId: string;
@@ -23,6 +23,9 @@ interface LeaderboardRankingsProps {
   showPagination?: boolean;
   defaultPageSize?: number;
   className?: string;
+  onSelectStudent?: (item: LeaderboardRankingItem) => void;
+  searchQuery?: string;
+  onClearSearch?: () => void;
 }
 
 export function LeaderboardRankings({
@@ -31,13 +34,41 @@ export function LeaderboardRankings({
   showPagination = true,
   defaultPageSize = 10,
   className,
+  onSelectStudent,
+  searchQuery,
+  onClearSearch,
 }: LeaderboardRankingsProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
 
+  // Reset ke halaman 1 saat pencarian atau daftar ranking berubah
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, rankings.length]);
+
   if (!rankings || rankings.length === 0) {
     return (
-      <div className="text-center py-8 text-sm text-muted-foreground italic border rounded-xl bg-card">
-        Belum ada siswa yang tercatat di papan peringkat ini.
+      <div className="text-center py-12 px-4 border border-dashed rounded-2xl bg-white dark:bg-card shadow-xs space-y-3">
+        <p className="text-sm font-bold text-foreground">
+          {searchQuery
+            ? `Tidak ada siswa yang cocok dengan pencarian "${searchQuery}"`
+            : "Belum ada siswa yang tercatat di papan peringkat ini."}
+        </p>
+        {searchQuery && (
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            Periksa ejaan nama atau coba gunakan kata kunci pencarian nama yang lain.
+          </p>
+        )}
+        {onClearSearch && searchQuery && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClearSearch}
+            className="rounded-xl text-xs cursor-pointer mt-1"
+          >
+            Reset Pencarian
+          </Button>
+        )}
       </div>
     );
   }
@@ -51,14 +82,6 @@ export function LeaderboardRankings({
 
   return (
     <div className={cn("space-y-3", className)}>
-      <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground px-3 py-1.5 border-b border-border/50">
-        <div className="flex items-center gap-3">
-          <span className="w-8 text-center">Pos</span>
-          <span>Siswa</span>
-        </div>
-        <span>Total Poin</span>
-      </div>
-
       <div className="space-y-1.5">
         {paginatedItems.map((item) => {
           const isCurrentUser = Boolean(currentUserId && String(item.userId) === String(currentUserId));
@@ -66,11 +89,22 @@ export function LeaderboardRankings({
           return (
             <div
               key={`${item.userId}-${item.rank}`}
+              onClick={() => onSelectStudent?.(item)}
+              role={onSelectStudent ? "button" : undefined}
+              tabIndex={onSelectStudent ? 0 : undefined}
+              onKeyDown={(e) => {
+                if (onSelectStudent && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  onSelectStudent(item);
+                }
+              }}
+              title={onSelectStudent ? `Klik untuk melihat riwayat prestasi ${item.userName}` : undefined}
               className={cn(
-                "group flex items-center justify-between p-3 rounded-xl border transition-all duration-150",
+                "group flex items-center justify-between p-3 rounded-xl border transition-all duration-150 shadow-xs",
+                onSelectStudent && "cursor-pointer hover:border-amber-500/40 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 active:scale-[0.995]",
                 isCurrentUser
-                  ? "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/50 shadow-sm ring-1 ring-amber-500/30"
-                  : "bg-card/70 hover:bg-accent/40 border-border/60 hover:border-border"
+                  ? "bg-amber-50 dark:bg-amber-500/15 border-amber-500/60 shadow-xs ring-1 ring-amber-500/30"
+                  : "bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-accent/40 border-slate-200/90 dark:border-border/60 hover:border-slate-300 dark:hover:border-border"
               )}
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -90,40 +124,42 @@ export function LeaderboardRankings({
                   {item.rank}
                 </span>
 
-                {/* Avatar */}
-                <UserAvatar
-                  src={item.avatarUrl}
-                  gender={item.gender}
-                  name={item.userName}
-                  className="h-9 w-9 shrink-0 rounded-lg object-cover border border-border"
-                />
+                {/* Avatar dengan Preview Lightbox Foto Murni */}
+                <div
+                  className="shrink-0 relative cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                  title={`Lihat foto ${item.userName}`}
+                >
+                  <UserAvatar
+                    src={item.avatarUrl}
+                    gender={item.gender}
+                    name={item.userName}
+                    previewable={true}
+                    className="h-9 w-9 rounded-lg object-cover border border-border hover:ring-2 hover:ring-amber-500/50 hover:scale-105 transition-all cursor-pointer"
+                  />
+                </div>
 
                 {/* Name & Byline */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <h5
                       className={cn(
-                        "text-xs sm:text-sm font-bold truncate",
-                        isCurrentUser ? "text-amber-900 dark:text-amber-200" : "text-foreground"
+                        "text-xs sm:text-sm font-bold truncate transition-colors",
+                        isCurrentUser ? "text-amber-900 dark:text-amber-200" : "text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400"
                       )}
                       title={item.userName}
                     >
                       {item.userName}
                     </h5>
-                    {isCurrentUser && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500 text-white shadow-xs">
-                        <UserCheck className="h-3 w-3" /> Anda
-                      </span>
-                    )}
                   </div>
                   {item.byline && (
-                    <p className="text-[11px] text-muted-foreground truncate">{item.byline}</p>
+                    <p className="text-[11px] text-slate-700 dark:text-slate-300 font-medium truncate">{item.byline}</p>
                   )}
                 </div>
               </div>
 
-              {/* Points Badge */}
-              <div className="shrink-0 pl-2">
+              {/* Points Badge & Detail Icon */}
+              <div className="shrink-0 pl-2 flex items-center gap-1 sm:gap-2">
                 <span
                   className={cn(
                     "inline-block text-xs font-extrabold px-2.5 py-1 rounded-lg border",
@@ -136,6 +172,9 @@ export function LeaderboardRankings({
                 >
                   {item.value}
                 </span>
+                {onSelectStudent && (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all hidden sm:block" />
+                )}
               </div>
             </div>
           );

@@ -357,11 +357,11 @@ export function Sidebar({
     ...(isWaliKelas
       ? [
           { label: "Kelas Saya", href: "/guru/my-class", icon: BuildingLibraryIcon, iconColor: "text-emerald-500", fx: "pop" as NimbusFx },
+          { label: "Prestasi Siswa", href: "/guru/achievements", icon: TrophyIcon, iconColor: "text-amber-500", fx: "pop" as NimbusFx },
         ]
       : []),
     { label: "Pengumuman", href: "/guru/announcements", icon: MegaphoneIcon, iconColor: "text-rose-500", fx: "pop" },
     { label: "Kalender Kegiatan", href: "/guru/calendar", icon: CalendarDaysIcon, iconColor: "text-purple-500", fx: "spin" },
-    { label: "Prestasi Siswa", href: "/guru/achievements", icon: TrophyIcon, iconColor: "text-amber-500", fx: "pop" },
     { label: "Kedisiplinan Siswa", href: "/guru/violations", icon: AlertLoopIcon, iconColor: "text-rose-500", fx: "drop" },
     { label: "Kelas Online", href: "/guru/kelas-online", icon: VideoIcon, iconColor: "text-indigo-500", fx: "wave" },
   ];

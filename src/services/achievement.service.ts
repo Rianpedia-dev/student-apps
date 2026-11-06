@@ -424,7 +424,7 @@ export class AchievementService {
       userId: e.userId,
       rank: e.rank,
       userName: e.userName,
-      byline: `${e.kelas} • ${e.totalAchievements} Prestasi`,
+      byline: e.kelas,
       value: `${e.totalPoints} Poin`,
       avatarUrl: e.avatarUrl,
       gender: e.gender,

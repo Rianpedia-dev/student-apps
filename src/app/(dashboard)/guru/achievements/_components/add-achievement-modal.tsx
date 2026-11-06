@@ -69,6 +69,7 @@ interface AddAchievementModalProps {
   onOpenChange?: (open: boolean) => void;
   achievementToEdit?: EditableAchievement | null;
   triggerButton?: React.ReactNode;
+  onSuccess?: () => void;
 }
 
 interface AchievementFormProps {
@@ -76,6 +77,7 @@ interface AchievementFormProps {
   guruClass: string;
   achievementToEdit?: EditableAchievement | null;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 function getCurrentAcademicYear(): string {
@@ -90,6 +92,7 @@ function AchievementFormInner({
   guruClass,
   achievementToEdit,
   onClose,
+  onSuccess,
 }: AchievementFormProps) {
   const router = useRouter();
   const isEditMode = Boolean(achievementToEdit);
@@ -247,6 +250,7 @@ function AchievementFormInner({
           res?.message || (isEditMode ? "Prestasi berhasil diperbarui!" : "Prestasi berhasil dicatat!")
         );
         onClose();
+        onSuccess?.();
         router.refresh();
       }
     } catch (err: unknown) {
@@ -573,6 +577,7 @@ export function AddAchievementModal({
   onOpenChange,
   achievementToEdit,
   triggerButton,
+  onSuccess,
 }: AddAchievementModalProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = isOpen !== undefined;
@@ -614,6 +619,7 @@ export function AddAchievementModal({
             guruClass={guruClass}
             achievementToEdit={achievementToEdit}
             onClose={() => setOpen?.(false)}
+            onSuccess={onSuccess}
           />
         </DialogContent>
       </Dialog>

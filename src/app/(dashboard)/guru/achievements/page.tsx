@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
-import { AddAchievementModal } from "./_components/add-achievement-modal";
 import { AchievementsClientView } from "./_components/achievements-client-view";
 import { AchievementService } from "@/services/achievement.service";
 
@@ -17,9 +16,12 @@ export default async function GuruAchievementsPage() {
   const activeJenjang = await getActiveJenjang(session);
   const isRestricted = activeJenjang !== "ALL";
 
-  // Hanya Wali Kelas (status === "4") yang berhak menginput/mengelola prestasi
-  const isWaliKelas = session.status === "4";
-  const guruClass = isWaliKelas ? (session.kelas || "") : "";
+  // Hanya Wali Kelas (status === "4") yang berhak mengakses dan mengelola prestasi
+  const isWaliKelas = session.status === "4" || Boolean(session.kelas && session.status !== "2");
+  if (!isWaliKelas) {
+    redirect("/guru");
+  }
+  const guruClass = session.kelas || "";
 
   // Ambil data siswa binaan jika wali kelas
   let students: {
@@ -70,22 +72,14 @@ export default async function GuruAchievementsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Page & Action Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Prestasi & Kejuaraan Siswa</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            {isWaliKelas
-              ? `Kelola catatan juara siswa binaan (${guruClass}) dengan sistem poin skala 1–16.`
-              : "Pantau rekam jejak juara dan papan peringkat siswa berprestasi Al-Azhar."}
-          </p>
-        </div>
-
-        {isWaliKelas && (
-          <div className="flex items-center gap-3">
-            <AddAchievementModal students={students} guruClass={guruClass} />
-          </div>
-        )}
+      {/* Header Page */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Prestasi & Kejuaraan Siswa</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+          {isWaliKelas
+            ? `Kelola catatan juara siswa binaan (${guruClass}) dengan sistem poin skala 1–16.`
+            : "Pantau rekam jejak juara dan papan peringkat siswa berprestasi Al-Azhar."}
+        </p>
       </div>
 
       {/* Interactive Client View: Tabs, Gallery, Leaderboard & Dialogs */}

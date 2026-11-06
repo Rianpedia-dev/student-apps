@@ -293,3 +293,142 @@ export async function deleteAchievementAction(id: string) {
   }
 }
 
+export async function getStudentAchievementHistoryAction(params: {
+  userId?: string;
+  userName?: string;
+}) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return { error: "Sesi telah berakhir, silakan login kembali." };
+    }
+
+    const { userId, userName } = params;
+    if (!userId && !userName) {
+      return { error: "Identitas siswa tidak valid." };
+    }
+
+    let studentUser: {
+      id: bigint;
+      name: string;
+      nis: string | null;
+      kelas: string | null;
+      jenjang: string | null;
+      image: string | null;
+      gender: string | null;
+    } | null = null;
+
+    const validBigIntId =
+      userId && userId !== "0" && /^\d+$/.test(userId) ? BigInt(userId) : null;
+
+    if (validBigIntId) {
+      studentUser = await prisma.user.findUnique({
+        where: { id: validBigIntId },
+        select: {
+          id: true,
+          name: true,
+          nis: true,
+          kelas: true,
+          jenjang: true,
+          image: true,
+          gender: true,
+        },
+      });
+    }
+
+    if (!studentUser && userName) {
+      studentUser = await prisma.user.findFirst({
+        where: { name: userName.trim() },
+        select: {
+          id: true,
+          name: true,
+          nis: true,
+          kelas: true,
+          jenjang: true,
+          image: true,
+          gender: true,
+        },
+      });
+    }
+
+    // Bangun filter query pencarian seluruh prestasi
+    const orFilters: any[] = [];
+    if (userId && userId !== "0") {
+      orFilters.push({ id_user: userId });
+    }
+    if (studentUser) {
+      orFilters.push({ id_user: studentUser.id.toString() });
+      orFilters.push({ nama: studentUser.name });
+    } else if (userName) {
+      orFilters.push({ nama: userName.trim() });
+    }
+
+    if (orFilters.length === 0) {
+      return { error: "Siswa tidak ditemukan." };
+    }
+
+    const achievements = await prisma.prestasi.findMany({
+      where: {
+        OR: orFilters,
+      },
+      orderBy: [
+        { tahun_ajaran: "desc" },
+        { tanggal_prestasi: "desc" },
+        { created_at: "desc" },
+      ],
+    });
+
+    // Deduplikasi jika terdapat record kembar berdasarkan ID
+    const uniqueMap = new Map<string, (typeof achievements)[0]>();
+    for (const item of achievements) {
+      const idStr = item.id.toString();
+      if (!uniqueMap.has(idStr)) {
+        uniqueMap.set(idStr, item);
+      }
+    }
+    const uniqueAchievements = Array.from(uniqueMap.values());
+
+    const totalPoints = uniqueAchievements.reduce((sum, item) => {
+      const p = item.poin ?? calculateAchievementPoints(item.tingkat, item.peringkat);
+      return sum + p;
+    }, 0);
+
+    const studentInfo = {
+      id: studentUser ? studentUser.id.toString() : userId || "0",
+      name: studentUser ? studentUser.name : userName || (uniqueAchievements[0]?.nama ?? "Siswa"),
+      nis: studentUser?.nis || "",
+      kelas: studentUser?.kelas || uniqueAchievements[0]?.kelas || "",
+      jenjang: studentUser?.jenjang || uniqueAchievements[0]?.jenjang || "SD",
+      image: studentUser?.image || null,
+      gender: studentUser?.gender || null,
+    };
+
+    return {
+      success: true,
+      student: studentInfo,
+      totalPoints,
+      totalAchievements: uniqueAchievements.length,
+      achievements: uniqueAchievements.map((a) => ({
+        id: a.id.toString(),
+        id_user: a.id_user,
+        nama: a.nama,
+        kelas: a.kelas,
+        kelas_saat_prestasi: a.kelas_saat_prestasi || a.kelas,
+        tahun_ajaran: a.tahun_ajaran || "",
+        tingkat: a.tingkat || "Dalam Sekolah",
+        peringkat: a.peringkat || "Juara 1",
+        poin: a.poin ?? calculateAchievementPoints(a.tingkat, a.peringkat),
+        fotoanak: a.fotoanak || "",
+        prestasi: a.prestasi,
+        tanggal_prestasi: a.tanggal_prestasi ? a.tanggal_prestasi.toISOString() : null,
+        created_at: a.created_at ? a.created_at.toISOString() : null,
+      })),
+    };
+  } catch (err: unknown) {
+    const errorMsg =
+      err instanceof Error ? err.message : "Gagal memuat riwayat prestasi siswa.";
+    return { error: errorMsg };
+  }
+}
+
+
