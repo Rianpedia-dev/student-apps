@@ -12,6 +12,14 @@ import {
   type LeaderboardRankingItem,
 } from "@/components/ui/leaderboard-rankings";
 
+export interface LeaderboardStudentLookupItem {
+  id: string;
+  name: string;
+  kelas?: string | null;
+  image?: string | null;
+  gender?: string | null;
+}
+
 export interface LeaderboardRunOption {
   id: string;
   label: string;
@@ -23,12 +31,14 @@ export interface LeaderboardCardProps extends React.HTMLAttributes<HTMLDivElemen
   toDate?: string | Date;
   podiumRankings: LeaderboardPodiumRanking[];
   rankings: LeaderboardRankingItem[];
+  allStudents?: LeaderboardStudentLookupItem[];
   currentUserId?: string;
   runOptions?: LeaderboardRunOption[];
   selectedRunId?: string;
   onRunChange?: (runId: string) => void;
   onSelectStudent?: (item: LeaderboardRankingItem) => void;
   actionButton?: React.ReactNode;
+  showPagination?: boolean;
 }
 
 function formatRangeDate(date?: string | Date) {
@@ -52,12 +62,14 @@ const LeaderboardCard = React.forwardRef<HTMLDivElement, LeaderboardCardProps>(
       toDate,
       podiumRankings,
       rankings,
+      allStudents = [],
       currentUserId,
       runOptions,
       selectedRunId,
       onRunChange,
       onSelectStudent,
       actionButton,
+      showPagination = false,
       ...props
     },
     ref
@@ -78,14 +90,56 @@ const LeaderboardCard = React.forwardRef<HTMLDivElement, LeaderboardCardProps>(
 
     // Filter daftar ranking berdasarkan input pencarian nama atau kelas siswa
     const filteredRankings = React.useMemo(() => {
-      if (!searchQuery.trim()) return rankings;
+      if (!searchQuery.trim()) {
+        // Tampilan langsung: tampilkan semua siswa berpoin (> 0 poin)
+        return rankings;
+      }
+
       const q = searchQuery.toLowerCase().trim();
-      return rankings.filter(
+
+      // 1. Siswa yang berpoin dan cocok dengan kueri pencarian
+      const matchedWithPoints = rankings.filter(
         (item) =>
           item.userName.toLowerCase().includes(q) ||
           (item.byline && item.byline.toLowerCase().includes(q))
       );
-    }, [rankings, searchQuery]);
+
+      // Kumpulan ID dan Nama siswa yang berpoin agar tidak terduplikasi
+      const existingUserIds = new Set(matchedWithPoints.map((m) => String(m.userId)));
+      const existingUserNames = new Set(
+        matchedWithPoints.map((m) => m.userName.trim().toLowerCase())
+      );
+
+      // 2. Jika pencarian mencari nama siswa yang belum ada poin, tampilkan dengan 0 Poin
+      const matchedZeroPoints: LeaderboardRankingItem[] = [];
+
+      if (allStudents && allStudents.length > 0) {
+        for (const s of allStudents) {
+          const sId = String(s.id);
+          const sNameLower = s.name.trim().toLowerCase();
+          const sClassLower = (s.kelas || "").toLowerCase();
+
+          if (existingUserIds.has(sId) || existingUserNames.has(sNameLower)) {
+            continue;
+          }
+
+          if (sNameLower.includes(q) || sClassLower.includes(q)) {
+            matchedZeroPoints.push({
+              userId: sId,
+              rank: "-",
+              userName: s.name,
+              byline: s.kelas || "",
+              value: "0 Poin",
+              avatarUrl: s.image,
+              gender: s.gender,
+              displayed: true,
+            });
+          }
+        }
+      }
+
+      return [...matchedWithPoints, ...matchedZeroPoints];
+    }, [rankings, allStudents, searchQuery]);
 
     // Render pengalih cakupan: Segmented Button untuk <= 2 opsi, Dropdown rapi untuk > 2 opsi
     const renderScopeControl = () => {
@@ -218,11 +272,11 @@ const LeaderboardCard = React.forwardRef<HTMLDivElement, LeaderboardCardProps>(
           </div>
         </div>
 
-        {/* Daftar Peringkat Lengkap dengan Highlight Siswa Aktif & Paginasi */}
+        {/* Daftar Peringkat Lengkap dengan Highlight Siswa Aktif */}
         <LeaderboardRankings
           rankings={filteredRankings}
           currentUserId={currentUserId}
-          showPagination
+          showPagination={showPagination}
           defaultPageSize={10}
           onSelectStudent={onSelectStudent}
           searchQuery={searchQuery}

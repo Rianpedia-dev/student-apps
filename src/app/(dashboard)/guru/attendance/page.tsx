@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AttendanceService } from "@/services/attendance.service";
 import { AttendanceQuickActions } from "./_components/attendance-quick-actions";
+import { OtherSubjectsFolders } from "./_components/other-subjects-folders";
 
 export const dynamic = "force-dynamic";
 
@@ -193,30 +194,15 @@ export default async function GuruAttendancePage() {
           <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
             Mata Pelajaran & Kelas Lain
           </h2>
+          <Badge variant="outline" className="text-xs font-medium px-2.5 py-0.5 bg-card/80 border-border/80">
+            {assignedSubjects.length} Kelas
+          </Badge>
         </div>
 
-        {assignedSubjects.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Belum ada mata pelajaran yang ditugaskan ke akun Anda.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {assignedSubjects.map((sub, idx) => (
-              <Link
-                key={idx}
-                href={`/guru/attendance/${sub.mapelId}/${sub.kelasId}/${todayFormatted}`}
-                className="group block"
-              >
-                <div className="p-3.5 sm:p-4 rounded-2xl border border-border/80 bg-card/95 hover:bg-card hover:border-teal-500/60 dark:bg-card/90 shadow-2xs hover:shadow-md transition-all">
-                  <p className="text-xs sm:text-sm font-bold text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                    {sub.mapelNama}
-                  </p>
-                  <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 font-medium">
-                    {sub.kelasNama}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        <OtherSubjectsFolders
+          assignedSubjects={assignedSubjects}
+          todayFormatted={todayFormatted}
+        />
       </div>
     </div>
   );

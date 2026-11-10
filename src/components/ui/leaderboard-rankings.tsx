@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface LeaderboardRankingItem {
   userId: string;
-  rank: number;
+  rank: number | string;
   userName: string;
   byline?: string;
   value: number | string;
@@ -165,7 +165,7 @@ export function LeaderboardRankings({
                     "inline-block text-xs font-extrabold px-2.5 py-1 rounded-lg border",
                     isCurrentUser
                       ? "bg-amber-500/20 text-amber-900 dark:text-amber-200 border-amber-500/40"
-                      : item.rank <= 3
+                      : typeof item.rank === "number" && item.rank <= 3
                       ? "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20"
                       : "bg-secondary text-secondary-foreground border-border/40"
                   )}
@@ -181,17 +181,25 @@ export function LeaderboardRankings({
         })}
       </div>
 
-      {/* Pagination Controls */}
-      {showPagination && totalPages > 1 && (
-        <div className="flex items-center justify-between pt-3 border-t border-border/50 text-xs">
-          <p className="text-muted-foreground">
-            Menampilkan <strong className="text-foreground">{startIndex + 1}</strong> -{" "}
-            <strong className="text-foreground">
-              {Math.min(startIndex + pageSize, rankings.length)}
-            </strong>{" "}
-            dari <strong className="text-foreground">{rankings.length}</strong> siswa
-          </p>
+      {/* Footer Info Siswa & Kontrol Paginasi */}
+      <div className="flex items-center justify-between pt-3 border-t border-border/50 text-xs">
+        <p className="text-muted-foreground">
+          {showPagination && totalPages > 1 ? (
+            <>
+              Menampilkan <strong className="text-foreground">{startIndex + 1}</strong> -{" "}
+              <strong className="text-foreground">
+                {Math.min(startIndex + pageSize, rankings.length)}
+              </strong>{" "}
+              dari <strong className="text-foreground">{rankings.length}</strong> siswa
+            </>
+          ) : (
+            <>
+              Menampilkan seluruh <strong className="text-foreground">{rankings.length}</strong> siswa
+            </>
+          )}
+        </p>
 
+        {showPagination && totalPages > 1 && (
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
@@ -215,8 +223,8 @@ export function LeaderboardRankings({
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

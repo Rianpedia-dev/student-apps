@@ -3,9 +3,10 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
 import { StatCard } from "@/components/shared/stat-card";
+import type { FolderCardVariant } from "@/components/shared/folder-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
 import { AchievementService } from "@/services/achievement.service";
-import { BestStudentSlider } from "@/components/features/achievements/best-student-slider";
+import { BestStudentCertificateCard } from "@/components/features/achievements/best-student-certificate-card";
 import { Badge } from "@/components/ui/badge";
 import {
   IslamicMosaicPattern,
@@ -25,152 +26,40 @@ export default async function GuruDashboardPage() {
 
   const activeJenjang = await getActiveJenjang(session);
   const isRestricted = activeJenjang !== "ALL";
-  const jenjangKelasFilter = isRestricted ? { jenjang: activeJenjang } : {};
 
   const dbUser = /^\d+$/.test(session.id)
     ? await prisma.user.findUnique({
         where: { id: BigInt(session.id) },
-        select: { status: true, kelas: true, guru_bidang: true },
+        select: { status: true, kelas: true },
       })
     : null;
 
   const currentStatus = dbUser?.status || session.status;
   const isWaliKelas = currentStatus === "4";
   const guruClass = isWaliKelas ? (dbUser?.kelas || session.kelas || "") : "";
-  const guruBidang = dbUser?.guru_bidang || "";
 
   // Cek apakah kelas wali cocok dengan jenjang aktif
   const guruClassJenjang = guruClass && /SMP|Kelas (7|8|9)/i.test(guruClass) ? "SMP" : "SD";
   const showGuruClass = !isRestricted || activeJenjang === guruClassJenjang;
 
-  const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const isNum = /^\d+$/.test(session.id);
-  const guruIdBigInt = isNum ? BigInt(session.id) : null;
-
-  let students: any[] = [];
-  let attendanceToday = 0;
-  let totalAbsenToday = 0;
-  let totalTugas = 0;
-  let pendingReview = 0;
-  let totalMateri = 0;
-  let totalJadwal = 0;
-  let totalKelasOnline = 0;
-  let announcements: any[] = [];
+  let announcements: Awaited<ReturnType<typeof prisma.pengumuman.findMany>> = [];
 
   try {
-    let allowedClassNames: string[] = [];
-    if (isRestricted) {
-      const allowedClasses = await prisma.kelas.findMany({
-        where: { jenjang: activeJenjang },
-        select: { nama_kelas: true },
-      });
-      allowedClassNames = allowedClasses.map((c) => c.nama_kelas);
-    }
-
-    const [
-      dbStudents,
-      dbAttHadir,
-      dbAttTotal,
-      dbTugas,
-      dbReview,
-      dbMateri,
-      dbJadwal,
-      dbOnline,
-      dbAnnounce,
-    ] = await Promise.all([
-      guruClass && showGuruClass
-        ? prisma.user.findMany({
-            where: { kelas: guruClass, status: "1" },
-            orderBy: { name: "asc" },
-          })
-        : [],
-      guruClass && showGuruClass
-        ? prisma.absen.count({
-            where: {
-              kelas: guruClass,
-              date: todayStr,
-              keterangan: "Hadir",
-            },
-          })
-        : 0,
-      guruClass && showGuruClass
-        ? prisma.absen.count({
-            where: { kelas: guruClass, date: todayStr },
-          })
-        : 0,
-      guruIdBigInt
-        ? prisma.tugas.count({
-            where: {
-              guru_id: guruIdBigInt,
-              status: "aktif",
-              kelas: isRestricted ? jenjangKelasFilter : undefined,
-            },
-          })
-        : 0,
-      guruIdBigInt
-        ? prisma.tugasSubmission.count({
-            where: {
-              tugas: {
-                guru_id: guruIdBigInt,
-                kelas: isRestricted ? jenjangKelasFilter : undefined,
-              },
-              status: "dikumpulkan",
-            },
-          })
-        : 0,
-      guruIdBigInt
-        ? prisma.pertemuan.count({
-            where: {
-              guru_id: guruIdBigInt,
-              kelas: isRestricted ? jenjangKelasFilter : undefined,
-            },
-          })
-        : 0,
-      guruIdBigInt
-        ? prisma.jadwalPelajaran.count({
-            where: {
-              guru_id: guruIdBigInt,
-              kelas: isRestricted ? jenjangKelasFilter : undefined,
-            },
-          })
-        : 0,
-      guruIdBigInt
-        ? prisma.kelasOnline
-            .count({
-              where: {
-                guru_id: guruIdBigInt,
-                ...(isRestricted ? { kelas: { in: allowedClassNames } } : {}),
-              },
-            })
-            .catch(() => 0)
-        : 0,
-      prisma.pengumuman.findMany({
-        where: {
-          AND: [{ OR: [{ jenjang: "ALL" }, { jenjang: null }, ...(isRestricted ? [{ jenjang: activeJenjang }] : [])] }],
-          OR: [
-            { target_role: "GURU" },
-            { target_role: "ALL" },
-            { target_role: null },
-            { from: "IT" },
-            { from: session.name },
-            ...(guruClass && showGuruClass ? [{ from: guruClass }, { target_kelas: guruClass }] : []),
-          ],
-        },
-        orderBy: { id: "desc" },
-        take: 20,
-      }),
-    ]);
-
-    students = dbStudents;
-    attendanceToday = dbAttHadir;
-    totalAbsenToday = dbAttTotal;
-    totalTugas = dbTugas;
-    pendingReview = dbReview;
-    totalMateri = dbMateri;
-    totalJadwal = dbJadwal;
-    totalKelasOnline = dbOnline;
-    announcements = dbAnnounce;
+    announcements = await prisma.pengumuman.findMany({
+      where: {
+        AND: [{ OR: [{ jenjang: "ALL" }, { jenjang: null }, ...(isRestricted ? [{ jenjang: activeJenjang }] : [])] }],
+        OR: [
+          { target_role: "GURU" },
+          { target_role: "ALL" },
+          { target_role: null },
+          { from: "IT" },
+          { from: session.name },
+          ...(guruClass && showGuruClass ? [{ from: guruClass }, { target_kelas: guruClass }] : []),
+        ],
+      },
+      orderBy: { id: "desc" },
+      take: 20,
+    });
   } catch (e) {
     console.error("Database query error in guru dashboard:", e);
   }
@@ -206,13 +95,28 @@ export default async function GuruDashboardPage() {
     };
   });
 
-  const todayFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const bestStudentCards = await AchievementService.getBestStudentCardSlides({
+    jenjang: activeJenjang,
+    userClass: guruClass,
+  });
 
-  const sliderJenjang: "SD" | "SMP" | "ALL" = activeJenjang;
-  const [bestStudentsSchool, bestStudentsPerRombel] = await Promise.all([
-    AchievementService.getBestStudentSchool(sliderJenjang === "ALL" ? "SD" : sliderJenjang, 8),
-    AchievementService.getBestStudentPerRombel(sliderJenjang === "ALL" ? "SD" : sliderJenjang),
-  ]);
+  const folderCards: Array<{ title: string; variant: FolderCardVariant; href: string }> = isWaliKelas
+    ? [
+        { title: "Kelas Saya", variant: "amber", href: "/guru/my-class" },
+        { title: "Presensi Hari Ini", variant: "blue", href: "/guru/attendance" },
+        { title: "Mata Pelajaran", variant: "emerald", href: "/guru/mapel" },
+        { title: "Chat Siswa", variant: "rose", href: "/guru/chat" },
+        { title: "Kedisiplinan Siswa", variant: "purple", href: "/guru/violations" },
+        { title: "Kelas Online", variant: "teal", href: "/guru/kelas-online" },
+      ]
+    : [
+        { title: "Presensi Hari Ini", variant: "amber", href: "/guru/attendance" },
+        { title: "Mata Pelajaran", variant: "blue", href: "/guru/mapel" },
+        { title: "Chat Siswa", variant: "emerald", href: "/guru/chat" },
+        { title: "Kedisiplinan Siswa", variant: "rose", href: "/guru/violations" },
+        { title: "Kalender Kegiatan", variant: "purple", href: "/guru/calendar" },
+        { title: "Kelas Online", variant: "teal", href: "/guru/kelas-online" },
+      ];
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -281,109 +185,37 @@ export default async function GuruDashboardPage() {
           - Tablet (md): 3 card dalam satu baris mendatar (2 baris x 3 card)
           - Mobile: 2 card per baris mendatar (3 baris mendatar, responsif) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5 md:gap-4">
-        {isWaliKelas ? (
-          <>
-            {/* Baris 1: Amber, Blue, Emerald */}
-            <StatCard
-              title="Kelas Saya"
-              variant="amber"
-              href="/guru/my-class"
-            />
-            <StatCard
-              title="Presensi Hari Ini"
-              variant="blue"
-              href="/guru/attendance"
-            />
-            <StatCard
-              title="Tugas Aktif"
-              variant="emerald"
-              href="/guru/tugas"
-            />
-
-            {/* Baris 2: Rose, Purple, Teal */}
-            <StatCard
-              title="Perlu Dinilai"
-              variant="rose"
-              href="/guru/tugas?status=need_grading"
-            />
-            <StatCard
-              title="Materi & Modul"
-              variant="purple"
-              href="/guru/mapel"
-            />
-            <StatCard
-              title="Jadwal Mengajar"
-              variant="teal"
-              href="/guru/calendar"
-            />
-          </>
-        ) : (
-          <>
-            {/* Baris 1: Amber, Blue, Emerald */}
-            <StatCard
-              title="Mata Pelajaran"
-              variant="amber"
-              href="/guru/mapel"
-            />
-            <StatCard
-              title="Jadwal Mengajar"
-              variant="blue"
-              href="/guru/calendar"
-            />
-            <StatCard
-              title="Tugas Aktif"
-              variant="emerald"
-              href="/guru/tugas"
-            />
-
-            {/* Baris 2: Rose, Purple, Teal */}
-            <StatCard
-              title="Perlu Dinilai"
-              variant="rose"
-              href="/guru/tugas?status=need_grading"
-            />
-            <StatCard
-              title="Materi & Modul"
-              variant="purple"
-              href="/guru/mapel"
-            />
-            <StatCard
-              title="Kelas Online"
-              variant="teal"
-              href="/guru/kelas-online"
-            />
-          </>
-        )}
+        {folderCards.map((card) => (
+          <StatCard
+            key={`${card.href}-${card.title}`}
+            title={card.title}
+            variant={card.variant}
+            href={card.href}
+          />
+        ))}
       </div>
 
-      {/* Slider 1: Best Student Sekolah */}
-      <BestStudentSlider
-        title={`Best Student Sekolah (${sliderJenjang === "ALL" ? "SD" : sliderJenjang})`}
-        subtitle="Siswa peraih akumulasi poin prestasi tertinggi tingkat sekolah"
-        items={bestStudentsSchool}
-        variant="school"
-        badgeText="Top Prestasi Sekolah"
-      />
-
-      {/* Slider 2: Best Student Semua Rombel */}
-      <BestStudentSlider
-        title={`Best Student Semua Rombel (${sliderJenjang === "ALL" ? "SD" : sliderJenjang})`}
-        subtitle="Jawara peraih poin prestasi tertinggi dari masing-masing kelas binaan"
-        items={bestStudentsPerRombel}
-        variant="rombel"
-        badgeText="Jawara Rombel"
-      />
-
-      {/* Timeline Pengumuman */}
-      <div className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Timeline Pengumuman</h2>
+      {/* Grid: Timeline Pengumuman & Card Best Student Bersanding */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Kolom Timeline Pengumuman */}
+        <div className="lg:col-span-7 xl:col-span-7 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Timeline Pengumuman</h2>
+          </div>
+          <AnnouncementTimeline
+            announcements={formattedAnnouncements}
+            userRole="guru"
+            canManage={false}
+          />
         </div>
-        <AnnouncementTimeline
-          announcements={formattedAnnouncements}
-          userRole="guru"
-          canManage={false}
-        />
+
+        {/* Kolom Card Best Student (Paper Curl Carousel Landscape) */}
+        <div className="lg:col-span-5 xl:col-span-5 space-y-3.5 lg:sticky lg:top-6">
+          <BestStudentCertificateCard
+            items={bestStudentCards}
+            userRole="guru"
+          />
+        </div>
       </div>
     </div>
   );

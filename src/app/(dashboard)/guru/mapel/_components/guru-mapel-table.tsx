@@ -8,6 +8,7 @@ import {
   BookOpen,
   ListTodo,
   Search,
+  ClipboardList,
 } from "lucide-react";
 import {
   Table,
@@ -45,6 +46,7 @@ export function GuruMapelTable({ schedules }: GuruMapelTableProps) {
   const [search, setSearch] = useState("");
   const [selectedHari, setSelectedHari] = useState<string>("all");
   const [selectedJenjang, setSelectedJenjang] = useState<string>("all");
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   // Daftar hari unik yang ada di jadwal
   const availableDays = useMemo(() => {
@@ -264,7 +266,9 @@ export function GuruMapelTable({ schedules }: GuruMapelTableProps) {
                       {/* Aksi Cepat */}
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <Link href={`/guru/mapel/${sch.mapelId}?kelasId=${sch.kelasId}`}>
+                          <Link
+                            href={`/guru/mapel/${sch.mapelId}?kelasId=${sch.kelasId}&tab=materi`}
+                          >
                             <Button
                               variant="default"
                               size="sm"
@@ -277,7 +281,7 @@ export function GuruMapelTable({ schedules }: GuruMapelTableProps) {
                           </Link>
 
                           <Link
-                            href={`/guru/tugas?mapelId=${sch.mapelId}&kelasId=${sch.kelasId}`}
+                            href={`/guru/mapel/${sch.mapelId}?kelasId=${sch.kelasId}&tab=tugas`}
                           >
                             <Button
                               variant="outline"

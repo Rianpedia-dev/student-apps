@@ -46,6 +46,16 @@ export interface StudentLeaderboardEntry {
     harapan: number;
   };
   highlightPrestasi: string;
+  certificateUrl?: string | null;
+}
+
+export interface StudentBasicInfo {
+  id: string;
+  name: string;
+  kelas: string;
+  jenjang?: string;
+  image: string | null;
+  gender: string | null;
 }
 
 export interface BestStudentSliderItem {
@@ -61,6 +71,25 @@ export interface BestStudentSliderItem {
   topTingkat: string;
   topPeringkat: string;
   rank?: number;
+}
+
+export interface BestStudentCardItem {
+  id: string;
+  categoryType: "TOP_JENJANG" | "TOP_KELAS_SENDIRI" | "TOP_KELAS_LAIN";
+  categoryLabel: string;
+  categoryBadge: string;
+  categorySub: string;
+  studentName: string;
+  studentClass: string;
+  studentImage: string | null;
+  studentGender: string | null;
+  certificateImage: string | null;
+  totalPoints: number;
+  highlightPrestasi: string;
+  tingkat: string;
+  peringkat: string;
+  rank?: number;
+  waliKelas?: string | null;
 }
 
 export interface TargetAchievementContext {
@@ -241,6 +270,7 @@ export class AchievementService {
     kelas?: string;
   }): Promise<{
     entries: StudentLeaderboardEntry[];
+    allStudents: StudentBasicInfo[];
     podiumRankings: {
       userId: string;
       userName: string;
@@ -252,7 +282,7 @@ export class AchievementService {
     }[];
     rankings: {
       userId: string;
-      rank: number;
+      rank: number | string;
       userName: string;
       byline?: string;
       value: number | string;
@@ -269,13 +299,44 @@ export class AchievementService {
       whereClause.kelas = params.kelas;
     }
 
-    const records = await prisma.prestasi.findMany({
-      where: whereClause,
-      orderBy: { created_at: "desc" },
-    });
+    const studentUserWhere: any = { status: "1" };
+    if (params?.jenjang && params.jenjang !== "ALL") {
+      studentUserWhere.jenjang = params.jenjang;
+    }
+    if (params?.kelas && params.kelas !== "ALL" && params.kelas !== "all-school") {
+      studentUserWhere.kelas = params.kelas;
+    }
+
+    const [records, allStudentsDb] = await Promise.all([
+      prisma.prestasi.findMany({
+        where: whereClause,
+        orderBy: { created_at: "desc" },
+      }),
+      prisma.user.findMany({
+        where: studentUserWhere,
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          gender: true,
+          kelas: true,
+          jenjang: true,
+        },
+        orderBy: [{ kelas: "asc" }, { name: "asc" }],
+      }),
+    ]);
+
+    const allStudents: StudentBasicInfo[] = allStudentsDb.map((s) => ({
+      id: s.id.toString(),
+      name: s.name,
+      kelas: s.kelas || "",
+      jenjang: s.jenjang || "SD",
+      image: s.image,
+      gender: s.gender,
+    }));
 
     if (records.length === 0) {
-      return { entries: [], podiumRankings: [], rankings: [] };
+      return { entries: [], podiumRankings: [], rankings: [], allStudents };
     }
 
     // Kelompokkan per siswa (id_user atau nama)
@@ -325,21 +386,30 @@ export class AchievementService {
 
     const names = Array.from(grouped.values()).map((g) => g.nama);
 
-    const users = await prisma.user.findMany({
-      where: {
-        OR: [
-          ...(userIds.length > 0 ? [{ id: { in: userIds } }] : []),
-          ...(names.length > 0 ? [{ name: { in: names } }] : []),
-        ],
-      },
-      select: { id: true, name: true, image: true, gender: true, kelas: true, status: true },
-    });
-
-    const userById = new Map<string, (typeof users)[0]>();
-    const userByName = new Map<string, (typeof users)[0]>();
-    for (const u of users) {
+    const userById = new Map<string, { id: bigint; name: string; image: string | null; gender: string | null; kelas: string | null }>();
+    const userByName = new Map<string, { id: bigint; name: string; image: string | null; gender: string | null; kelas: string | null }>();
+    for (const u of allStudentsDb) {
       userById.set(u.id.toString(), u);
       userByName.set(u.name.trim().toLowerCase(), u);
+    }
+
+    const missingUserIds = userIds.filter((id) => !userById.has(id.toString()));
+    const missingNames = names.filter((n) => !userByName.has(n.trim().toLowerCase()));
+
+    if (missingUserIds.length > 0 || missingNames.length > 0) {
+      const extraUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            ...(missingUserIds.length > 0 ? [{ id: { in: missingUserIds } }] : []),
+            ...(missingNames.length > 0 ? [{ name: { in: missingNames } }] : []),
+          ],
+        },
+        select: { id: true, name: true, image: true, gender: true, kelas: true },
+      });
+      for (const u of extraUsers) {
+        userById.set(u.id.toString(), u);
+        userByName.set(u.name.trim().toLowerCase(), u);
+      }
     }
 
     // Hitung rincian medali dan susun list terurut
@@ -379,6 +449,27 @@ export class AchievementService {
         return pCurrent > pPrev ? current : prev;
       }, item.achievements[0]);
 
+      // Cari sertifikat yang diupload saat create prestasi siswa
+      const certAch = item.achievements.find(
+        (a) =>
+          a.fotoanak &&
+          typeof a.fotoanak === "string" &&
+          a.fotoanak.trim() !== "" &&
+          !a.fotoanak.includes("trophy") &&
+          !a.fotoanak.includes("best-student") &&
+          !a.fotoanak.includes("best-point")
+      );
+      const certificateUrl =
+        certAch?.fotoanak ||
+        (topAch?.fotoanak &&
+        typeof topAch.fotoanak === "string" &&
+        topAch.fotoanak.trim() !== "" &&
+        !topAch.fotoanak.includes("trophy") &&
+        !topAch.fotoanak.includes("best-student") &&
+        !topAch.fotoanak.includes("best-point")
+          ? topAch.fotoanak
+          : null);
+
       entries.push({
         userId: student?.id ? student.id.toString() : item.userId,
         rank: 0, // diisi setelah sort
@@ -390,11 +481,15 @@ export class AchievementService {
         totalAchievements: item.achievements.length,
         medals,
         highlightPrestasi: topAch?.prestasi || "",
+        certificateUrl: certificateUrl || null,
       });
     }
 
+    // Pastikan hanya siswa yang memiliki poin (> 0 poin) yang masuk ke daftar entries leaderboard
+    const validEntries = entries.filter((e) => e.totalPoints > 0);
+
     // Sort: Total Points tertinggi, lalu jumlah Internasional, Nasional, dll.
-    entries.sort((a, b) => {
+    validEntries.sort((a, b) => {
       if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
       if (b.medals.internasional !== a.medals.internasional)
         return b.medals.internasional - a.medals.internasional;
@@ -403,13 +498,13 @@ export class AchievementService {
       return b.totalAchievements - a.totalAchievements;
     });
 
-    // Tetapkan rank angka
-    entries.forEach((e, idx) => {
+    // Tetapkan rank angka berurutan 1..N
+    validEntries.forEach((e, idx) => {
       e.rank = idx + 1;
     });
 
     // Format untuk podium top 3
-    const podiumRankings = entries.slice(0, 3).map((e) => ({
+    const podiumRankings = validEntries.slice(0, 3).map((e) => ({
       userId: e.userId,
       userName: e.userName,
       rank: e.rank,
@@ -420,7 +515,7 @@ export class AchievementService {
     }));
 
     // Format untuk daftar rankings
-    const rankings = entries.map((e) => ({
+    const rankings = validEntries.map((e) => ({
       userId: e.userId,
       rank: e.rank,
       userName: e.userName,
@@ -431,7 +526,7 @@ export class AchievementService {
       displayed: true,
     }));
 
-    return { entries, podiumRankings, rankings };
+    return { entries: validEntries, podiumRankings, rankings, allStudents };
   }
 
   /**
@@ -497,6 +592,148 @@ export class AchievementService {
     }
 
     return result;
+  }
+
+  /**
+   * Card Best Student:
+   * Menampilkan HANYA Top 1 (Peringkat 1 / Jawara) dari masing-masing kelas di jenjang SD / SMP.
+   * Setiap kelas diwakili HANYA oleh 1 siswa peraih poin tertinggi (Juara 1 / Best Student kelas).
+   * Carousel berotasi otomatis antar Top 1 tiap kelas dengan animasi Paper Curl 3D.
+   */
+  static async getBestStudentCardSlides(params: {
+    jenjang: "SD" | "SMP" | "ALL";
+    userClass?: string | null;
+  }): Promise<BestStudentCardItem[]> {
+    // Ambil data Wali Kelas dari tbl_user (status 4 / 2) & tbl_kelas (jika terisi)
+    const [kelasList, waliUsers] = await Promise.all([
+      prisma.kelas.findMany({
+        where: { wali_kelas: { not: null } },
+        select: { nama_kelas: true, wali_kelas: true },
+      }),
+      prisma.user.findMany({
+        where: {
+          status: { in: ["2", "4"] },
+          kelas: { not: null },
+        },
+        select: { name: true, kelas: true, status: true },
+        orderBy: { status: "desc" },
+      }),
+    ]);
+
+    const resolveWaliKelas = (className?: string | null): string | null => {
+      if (!className) return null;
+      const userMatch = waliUsers.find(
+        (u) => u.kelas && isSameRombel(u.kelas, className)
+      );
+      if (userMatch) return userMatch.name;
+
+      const kelasMatch = kelasList.find(
+        (k) => k.nama_kelas && isSameRombel(k.nama_kelas, className)
+      );
+      if (kelasMatch && kelasMatch.wali_kelas) return kelasMatch.wali_kelas;
+
+      return null;
+    };
+
+    const buildSlide = (
+      entry: StudentLeaderboardEntry,
+      categoryType: "TOP_JENJANG" | "TOP_KELAS_SENDIRI" | "TOP_KELAS_LAIN" = "TOP_KELAS_LAIN"
+    ): BestStudentCardItem => {
+      const cleanClass = entry.kelas
+        ? entry.kelas.trim().replace(/^(kelas\s*)+/i, "")
+        : "";
+      return {
+        id: `top-class-${entry.userId}-${cleanClass.replace(/\s+/g, "_")}`,
+        categoryType,
+        categoryLabel: cleanClass ? `Best Student di Kelas ${cleanClass}` : "Best Student",
+        categoryBadge: `★ BEST STUDENT ★`,
+        categorySub: cleanClass ? `Best Student di Kelas ${cleanClass}` : "Best Student",
+        studentName: entry.userName,
+        studentClass: entry.kelas,
+        studentImage: entry.avatarUrl,
+        studentGender: entry.gender,
+        certificateImage: entry.certificateUrl || null,
+        totalPoints: entry.totalPoints,
+        highlightPrestasi:
+          entry.highlightPrestasi || `Prestasi Terbaik ${cleanClass || "Al-Azhar"}`,
+        tingkat:
+          entry.medals.internasional > 0
+            ? "Internasional"
+            : entry.medals.nasional > 0
+            ? "Nasional"
+            : "Daerah/Kota",
+        peringkat: entry.medals.juara1 > 0 ? "Juara 1" : "Juara",
+        rank: 1,
+        waliKelas: resolveWaliKelas(entry.kelas),
+      };
+    };
+
+    // Helper untuk mengambil HANYA 1 siswa terbaik (Top 1) dari masing-masing kelas
+    const extractTop1PerClass = (
+      leaderboardEntries: StudentLeaderboardEntry[],
+      priorityClass?: string | null,
+      maxLimit: number = 8
+    ): BestStudentCardItem[] => {
+      const topPerClass: BestStudentCardItem[] = [];
+      const seenClasses: string[] = [];
+
+      // 1. Jika ada priorityClass (kelas siswa / walikelas aktif), utamakan Top 1 kelasnya di urutan pertama
+      if (priorityClass) {
+        const myClassEntries = leaderboardEntries.filter(
+          (e) => e.kelas && isSameRombel(e.kelas, priorityClass)
+        );
+        if (myClassEntries.length > 0) {
+          const topMyClass = myClassEntries[0];
+          topPerClass.push(buildSlide(topMyClass, "TOP_KELAS_SENDIRI"));
+          seenClasses.push(topMyClass.kelas);
+        }
+      }
+
+      // 2. Ambil Top 1 dari setiap kelas lainnya secara terurut berdasarkan perolehan poin tertinggi
+      for (const entry of leaderboardEntries) {
+        if (!entry.kelas) continue;
+        const alreadyIncluded = seenClasses.some((c) => isSameRombel(c, entry.kelas));
+        if (alreadyIncluded) continue;
+
+        topPerClass.push(buildSlide(entry, "TOP_KELAS_LAIN"));
+        seenClasses.push(entry.kelas);
+
+        if (topPerClass.length >= maxLimit) break;
+      }
+
+      return topPerClass;
+    };
+
+    // Deteksi jenjang dari userClass atau params.jenjang
+    const isSMPClass =
+      params.userClass && /smp|kelas\s*(7|8|9)/i.test(params.userClass);
+    const isSDClass =
+      params.userClass && /sd|kelas\s*(1|2|3|4|5|6)/i.test(params.userClass);
+
+    if (params.jenjang === "SMP" || (params.jenjang === "ALL" && isSMPClass)) {
+      const { entries } = await this.getLeaderboard({ jenjang: "SMP" });
+      return extractTop1PerClass(entries, params.userClass, 8);
+    } else if (params.jenjang === "SD" || (params.jenjang === "ALL" && isSDClass)) {
+      const { entries } = await this.getLeaderboard({ jenjang: "SD" });
+      return extractTop1PerClass(entries, params.userClass, 8);
+    } else {
+      // params.jenjang === "ALL" tanpa kelas spesifik: Ambil 4 Top 1 SD dan 4 Top 1 SMP
+      const [sdLeaderboard, smpLeaderboard] = await Promise.all([
+        this.getLeaderboard({ jenjang: "SD" }),
+        this.getLeaderboard({ jenjang: "SMP" }),
+      ]);
+
+      const sdTop = extractTop1PerClass(sdLeaderboard.entries, null, 4);
+      const smpTop = extractTop1PerClass(smpLeaderboard.entries, null, 4);
+
+      const combined: BestStudentCardItem[] = [];
+      const maxLen = Math.max(sdTop.length, smpTop.length);
+      for (let i = 0; i < maxLen; i++) {
+        if (sdTop[i]) combined.push(sdTop[i]);
+        if (smpTop[i]) combined.push(smpTop[i]);
+      }
+      return combined;
+    }
   }
 }
 

@@ -4,7 +4,7 @@ import { StatCard } from "@/components/shared/stat-card";
 import { AnnouncementTimeline } from "@/components/shared/announcement-timeline";
 import { DashboardService } from "@/services/dashboard.service";
 import { AchievementService } from "@/services/achievement.service";
-import { BestStudentSlider } from "@/components/features/achievements/best-student-slider";
+import { BestStudentCertificateCard } from "@/components/features/achievements/best-student-certificate-card";
 import {
   IslamicMosaicPattern,
   IslamicStarGeometricPattern,
@@ -35,16 +35,16 @@ export default async function SiswaDashboardPage() {
   const studentName = studentInfo.name;
 
   const studentJenjang: "SD" | "SMP" =
-    (session.jenjang && session.jenjang !== "ALL")
+    session.jenjang && session.jenjang !== "ALL"
       ? (session.jenjang as "SD" | "SMP")
       : /smp|kelas\s*(7|8|9)/i.test(session.kelas || "")
       ? "SMP"
       : "SD";
 
-  const [bestStudentsSchool, bestStudentsPerRombel] = await Promise.all([
-    AchievementService.getBestStudentSchool(studentJenjang, 8),
-    AchievementService.getBestStudentPerRombel(studentJenjang),
-  ]);
+  const bestStudentCards = await AchievementService.getBestStudentCardSlides({
+    jenjang: studentJenjang,
+    userClass: session.kelas,
+  });
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
@@ -131,7 +131,7 @@ export default async function SiswaDashboardPage() {
           aspectRatioClassName="aspect-[1.18/1]"
         />
 
-        {/* Baris 2: Purple, Teal, Gold */}
+        {/* Baris 2: Purple, Teal */}
         <StatCard
           title="Pelanggaran"
           variant="purple"
@@ -144,42 +144,29 @@ export default async function SiswaDashboardPage() {
           href="/siswa/kelas-online"
           aspectRatioClassName="aspect-[1.18/1]"
         />
-        <StatCard
-          title="Prestasi"
-          variant="amber"
-          href="/siswa/achievements"
-          aspectRatioClassName="aspect-[1.18/1]"
-        />
       </div>
 
-      {/* Slider 1: Best Student Sekolah */}
-      <BestStudentSlider
-        title={`Best Student Sekolah (${studentJenjang})`}
-        subtitle="Siswa peraih akumulasi poin prestasi tertinggi tingkat sekolah"
-        items={bestStudentsSchool}
-        variant="school"
-        badgeText="Top Prestasi Sekolah"
-      />
-
-      {/* Slider 2: Best Student Semua Rombel */}
-      <BestStudentSlider
-        title={`Best Student Semua Rombel (${studentJenjang})`}
-        subtitle="Jawara peraih poin prestasi tertinggi dari masing-masing kelas binaan"
-        items={bestStudentsPerRombel}
-        variant="rombel"
-        badgeText="Jawara Rombel"
-      />
-
-      {/* Timeline Pengumuman */}
-      <div className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Pengumuman Sekolah & Kelas</h2>
+      {/* Grid: Pengumuman & Card Best Student Bersanding */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Kolom Pengumuman Sekolah & Kelas */}
+        <div className="lg:col-span-7 xl:col-span-7 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Pengumuman Sekolah & Kelas</h2>
+          </div>
+          <AnnouncementTimeline
+            announcements={formattedAnnouncements}
+            userRole="siswa"
+            canManage={false}
+          />
         </div>
-        <AnnouncementTimeline
-          announcements={formattedAnnouncements}
-          userRole="siswa"
-          canManage={false}
-        />
+
+        {/* Kolom Card Best Student (Paper Curl Carousel Landscape) */}
+        <div className="lg:col-span-5 xl:col-span-5 space-y-3.5 lg:sticky lg:top-6">
+          <BestStudentCertificateCard
+            items={bestStudentCards}
+            userRole="siswa"
+          />
+        </div>
       </div>
     </div>
   );

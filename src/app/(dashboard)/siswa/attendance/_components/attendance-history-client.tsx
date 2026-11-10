@@ -230,7 +230,7 @@ export function AttendanceHistoryClient({
           )}
         >
           <Clock className="h-4 w-4 shrink-0" />
-          <span>Riwayat Sesi Terkini</span>
+          <span>Riwayat Presensi</span>
         </Button>
       </div>
 
@@ -395,18 +395,16 @@ export function AttendanceHistoryClient({
 
       {/* Tab 2: Monthly Calendar */}
       {activeTab === "calendar" && (
-        <div className="space-y-4 animate-in fade-in-50 duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
-            {/* Left 2 Cols: Interactive Calendar */}
-            <div className="md:col-span-2">
-              <LiquidGlassCard
-                borderRadius="24px"
-                blurIntensity="xl"
-                shadowIntensity="sm"
-                glowIntensity="sm"
-                draggable={false}
-                className="p-0 border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 shadow-lg overflow-hidden"
-              >
+        <div className="space-y-5 animate-in fade-in-50 duration-200">
+          {/* Top: Interactive Calendar (Full Width) */}
+          <LiquidGlassCard
+            borderRadius="24px"
+            blurIntensity="xl"
+            shadowIntensity="sm"
+            glowIntensity="sm"
+            draggable={false}
+            className="w-full p-0 border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 shadow-lg overflow-hidden"
+          >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 p-4 sm:p-5 pb-3">
                   <div>
                     <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
@@ -462,10 +460,10 @@ export function AttendanceHistoryClient({
                   </div>
 
                   {/* Day Grid */}
-                  <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2">
+                  <div className="grid grid-cols-7 gap-1.5 sm:gap-2 md:gap-2.5">
                     {calendarDays.map((d, index) => {
                       if (d === null) {
-                        return <div key={`empty-${index}`} className="min-h-[50px] sm:min-h-[64px] md:min-h-[72px]" />;
+                        return <div key={`empty-${index}`} className="min-h-[52px] sm:min-h-[66px] md:min-h-[76px]" />;
                       }
 
                       const dStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
@@ -482,7 +480,7 @@ export function AttendanceHistoryClient({
                           type="button"
                           onClick={() => setSelectedDate(dStr)}
                           className={cn(
-                            "min-h-[50px] sm:min-h-[64px] md:min-h-[72px] border rounded-xl p-1 sm:p-1.5 flex flex-col justify-between text-left transition-all duration-200 cursor-pointer focus:outline-none",
+                            "min-h-[52px] sm:min-h-[66px] md:min-h-[76px] border rounded-xl p-1.5 sm:p-2 flex flex-col justify-between text-left transition-all duration-200 cursor-pointer focus:outline-none",
                             isSelected
                               ? "ring-2 ring-emerald-500 bg-emerald-500/10 border-emerald-500/60 shadow-sm"
                               : hasEvents
@@ -511,7 +509,7 @@ export function AttendanceHistoryClient({
                           </div>
 
                           <div className="flex flex-wrap gap-0.5 sm:gap-1 overflow-hidden mt-0.5 sm:mt-1">
-                            {dayEvents.slice(0, 3).map((e) => (
+                            {dayEvents.slice(0, 4).map((e) => (
                               <span
                                 key={e.id}
                                 title={e.title}
@@ -519,9 +517,9 @@ export function AttendanceHistoryClient({
                                 style={{ backgroundColor: e.backgroundColor }}
                               />
                             ))}
-                            {dayEvents.length > 3 && (
+                            {dayEvents.length > 4 && (
                               <span className="text-[8px] sm:text-[9px] text-muted-foreground font-semibold">
-                                +{dayEvents.length - 3}
+                                +{dayEvents.length - 4}
                               </span>
                             )}
                           </div>
@@ -547,58 +545,52 @@ export function AttendanceHistoryClient({
                   </div>
                 </div>
               </LiquidGlassCard>
-            </div>
 
-            {/* Right Col: Selected Date Detail Panel */}
-            <div className="space-y-3 md:col-span-1">
-              <Card className="border border-border/80 shadow-xs h-full flex flex-col">
-                <CardHeader className="p-4 border-b border-border/60 bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                        Detail Presensi Harian
-                      </span>
-                      <CardTitle className="text-sm font-bold text-foreground">
-                        {formatDateIndo(selectedDate)}
-                      </CardTitle>
-                    </div>
-                    <Badge variant="outline" className="text-xs font-semibold">
-                      {selectedDateEvents.length} Sesi KBM
-                    </Badge>
-                  </div>
-                </CardHeader>
+          {/* Bottom: Selected Date Detail Panel (Full Width) */}
+          <Card className="w-full border border-border/80 shadow-xs rounded-2xl overflow-hidden">
+            <CardHeader className="p-4 sm:p-5 border-b border-border/60 bg-muted/30">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                    Detail Presensi Harian
+                  </span>
+                  <CardTitle className="text-base sm:text-lg font-bold text-foreground">
+                    {formatDateIndo(selectedDate)}
+                  </CardTitle>
+                </div>
+                <Badge variant="outline" className="text-xs font-semibold self-start sm:self-auto px-2.5 py-1">
+                  {selectedDateEvents.length} Sesi KBM
+                </Badge>
+              </div>
+            </CardHeader>
 
-                <CardContent className="p-4 flex-1 overflow-y-auto max-h-[460px] space-y-3">
-                  {selectedDateEvents.length === 0 ? (
-                    <div className="py-12 text-center text-xs text-muted-foreground space-y-2">
-                      <Calendar className="h-8 w-8 mx-auto text-muted-foreground/50" />
-                      <p className="font-semibold text-foreground">Tidak ada catatan presensi</p>
-                      <p className="max-w-[220px] mx-auto">
-                        Tidak ada sesi KBM yang dipresensi pada tanggal {formatDateIndo(selectedDate)}.
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/75 pt-2">
-                        Pilih tanggal di kalender yang memiliki titik warna untuk melihat rincian jam pelajaran.
-                      </p>
-                    </div>
-                  ) : (
-                    selectedDateEvents.map((ev) => (
-                      <div
-                        key={ev.id}
-                        className="p-3 rounded-xl border border-border/70 bg-card space-y-2 hover:border-emerald-500/40 transition-colors shadow-2xs"
-                      >
+            <CardContent className="p-4 sm:p-5">
+              {selectedDateEvents.length === 0 ? (
+                <div className="py-8 sm:py-10 text-center text-xs text-muted-foreground space-y-2">
+                  <Calendar className="h-8 w-8 mx-auto text-muted-foreground/50" />
+                  <p className="font-semibold text-foreground text-sm">Tidak ada catatan presensi</p>
+                  <p className="max-w-md mx-auto text-xs">
+                    Tidak ada sesi KBM yang dipresensi pada tanggal {formatDateIndo(selectedDate)}.
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/75 pt-1">
+                    Pilih tanggal di kalender yang memiliki titik warna untuk melihat rincian jam pelajaran.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {selectedDateEvents.map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="p-3.5 sm:p-4 rounded-xl border border-border/70 bg-card/70 hover:bg-card hover:border-emerald-500/40 transition-all shadow-2xs flex flex-col justify-between gap-3"
+                    >
+                      <div className="space-y-1.5">
                         <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <span className="text-[10px] font-mono font-bold text-muted-foreground">
-                              {ev.mapelKode}
-                            </span>
-                            <h4 className="text-xs font-bold text-foreground">
-                              {ev.mapelNama}
-                            </h4>
-                          </div>
-
+                          <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                            {ev.mapelKode || "MAPEL"}
+                          </span>
                           <Badge
                             className={cn(
-                              "text-[10px] font-semibold py-0.5",
+                              "text-[10px] font-semibold py-0.5 px-2.5 rounded-full shadow-2xs",
                               ev.keterangan === "Hadir" && "bg-emerald-600 text-white",
                               ev.keterangan === "Sakit" && "bg-sky-600 text-white",
                               ev.keterangan === "Izin" && "bg-amber-600 text-white",
@@ -608,34 +600,39 @@ export function AttendanceHistoryClient({
                             {ev.keterangan}
                           </Badge>
                         </div>
+                        <h4 className="text-sm font-bold text-foreground line-clamp-2">
+                          {ev.mapelNama}
+                        </h4>
+                      </div>
 
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                      <div className="space-y-2 pt-2 border-t border-border/50 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
                           {ev.jamKe && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <Clock className="h-3.5 w-3.5 text-muted-foreground/80 shrink-0" />
                               Jam Ke: {ev.jamKe}
                             </span>
                           )}
                           {ev.guruNama && (
-                            <span className="flex items-center gap-1">
-                              <User className="h-3 w-3 text-muted-foreground" />
+                            <span className="flex items-center gap-1.5 font-medium truncate max-w-[180px]">
+                              <User className="h-3.5 w-3.5 text-muted-foreground/80 shrink-0" />
                               {ev.guruNama}
                             </span>
                           )}
                         </div>
 
                         {ev.catatan && (
-                          <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-400">
+                          <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300">
                             <strong>Catatan:</strong> {ev.catatan}
                           </div>
                         )}
                       </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 

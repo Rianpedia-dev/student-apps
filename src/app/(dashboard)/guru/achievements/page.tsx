@@ -61,7 +61,7 @@ export default async function GuruAchievementsPage() {
   }));
 
   // Ambil prestasi & leaderboard via AchievementService
-  const [achievements, { entries: leaderboardEntries }] = await Promise.all([
+  const [achievements, { entries: leaderboardEntries, allStudents }] = await Promise.all([
     AchievementService.getAchievements({
       jenjang: isRestricted ? activeJenjang : undefined,
     }),
@@ -72,15 +72,6 @@ export default async function GuruAchievementsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Page */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Prestasi & Kejuaraan Siswa</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          {isWaliKelas
-            ? `Kelola catatan juara siswa binaan (${guruClass}) dengan sistem poin skala 1–16.`
-            : "Pantau rekam jejak juara dan papan peringkat siswa berprestasi Al-Azhar."}
-        </p>
-      </div>
 
       {/* Interactive Client View: Tabs, Gallery, Leaderboard & Dialogs */}
       <AchievementsClientView
@@ -91,6 +82,7 @@ export default async function GuruAchievementsPage() {
         userRole={session.role}
         userStatus={session.status}
         leaderboardEntries={leaderboardEntries}
+        allStudents={allStudents}
         rombelOptions={rombelOptions}
         currentUserId={session.id}
         jenjangLabel={activeJenjang === "ALL" ? "SD / SMP" : activeJenjang}

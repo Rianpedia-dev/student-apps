@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { SystemSettingService } from "./system-setting.service";
 import bcrypt from "bcryptjs";
+import { calculateAchievementPoints } from "@/lib/achievement-points";
 
 export const DEMO_EMAILS = {
   GURU_SD: "guru.sd@gmail.com",
@@ -48,7 +49,6 @@ export class DemoDataService {
     const studentIds = demoUsers
       .filter((u) => u.email.includes("siswa"))
       .map((u) => u.id);
-    const studentIdStrs = studentIds.map((id) => id.toString());
 
     if (userIds.length === 0) {
       return {
@@ -99,9 +99,7 @@ export class DemoDataService {
           ],
         },
       }),
-      prisma.prestasi.count({
-        where: { id_user: { in: studentIdStrs } },
-      }),
+      prisma.prestasi.count(),
       prisma.chatMessage.count({
         where: { sender_id: { in: userIds } },
       }),
@@ -125,10 +123,12 @@ export class DemoDataService {
    * Menyiapkan & mengisikan seluruh data contoh (sample data) ke akun demo:
    * 1. Guru SD, Walas SD, Guru SMP, Walas SMP, Guru Lintas
    * 2. Siswa SD & Siswa SMP
-   * Mencakup: Jadwal KBM, Pertemuan/Materi, Tugas Interaktif, Jawaban & Nilai, Presensi 14 Hari, Prestasi, dan Chat.
+   * Mencakup: Jadwal KBM Multi-Kelas, Modul/Pertemuan KBM, Tugas Interaktif & Berkas,
+   * Submisi & Nilai Beragam Kondisi, Presensi Lengkap 14 Hari, Prestasi di Semua Kelas,
+   * Catatan Kedisiplinan/Pelanggaran, Pengumuman Resmi, dan Chat Realistis.
    */
   static async seedDemoDashboardData(): Promise<{ success: boolean; message: string; count: any }> {
-    console.log("🚀 [DemoDataService] Memulai pengisian data contoh akun demo...");
+    console.log("🚀 [DemoDataService] Memulai pengisian data contoh akun demo lengkap...");
 
     // 1. Bersihkan data demo lama terlebih dahulu untuk mencegah duplikasi (idempotent)
     await this.clearDemoDashboardDataInternal();
@@ -174,7 +174,7 @@ export class DemoDataService {
         jenjang: "SMP",
         gender: "L",
         nip: "198604182012011002",
-        guru_bidang: "Matematika SMP",
+        guru_bidang: "Matematika & IPA SMP",
         address: "Jl. Demang Lebar Daun, Palembang",
         notes: "Akun Demo Guru Mapel SMP",
       },
@@ -201,7 +201,7 @@ export class DemoDataService {
         jenjang: "ALL",
         gender: "L",
         nip: "198603202011011002",
-        guru_bidang: "Bahasa Arab (SD & SMP)",
+        guru_bidang: "Bahasa Arab & Al-Qur'an (SD & SMP)",
         address: "Jl. Sudirman, Palembang",
         notes: "Akun Demo Guru Lintas Jenjang (SD & SMP)",
       },
@@ -270,17 +270,39 @@ export class DemoDataService {
     const siswaSD = usersMap.get(DEMO_EMAILS.SISWA_SD)!;
     const siswaSMP = usersMap.get(DEMO_EMAILS.SISWA_SMP)!;
 
-    // 3. Ambil Kelas Target SD & SMP
-    const kelasSD = await prisma.kelas.findFirst({
-      where: { nama_kelas: "Kelas 4 - Mehmed Al Fatih" },
-    });
-    const kelasSMP = await prisma.kelas.findFirst({
-      where: { nama_kelas: "Kelas 7 - Khalid bin Walid" },
-    });
+    // 3. Ambil Kelas-Kelas Kunci SD & SMP
+    const [
+      kelasSDMehmed,
+      kelasSDSayfuddin,
+      kelasSDSholahuddin,
+      kelasSDIbnuBatutah,
+      kelasSDAlBukhari,
+      kelasSMPKhalid,
+      kelasSMPHamzah,
+      kelasSMPZaid,
+      kelasSMPSyafii,
+    ] = await Promise.all([
+      prisma.kelas.findFirst({ where: { nama_kelas: "Kelas 4 - Mehmed Al Fatih" } }),
+      prisma.kelas.findFirst({ where: { nama_kelas: "Kelas 4 - Sayfuddin Al Quthuz" } }),
+      prisma.kelas.findFirst({ where: { nama_kelas: "Kelas 4 - Sholahuddin Al Ayubi" } }),
+      prisma.kelas.findFirst({ where: { nama_kelas: "Kelas 3 - Ibnu Batutah" } }),
+      prisma.kelas.findFirst({ where: { nama_kelas: "Kelas 5 - Al Bukhari" } }),
+      prisma.kelas.findFirst({ where: { nama_kelas: "Kelas 7 - Khalid bin Walid" } }),
+      prisma.kelas.findFirst({ where: { nama_kelas: "Kelas 7 - Hamzah bin Abdul Muthalib" } }),
+      prisma.kelas.findFirst({ where: { nama_kelas: "Kelas 7 - Zaid bin Haritsah" } }),
+      prisma.kelas.findFirst({ where: { nama_kelas: "Kelas 8 - Imam Syafi'i" } }),
+    ]);
 
-    if (!kelasSD || !kelasSMP) {
-      throw new Error("Kelas target (Kelas 4 SD atau Kelas 7 SMP) tidak ditemukan di tbl_kelas.");
-    }
+    const kSD1 = kelasSDMehmed || { id: BigInt(60), nama_kelas: "Kelas 4 - Mehmed Al Fatih" };
+    const kSD2 = kelasSDSayfuddin || kSD1;
+    const kSD3 = kelasSDSholahuddin || kSD1;
+    const kSD_Batutah = kelasSDIbnuBatutah || kSD1;
+    const kSD_Bukhari = kelasSDAlBukhari || kSD1;
+
+    const kSMP1 = kelasSMPKhalid || { id: BigInt(83), nama_kelas: "Kelas 7 - Khalid bin Walid" };
+    const kSMP2 = kelasSMPHamzah || kSMP1;
+    const kSMP3 = kelasSMPZaid || kSMP1;
+    const kSMP_Syafii = kelasSMPSyafii || kSMP1;
 
     // 4. Ambil Master Mata Pelajaran
     const mapels = await prisma.mataPelajaran.findMany();
@@ -295,124 +317,52 @@ export class DemoDataService {
     const mapelENG = mapelByKode.get("ENG") || mapels[0];
     const mapelIPA = mapelByKode.get("IPA") || mapels[0];
 
-    // 5. SEED JADWAL PELAJARAN (KBM)
-    console.log("📅 Menyiapkan Jadwal Pelajaran Demo...");
+    // 5. SEED JADWAL PELAJARAN (Lengkap Multi-Kelas & Multi-Hari)
+    console.log("📅 Menyiapkan Jadwal Pelajaran Demo Lengkap (Senin - Jumat)...");
     const jadwalItems = [
-      // --- SD: Kelas 4 - Mehmed Al Fatih ---
-      {
-        kelas_id: kelasSD.id,
-        mapel_id: mapelIPAS.id,
-        guru_id: guruSD.id,
-        hari: "Senin",
-        jam_mulai: "07:30",
-        jam_selesai: "09:00",
-      },
-      {
-        kelas_id: kelasSD.id,
-        mapel_id: mapelPAI.id,
-        guru_id: walasSD.id,
-        hari: "Senin",
-        jam_mulai: "09:30",
-        jam_selesai: "11:00",
-      },
-      {
-        kelas_id: kelasSD.id,
-        mapel_id: mapelARB.id,
-        guru_id: guruLintas.id,
-        hari: "Selasa",
-        jam_mulai: "07:30",
-        jam_selesai: "09:00",
-      },
-      {
-        kelas_id: kelasSD.id,
-        mapel_id: mapelBIN.id,
-        guru_id: guruSD.id,
-        hari: "Selasa",
-        jam_mulai: "09:30",
-        jam_selesai: "11:00",
-      },
-      {
-        kelas_id: kelasSD.id,
-        mapel_id: mapelALQ.id,
-        guru_id: guruLintas.id,
-        hari: "Rabu",
-        jam_mulai: "07:30",
-        jam_selesai: "09:00",
-      },
-      {
-        kelas_id: kelasSD.id,
-        mapel_id: mapelIPAS.id,
-        guru_id: guruSD.id,
-        hari: "Kamis",
-        jam_mulai: "07:30",
-        jam_selesai: "09:00",
-      },
-      {
-        kelas_id: kelasSD.id,
-        mapel_id: mapelPAI.id,
-        guru_id: walasSD.id,
-        hari: "Jumat",
-        jam_mulai: "07:30",
-        jam_selesai: "09:00",
-      },
+      // === GURU SD: Ustadzah Nurul (IPAS & Tematik) ===
+      { kelas_id: kSD1.id, mapel_id: mapelIPAS.id, guru_id: guruSD.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSD2.id, mapel_id: mapelIPAS.id, guru_id: guruSD.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSD_Batutah.id, mapel_id: mapelIPAS.id, guru_id: guruSD.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSD1.id, mapel_id: mapelBIN.id, guru_id: guruSD.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSD2.id, mapel_id: mapelIPAS.id, guru_id: guruSD.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSD_Bukhari.id, mapel_id: mapelIPAS.id, guru_id: guruSD.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSD1.id, mapel_id: mapelIPAS.id, guru_id: guruSD.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSD_Batutah.id, mapel_id: mapelIPAS.id, guru_id: guruSD.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSD_Bukhari.id, mapel_id: mapelIPAS.id, guru_id: guruSD.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00" },
 
-      // --- SMP: Kelas 7 - Khalid bin Walid ---
-      {
-        kelas_id: kelasSMP.id,
-        mapel_id: mapelMTK.id,
-        guru_id: guruSMP.id,
-        hari: "Senin",
-        jam_mulai: "07:30",
-        jam_selesai: "09:00",
-      },
-      {
-        kelas_id: kelasSMP.id,
-        mapel_id: mapelENG.id,
-        guru_id: walasSMP.id,
-        hari: "Senin",
-        jam_mulai: "09:30",
-        jam_selesai: "11:00",
-      },
-      {
-        kelas_id: kelasSMP.id,
-        mapel_id: mapelIPA.id,
-        guru_id: guruSMP.id,
-        hari: "Selasa",
-        jam_mulai: "07:30",
-        jam_selesai: "09:00",
-      },
-      {
-        kelas_id: kelasSMP.id,
-        mapel_id: mapelARB.id,
-        guru_id: guruLintas.id,
-        hari: "Rabu",
-        jam_mulai: "07:30",
-        jam_selesai: "09:00",
-      },
-      {
-        kelas_id: kelasSMP.id,
-        mapel_id: mapelMTK.id,
-        guru_id: guruSMP.id,
-        hari: "Rabu",
-        jam_mulai: "09:30",
-        jam_selesai: "11:00",
-      },
-      {
-        kelas_id: kelasSMP.id,
-        mapel_id: mapelENG.id,
-        guru_id: walasSMP.id,
-        hari: "Kamis",
-        jam_mulai: "07:30",
-        jam_selesai: "09:00",
-      },
-      {
-        kelas_id: kelasSMP.id,
-        mapel_id: mapelARB.id,
-        guru_id: guruLintas.id,
-        hari: "Kamis",
-        jam_mulai: "09:30",
-        jam_selesai: "11:00",
-      },
+      // === WALAS SD: Ustadzah Fatimah (PAI & Budi Pekerti) ===
+      { kelas_id: kSD1.id, mapel_id: mapelPAI.id, guru_id: walasSD.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSD2.id, mapel_id: mapelPAI.id, guru_id: walasSD.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSD3.id, mapel_id: mapelPAI.id, guru_id: walasSD.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSD3.id, mapel_id: mapelPAI.id, guru_id: walasSD.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSD2.id, mapel_id: mapelPAI.id, guru_id: walasSD.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSD1.id, mapel_id: mapelPAI.id, guru_id: walasSD.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00" },
+
+      // === GURU SMP: Ustadz Wildan (Matematika & IPA) ===
+      { kelas_id: kSMP1.id, mapel_id: mapelMTK.id, guru_id: guruSMP.id, hari: "Senin", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSMP2.id, mapel_id: mapelMTK.id, guru_id: guruSMP.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSMP1.id, mapel_id: mapelIPA.id, guru_id: guruSMP.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSMP_Syafii.id, mapel_id: mapelMTK.id, guru_id: guruSMP.id, hari: "Selasa", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSMP1.id, mapel_id: mapelMTK.id, guru_id: guruSMP.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSMP2.id, mapel_id: mapelMTK.id, guru_id: guruSMP.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSMP_Syafii.id, mapel_id: mapelMTK.id, guru_id: guruSMP.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSMP1.id, mapel_id: mapelIPA.id, guru_id: guruSMP.id, hari: "Jumat", jam_mulai: "07:30", jam_selesai: "09:00" },
+
+      // === WALAS SMP: Ustadz Farhan (Bahasa Inggris) ===
+      { kelas_id: kSMP1.id, mapel_id: mapelENG.id, guru_id: walasSMP.id, hari: "Senin", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSMP3.id, mapel_id: mapelENG.id, guru_id: walasSMP.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSMP3.id, mapel_id: mapelENG.id, guru_id: walasSMP.id, hari: "Rabu", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSMP1.id, mapel_id: mapelENG.id, guru_id: walasSMP.id, hari: "Kamis", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSMP_Syafii.id, mapel_id: mapelENG.id, guru_id: walasSMP.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSMP1.id, mapel_id: mapelENG.id, guru_id: walasSMP.id, hari: "Jumat", jam_mulai: "09:30", jam_selesai: "11:00" },
+
+      // === GURU LINTAS: Ustadz Ahmad (Bahasa Arab & Al-Qur'an) ===
+      { kelas_id: kSD1.id, mapel_id: mapelARB.id, guru_id: guruLintas.id, hari: "Selasa", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSD1.id, mapel_id: mapelALQ.id, guru_id: guruLintas.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSMP1.id, mapel_id: mapelARB.id, guru_id: guruLintas.id, hari: "Rabu", jam_mulai: "07:30", jam_selesai: "09:00" },
+      { kelas_id: kSMP1.id, mapel_id: mapelARB.id, guru_id: guruLintas.id, hari: "Kamis", jam_mulai: "09:30", jam_selesai: "11:00" },
+      { kelas_id: kSD1.id, mapel_id: mapelALQ.id, guru_id: guruLintas.id, hari: "Jumat", jam_mulai: "09:30", jam_selesai: "11:00" },
     ];
 
     const createdJadwal = [];
@@ -421,20 +371,19 @@ export class DemoDataService {
       createdJadwal.push(created);
     }
 
-    // 6. SEED PERTEMUAN / MODUL MATERI KBM
-    console.log("📚 Menyiapkan Modul & Pertemuan KBM...");
+    // 6. SEED PERTEMUAN / MODUL KBM (Lengkap: Lampau, Hari Ini Aktif, dan Mendatang)
+    console.log("📚 Menyiapkan Modul & Pertemuan KBM Beragam Kondisi...");
     const now = new Date();
     const pertemuanList = [
-      // IPAS SD (Guru SD)
+      // === IPAS SD (Ustadzah Nurul) ===
       {
-        kelas_id: kelasSD.id,
+        kelas_id: kSD1.id,
         mapel_id: mapelIPAS.id,
         guru_id: guruSD.id,
         pertemuan_ke: 1,
         judul: "Ekosistem & Rantai Makanan Makhluk Hidup",
-        deskripsi:
-          "Pembahasan mengenai interaksi antara makhluk hidup (biotik) dan lingkungannya (abiotik), serta peranan produsen, konsumen, dan pengurai.",
-        tanggal: new Date(now.getTime() - 7 * 86400000),
+        deskripsi: "Interaksi antara makhluk hidup (biotik) dan lingkungannya (abiotik), serta peranan produsen, konsumen, dan pengurai.",
+        tanggal: new Date(now.getTime() - 8 * 86400000),
         file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         file_name: "Modul_IPAS_Ekosistem_Kelas4.pdf",
         file_size: 1420000,
@@ -443,14 +392,13 @@ export class DemoDataService {
         is_published: true,
       },
       {
-        kelas_id: kelasSD.id,
+        kelas_id: kSD1.id,
         mapel_id: mapelIPAS.id,
         guru_id: guruSD.id,
         pertemuan_ke: 2,
         judul: "Wujud Benda & Perubahannya di Sekitar Kita",
-        deskripsi:
-          "Mempelajari 3 wujud benda (padat, cair, gas) serta peristiwa mencair, membeku, menguap, mengembun, menyublim, dan mengkristal.",
-        tanggal: new Date(now.getTime() - 3 * 86400000),
+        deskripsi: "Mempelajari 3 wujud benda (padat, cair, gas) serta peristiwa mencair, membeku, menguap, mengembun, dan menyublim.",
+        tanggal: new Date(now.getTime() - 4 * 86400000),
         file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         file_name: "Lembar_Kerja_Wujud_Benda.pdf",
         file_size: 850000,
@@ -458,16 +406,45 @@ export class DemoDataService {
         video_url: "https://www.youtube.com/watch?v=kYI6j2e8ZzY",
         is_published: true,
       },
-      // PAI SD (Walas SD)
       {
-        kelas_id: kelasSD.id,
+        kelas_id: kSD1.id,
+        mapel_id: mapelIPAS.id,
+        guru_id: guruSD.id,
+        pertemuan_ke: 3,
+        judul: "Siklus Air & Pelestarian Lingkungan Hidup",
+        deskripsi: "Proses evaporasi, kondensasi, presipitasi, dan infiltrasi dalam siklus hidrologi serta upaya konservasi air bersih.",
+        tanggal: new Date(now.getTime() - 1 * 86400000),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "PPT_Siklus_Air_AlAzhar.pdf",
+        file_size: 1200000,
+        file_type: "application/pdf",
+        is_published: true,
+      },
+      {
+        kelas_id: kSD1.id,
+        mapel_id: mapelIPAS.id,
+        guru_id: guruSD.id,
+        pertemuan_ke: 4,
+        judul: "Energi Terbarukan & Pemanfaatannya Sehari-hari",
+        deskripsi: "Sesi tatap maya interaktif: Pembahasan panel surya, kincir angin, dan energi biogas yang ramah lingkungan.",
+        tanggal: new Date(now.getTime()),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Panduan_Praktikum_Energi.pdf",
+        file_size: 960000,
+        file_type: "application/pdf",
+        video_url: "https://www.youtube.com/watch?v=1kUE0BZtTRc",
+        is_published: true,
+      },
+
+      // === PAI SD (Ustadzah Fatimah) ===
+      {
+        kelas_id: kSD1.id,
         mapel_id: mapelPAI.id,
         guru_id: walasSD.id,
         pertemuan_ke: 1,
         judul: "Kisah Teladan Rasulullah SAW dan Para Sahabat",
-        deskripsi:
-          "Mempelajari sifat-sifat mulia Nabi Muhammad SAW: Shiddiq, Amanah, Tabligh, dan Fathonah serta keteladanan Khulafaur Rasyidin.",
-        tanggal: new Date(now.getTime() - 6 * 86400000),
+        deskripsi: "Mempelajari sifat-sifat mulia Nabi Muhammad SAW: Shiddiq, Amanah, Tabligh, dan Fathonah serta keteladanan Khulafaur Rasyidin.",
+        tanggal: new Date(now.getTime() - 7 * 86400000),
         file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         file_name: "Sirah_Nabawiyyah_Ringkas.pdf",
         file_size: 1100000,
@@ -475,32 +452,74 @@ export class DemoDataService {
         video_url: "https://www.youtube.com/watch?v=QZ0B87Q3c_0",
         is_published: true,
       },
-      // Bahasa Arab SD (Guru Lintas)
       {
-        kelas_id: kelasSD.id,
+        kelas_id: kSD1.id,
+        mapel_id: mapelPAI.id,
+        guru_id: walasSD.id,
+        pertemuan_ke: 2,
+        judul: "Indahnya Saling Menghormati & Toleransi dalam Islam",
+        deskripsi: "Kajian surah Al-Hujurat ayat 13 mengenai persaudaraan dan pentingnya berakhlak terpuji kepada sesama teman.",
+        tanggal: new Date(now.getTime() - 3 * 86400000),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Akhlak_Terpuji_Kelas4.pdf",
+        file_size: 920000,
+        file_type: "application/pdf",
+        is_published: true,
+      },
+      {
+        kelas_id: kSD1.id,
+        mapel_id: mapelPAI.id,
+        guru_id: walasSD.id,
+        pertemuan_ke: 3,
+        judul: "Mengenal Asmaul Husna: Al-Malik, Al-Quddus, As-Salam",
+        deskripsi: "Menghayati makna nama-nama agung Allah SWT serta implementasinya dalam doa dan perilaku kehidupan sehari-hari.",
+        tanggal: new Date(now.getTime()),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Asmaul_Husna_Lengkap.pdf",
+        file_size: 1350000,
+        file_type: "application/pdf",
+        is_published: true,
+      },
+
+      // === Bahasa Arab SD (Ustadz Ahmad) ===
+      {
+        kelas_id: kSD1.id,
         mapel_id: mapelARB.id,
         guru_id: guruLintas.id,
         pertemuan_ke: 1,
         judul: "At-Ta'aruf (Perkenalan & Kosa Kata Perlengkapan Kelas)",
-        deskripsi:
-          "Pengenalan ucapan salam, menanyakan kabar, serta mufradat seputar buku (kitabun), pena (qolamun), dan meja (maktabun).",
-        tanggal: new Date(now.getTime() - 5 * 86400000),
+        deskripsi: "Pengenalan ucapan salam, menanyakan kabar, serta mufradat seputar buku (kitabun), pena (qolamun), dan meja (maktabun).",
+        tanggal: new Date(now.getTime() - 6 * 86400000),
         file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         file_name: "Mufradat_Arab_Dasar.pdf",
         file_size: 780000,
         file_type: "application/pdf",
         is_published: true,
       },
-      // Matematika SMP (Guru SMP)
       {
-        kelas_id: kelasSMP.id,
+        kelas_id: kSD1.id,
+        mapel_id: mapelARB.id,
+        guru_id: guruLintas.id,
+        pertemuan_ke: 2,
+        judul: "Al-Usrah wal Bait (Keluarga dan Rumah)",
+        deskripsi: "Menghafal kosakata anggota keluarga (Abun, Ummun, Akhun, Ukhtun) dan ruangan di dalam rumah.",
+        tanggal: new Date(now.getTime() - 2 * 86400000),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "AlUsrah_wal_Bait.pdf",
+        file_size: 890000,
+        file_type: "application/pdf",
+        is_published: true,
+      },
+
+      // === Matematika SMP (Ustadz Wildan) ===
+      {
+        kelas_id: kSMP1.id,
         mapel_id: mapelMTK.id,
         guru_id: guruSMP.id,
         pertemuan_ke: 1,
         judul: "Mengenal Aljabar: Variabel, Koefisien, dan Suku Sejenis",
-        deskripsi:
-          "Konsep dasar bentuk aljabar, penjumlahan dan pengurangan bentuk aljabar sederhana serta aplikasinya dalam pemecahan masalah.",
-        tanggal: new Date(now.getTime() - 7 * 86400000),
+        deskripsi: "Konsep dasar bentuk aljabar, penjumlahan dan pengurangan bentuk aljabar sederhana serta aplikasinya.",
+        tanggal: new Date(now.getTime() - 8 * 86400000),
         file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         file_name: "Aljabar_Dasar_SMP_Kelas7.pdf",
         file_size: 1950000,
@@ -509,31 +528,58 @@ export class DemoDataService {
         is_published: true,
       },
       {
-        kelas_id: kelasSMP.id,
+        kelas_id: kSMP1.id,
         mapel_id: mapelMTK.id,
         guru_id: guruSMP.id,
         pertemuan_ke: 2,
         judul: "Persamaan Linier Satu Variabel (PLSV)",
-        deskripsi:
-          "Menemukan himpunan penyelesaian persamaan linear satu variabel menggunakan sifat-sifat kesetaraan aljabar.",
-        tanggal: new Date(now.getTime() - 2 * 86400000),
+        deskripsi: "Menemukan himpunan penyelesaian persamaan linear satu variabel menggunakan sifat kesetaraan matematika.",
+        tanggal: new Date(now.getTime() - 5 * 86400000),
         file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         file_name: "Latihan_PLSV_Terbimbing.pdf",
         file_size: 920000,
         file_type: "application/pdf",
+        is_published: true,
+      },
+      {
+        kelas_id: kSMP1.id,
+        mapel_id: mapelMTK.id,
+        guru_id: guruSMP.id,
+        pertemuan_ke: 3,
+        judul: "Pertidaksamaan Linier Satu Variabel (PtLSV)",
+        deskripsi: "Menyelesaikan pertidaksamaan linear, garis bilangan penyelesaian, dan membedakan tanda pertidaksamaan.",
+        tanggal: new Date(now.getTime() - 2 * 86400000),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "PtLSV_Modul_Kelas7.pdf",
+        file_size: 1100000,
+        file_type: "application/pdf",
+        is_published: true,
+      },
+      {
+        kelas_id: kSMP1.id,
+        mapel_id: mapelMTK.id,
+        guru_id: guruSMP.id,
+        pertemuan_ke: 4,
+        judul: "Perbandingan Senilai & Berbalik Nilai dalam Masalah Nyata",
+        deskripsi: "Sesi tatap maya: Perhitungan rasio skala peta, konsumsi bahan bakar, dan waktu tempuh perjalanan.",
+        tanggal: new Date(now.getTime()),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Rasio_dan_Perbandingan.pdf",
+        file_size: 1300000,
+        file_type: "application/pdf",
         video_url: "https://www.youtube.com/watch?v=NybHckSEQBI",
         is_published: true,
       },
-      // Bahasa Inggris SMP (Walas SMP)
+
+      // === Bahasa Inggris SMP (Ustadz Farhan) ===
       {
-        kelas_id: kelasSMP.id,
+        kelas_id: kSMP1.id,
         mapel_id: mapelENG.id,
         guru_id: walasSMP.id,
         pertemuan_ke: 1,
         judul: "Unit 1: Self-Introduction and Greetings in Formal Context",
-        deskripsi:
-          "How to introduce yourself confidently, talk about hobbies, origins, and family in English with proper pronunciation.",
-        tanggal: new Date(now.getTime() - 6 * 86400000),
+        deskripsi: "How to introduce yourself confidently, talk about hobbies, origins, and family in English.",
+        tanggal: new Date(now.getTime() - 7 * 86400000),
         file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         file_name: "English_Grade7_Unit1.pdf",
         file_size: 1250000,
@@ -541,19 +587,61 @@ export class DemoDataService {
         video_url: "https://www.youtube.com/watch?v=d_2XJq9p7sA",
         is_published: true,
       },
-      // Bahasa Arab SMP (Guru Lintas)
       {
-        kelas_id: kelasSMP.id,
+        kelas_id: kSMP1.id,
+        mapel_id: mapelENG.id,
+        guru_id: walasSMP.id,
+        pertemuan_ke: 2,
+        judul: "Unit 2: Daily Routines & Simple Present Tense",
+        deskripsi: "Using adverbs of frequency (always, usually, sometimes, never) and third-person singular verb forms.",
+        tanggal: new Date(now.getTime() - 3 * 86400000),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Daily_Routines_Grammar.pdf",
+        file_size: 980000,
+        file_type: "application/pdf",
+        is_published: true,
+      },
+      {
+        kelas_id: kSMP1.id,
+        mapel_id: mapelENG.id,
+        guru_id: walasSMP.id,
+        pertemuan_ke: 3,
+        judul: "Unit 3: Describing Heroes & Muslim Figures",
+        deskripsi: "Descriptive text structure: Identification and description of exemplary historical Muslim leaders.",
+        tanggal: new Date(now.getTime()),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Descriptive_Text_Unit3.pdf",
+        file_size: 1400000,
+        file_type: "application/pdf",
+        is_published: true,
+      },
+
+      // === Bahasa Arab SMP (Ustadz Ahmad) ===
+      {
+        kelas_id: kSMP1.id,
         mapel_id: mapelARB.id,
         guru_id: guruLintas.id,
         pertemuan_ke: 1,
         judul: "Qawa'id Al-Lughah: Pembagian Kalimat (Isim, Fi'il, Huruf)",
-        deskripsi:
-          "Memahami ciri-ciri isim (kata benda), tanda-tanda fi'il (kata kerja), serta penggunaan huruf jar dalam kalimat bahasa Arab.",
-        tanggal: new Date(now.getTime() - 4 * 86400000),
+        deskripsi: "Memahami ciri-ciri isim (kata benda), tanda-tanda fi'il (kata kerja), serta penggunaan huruf jar dalam kalimat.",
+        tanggal: new Date(now.getTime() - 6 * 86400000),
         file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
         file_name: "Qawaid_Bahasa_Arab_Kelas7.pdf",
         file_size: 1600000,
+        file_type: "application/pdf",
+        is_published: true,
+      },
+      {
+        kelas_id: kSMP1.id,
+        mapel_id: mapelARB.id,
+        guru_id: guruLintas.id,
+        pertemuan_ke: 2,
+        judul: "Tarkib Jumlah Fi'liyyah dan Jumlah Ismiyyah",
+        deskripsi: "Penyusunan kalimat sempurna dalam bahasa Arab dengan subjek (Fa'il/Mubtada') dan predikat (Fi'il/Khabar).",
+        tanggal: new Date(now.getTime() - 2 * 86400000),
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Tarkib_Jumlah_Fi'liyyah.pdf",
+        file_size: 1150000,
         file_type: "application/pdf",
         is_published: true,
       },
@@ -568,45 +656,40 @@ export class DemoDataService {
     // Progress pertemuan untuk siswa demo
     await prisma.pertemuanProgress.createMany({
       data: [
-        {
-          pertemuan_id: createdPertemuan[0].id,
-          siswa_id: siswaSD.id,
-          is_completed: true,
-          completed_at: new Date(now.getTime() - 5 * 86400000),
-        },
-        {
-          pertemuan_id: createdPertemuan[2].id,
-          siswa_id: siswaSD.id,
-          is_completed: true,
-          completed_at: new Date(now.getTime() - 4 * 86400000),
-        },
-        {
-          pertemuan_id: createdPertemuan[4].id,
-          siswa_id: siswaSMP.id,
-          is_completed: true,
-          completed_at: new Date(now.getTime() - 5 * 86400000),
-        },
-        {
-          pertemuan_id: createdPertemuan[6].id,
-          siswa_id: siswaSMP.id,
-          is_completed: true,
-          completed_at: new Date(now.getTime() - 4 * 86400000),
-        },
+        { pertemuan_id: createdPertemuan[0].id, siswa_id: siswaSD.id, is_completed: true, completed_at: new Date(now.getTime() - 7 * 86400000) },
+        { pertemuan_id: createdPertemuan[1].id, siswa_id: siswaSD.id, is_completed: true, completed_at: new Date(now.getTime() - 3 * 86400000) },
+        { pertemuan_id: createdPertemuan[4].id, siswa_id: siswaSD.id, is_completed: true, completed_at: new Date(now.getTime() - 6 * 86400000) },
+        { pertemuan_id: createdPertemuan[7].id, siswa_id: siswaSD.id, is_completed: true, completed_at: new Date(now.getTime() - 5 * 86400000) },
+        { pertemuan_id: createdPertemuan[9].id, siswa_id: siswaSMP.id, is_completed: true, completed_at: new Date(now.getTime() - 7 * 86400000) },
+        { pertemuan_id: createdPertemuan[10].id, siswa_id: siswaSMP.id, is_completed: true, completed_at: new Date(now.getTime() - 4 * 86400000) },
+        { pertemuan_id: createdPertemuan[13].id, siswa_id: siswaSMP.id, is_completed: true, completed_at: new Date(now.getTime() - 6 * 86400000) },
+        { pertemuan_id: createdPertemuan[16].id, siswa_id: siswaSMP.id, is_completed: true, completed_at: new Date(now.getTime() - 5 * 86400000) },
       ],
     });
 
-    // 7. SEED TUGAS INTERAKTIF DENGAN SOAL & OPSI
-    console.log("📝 Menyiapkan Tugas Interaktif & Soal-Soal...");
+    // 7. SEED TUGAS INTERAKTIF & BERKAS BERAGAM KONDISI
+    console.log("📝 Menyiapkan Tugas & Kuis Interaktif dengan Berbagai Status...");
 
-    // --- Tugas 1: Kuis IPAS SD (Guru SD) ---
+    // Ambil teman-teman sekelas lainnya untuk diberi submisi realistis
+    const peersSD = await prisma.user.findMany({
+      where: { kelas: kSD1.nama_kelas, status: "1", id: { not: siswaSD.id } },
+      take: 8,
+      select: { id: true, name: true },
+    });
+    const peersSMP = await prisma.user.findMany({
+      where: { kelas: kSMP1.nama_kelas, status: "1", id: { not: siswaSMP.id } },
+      take: 8,
+      select: { id: true, name: true },
+    });
+
+    // --- Tugas 1: Kuis IPAS SD (Sudah Dinilai) ---
     const tugasIPAS = await prisma.tugas.create({
       data: {
-        kelas_id: kelasSD.id,
+        kelas_id: kSD1.id,
         mapel_id: mapelIPAS.id,
         guru_id: guruSD.id,
-        judul: "Kuis Interaktif IPAS: Ekosistem & Siklus Hidup",
-        deskripsi:
-          "Kerjakan kuis pilihan ganda dan satu pertanyaan uraian berikut dengan cermat untuk menguji pemahaman materi ekosistem.",
+        judul: "Kuis Interaktif IPAS: Ekosistem & Rantai Makanan",
+        deskripsi: "Kerjakan kuis pilihan ganda dan satu pertanyaan uraian berikut dengan cermat untuk menguji pemahaman materi ekosistem.",
         deadline: new Date(now.getTime() + 5 * 86400000),
         poin_maksimal: 100,
         status: "aktif",
@@ -669,10 +752,26 @@ export class DemoDataService {
       },
     });
 
-    // --- Tugas 2: Tugas PAI SD (Walas SD) ---
+    // --- Tugas 2: Tugas Proyek Mandiri IPAS SD (Upload File - Menunggu Review) ---
+    const tugasKlipingSD = await prisma.tugas.create({
+      data: {
+        kelas_id: kSD1.id,
+        mapel_id: mapelIPAS.id,
+        guru_id: guruSD.id,
+        judul: "Proyek Portofolio: Kliping Siklus Air & Daur Hidup Hewan",
+        deskripsi: "Susun kliping ringkas berupa foto pengamatan atau diagram daur hidup kupu-kupu/katak, lalu unggah dokumen PDF hasil karya ananda.",
+        deadline: new Date(now.getTime() + 7 * 86400000),
+        poin_maksimal: 100,
+        status: "aktif",
+        tipe_pengerjaan: "UPLOAD_FILE",
+        pertemuan_id: createdPertemuan[2].id,
+      },
+    });
+
+    // --- Tugas 3: Tugas PAI SD (Sudah Dinilai) ---
     const tugasPAI = await prisma.tugas.create({
       data: {
-        kelas_id: kelasSD.id,
+        kelas_id: kSD1.id,
         mapel_id: mapelPAI.id,
         guru_id: walasSD.id,
         judul: "Uji Pemahaman PAI: Rukun Iman & Adab Muslim",
@@ -683,7 +782,7 @@ export class DemoDataService {
         tipe_pengerjaan: "INTERAKTIF",
         durasi_menit: 25,
         tampilkan_nilai_instan: true,
-        pertemuan_id: createdPertemuan[2].id,
+        pertemuan_id: createdPertemuan[4].id,
       },
     });
 
@@ -715,32 +814,32 @@ export class DemoDataService {
         pertanyaan: "Adab yang benar saat berbicara kepada guru dan orang tua adalah...",
         bobot_poin: 50,
         kunci_jawaban: "A",
-        pembahasan: "Islam mengajarkan siswa berbicara dengan sopan, suara santun, dan menatap dengan hormat.",
+        pembahasan: "Islam mengajarkan siswa berbicara dengan suara santun, sopan, dan menatap dengan hormat.",
       },
     });
     await prisma.tugasSoalOpsi.createMany({
       data: [
-        { soal_id: soalPAI2.id, label: "A", teks_opsi: "Berbicara dengan suara santun, sopan, dan tidak memotong pembicaraan", is_benar: true, nomor_urut: 1 },
+        { soal_id: soalPAI2.id, label: "A", teks_opsi: "Berbicara dengan santun, sopan, dan tidak memotong pembicaraan", is_benar: true, nomor_urut: 1 },
         { soal_id: soalPAI2.id, label: "B", teks_opsi: "Berbicara sambil memalingkan muka", is_benar: false, nomor_urut: 2 },
         { soal_id: soalPAI2.id, label: "C", teks_opsi: "Menyela sebelum orang tua selesai bicara", is_benar: false, nomor_urut: 3 },
         { soal_id: soalPAI2.id, label: "D", teks_opsi: "Berteriak agar terdengar jelas", is_benar: false, nomor_urut: 4 },
       ],
     });
 
-    // --- Tugas 3: Tugas Bahasa Arab SD (Guru Lintas) — BELUM DIKERJAKAN SISWA SD ---
+    // --- Tugas 4: Tugas Bahasa Arab SD (Aktif - Belum Dikerjakan Siswa Demo) ---
     const tugasARBSD = await prisma.tugas.create({
       data: {
-        kelas_id: kelasSD.id,
+        kelas_id: kSD1.id,
         mapel_id: mapelARB.id,
         guru_id: guruLintas.id,
         judul: "Latihan Mufradat Bahasa Arab Kelas 4",
-        deskripsi: "Latihan hafalan kosa kata bahasa Arab peralatan belajar di sekolah.",
+        deskripsi: "Latihan hafalan kosakata bahasa Arab peralatan belajar di sekolah.",
         deadline: new Date(now.getTime() + 4 * 86400000),
         poin_maksimal: 100,
         status: "aktif",
         tipe_pengerjaan: "INTERAKTIF",
         durasi_menit: 20,
-        pertemuan_id: createdPertemuan[3].id,
+        pertemuan_id: createdPertemuan[7].id,
       },
     });
     const soalARB1 = await prisma.tugasSoal.create({
@@ -762,10 +861,10 @@ export class DemoDataService {
       ],
     });
 
-    // --- Tugas 4: Kuis Matematika SMP (Guru SMP) ---
+    // --- Tugas 5: Kuis Matematika SMP (Sudah Dinilai) ---
     const tugasMTK = await prisma.tugas.create({
       data: {
-        kelas_id: kelasSMP.id,
+        kelas_id: kSMP1.id,
         mapel_id: mapelMTK.id,
         guru_id: guruSMP.id,
         judul: "Kuis Aljabar & Persamaan Linier Satu Variabel",
@@ -776,7 +875,7 @@ export class DemoDataService {
         tipe_pengerjaan: "INTERAKTIF",
         durasi_menit: 45,
         tampilkan_nilai_instan: true,
-        pertemuan_id: createdPertemuan[4].id,
+        pertemuan_id: createdPertemuan[9].id,
       },
     });
 
@@ -832,10 +931,26 @@ export class DemoDataService {
       },
     });
 
-    // --- Tugas 5: Tugas Bahasa Inggris SMP (Walas SMP) ---
+    // --- Tugas 6: Tugas Menulis Bahasa Inggris SMP (Upload Berkas - Descriptive Text) ---
+    const tugasDescriptiveSMP = await prisma.tugas.create({
+      data: {
+        kelas_id: kSMP1.id,
+        mapel_id: mapelENG.id,
+        guru_id: walasSMP.id,
+        judul: "Descriptive Writing: My Favorite Muslim Hero",
+        deskripsi: "Write a short 3-paragraph essay describing an inspiring Muslim scientist or leader in English. Upload your document in PDF format.",
+        deadline: new Date(now.getTime() + 6 * 86400000),
+        poin_maksimal: 100,
+        status: "aktif",
+        tipe_pengerjaan: "UPLOAD_FILE",
+        pertemuan_id: createdPertemuan[15].id,
+      },
+    });
+
+    // --- Tugas 7: Kuis Reading Bahasa Inggris SMP (Sudah Dinilai) ---
     const tugasENG = await prisma.tugas.create({
       data: {
-        kelas_id: kelasSMP.id,
+        kelas_id: kSMP1.id,
         mapel_id: mapelENG.id,
         guru_id: walasSMP.id,
         judul: "English Reading & Daily Routines Quiz",
@@ -846,7 +961,7 @@ export class DemoDataService {
         tipe_pengerjaan: "INTERAKTIF",
         durasi_menit: 30,
         tampilkan_nilai_instan: true,
-        pertemuan_id: createdPertemuan[6].id,
+        pertemuan_id: createdPertemuan[14].id,
       },
     });
 
@@ -858,7 +973,6 @@ export class DemoDataService {
         pertanyaan: "Haidar always ... to school by bicycle every morning.",
         bobot_poin: 50,
         kunci_jawaban: "B",
-        pembahasan: "Subject He/She/Singular name uses verb-s/es in simple present tense.",
       },
     });
     await prisma.tugasSoalOpsi.createMany({
@@ -889,10 +1003,62 @@ export class DemoDataService {
       ],
     });
 
-    // 8. SEED SUBMISSIONS SISWA DEMO (Hasil Pengerjaan Tugas & Penilaian)
-    console.log("📊 Menyiapkan Submissions & Riwayat Nilai Siswa...");
+    // --- Tugas 8: Latihan Qawa'id Bahasa Arab SMP (Aktif - Belum Dikerjakan Siswa SMP) ---
+    const tugasARBSMP = await prisma.tugas.create({
+      data: {
+        kelas_id: kSMP1.id,
+        mapel_id: mapelARB.id,
+        guru_id: guruLintas.id,
+        judul: "Latihan Qawa'id Al-Lughah: Pembagian Kalimat",
+        deskripsi: "Klasifikasikan kalimat-kalimat berikut ke dalam isim, fi'il, atau huruf.",
+        deadline: new Date(now.getTime() + 5 * 86400000),
+        poin_maksimal: 100,
+        status: "aktif",
+        tipe_pengerjaan: "INTERAKTIF",
+        durasi_menit: 25,
+        pertemuan_id: createdPertemuan[16].id,
+      },
+    });
+    const soalARBSMP1 = await prisma.tugasSoal.create({
+      data: {
+        tugas_id: tugasARBSMP.id,
+        nomor_urut: 1,
+        tipe_soal: "PILIHAN_GANDA",
+        pertanyaan: "Kata 'يَكْتُبُ' (Yaktubu) termasuk dalam kategori...",
+        bobot_poin: 100,
+        kunci_jawaban: "B",
+        pembahasan: "Yaktubu adalah Fi'il Mudhari' (kata kerja yang menunjukkan perbuatan sekarang/akan datang).",
+      },
+    });
+    await prisma.tugasSoalOpsi.createMany({
+      data: [
+        { soal_id: soalARBSMP1.id, label: "A", teks_opsi: "Isim (Kata Benda)", is_benar: false, nomor_urut: 1 },
+        { soal_id: soalARBSMP1.id, label: "B", teks_opsi: "Fi'il (Kata Kerja)", is_benar: true, nomor_urut: 2 },
+        { soal_id: soalARBSMP1.id, label: "C", teks_opsi: "Huruf Jar", is_benar: false, nomor_urut: 3 },
+        { soal_id: soalARBSMP1.id, label: "D", teks_opsi: "Zharaf Makan", is_benar: false, nomor_urut: 4 },
+      ],
+    });
 
-    // Submisi Siswa SD pada Tugas IPAS: Sudah dinilai (Nilai 95)
+    // --- Tugas 9: Pre-Test Awal Semester (Tugas Selesai / Ditutup / Lampau) ---
+    await prisma.tugas.create({
+      data: {
+        kelas_id: kSD1.id,
+        mapel_id: mapelIPAS.id,
+        guru_id: guruSD.id,
+        judul: "Penjajakan Awal: Diagnostic Assessment IPAS",
+        deskripsi: "Tugas pemetaan awal kompetensi IPA kelas 4.",
+        deadline: new Date(now.getTime() - 10 * 86400000),
+        poin_maksimal: 100,
+        status: "selesai",
+        tipe_pengerjaan: "INTERAKTIF",
+        durasi_menit: 20,
+      },
+    });
+
+    // 8. SEED SUBMISSIONS SISWA REALISTIS & MULTI-KONDISI
+    console.log("📊 Menyiapkan Submisi Siswa & Penilaian Beragam...");
+
+    // Submisi Rayhan pada Tugas IPAS (Nilai 95)
     const subSD_IPAS = await prisma.tugasSubmission.create({
       data: {
         tugas_id: tugasIPAS.id,
@@ -908,41 +1074,41 @@ export class DemoDataService {
         submitted_at: new Date(now.getTime() - 2 * 86400000),
         graded_at: new Date(now.getTime() - 1 * 86400000),
         graded_by: guruSD.id,
-        mulai_mengerjakan_at: new Date(now.getTime() - 2 * 86400000 - 1200000),
-        selesai_mengerjakan_at: new Date(now.getTime() - 2 * 86400000),
         durasi_detik: 1200,
       },
     });
-
     await prisma.tugasJawabanSiswa.createMany({
       data: [
-        {
-          submission_id: subSD_IPAS.id,
-          soal_id: soalIPAS1.id,
-          jawaban_siswa: "A",
-          is_benar: true,
-          poin_didapat: 20,
-        },
-        {
-          submission_id: subSD_IPAS.id,
-          soal_id: soalIPAS2.id,
-          jawaban_siswa: "B",
-          is_benar: true,
-          poin_didapat: 20,
-        },
+        { submission_id: subSD_IPAS.id, soal_id: soalIPAS1.id, jawaban_siswa: "A", is_benar: true, poin_didapat: 20 },
+        { submission_id: subSD_IPAS.id, soal_id: soalIPAS2.id, jawaban_siswa: "B", is_benar: true, poin_didapat: 20 },
         {
           submission_id: subSD_IPAS.id,
           soal_id: soalIPAS3.id,
-          jawaban_siswa:
-            "Jika katak berkurang, hama belalang akan bertambah banyak dan merusak tanaman padi petani. Kemudian ular sawah yang memakan katak akan kekurangan makanan.",
+          jawaban_siswa: "Jika katak berkurang drastis, hama belalang akan bertambah banyak dan merusak tanaman padi. Ular sawah juga akan kekurangan makanan.",
           is_benar: true,
           poin_didapat: 55,
-          catatan_koreksi: "Analisis rantai makanan sangat tepat dan berbobot.",
         },
       ],
     });
 
-    // Submisi Siswa SD pada Tugas PAI: Sudah dinilai (Nilai 100)
+    // Submisi Rayhan pada Kliping (Upload Berkas - Sudah Dinilai 94)
+    await prisma.tugasSubmission.create({
+      data: {
+        tugas_id: tugasKlipingSD.id,
+        siswa_id: siswaSD.id,
+        status: "sudah_dinilai",
+        nilai: 94,
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Kliping_Siklus_Air_Rayhan.pdf",
+        file_type: "application/pdf",
+        catatan_guru: "Kliping sangat rapi dengan foto dokumentasi metamorfosis yang jelas. Sangat baik!",
+        submitted_at: new Date(now.getTime() - 1 * 86400000),
+        graded_at: new Date(now.getTime() - 12 * 3600000),
+        graded_by: guruSD.id,
+      },
+    });
+
+    // Submisi Rayhan pada PAI (Nilai 100)
     const subSD_PAI = await prisma.tugasSubmission.create({
       data: {
         tugas_id: tugasPAI.id,
@@ -962,44 +1128,12 @@ export class DemoDataService {
     });
     await prisma.tugasJawabanSiswa.createMany({
       data: [
-        {
-          submission_id: subSD_PAI.id,
-          soal_id: soalPAI1.id,
-          jawaban_siswa: "C",
-          is_benar: true,
-          poin_didapat: 50,
-        },
-        {
-          submission_id: subSD_PAI.id,
-          soal_id: soalPAI2.id,
-          jawaban_siswa: "A",
-          is_benar: true,
-          poin_didapat: 50,
-        },
+        { submission_id: subSD_PAI.id, soal_id: soalPAI1.id, jawaban_siswa: "C", is_benar: true, poin_didapat: 50 },
+        { submission_id: subSD_PAI.id, soal_id: soalPAI2.id, jawaban_siswa: "A", is_benar: true, poin_didapat: 50 },
       ],
     });
 
-    // Tambahkan 1 submisi siswa lain di Kelas 4 dengan status "dikumpulkan" (menunggu review)
-    // agar Ustadzah Nurul melihat indikator "1 Menunggu Penilaian" di dashboard
-    const otherSDStudent = await prisma.user.findFirst({
-      where: { kelas: kelasSD.nama_kelas, status: "1", id: { not: siswaSD.id } },
-    });
-    if (otherSDStudent) {
-      await prisma.tugasSubmission.create({
-        data: {
-          tugas_id: tugasIPAS.id,
-          siswa_id: otherSDStudent.id,
-          status: "dikumpulkan",
-          nilai_otomatis: 40,
-          total_soal: 3,
-          total_benar: 2,
-          submitted_at: new Date(now.getTime() - 1 * 86400000),
-          durasi_detik: 1400,
-        },
-      });
-    }
-
-    // Submisi Siswa SMP pada Tugas MTK: Sudah dinilai (Nilai 92)
+    // Submisi Haidar SMP pada MTK (Nilai 92)
     const subSMP_MTK = await prisma.tugasSubmission.create({
       data: {
         tugas_id: tugasMTK.id,
@@ -1024,15 +1158,31 @@ export class DemoDataService {
         {
           submission_id: subSMP_MTK.id,
           soal_id: soalMTK3.id,
-          jawaban_siswa: "Keliling = 2(p + l) = 2(2x+3 + x+1) = 2(3x+4) = 6x+8 = 32 => 6x = 24 => x = 4. Maka p = 2(4)+3 = 11 cm dan l = 4+1 = 5 cm.",
+          jawaban_siswa: "Keliling = 2(3x + 4) = 32 => 6x + 8 = 32 => 6x = 24 => x = 4. Maka panjang = 11 cm dan lebar = 5 cm.",
           is_benar: true,
           poin_didapat: 42,
-          catatan_koreksi: "Penyelesaian persamaan sangat sistematis.",
         },
       ],
     });
 
-    // Submisi Siswa SMP pada Tugas Bahasa Inggris: Sudah dinilai (Nilai 100)
+    // Submisi Haidar SMP pada English Descriptive Essay (Nilai 96)
+    await prisma.tugasSubmission.create({
+      data: {
+        tugas_id: tugasDescriptiveSMP.id,
+        siswa_id: siswaSMP.id,
+        status: "sudah_dinilai",
+        nilai: 96,
+        file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Kliping_Siklus_Air_Rayhan.pdf",
+        file_type: "application/pdf",
+        catatan_guru: "Splendid vocabulary and grammatical accuracy. Your portrayal of Salahuddin Al-Ayyubi is very touching.",
+        submitted_at: new Date(now.getTime() - 1 * 86400000),
+        graded_at: new Date(now.getTime() - 18 * 3600000),
+        graded_by: walasSMP.id,
+      },
+    });
+
+    // Submisi Haidar SMP pada English Quiz (Nilai 100)
     const subSMP_ENG = await prisma.tugasSubmission.create({
       data: {
         tugas_id: tugasENG.id,
@@ -1056,29 +1206,102 @@ export class DemoDataService {
       ],
     });
 
-    // 9. SEED PRESENSI KBM (14 Hari Efektif Termasuk Hari Ini)
+    // Submisi Siswa Lain di Kelas 4 (SD) & Kelas 7 (SMP)
+    // Menghasilkan situasi riil: sebagian sudah dinilai, sebagian menunggu penilaian guru!
+    const sampleScores = [98, 90, 85, 88, 92, 80, 78];
+    for (let i = 0; i < peersSD.length; i++) {
+      const peer = peersSD[i];
+      const isPending = i === 0 || i === 1; // 2 siswa berstatus "dikumpulkan" (menunggu dinilai)
+      await prisma.tugasSubmission.create({
+        data: {
+          tugas_id: tugasIPAS.id,
+          siswa_id: peer.id,
+          status: isPending ? "dikumpulkan" : "sudah_dinilai",
+          nilai: isPending ? null : sampleScores[i % sampleScores.length],
+          nilai_otomatis: 40,
+          nilai_manual: isPending ? null : sampleScores[i % sampleScores.length] - 40,
+          catatan_guru: isPending ? null : "Jawaban baik dan telah diverifikasi oleh ustadzah.",
+          total_soal: 3,
+          total_benar: 2,
+          submitted_at: new Date(now.getTime() - (i + 1) * 3600000 * 6),
+          graded_at: isPending ? null : new Date(now.getTime() - (i + 1) * 3600000 * 3),
+          graded_by: isPending ? null : guruSD.id,
+        },
+      });
+
+      // Submisi kliping untuk 3 siswa lainnya
+      if (i < 3) {
+        await prisma.tugasSubmission.create({
+          data: {
+            tugas_id: tugasKlipingSD.id,
+            siswa_id: peer.id,
+            status: i === 0 ? "dikumpulkan" : "sudah_dinilai",
+            nilai: i === 0 ? null : 90 + i * 2,
+            file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Kliping_Siklus_Air_Rayhan.pdf",
+        file_type: "application/pdf",
+            submitted_at: new Date(now.getTime() - 20 * 3600000),
+          },
+        });
+      }
+    }
+
+    for (let i = 0; i < peersSMP.length; i++) {
+      const peer = peersSMP[i];
+      const isPending = i === 0;
+      await prisma.tugasSubmission.create({
+        data: {
+          tugas_id: tugasMTK.id,
+          siswa_id: peer.id,
+          status: isPending ? "dikumpulkan" : "sudah_dinilai",
+          nilai: isPending ? null : sampleScores[i % sampleScores.length],
+          nilai_otomatis: 50,
+          catatan_guru: isPending ? null : "Perhitungan rapi, pertahankan ketelitian.",
+          total_soal: 3,
+          total_benar: 2,
+          submitted_at: new Date(now.getTime() - (i + 1) * 3600000 * 8),
+          graded_at: isPending ? null : new Date(now.getTime() - (i + 1) * 3600000 * 4),
+          graded_by: isPending ? null : guruSMP.id,
+        },
+      });
+
+      if (i < 3) {
+        await prisma.tugasSubmission.create({
+          data: {
+            tugas_id: tugasDescriptiveSMP.id,
+            siswa_id: peer.id,
+            status: i === 0 ? "dikumpulkan" : "sudah_dinilai",
+            nilai: i === 0 ? null : 88 + i * 3,
+            file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        file_name: "Kliping_Siklus_Air_Rayhan.pdf",
+        file_type: "application/pdf",
+            submitted_at: new Date(now.getTime() - 15 * 3600000),
+          },
+        });
+      }
+    }
+
+    // 9. SEED PRESENSI LENGKAP 14 HARI (Multi-Kondisi: Hadir, Sakit, Izin, Alpa)
     console.log("📋 Menyiapkan Rekap Presensi KBM 14 Hari...");
 
-    // Format YYYY-MM-DD
     const formatDate = (d: Date) =>
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     const formatMonth = (d: Date) =>
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 
-    // Ambil siswa kelas 4 SD dan kelas 7 SMP untuk diberi presensi
     const allStudentsSD = await prisma.user.findMany({
-      where: { kelas: kelasSD.nama_kelas, status: "1" },
+      where: { kelas: kSD1.nama_kelas, status: "1" },
       select: { id: true },
     });
     const allStudentsSMP = await prisma.user.findMany({
-      where: { kelas: kelasSMP.nama_kelas, status: "1" },
+      where: { kelas: kSMP1.nama_kelas, status: "1" },
       select: { id: true },
     });
 
     const absenBatch = [];
 
-    // Buat riwayat presensi untuk 10 hari efektif (mundur dari hari ini)
-    for (let dayOffset = 0; dayOffset <= 12; dayOffset++) {
+    // Buat riwayat presensi 10 hari sekolah efektif
+    for (let dayOffset = 0; dayOffset <= 13; dayOffset++) {
       const d = new Date(now.getTime() - dayOffset * 86400000);
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue; // Lewati Sabtu & Minggu
@@ -1086,7 +1309,7 @@ export class DemoDataService {
       const dateStr = formatDate(d);
       const monthStr = formatMonth(d);
 
-      // --- Sesi SD: IPAS (Guru SD) ---
+      // Sesi SD 1: IPAS
       for (const s of allStudentsSD) {
         let ket = "Hadir";
         let ctt: string | null = null;
@@ -1096,12 +1319,18 @@ export class DemoDataService {
         } else if (s.id === siswaSD.id && dayOffset === 9) {
           ket = "Sakit";
           ctt = "Demam dan flu (surat dokter terlampir)";
+        } else if (dayOffset === 2 && s.id === allStudentsSD[2]?.id) {
+          ket = "Sakit";
+          ctt = "Sakit surat izin orang tua";
+        } else if (dayOffset === 6 && s.id === allStudentsSD[3]?.id) {
+          ket = "Izin";
+          ctt = "Izin pembinaan lomba";
         }
 
         absenBatch.push({
           user_id: s.id,
-          kelas: kelasSD.nama_kelas,
-          kelas_id: kelasSD.id,
+          kelas: kSD1.nama_kelas,
+          kelas_id: kSD1.id,
           mapel_id: mapelIPAS.id,
           guru_id: guruSD.id,
           keterangan: ket,
@@ -1112,19 +1341,19 @@ export class DemoDataService {
         });
       }
 
-      // --- Sesi SD: PAI (Walas SD) ---
+      // Sesi SD 2: PAI
       for (const s of allStudentsSD) {
         let ket = "Hadir";
         let ctt: string | null = null;
         if (s.id === siswaSD.id && (dayOffset === 4 || dayOffset === 9)) {
           ket = dayOffset === 4 ? "Izin" : "Sakit";
-          ctt = "Sinkronisasi izin harian wali kelas";
+          ctt = dayOffset === 4 ? "Izin acara keluarga resmi" : "Demam dan flu (surat dokter)";
         }
 
         absenBatch.push({
           user_id: s.id,
-          kelas: kelasSD.nama_kelas,
-          kelas_id: kelasSD.id,
+          kelas: kSD1.nama_kelas,
+          kelas_id: kSD1.id,
           mapel_id: mapelPAI.id,
           guru_id: walasSD.id,
           keterangan: ket,
@@ -1135,19 +1364,22 @@ export class DemoDataService {
         });
       }
 
-      // --- Sesi SMP: MTK (Guru SMP) ---
+      // Sesi SMP 1: MTK
       for (const s of allStudentsSMP) {
         let ket = "Hadir";
         let ctt: string | null = null;
         if (s.id === siswaSMP.id && dayOffset === 6) {
           ket = "Izin";
           ctt = "Izin persiapan seleksi lomba matematika";
+        } else if (dayOffset === 3 && s.id === allStudentsSMP[2]?.id) {
+          ket = "Sakit";
+          ctt = "Sakit demam";
         }
 
         absenBatch.push({
           user_id: s.id,
-          kelas: kelasSMP.nama_kelas,
-          kelas_id: kelasSMP.id,
+          kelas: kSMP1.nama_kelas,
+          kelas_id: kSMP1.id,
           mapel_id: mapelMTK.id,
           guru_id: guruSMP.id,
           keterangan: ket,
@@ -1158,13 +1390,13 @@ export class DemoDataService {
         });
       }
 
-      // --- Sesi SMP: Bahasa Inggris (Walas SMP) ---
+      // Sesi SMP 2: Bahasa Inggris
       for (const s of allStudentsSMP) {
         let ket = "Hadir";
         absenBatch.push({
           user_id: s.id,
-          kelas: kelasSMP.nama_kelas,
-          kelas_id: kelasSMP.id,
+          kelas: kSMP1.nama_kelas,
+          kelas_id: kSMP1.id,
           mapel_id: mapelENG.id,
           guru_id: walasSMP.id,
           keterangan: ket,
@@ -1182,30 +1414,356 @@ export class DemoDataService {
       await prisma.absen.createMany({ data: chunk, skipDuplicates: true });
     }
 
-    // 10. SEED PRESTASI SISWA DEMO
-    console.log("🏆 Menyiapkan Prestasi Siswa Demo...");
-    await prisma.prestasi.createMany({
-      data: [
-        {
-          id_user: siswaSD.id.toString(),
-          nama: siswaSD.name,
-          kelas: kelasSD.nama_kelas,
-          prestasi: "Juara 1 Olimpiade Sains & Matematika Nasional (OSMN) 2026",
-          fotoanak: "/images/best-student.avif",
-        },
-        {
-          id_user: siswaSMP.id.toString(),
-          nama: siswaSMP.name,
-          kelas: kelasSMP.nama_kelas,
-          prestasi: "Juara 2 National English Storytelling & Speech Competition 2026",
-          fotoanak: "/images/best-point.avif",
-        },
-      ],
+    // 10. SEED PRESTASI SISWA LENGKAP DI SEMUA KELAS (SD & SMP)
+    console.log("🏆 Menyiapkan Prestasi Siswa Lengkap di Semua Kelas...");
+
+    // Daftar template prestasi kaya & variatif
+    const templateCatalog = [
+      { prestasi: "Medali Emas Islamic Science Olympiad Tingkat Internasional", tingkat: "Internasional", peringkat: "Juara 1" },
+      { prestasi: "Juara 1 Musabaqah Hifdzil Qur'an (MHQ) 3 Juz Tingkat Nasional", tingkat: "Nasional", peringkat: "Juara 1" },
+      { prestasi: "Gold Medalist International Youth English Debate & Storytelling", tingkat: "Internasional", peringkat: "Juara 1" },
+      { prestasi: "Juara 1 Olimpiade Sains & Matematika Nasional (OSMN) 2026", tingkat: "Nasional", peringkat: "Juara 1" },
+      { prestasi: "Juara 1 Turnamen Panahan Tradisional Pelajar Se-Sumbagsel", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+      { prestasi: "Juara 1 Olimpiade Bahasa Arab (OBA) Tingkat Provinsi Sumatera Selatan", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+      { prestasi: "Juara 2 Lomba Kaligrafi Kontemporer Pelajar Se-Kota Palembang", tingkat: "Daerah/Kota", peringkat: "Juara 2" },
+      { prestasi: "Juara 1 English Speech & Story Telling Contest Al-Azhar Cup 2026", tingkat: "Dalam Sekolah", peringkat: "Juara 1" },
+      { prestasi: "Juara 1 MHQ 5 Juz Festival Anak Sholeh Indonesia (FASI) Sumsel", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+      { prestasi: "Juara 1 Kejuaraan Taekwondo Pelajar Antar Dojang Se-Sumatera", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+      { prestasi: "Juara 2 Lomba Cerdas Cermat PAI Pelajar Se-Kota Palembang", tingkat: "Daerah/Kota", peringkat: "Juara 2" },
+      { prestasi: "Juara 1 Lomba Da'i Cilik PAI Tingkat Pelajar se-Sumatera Selatan", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+      { prestasi: "Medali Perak International Kangaroo Mathematics Contest (IKMC)", tingkat: "Internasional", peringkat: "Juara 2" },
+      { prestasi: "Juara 1 Lomba Robotik Line Follower Pelajar Nasional", tingkat: "Nasional", peringkat: "Juara 1" },
+      { prestasi: "Juara 3 Olimpiade Sains Kuark (OSK) Tingkat Nasional", tingkat: "Nasional", peringkat: "Juara 3" },
+      { prestasi: "Juara 1 Lomba Cipta & Baca Puisi Islami Kota Palembang", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+      { prestasi: "Juara 1 Lomba Tartil Qur'an Pekan Keterampilan & Seni PAI", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+      { prestasi: "Juara 2 Festival Seni Nasyid & Hadroh Ramadhan 1447 H", tingkat: "Daerah/Kota", peringkat: "Juara 2" },
+      { prestasi: "Juara 1 Turnamen Futsal Pelajar Antar Sekolah Islam Se-Palembang", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+      { prestasi: "Juara Harapan 1 National English Spelling Bee Championship", tingkat: "Nasional", peringkat: "Harapan" },
+      { prestasi: "Medali Perunggu Asian Science & Mathematics Olympiad (ASMO)", tingkat: "Internasional", peringkat: "Juara 3" },
+      { prestasi: "Juara 1 Musabaqah Khaththil Qur'an (MKQ) Hiasan Mushaf", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+      { prestasi: "Juara 1 Lomba Menulis Cerpen Islami Tingkat Pelajar", tingkat: "Dalam Sekolah", peringkat: "Juara 1" },
+      { prestasi: "Juara 2 Olimpiade Astronomi & Sains Dasar Pelajar", tingkat: "Daerah/Kota", peringkat: "Juara 2" },
+      { prestasi: "Juara 1 Pencak Silat Tapak Suci Pelajar Tingkat Daerah", tingkat: "Daerah/Kota", peringkat: "Juara 1" },
+    ];
+
+    const prestasiToInsert: any[] = [];
+
+    // --- A. Prestasi Zahra Salsabila (TOP 1 SD - Akumulasi 36 Poin) ---
+    const zahra = await prisma.user.findFirst({
+      where: { name: { contains: "Zahra" }, kelas: kSD1.nama_kelas },
+    });
+    const zahraId = zahra ? zahra.id.toString() : "21";
+    const zahraName = zahra ? zahra.name : "Zahra Salsabila";
+
+    prestasiToInsert.push(
+      {
+        id_user: zahraId,
+        nama: zahraName,
+        kelas: kSD1.nama_kelas,
+        kelas_saat_prestasi: "Kelas 4",
+        tahun_ajaran: "2025/2026",
+        tingkat: "Internasional",
+        peringkat: "Juara 1",
+        poin: 16,
+        jenjang: "SD",
+        fotoanak: "/images/best-point.avif",
+        prestasi: "Medali Emas International Islamic Science & Quranic Olympiad",
+        tanggal_prestasi: new Date(now.getTime() - 10 * 86400000),
+        created_at: new Date(now.getTime() - 10 * 86400000),
+      },
+      {
+        id_user: zahraId,
+        nama: zahraName,
+        kelas: kSD1.nama_kelas,
+        kelas_saat_prestasi: "Kelas 4",
+        tahun_ajaran: "2025/2026",
+        tingkat: "Nasional",
+        peringkat: "Juara 1",
+        poin: 12,
+        jenjang: "SD",
+        fotoanak: "/images/best-point.avif",
+        prestasi: "Juara 1 Musabaqah Hifdzil Qur'an (MHQ) 3 Juz Tingkat Nasional",
+        tanggal_prestasi: new Date(now.getTime() - 25 * 86400000),
+        created_at: new Date(now.getTime() - 25 * 86400000),
+      },
+      {
+        id_user: zahraId,
+        nama: zahraName,
+        kelas: kSD1.nama_kelas,
+        kelas_saat_prestasi: "Kelas 4",
+        tahun_ajaran: "2025/2026",
+        tingkat: "Daerah/Kota",
+        peringkat: "Juara 1",
+        poin: 8,
+        jenjang: "SD",
+        fotoanak: "/images/best-point.avif",
+        prestasi: "Juara 1 Olimpiade Matematika Pelajar SD Se-Sumatera Selatan",
+        tanggal_prestasi: new Date(now.getTime() - 40 * 86400000),
+        created_at: new Date(now.getTime() - 40 * 86400000),
+      }
+    );
+
+    // --- B. Prestasi Siswa SD Demo (Muhammad Rayhan Al-Fatih - Akumulasi 20 Poin) ---
+    prestasiToInsert.push(
+      {
+        id_user: siswaSD.id.toString(),
+        nama: siswaSD.name,
+        kelas: kSD1.nama_kelas,
+        kelas_saat_prestasi: "Kelas 4",
+        tahun_ajaran: "2025/2026",
+        tingkat: "Nasional",
+        peringkat: "Juara 1",
+        poin: 12,
+        jenjang: "SD",
+        fotoanak: "/images/best-student.avif",
+        prestasi: "Juara 1 Olimpiade Sains & Matematika Nasional (OSMN) 2026",
+        tanggal_prestasi: new Date(now.getTime() - 5 * 86400000),
+        created_at: new Date(now.getTime() - 5 * 86400000),
+      },
+      {
+        id_user: siswaSD.id.toString(),
+        nama: siswaSD.name,
+        kelas: kSD1.nama_kelas,
+        kelas_saat_prestasi: "Kelas 4",
+        tahun_ajaran: "2025/2026",
+        tingkat: "Daerah/Kota",
+        peringkat: "Juara 1",
+        poin: 8,
+        jenjang: "SD",
+        fotoanak: "/images/best-student.avif",
+        prestasi: "Juara 1 Turnamen Panahan Tradisional Pelajar Al-Azhar Se-Sumbagsel",
+        tanggal_prestasi: new Date(now.getTime() - 20 * 86400000),
+        created_at: new Date(now.getTime() - 20 * 86400000),
+      }
+    );
+
+    // --- C. Prestasi Siswa SMP Demo (Haidar Ali SMP - TOP 1 SMP - Akumulasi 36 Poin) ---
+    prestasiToInsert.push(
+      {
+        id_user: siswaSMP.id.toString(),
+        nama: siswaSMP.name,
+        kelas: kSMP1.nama_kelas,
+        kelas_saat_prestasi: "Kelas 7",
+        tahun_ajaran: "2025/2026",
+        tingkat: "Internasional",
+        peringkat: "Juara 1",
+        poin: 16,
+        jenjang: "SMP",
+        fotoanak: "/images/best-student.avif",
+        prestasi: "Gold Medalist International Youth English Debate & Storytelling",
+        tanggal_prestasi: new Date(now.getTime() - 8 * 86400000),
+        created_at: new Date(now.getTime() - 8 * 86400000),
+      },
+      {
+        id_user: siswaSMP.id.toString(),
+        nama: siswaSMP.name,
+        kelas: kSMP1.nama_kelas,
+        kelas_saat_prestasi: "Kelas 7",
+        tahun_ajaran: "2025/2026",
+        tingkat: "Nasional",
+        peringkat: "Juara 1",
+        poin: 12,
+        jenjang: "SMP",
+        fotoanak: "/images/best-student.avif",
+        prestasi: "Juara 1 Olimpiade Sains & Matematika Pelajar SMP Nasional",
+        tanggal_prestasi: new Date(now.getTime() - 22 * 86400000),
+        created_at: new Date(now.getTime() - 22 * 86400000),
+      },
+      {
+        id_user: siswaSMP.id.toString(),
+        nama: siswaSMP.name,
+        kelas: kSMP1.nama_kelas,
+        kelas_saat_prestasi: "Kelas 7",
+        tahun_ajaran: "2025/2026",
+        tingkat: "Daerah/Kota",
+        peringkat: "Juara 1",
+        poin: 8,
+        jenjang: "SMP",
+        fotoanak: "/images/best-student.avif",
+        prestasi: "Juara 1 Musabaqah Tilawatil Qur'an (MTQ) Pelajar SMP Se-Sumsel",
+        tanggal_prestasi: new Date(now.getTime() - 35 * 86400000),
+        created_at: new Date(now.getTime() - 35 * 86400000),
+      }
+    );
+
+    // --- D. Prestasi Merata di Seluruh Kelas Lainnya ---
+    const allClasses = await prisma.kelas.findMany({
+      orderBy: [{ jenjang: "asc" }, { tingkat: "asc" }, { nama_kelas: "asc" }],
     });
 
-    // 11. SEED CHAT ROOM & PESAN DEMO
-    console.log("💬 Menyiapkan Riwayat Pesan Chat Demo...");
-    // Room 1: Walas SD <-> Siswa SD
+    let catIdx = 4;
+    for (const c of allClasses) {
+      // Lewati kelas utama jika sudah terisi Zahra & Haidar
+      const isMainSD = c.nama_kelas === kSD1.nama_kelas;
+      const isMainSMP = c.nama_kelas === kSMP1.nama_kelas;
+
+      const studentInClass = await prisma.user.findFirst({
+        where: { kelas: c.nama_kelas, status: { in: ["0", "1"] } },
+        select: { id: true, name: true, kelas: true, jenjang: true },
+      });
+
+      if (studentInClass && !isMainSD && !isMainSMP) {
+        const tpl = templateCatalog[catIdx % templateCatalog.length];
+        const poin = calculateAchievementPoints(tpl.tingkat as any, tpl.peringkat as any);
+        const daysAgo = 10 + (catIdx * 3) % 90;
+
+        prestasiToInsert.push({
+          id_user: studentInClass.id.toString(),
+          nama: studentInClass.name,
+          kelas: c.nama_kelas,
+          kelas_saat_prestasi: c.nama_kelas.split("-")[0].trim(),
+          tahun_ajaran: "2025/2026",
+          tingkat: tpl.tingkat,
+          peringkat: tpl.peringkat,
+          poin: poin,
+          jenjang: c.jenjang || "SD",
+          fotoanak: catIdx % 2 === 0 ? "/images/best-student.avif" : "/images/best-point.avif",
+          prestasi: tpl.prestasi,
+          tanggal_prestasi: new Date(now.getTime() - daysAgo * 86400000),
+          created_at: new Date(now.getTime() - daysAgo * 86400000),
+        });
+        catIdx++;
+      }
+    }
+
+    // Insert semua prestasi secara bertahap
+    for (const p of prestasiToInsert) {
+      await prisma.prestasi.create({ data: p });
+    }
+
+    // 11. SEED CATATAN KEDISIPLINAN & PEMBINAAN (tbl_pelanggaran)
+    console.log("🛡️ Menyiapkan Catatan Kedisiplinan & Pelanggaran Demo...");
+    const pelanggaranList = [
+      {
+        user_id: siswaSMP.id.toString(),
+        nama: siswaSMP.name,
+        kelas: kSMP1.nama_kelas,
+        kategori: "Apresiasi Kedisiplinan & Adab",
+        keterangan: "Apresiasi kedisiplinan: Siswa proaktif membantu ustadz merapikan shaf musholla dan menjadi muadzin sholat dhuha berjamaah.",
+        tingkatan: "Positif",
+        semester: "Semester 1",
+        tahun_pelajaran: "2026/2027",
+        jenjang: "SMP",
+        guru_id: walasSMP.id,
+        guru_nama: walasSMP.name,
+        created_at: new Date(now.getTime() - 2 * 86400000),
+      },
+      {
+        user_id: siswaSD.id.toString(),
+        nama: siswaSD.name,
+        kelas: kSD1.nama_kelas,
+        kategori: "Kedisiplinan Waktu",
+        keterangan: "Terlambat 7 menit masuk kelas pada jam ke-1 dikarenakan kendala hujan lebat di perjalanan. Siswa telah melapor dan selesai dibina.",
+        tingkatan: "Ringan",
+        semester: "Semester 1",
+        tahun_pelajaran: "2026/2027",
+        jenjang: "SD",
+        guru_id: walasSD.id,
+        guru_nama: walasSD.name,
+        created_at: new Date(now.getTime() - 5 * 86400000),
+      },
+      {
+        user_id: peersSD[0]?.id.toString() || siswaSD.id.toString(),
+        nama: peersSD[0]?.name || "Siswa Kelas 4",
+        kelas: kSD1.nama_kelas,
+        kategori: "Kerapian Seragam",
+        keterangan: "Lupa mengenakan kopiah seragam saat upacara bendera hari Senin. Telah diingatkan oleh wali kelas.",
+        tingkatan: "Ringan",
+        semester: "Semester 1",
+        tahun_pelajaran: "2026/2027",
+        jenjang: "SD",
+        guru_id: walasSD.id,
+        guru_nama: walasSD.name,
+        created_at: new Date(now.getTime() - 7 * 86400000),
+      },
+      {
+        user_id: peersSMP[0]?.id.toString() || siswaSMP.id.toString(),
+        nama: peersSMP[0]?.name || "Siswa Kelas 7",
+        kelas: kSMP1.nama_kelas,
+        kategori: "Kedisiplinan Belajar",
+        keterangan: "Lupa membawa buku panduan praktikum IPA. Sudah meminjam buku cadangan perpustakaan.",
+        tingkatan: "Ringan",
+        semester: "Semester 1",
+        tahun_pelajaran: "2026/2027",
+        jenjang: "SMP",
+        guru_id: guruSMP.id,
+        guru_nama: guruSMP.name,
+        created_at: new Date(now.getTime() - 4 * 86400000),
+      },
+    ];
+
+    for (const pel of pelanggaranList) {
+      await prisma.pelanggaran.create({ data: pel });
+    }
+
+    // 12. SEED PENGUMUMAN RESMI SEKOLAH (tbl_pengumuman)
+    console.log("📢 Menyiapkan Pengumuman Resmi Sekolah...");
+    const pengumumanList = [
+      {
+        from: "Kesiswaan Al-Azhar Cairo",
+        title: "Pekan Penilaian Tengah Semester (PTS) Semester Ganjil T.A 2026/2027",
+        file: null,
+        pengumuman: "Diberitahukan kepada seluruh ustadz/ustadzah, siswa, dan orang tua murid bahwa Pekan Penilaian Tengah Semester (PTS) akan diselenggarakan secara serentak. Siswa diimbau menjaga kesehatan dan mempersiapkan diri dengan baik.",
+        like: "42",
+        jenjang: "ALL",
+        target_role: "ALL",
+        target_kelas: null,
+        created_at: new Date(now.getTime() - 3 * 86400000),
+      },
+      {
+        from: "Kurikulum Al-Azhar Cairo",
+        title: "Semarak Ramadhan 1447 H & Pesantren Kilat Siswa Al-Azhar Cairo",
+        file: null,
+        pengumuman: "Menyambut bulan suci Ramadhan 1447 H, sekolah akan mengadakan rangkaian Pesantren Kilat, Khotmil Qur'an, dan Lomba Keagamaan Islami untuk seluruh jenjang SD dan SMP.",
+        like: "68",
+        jenjang: "ALL",
+        target_role: "ALL",
+        target_kelas: null,
+        created_at: new Date(now.getTime() - 6 * 86400000),
+      },
+      {
+        from: "Ustadzah Fatimah, S.Pd",
+        title: "Outing Class Edukatif ke Museum Balaputradeva & Rumah Limas",
+        file: null,
+        pengumuman: "Assalamu'alaikum wr wb. Khusus untuk ananda siswa Kelas 4 - Mehmed Al Fatih, kegiatan Outing Class bertema Pengenalan Sejarah & Budaya Lokal akan dilaksanakan hari Kamis depan. Harap membawa perlengkapan sholat dan buku catatan.",
+        like: "28",
+        jenjang: "SD",
+        target_role: "siswa",
+        target_kelas: kSD1.nama_kelas,
+        created_at: new Date(now.getTime() - 1 * 86400000),
+      },
+      {
+        from: "Ustadz Farhan, S.Pd",
+        title: "Sosialisasi Lomba National English Storytelling & Science Competition",
+        file: null,
+        pengumuman: "Pendaftaran delegasi lomba Bahasa Inggris dan Sains tingkat Nasional telah dibuka. Bagi ananda siswa SMP yang berminat mengikuti seleksi internal sekolah, silakan menghubungi Ustadz Farhan di ruang guru.",
+        like: "35",
+        jenjang: "SMP",
+        target_role: "siswa",
+        target_kelas: null,
+        created_at: new Date(now.getTime() - 4 * 86400000),
+      },
+      {
+        from: "Kurikulum Al-Azhar Cairo",
+        title: "Panduan Pembelajaran Tatap Maya & Etika Digital Kelas Online",
+        file: null,
+        pengumuman: "Seluruh siswa diharapkan mengaktifkan kamera video (on-cam), mengenakan seragam rapi, dan menggunakan mikrofon secara tertib saat sesi tatap maya berlangsung pada portal kelas online.",
+        like: "51",
+        jenjang: "ALL",
+        target_role: "ALL",
+        target_kelas: null,
+        created_at: new Date(now.getTime() - 8 * 86400000),
+      },
+    ];
+
+    for (const peng of pengumumanList) {
+      await prisma.pengumuman.create({ data: peng });
+    }
+
+    // 13. SEED CHAT ROOM & PESAN DEMO LENGKAP (5 Room Aktif)
+    console.log("💬 Menyiapkan Riwayat Pesan Chat Realistis (5 Room)...");
+
+    // Room 1: Walas SD <-> Siswa SD (Rayhan)
     const chatRoomSD = await prisma.chatRoom.create({
       data: {
         type: "DIRECT",
@@ -1220,16 +1778,14 @@ export class DemoDataService {
         {
           room_id: chatRoomSD.id,
           sender_id: walasSD.id,
-          message:
-            "Assalamu'alaikum Rayhan, jangan lupa latihan hafalan Surah Al-Mulk ayat 1-15 untuk persiapan wisuda tahfidz ya.",
+          message: "Assalamu'alaikum Rayhan, jangan lupa latihan hafalan Surah Al-Mulk ayat 1-15 untuk persiapan wisuda tahfidz ya.",
           is_read: true,
           created_at: new Date(now.getTime() - 14400000),
         },
         {
           room_id: chatRoomSD.id,
           sender_id: siswaSD.id,
-          message:
-            "Wa'alaikumsalam Ustadzah, baik insyaAllah siap! Saat ini sudah lancar sampai ayat 15.",
+          message: "Wa'alaikumsalam Ustadzah, baik insyaAllah siap! Saat ini sudah lancar sampai ayat 15.",
           is_read: true,
           created_at: new Date(now.getTime() - 7200000),
         },
@@ -1243,7 +1799,43 @@ export class DemoDataService {
       ],
     });
 
-    // Room 2: Walas SMP <-> Siswa SMP
+    // Room 2: Guru SD (Nurul) <-> Siswa SD (Rayhan)
+    const chatRoomGuruSD = await prisma.chatRoom.create({
+      data: {
+        type: "DIRECT",
+        user_one_id: guruSD.id,
+        user_two_id: siswaSD.id,
+        last_message: "Sangat bagus Rayhan! Jawaban kliping metamorfosis kupu-kupumu sudah ustadzah periksa dan nilainya memuaskan.",
+        last_message_at: new Date(now.getTime() - 1800000),
+      },
+    });
+    await prisma.chatMessage.createMany({
+      data: [
+        {
+          room_id: chatRoomGuruSD.id,
+          sender_id: siswaSD.id,
+          message: "Ustadzah Nurul, apakah tugas kliping rantai makanan boleh ditambahkan foto hewan dari majalah sains?",
+          is_read: true,
+          created_at: new Date(now.getTime() - 86400000),
+        },
+        {
+          room_id: chatRoomGuruSD.id,
+          sender_id: guruSD.id,
+          message: "Tentu sangat boleh Rayhan, justru itu akan menambah nilai kerapian dan kreativitas portofoliomu.",
+          is_read: true,
+          created_at: new Date(now.getTime() - 43200000),
+        },
+        {
+          room_id: chatRoomGuruSD.id,
+          sender_id: guruSD.id,
+          message: "Sangat bagus Rayhan! Jawaban kliping metamorfosis kupu-kupumu sudah ustadzah periksa dan nilainya memuaskan.",
+          is_read: false, // Unread message untuk demo notifikasi
+          created_at: new Date(now.getTime() - 1800000),
+        },
+      ],
+    });
+
+    // Room 3: Walas SMP (Farhan) <-> Siswa SMP (Haidar)
     const chatRoomSMP = await prisma.chatRoom.create({
       data: {
         type: "DIRECT",
@@ -1279,14 +1871,72 @@ export class DemoDataService {
       ],
     });
 
-    // 12. Simpan status di SystemSetting
+    // Room 4: Guru SMP (Wildan) <-> Siswa SMP (Haidar)
+    const chatRoomGuruSMP = await prisma.chatRoom.create({
+      data: {
+        type: "DIRECT",
+        user_one_id: guruSMP.id,
+        user_two_id: siswaSMP.id,
+        last_message: "Benar sekali Haidar, sifat pindah ruas pada aljabar selalu berlawanan tanda. Pertahankan ketelitianmu!",
+        last_message_at: new Date(now.getTime() - 900000),
+      },
+    });
+    await prisma.chatMessage.createMany({
+      data: [
+        {
+          room_id: chatRoomGuruSMP.id,
+          sender_id: siswaSMP.id,
+          message: "Ustadz Wildan, untuk soal PLSV nomor 3 apakah tanda minus berubah menjadi positif jika dipindah ke ruas kanan?",
+          is_read: true,
+          created_at: new Date(now.getTime() - 7200000),
+        },
+        {
+          room_id: chatRoomGuruSMP.id,
+          sender_id: guruSMP.id,
+          message: "Benar sekali Haidar, sifat pindah ruas pada aljabar selalu berlawanan tanda. Pertahankan ketelitianmu!",
+          is_read: false,
+          created_at: new Date(now.getTime() - 900000),
+        },
+      ],
+    });
+
+    // Room 5: Walas SD (Fatimah) <-> Guru SD (Nurul)
+    const chatRoomGuruInternal = await prisma.chatRoom.create({
+      data: {
+        type: "DIRECT",
+        user_one_id: walasSD.id,
+        user_two_id: guruSD.id,
+        last_message: "Baik Ustadzah Nurul, jadwal bimbingan belajar tambahan untuk kelas 4 sudah saya koordinasikan dengan wali murid.",
+        last_message_at: new Date(now.getTime() - 600000),
+      },
+    });
+    await prisma.chatMessage.createMany({
+      data: [
+        {
+          room_id: chatRoomGuruInternal.id,
+          sender_id: guruSD.id,
+          message: "Ustadzah Fatimah, bagaimana kesiapan anak-anak kelas 4 untuk asesmen formatif pekan ini?",
+          is_read: true,
+          created_at: new Date(now.getTime() - 3600000),
+        },
+        {
+          room_id: chatRoomGuruInternal.id,
+          sender_id: walasSD.id,
+          message: "Baik Ustadzah Nurul, jadwal bimbingan belajar tambahan untuk kelas 4 sudah saya koordinasikan dengan wali murid.",
+          is_read: true,
+          created_at: new Date(now.getTime() - 600000),
+        },
+      ],
+    });
+
+    // 14. Simpan status di SystemSetting
     await SystemSettingService.setSetting(
       "ENABLE_DEMO_DATA",
       "true",
       "Status data contoh (sample data) aktif pada dashboard akun demo"
     );
 
-    console.log("✅ [DemoDataService] Seluruh data contoh akun demo berhasil diisikan lengkap!");
+    console.log("✅ [DemoDataService] Seluruh data contoh akun demo berhasil diisikan lengkap di semua fitur!");
 
     return {
       success: true,
@@ -1294,9 +1944,12 @@ export class DemoDataService {
       count: {
         jadwal: createdJadwal.length,
         pertemuan: createdPertemuan.length,
-        tugas: 5,
-        submissions: 4,
+        tugas: 9,
+        submissions: 6 + peersSD.length + peersSMP.length,
         absensi: absenBatch.length,
+        prestasi: prestasiToInsert.length,
+        pelanggaran: pelanggaranList.length,
+        pengumuman: pengumumanList.length,
       },
     };
   }
@@ -1357,7 +2010,12 @@ export class DemoDataService {
 
     // 2. Prestasi
     await prisma.prestasi.deleteMany({
-      where: { id_user: { in: studentIdStrs } },
+      where: {
+        OR: [
+          { id_user: { in: studentIdStrs } },
+          { fotoanak: { in: ["/images/best-student.avif", "/images/best-point.avif"] } },
+        ],
+      },
     });
 
     // 3. Absensi
@@ -1406,6 +2064,30 @@ export class DemoDataService {
     // 7. Jadwal Pelajaran
     await prisma.jadwalPelajaran.deleteMany({
       where: { guru_id: { in: teacherIds } },
+    });
+
+    // 8. Pelanggaran demo
+    await prisma.pelanggaran.deleteMany({
+      where: {
+        OR: [
+          { user_id: { in: studentIdStrs } },
+          { guru_id: { in: teacherIds } },
+        ],
+      },
+    });
+
+    // 9. Pengumuman demo
+    await prisma.pengumuman.deleteMany({
+      where: {
+        from: {
+          in: [
+            "Ustadzah Fatimah, S.Pd",
+            "Ustadz Farhan, S.Pd",
+            "Kurikulum Al-Azhar Cairo",
+            "Kesiswaan Al-Azhar Cairo",
+          ],
+        },
+      },
     });
 
     console.log("✅ [DemoDataService] Internal cleaner selesai.");

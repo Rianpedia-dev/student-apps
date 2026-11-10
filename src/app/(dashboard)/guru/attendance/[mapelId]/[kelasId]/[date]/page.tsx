@@ -119,7 +119,7 @@ export default async function DailySubjectAttendancePage(props: PageProps) {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto w-full px-2 sm:px-4 md:px-0">
+    <div className="space-y-5 sm:space-y-6 max-w-7xl mx-auto w-full px-2 sm:px-4 lg:px-6">
       {/* Back Link */}
       <div className="flex items-center justify-between">
         <Link
@@ -134,47 +134,46 @@ export default async function DailySubjectAttendancePage(props: PageProps) {
       </div>
 
       {/* Subject Header Card */}
-      <div className="p-5 sm:p-6 rounded-2xl border border-border/80 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="text-[11px] font-mono border-orange-500/40 text-orange-600 dark:text-orange-400">
-                {mapel.kode_mapel}
-              </Badge>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                {mapel.nama_mapel}
-              </h1>
+      <div className="p-5 sm:p-6 rounded-3xl border border-border/80 bg-card/95 dark:bg-card/90 shadow-sm backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+              {mapel.nama_mapel}
+            </h1>
+            <div className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
+              <span className="flex items-center gap-1.5 font-bold text-foreground">
+                <BuildingLibraryIcon className="h-4 w-4 text-emerald-600 shrink-0" />
+                {kelas.nama_kelas}
+              </span>
+              <span>•</span>
+              <span className="font-semibold text-foreground/90">
+                {formatDateIndo(date)}
+              </span>
+              {jamKe && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                    {jamKe} WIB
+                  </span>
+                </>
+              )}
+              <span>•</span>
+              <span>Total {students.length} Siswa</span>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Form Presensi Pertemuan KBM: <strong>{formatDateIndo(date)}</strong>
-            </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="shrink-0 self-start sm:self-center">
             {existingAbsen.length > 0 ? (
-              <Badge className="bg-emerald-600 text-white text-xs font-semibold">
+              <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-xs">
                 Sudah Diabsen ({existingAbsen.length} Siswa)
               </Badge>
             ) : (
-              <Badge variant="secondary" className="text-xs font-semibold">
+              <Badge variant="outline" className="text-xs font-bold text-amber-600 border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 rounded-full animate-pulse">
                 Belum Diisi
               </Badge>
             )}
           </div>
-        </div>
-
-        <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap pt-1 border-t border-border/40">
-          <span className="flex items-center gap-1.5 font-semibold text-foreground">
-            <BuildingLibraryIcon className="h-4 w-4 text-emerald-600 shrink-0" />
-            {kelas.nama_kelas}
-          </span>
-          {jamKe && (
-            <span className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-              {jamKe} WIB
-            </span>
-          )}
-          <span>• Total {students.length} Siswa</span>
         </div>
       </div>
 

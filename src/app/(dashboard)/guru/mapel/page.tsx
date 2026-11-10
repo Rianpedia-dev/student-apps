@@ -102,12 +102,17 @@ export default async function GuruMapelPage() {
   });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="bg-card/60 backdrop-blur-xs p-4 sm:p-5 rounded-2xl border border-border">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-          Mata Pelajaran & Tugas Siswa
-        </h1>
+      <div className="bg-card/95 backdrop-blur-md p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border/80 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
+            Jadwal Mengajar & Mata Pelajaran
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Pusat KBM Guru: Buka materi silabus pertemuan, kelola tugas siswa, dan lakukan presensi kelas harian.
+          </p>
+        </div>
       </div>
 
       {/* Schedule Table View */}

@@ -26,7 +26,7 @@ import { isSameRombel, isAchievementFromPreviousClass } from "@/lib/achievement-
 export interface SelectedStudentHistoryTarget {
   userId: string;
   userName: string;
-  rank?: number;
+  rank?: number | string;
   avatarUrl?: string | null;
   gender?: string | null;
   byline?: string;

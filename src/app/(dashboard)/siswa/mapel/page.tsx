@@ -87,13 +87,10 @@ export default async function SiswaMataPelajaranPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="bg-card/60 backdrop-blur-xs p-5 sm:p-6 rounded-2xl border border-border">
+      <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
           Jadwal & Mata Pelajaran
         </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          Daftar jadwal pelajaran mingguan dan materi pembelajaran untuk kelas {studentClass || "Anda"}.
-        </p>
       </div>
 
       {/* Konten Mata Pelajaran (Card & Table View) */}

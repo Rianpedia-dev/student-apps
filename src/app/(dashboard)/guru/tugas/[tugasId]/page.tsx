@@ -123,11 +123,8 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
     };
   });
 
-  const isFromMapel = from === "mapel";
-  const backHref = isFromMapel
-    ? "/guru/mapel"
-    : `/guru/tugas?mapelId=${tugas.mapel_id}&kelasId=${tugas.kelas_id}`;
-  const backLabel = isFromMapel ? "Kembali ke Mapel & Tugas" : "Kembali ke Daftar Tugas";
+  const backHref = `/guru/mapel/${tugas.mapel_id}?kelasId=${tugas.kelas_id}&tab=tugas`;
+  const backLabel = `Kembali ke Tugas ${tugas.mapel.nama_mapel}`;
 
   const deadlineFormatted = new Date(tugas.deadline).toLocaleDateString("id-ID", {
     day: "numeric",

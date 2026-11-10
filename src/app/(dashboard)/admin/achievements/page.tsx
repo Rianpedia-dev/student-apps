@@ -48,7 +48,7 @@ export default async function AdminAchievementsPage() {
   }));
 
   // Ambil data prestasi & leaderboard
-  const [achievements, { entries: leaderboardEntries }] = await Promise.all([
+  const [achievements, { entries: leaderboardEntries, allStudents }] = await Promise.all([
     AchievementService.getAchievements({
       jenjang: isRestricted ? activeJenjang : undefined,
     }),
@@ -68,6 +68,7 @@ export default async function AdminAchievementsPage() {
         userRole={session.role}
         userStatus={session.status}
         leaderboardEntries={leaderboardEntries}
+        allStudents={allStudents}
         rombelOptions={rombelOptions}
         currentUserId={session.id}
         jenjangLabel={activeJenjang === "ALL" ? "Semua Jenjang (SD & SMP)" : activeJenjang}

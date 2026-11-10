@@ -25,7 +25,7 @@ import {
   EyeOff,
   FileText,
   Loader2,
-  X
+  X,
 } from "lucide-react";
 import { createPertemuanAction, updatePertemuanAction } from "@/actions/pertemuan";
 
@@ -99,10 +99,6 @@ export function MeetingFormDialog({
       toast.error("Judul pertemuan wajib diisi.");
       return;
     }
-    if (!tanggal) {
-      toast.error("Tanggal pertemuan wajib ditentukan.");
-      return;
-    }
 
     setIsLoading(true);
     try {
@@ -112,7 +108,7 @@ export function MeetingFormDialog({
       formData.append("pertemuan_ke", pertemuanKe.toString());
       formData.append("judul", judul.trim());
       formData.append("deskripsi", deskripsi.trim());
-      formData.append("tanggal", tanggal);
+      formData.append("tanggal", tanggal || new Date().toISOString().split("T")[0]);
       formData.append("video_url", videoUrl.trim());
       formData.append("link_eksternal", linkEksternal.trim());
       formData.append("is_published", isPublished ? "true" : "false");
@@ -145,28 +141,25 @@ export function MeetingFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl p-5 sm:p-6 shadow-xl border border-border">
+      <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto scrollbar-hide rounded-3xl p-5 sm:p-6 shadow-2xl border border-border">
         {/* Header */}
-        <DialogHeader className="space-y-1 pb-1">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-600">
-              <BookOpen className="h-4 w-4" />
-            </span>
+        <DialogHeader className="space-y-1 pb-3 border-b border-border/60">
+          <div>
             <DialogTitle className="text-lg font-bold text-foreground">
               {isEdit ? `Edit Pertemuan ${pertemuanKe}` : "Tambah Pertemuan Baru"}
             </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              Kelola materi pembelajaran dan modul siswa.
+            </DialogDescription>
           </div>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Atur materi KBM, berkas modul pembelajaran, dan tugas pendukung.
-          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3 pt-1">
-          {/* Baris 1: Pertemuan, Tanggal, & Status Publikasi */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-            <div className="sm:col-span-3 space-y-1">
-              <Label className="text-[11px] font-semibold text-muted-foreground">
-                Pertemuan Ke-
+        <form onSubmit={handleSubmit} className="space-y-3.5 pt-1">
+          {/* Baris 1: Pertemuan & Status Publikasi */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+            <div className="sm:col-span-4 space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">
+                Pertemuan Ke
               </Label>
               <Input
                 type="number"
@@ -174,84 +167,79 @@ export function MeetingFormDialog({
                 max={50}
                 value={pertemuanKe}
                 onChange={(e) => setPertemuanKe(parseInt(e.target.value) || 1)}
-                className="h-8.5 text-center font-bold text-sm rounded-xl"
+                className="h-9.5 text-center font-bold text-sm rounded-xl bg-background border-border"
                 required
               />
             </div>
 
-            <div className="sm:col-span-5 space-y-1">
-              <Label className="text-[11px] font-semibold text-muted-foreground">
-                Tanggal KBM
+            <div className="sm:col-span-8 space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">
+                Status Materi
               </Label>
-              <Input
-                type="date"
-                value={tanggal}
-                onChange={(e) => setTanggal(e.target.value)}
-                className="h-8.5 rounded-xl text-xs"
-                required
-              />
-            </div>
-
-            <div className="sm:col-span-4 space-y-1">
-              <Label className="text-[11px] font-semibold text-muted-foreground">
-                Status Publikasi
-              </Label>
-              <button
-                type="button"
-                onClick={() => setIsPublished(!isPublished)}
-                className={`w-full h-8.5 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border ${isPublished
-                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/15"
-                    : "bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/15"
+              <div className="grid grid-cols-2 p-1 bg-muted/60 dark:bg-muted/40 rounded-xl border border-border/60 h-9.5 gap-1 items-center">
+                <button
+                  type="button"
+                  onClick={() => setIsPublished(false)}
+                  className={`h-7.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    !isPublished
+                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-xs border border-amber-500/30"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
-                title={isPublished ? "Siswa dapat melihat materi" : "Hanya guru yang dapat melihat (Draft)"}
-              >
-                {isPublished ? (
-                  <>
-                    <Eye className="h-3.5 w-3.5 shrink-0" />
-                    <span>Terbit (Siswa)</span>
-                  </>
-                ) : (
-                  <>
-                    <EyeOff className="h-3.5 w-3.5 shrink-0" />
-                    <span>Draft (Guru)</span>
-                  </>
-                )}
-              </button>
+                >
+                  <EyeOff className="h-3.5 w-3.5 shrink-0" />
+                  <span>Draft</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPublished(true)}
+                  className={`h-7.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    isPublished
+                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-xs border border-emerald-500/30"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Eye className="h-3.5 w-3.5 shrink-0" />
+                  <span>Terbitkan</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Judul Pertemuan */}
-          <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-muted-foreground">
-              Judul Pokok Bahasan / Materi <span className="text-destructive">*</span>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground">
+              Judul Materi <span className="text-destructive">*</span>
             </Label>
             <Input
-              placeholder="Contoh: Bab 1 - Mengenal Bilangan Bulat & Operasi Hitung"
+              placeholder="Contoh: Bab 1 - Mengenal Bilangan Bulat"
               value={judul}
               onChange={(e) => setJudul(e.target.value)}
-              className="h-8.5 rounded-xl text-xs sm:text-sm"
+              className="h-9.5 rounded-xl text-xs sm:text-sm bg-background border-border"
               required
             />
           </div>
 
           {/* Catatan / Arahan Belajar */}
-          <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-muted-foreground">
-              Catatan / Ringkasan Materi <span className="text-[10px] text-muted-foreground/70 font-normal">(Opsional)</span>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
+              <span>Ringkasan Materi</span>
+              <span className="text-[11px] text-muted-foreground font-normal">Opsional</span>
             </Label>
             <Textarea
-              placeholder="Tuliskan poin penting materi, arahan belajar siswa, dsb..."
+              placeholder="Tuliskan arahan belajar atau poin penting materi..."
               value={deskripsi}
               onChange={(e) => setDeskripsi(e.target.value)}
               rows={2}
-              className="rounded-xl text-xs resize-y min-h-[56px] leading-relaxed py-2"
+              className="rounded-xl text-xs resize-y min-h-[56px] leading-relaxed py-2 bg-background border-border"
             />
           </div>
 
-          {/* Upload Berkas Materi (Opsional) */}
-          <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-muted-foreground">
-              Berkas Modul / Materi <span className="text-[10px] text-muted-foreground/70 font-normal">(PDF, PPTX, Docx, Video maks. 35MB)</span>
+          {/* Upload Berkas Modul */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
+              <span>Lampiran Modul</span>
+              <span className="text-[11px] text-muted-foreground font-normal">Opsional</span>
             </Label>
             <input
               id="file-materi-input"
@@ -265,33 +253,41 @@ export function MeetingFormDialog({
             />
 
             {selectedFile ? (
-              <div className="flex items-center justify-between bg-muted/30 border border-primary/30 p-2 px-3 rounded-xl">
-                <div className="flex items-center gap-2 truncate">
-                  <FileText className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-xs font-semibold text-foreground truncate">{selectedFile.name}</span>
-                  <span className="text-[10px] text-muted-foreground shrink-0">
-                    ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
-                  </span>
+              <div className="flex items-center justify-between bg-muted/40 border border-primary/40 p-2.5 px-3.5 rounded-xl">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{selectedFile.name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </p>
+                  </div>
                 </div>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedFile(null)}
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive rounded-lg"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive rounded-lg shrink-0 cursor-pointer"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             ) : initialData?.fileName ? (
-              <div className="flex items-center justify-between bg-muted/30 border border-emerald-500/30 p-2 px-3 rounded-xl">
-                <div className="flex items-center gap-2 truncate">
-                  <FileText className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span className="text-xs font-semibold text-foreground truncate">{initialData.fileName}</span>
-                  <span className="text-[10px] text-muted-foreground shrink-0">(Tersimpan)</span>
+              <div className="flex items-center justify-between bg-muted/40 border border-emerald-500/30 p-2.5 px-3.5 rounded-xl">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{initialData.fileName}</p>
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Berkas tersimpan</p>
+                  </div>
                 </div>
                 <label htmlFor="file-materi-input">
-                  <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-[11px] rounded-lg pointer-events-none">
+                  <Button type="button" variant="outline" size="sm" className="h-7 px-2.5 text-xs rounded-lg pointer-events-none">
                     Ganti
                   </Button>
                 </label>
@@ -299,53 +295,55 @@ export function MeetingFormDialog({
             ) : (
               <label
                 htmlFor="file-materi-input"
-                className="flex items-center justify-center gap-2 cursor-pointer py-2 px-3 rounded-xl border border-dashed border-border hover:border-primary/50 bg-muted/15 hover:bg-muted/30 transition-all text-muted-foreground hover:text-foreground"
+                className="flex items-center justify-center gap-2.5 cursor-pointer py-2.5 px-4 rounded-xl border border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-muted/40 transition-all text-muted-foreground hover:text-foreground group"
               >
-                <Upload className="h-4 w-4 text-primary/70 shrink-0" />
-                <span className="text-xs font-medium">Klik untuk unggah dokumen materi</span>
+                <Upload className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <span className="text-xs font-medium">
+                  Unggah berkas PDF, Word, PPT, atau Video <span className="text-muted-foreground/70">(maks. 35MB)</span>
+                </span>
               </label>
             )}
           </div>
 
           {/* Media Tambahan: Video & Tautan Web */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div className="space-y-1">
-              <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-                <Video className="h-3 w-3 text-red-500" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Video className="h-3.5 w-3.5 text-rose-500 shrink-0" />
                 <span>Video YouTube</span>
               </Label>
               <Input
                 placeholder="https://www.youtube.com/..."
                 value={videoUrl}
                 onChange={(e) => setVideoUrl(e.target.value)}
-                className="h-8.5 rounded-xl text-xs"
+                className="h-9.5 rounded-xl text-xs bg-background border-border"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-                <LinkIcon className="h-3 w-3 text-blue-500" />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <LinkIcon className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                 <span>Tautan Referensi</span>
               </Label>
               <Input
                 placeholder="https://..."
                 value={linkEksternal}
                 onChange={(e) => setLinkEksternal(e.target.value)}
-                className="h-8.5 rounded-xl text-xs"
+                className="h-9.5 rounded-xl text-xs bg-background border-border"
               />
             </div>
           </div>
 
           {/* Tautkan Tugas */}
-          <div className="space-y-1">
-            <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-              <FileCheck className="h-3 w-3 text-primary" />
-              <span>Tautkan Tugas Kelas (Opsional)</span>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <FileCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>Tautkan Tugas Kelas</span>
             </Label>
             <select
               value={selectedTaskId}
               onChange={(e) => setSelectedTaskId(e.target.value)}
-              className="w-full h-8.5 px-3 text-xs bg-card border border-border rounded-xl focus:outline-hidden focus:ring-1 focus:ring-primary/40 text-foreground cursor-pointer"
+              className="w-full h-9.5 px-3 text-xs bg-background border border-border rounded-xl focus:outline-hidden focus:ring-2 focus:ring-primary/30 text-foreground cursor-pointer"
             >
               <option value="none">-- Tidak ada tugas yang ditautkan --</option>
               {availableTasks.map((t) => (
@@ -357,20 +355,20 @@ export function MeetingFormDialog({
           </div>
 
           {/* Tombol Aksi */}
-          <DialogFooter className="gap-2 sm:gap-2 pt-2 border-t border-border/60">
+          <DialogFooter className="gap-2 sm:gap-2 pt-3 border-t border-border/60">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="h-9 px-4 text-xs font-semibold rounded-xl"
+              className="h-9 px-4 text-xs font-semibold rounded-xl border-border/80 cursor-pointer"
             >
               Batal
             </Button>
             <Button
               type="submit"
               disabled={isLoading}
-              className="h-9 px-5 text-xs font-bold gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-sm hover:shadow-md transition-all"
+              className="h-9 px-5 text-xs font-bold gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-xs hover:shadow-md transition-all cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -378,9 +376,7 @@ export function MeetingFormDialog({
                   <span>Menyimpan...</span>
                 </>
               ) : (
-                <>
-                  <span>{isEdit ? "Simpan Perubahan" : "Simpan Pertemuan"}</span>
-                </>
+                <span>{isEdit ? "Simpan Perubahan" : "Simpan Pertemuan"}</span>
               )}
             </Button>
           </DialogFooter>

@@ -11,6 +11,7 @@ import {
   LogOut,
   CalendarClock,
   ShieldCheck,
+  ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
@@ -385,6 +386,10 @@ export function Sidebar({
       if (pathname === item.href) return true;
       if (item.href === "/admin" || item.href === "/guru" || item.href === "/siswa") {
         return false;
+      }
+      // Halaman tugas guru (/guru/tugas) adalah bagian dari Mata Pelajaran
+      if (item.href === "/guru/mapel" && pathname.startsWith("/guru/tugas")) {
+        return true;
       }
       return pathname.startsWith(item.href);
     });

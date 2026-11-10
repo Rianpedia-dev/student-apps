@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { LeaderboardCard, type LeaderboardRunOption } from "@/components/ui/leaderboard-card";
-import type { StudentLeaderboardEntry } from "@/services/achievement.service";
+import type { StudentLeaderboardEntry, StudentBasicInfo } from "@/services/achievement.service";
 import { isSameRombel } from "@/lib/achievement-points";
 import {
   StudentAchievementHistoryDialog,
@@ -12,6 +12,7 @@ import type { AchievementHistoryItem } from "./achievement-pinboard-view";
 
 interface AchievementLeaderboardViewProps {
   entries: StudentLeaderboardEntry[];
+  allStudents?: StudentBasicInfo[];
   rombelOptions?: { id: string; name: string }[];
   currentUserId?: string;
   defaultRunId?: string;
@@ -29,6 +30,7 @@ interface AchievementLeaderboardViewProps {
 
 export function AchievementLeaderboardView({
   entries,
+  allStudents = [],
   rombelOptions = [],
   currentUserId,
   defaultRunId = "all-school",
@@ -173,6 +175,22 @@ export function AchievementLeaderboardView({
     }));
   }, [rankedSubset]);
 
+  // Filter allStudents sesuai pilihan runOption untuk pencarian nama siswa dengan 0 Poin
+  const scopedStudents = useMemo(() => {
+    if (!allStudents || allStudents.length === 0) return [];
+    if (selectedRunId === "all-school") {
+      return allStudents;
+    }
+
+    const rombelName = selectedRunId.replace(/^rombel_/, "").trim();
+    return allStudents.filter((s) => {
+      return (
+        isSameRombel(s.kelas, rombelName) ||
+        (s.kelas && s.kelas.toLowerCase().trim().includes(rombelName.toLowerCase()))
+      );
+    });
+  }, [allStudents, selectedRunId]);
+
   return (
     <>
       <LeaderboardCard
@@ -182,6 +200,8 @@ export function AchievementLeaderboardView({
         onRunChange={setSelectedRunId}
         podiumRankings={podiumRankings}
         rankings={rankings}
+        allStudents={scopedStudents}
+        showPagination={false}
         onSelectStudent={handleSelectStudent}
         actionButton={actionButton}
       />

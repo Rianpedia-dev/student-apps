@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   BookOpen,
-  Calendar,
   Plus,
   Loader2,
   Edit,
@@ -20,6 +19,8 @@ import {
   Sparkles,
   School,
   ClipboardList,
+  ListTodo,
+  X,
   ChevronDown,
   ChevronUp,
   Download,
@@ -39,6 +40,8 @@ import { MeetingFormDialog } from "./meeting-form-dialog";
 import { CopyMeetingDialog } from "./copy-meeting-dialog";
 import { deletePertemuanAction, togglePublishPertemuanAction } from "@/actions/pertemuan";
 import { InBrowserDocViewer } from "@/components/features/assignment/in-browser-doc-viewer";
+import { TeacherTaskList, TeacherTaskItem } from "@/components/features/assignment/teacher-task-list";
+import { cn } from "@/lib/utils";
 
 interface TaskItem {
   id: string;
@@ -91,6 +94,8 @@ interface TeacherMeetingListProps {
     judul: string;
     pertemuan_id?: string | null;
   }>;
+  fullTasks?: TeacherTaskItem[];
+  initialTab?: string;
 }
 
 function getYouTubeEmbedUrl(url?: string | null): string | null {
@@ -115,8 +120,13 @@ export function TeacherMeetingList({
   allAssignedClasses,
   meetings,
   availableTasks,
+  fullTasks = [],
+  initialTab = "materi",
 }: TeacherMeetingListProps) {
   const router = useRouter();
+  const [activeMainTab, setActiveMainTab] = useState<"materi" | "tugas">(
+    initialTab === "tugas" ? "tugas" : "materi"
+  );
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<any | null>(null);
@@ -235,114 +245,186 @@ export function TeacherMeetingList({
 
   return (
     <div className="space-y-6">
-      {/* Header Bar */}
-      <div className="rounded-2xl sm:rounded-3xl bg-card/90 backdrop-blur-xs border border-border p-5 sm:p-6 shadow-xs relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Unified Master Header Card */}
+      <div className="rounded-3xl bg-card/95 dark:bg-card/90 backdrop-blur-md border border-border/80 p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Glow Accent */}
         <div className="absolute -right-20 -top-20 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="space-y-1.5 relative z-10">
-          <div className="flex items-center gap-2">
-            <Badge variant="purple" size="sm" className="font-bold font-mono uppercase">
-              {mapel.kodeMapel}
-            </Badge>
-            <Badge variant={currentKelas.jenjang === "SMP" ? "smp" : "amber"} size="sm">
-              {currentKelas.namaKelas} ({currentKelas.jenjang})
-            </Badge>
+        {/* Title, Class Identity & Main Tabs */}
+        <div className="space-y-3 relative z-10">
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+              {mapel.namaMapel}
+            </h1>
+
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
+              <span className="flex items-center gap-1.5 font-bold text-foreground">
+                <School className="h-4 w-4 text-emerald-600 shrink-0" />
+                {currentKelas.namaKelas}
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-muted/60 text-muted-foreground border border-border/50">
+                {currentKelas.jenjang}
+              </span>
+            </div>
           </div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
-            Kelola Pertemuan & Modul: {mapel.namaMapel}
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Total {meetings.length} Pertemuan • {publishedCount} Terbit untuk Siswa • {draftCount} Draf Guru
-          </p>
+
+          {/* Tab Navigasi: Materi Pertemuan atau Tugas Siswa */}
+          <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl border border-border/60 shadow-2xs w-fit">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMainTab("materi");
+                router.replace(`/guru/mapel/${mapel.id}?kelasId=${currentKelas.id}&tab=materi`, { scroll: false });
+              }}
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeMainTab === "materi"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <BookOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Materi Pertemuan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMainTab("tugas");
+                router.replace(`/guru/mapel/${mapel.id}?kelasId=${currentKelas.id}&tab=tugas`, { scroll: false });
+              }}
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeMainTab === "tugas"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <ListTodo className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+              <span>Tugas Siswa</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 flex-wrap relative z-10">
+        {/* Action Buttons Group */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap relative z-10 self-start lg:self-center">
           <Link
             href={`/guru/attendance/${mapel.id}/${currentKelas.id}/${new Date().toISOString().split("T")[0]}`}
           >
             <Button
               variant="outline"
               size="sm"
-              className="h-9.5 text-xs font-bold gap-2 rounded-xl border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 cursor-pointer"
+              className="h-10 text-xs font-bold gap-2 rounded-2xl border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 cursor-pointer shadow-2xs"
             >
               <ClipboardList className="h-4 w-4" />
               <span>Presensi KBM Hari Ini</span>
             </Button>
           </Link>
-          <Button
-            onClick={handleCreate}
-            size="sm"
-            className="h-9.5 text-xs font-bold gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Tambah Pertemuan Baru</span>
-          </Button>
+
+          {activeMainTab === "materi" ? (
+            <Button
+              onClick={handleCreate}
+              size="sm"
+              className="h-10 text-xs font-bold gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm cursor-pointer px-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Tambah Pertemuan Baru</span>
+            </Button>
+          ) : (
+            <Link
+              href={`/guru/tugas/create?mapelId=${mapel.id}&kelasId=${currentKelas.id}&from=mapel`}
+            >
+              <Button
+                size="sm"
+                className="h-10 text-xs font-bold gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm cursor-pointer px-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Buat Tugas Baru</span>
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* Class Switcher if teacher has multiple classes for this subject */}
-      {allAssignedClasses.length > 1 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <span className="text-xs font-semibold text-muted-foreground shrink-0 flex items-center gap-1.5 mr-1">
-            <School className="h-4 w-4 text-primary" />
-            <span>Pilih Kelas:</span>
-          </span>
-          {allAssignedClasses.map((cls) => {
-            const isActive = cls.id === currentKelas.id;
-            return (
-              <Button
-                key={cls.id}
-                variant={isActive ? "default" : "outline"}
-                size="sm"
-                onClick={() => router.push(`/guru/mapel/${mapel.id}?kelasId=${cls.id}`)}
-                className={`h-8 text-xs font-bold rounded-xl shrink-0 cursor-pointer ${
-                  isActive ? "bg-primary text-primary-foreground" : "hover:border-primary/40"
-                }`}
+      {activeMainTab === "materi" ? (
+        <>
+          {/* Action Toolbar: Collapse/Expand, Class Selector Dropdown, & Search Bar (Sejajar) */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        {/* Left: Expand/Collapse All */}
+        {meetings.length > 0 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={expandedIds.size === meetings.length ? collapseAll : expandAll}
+            className="h-10 text-xs font-bold text-muted-foreground hover:text-foreground gap-1.5 rounded-2xl bg-card/95 dark:bg-card/90 hover:bg-muted border border-border/80 cursor-pointer shadow-2xs px-3.5 backdrop-blur-md shrink-0 w-fit"
+          >
+            {expandedIds.size === meetings.length ? (
+              <>
+                <ChevronUp className="h-3.5 w-3.5" />
+                <span>Tutup Semua</span>
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3.5 w-3.5" />
+                <span>Buka Semua</span>
+              </>
+            )}
+          </Button>
+        ) : (
+          <div />
+        )}
+
+        {/* Right: Dropdown Pilih Kelas & Search Input Sejajar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 ml-auto w-full md:w-auto">
+          {/* Dropdown List Pilih Kelas */}
+          {allAssignedClasses.length > 1 && (
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl border border-border/80 bg-card/95 dark:bg-card/90 shadow-2xs backdrop-blur-md h-10 shrink-0">
+              <School className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span className="text-xs font-bold text-muted-foreground shrink-0 hidden sm:inline">
+                Pilih Kelas:
+              </span>
+              <select
+                value={currentKelas.id}
+                onChange={(e) =>
+                  router.push(`/guru/mapel/${mapel.id}?kelasId=${e.target.value}`)
+                }
+                className="bg-transparent text-xs font-bold text-foreground focus:outline-none cursor-pointer pr-1"
               >
-                {cls.namaKelas}
-              </Button>
-            );
-          })}
-        </div>
-      )}
+                {allAssignedClasses.map((cls) => (
+                  <option
+                    key={cls.id}
+                    value={cls.id}
+                    className="bg-card text-foreground font-semibold py-1"
+                  >
+                    {cls.namaKelas} ({cls.jenjang})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-      {/* Search Bar & Quick Controls */}
-      {meetings.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={expandedIds.size === meetings.length ? collapseAll : expandAll}
-              className="h-8 text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 rounded-xl cursor-pointer"
-            >
-              {expandedIds.size === meetings.length ? (
-                <>
-                  <ChevronUp className="h-3.5 w-3.5" />
-                  <span>Tutup Semua</span>
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-3.5 w-3.5" />
-                  <span>Buka Semua</span>
-                </>
+          {/* Search Bar Materi Pertemuan */}
+          {meetings.length > 0 && (
+            <div className="relative w-full sm:w-64 md:w-72">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Cari materi pertemuan..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-10 pl-9 pr-8 rounded-2xl bg-card/95 dark:bg-card/90 border border-border/80 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 shadow-2xs transition-all backdrop-blur-md"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               )}
-            </Button>
-          </div>
-
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Cari materi pertemuan..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 rounded-xl bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-            />
-          </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Meeting List Content */}
       {meetings.length === 0 ? (
@@ -399,13 +481,6 @@ export function TeacherMeetingList({
               const isExpanded = expandedIds.has(meeting.id);
               const isLatest = index === filteredMeetings.length - 1;
               const youtubeEmbed = getYouTubeEmbedUrl(meeting.videoUrl);
-
-              const dateFormatted = new Date(meeting.tanggal).toLocaleDateString("id-ID", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              });
 
               const hasFile = !!meeting.fileUrl;
               const hasVideo = !!meeting.videoUrl;
@@ -514,15 +589,6 @@ export function TeacherMeetingList({
                                   </Badge>
                                 )}
                               </button>
-
-                              <Badge
-                                variant="outline"
-                                size="sm"
-                                className="gap-1 font-medium text-muted-foreground"
-                              >
-                                <Calendar className="h-3 w-3 text-primary shrink-0" />
-                                <span>{dateFormatted}</span>
-                              </Badge>
 
                               {isLatest && (
                                 <Badge variant="sky" size="sm" className="gap-1">
@@ -895,6 +961,24 @@ export function TeacherMeetingList({
           </div>
         </div>
       )}
+    </>
+  ) : (
+    /* TAB TUGAS SISWA */
+    <TeacherTaskList
+      tasks={fullTasks}
+      initialMapelId={mapel.id}
+      initialKelasId={currentKelas.id}
+      isSpecificView={true}
+      activeMapelNama={mapel.namaMapel}
+      activeKelasNama={currentKelas.namaKelas}
+      assignedClassesForMapel={allAssignedClasses.map((c) => ({
+        id: c.id,
+        name: c.namaKelas,
+        jenjang: c.jenjang,
+      }))}
+      currentKelasId={currentKelas.id}
+    />
+  )}
 
       {/* Dialog Form Tambah / Edit */}
       <MeetingFormDialog

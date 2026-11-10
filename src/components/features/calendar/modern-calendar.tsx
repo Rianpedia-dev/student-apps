@@ -474,18 +474,12 @@ export function ModernCalendar({
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* 1. Header & Actions Bar (Mobile, iPad, Desktop Optimized) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3.5 sm:gap-4 pb-3.5 border-b border-border/40">
-        <div className="space-y-1 min-w-0">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-              <CalendarIcon className="h-5 w-5 sm:h-6 sm:w-6" />
-            </span>
+      <div className="bg-card/60 backdrop-blur-xs p-5 sm:p-6 rounded-2xl flex flex-col xl:flex-row xl:items-center justify-between gap-3.5 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
             <span>{pageTitle}</span>
             {loading && <Loader2 className="h-4 w-4 animate-spin text-emerald-500 shrink-0" />}
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl">
-            {pageSubtitle}
-          </p>
         </div>
 
         {/* Toolbar: Category Filter Dropdown, View Switcher & Add Button */}

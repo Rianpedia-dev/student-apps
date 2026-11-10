@@ -2,15 +2,15 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, ListTodo } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import { TeacherMeetingList } from "@/components/features/teacher-subjects/teacher-meeting-list";
+import { TeacherTaskItem } from "@/components/features/assignment/teacher-task-list";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ mapelId: string }>;
-  searchParams: Promise<{ kelasId?: string }>;
+  searchParams: Promise<{ kelasId?: string; tab?: string }>;
 }
 
 export default async function GuruMapelDetailPage({ params, searchParams }: PageProps) {
@@ -20,7 +20,7 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
   }
 
   const { mapelId } = await params;
-  const { kelasId } = await searchParams;
+  const { kelasId, tab } = await searchParams;
 
   if (!/^\d+$/.test(mapelId)) {
     notFound();
@@ -111,18 +111,61 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
       })
     : [];
 
-  // Ambil tugas yang tersedia untuk rombel ini
-  const tasksData = await prisma.tugas.findMany({
+  // Ambil tugas lengkap yang tersedia untuk rombel ini
+  const rawTasks = await prisma.tugas.findMany({
     where: {
       kelas_id: BigInt(currentKelas.id),
       mapel_id: mapel.id,
     },
-    select: {
-      id: true,
-      judul: true,
-      pertemuan_id: true,
+    include: {
+      kelas: true,
+      mapel: true,
+      pertemuan: {
+        select: {
+          id: true,
+          pertemuan_ke: true,
+          judul: true,
+        },
+      },
+      submissions: {
+        select: {
+          id: true,
+          status: true,
+        },
+      },
     },
     orderBy: { created_at: "desc" },
+  });
+
+  const fullTasks: TeacherTaskItem[] = rawTasks.map((task) => {
+    const totalSubs = task.submissions.length;
+    const waiting = task.submissions.filter(
+      (s) =>
+        s.status === "menunggu_penilaian" ||
+        s.status === "terlambat" ||
+        s.status === "perlu_revisi"
+    ).length;
+    const graded = task.submissions.filter((s) => s.status === "sudah_dinilai").length;
+
+    return {
+      id: task.id.toString(),
+      judul: task.judul,
+      deskripsi: task.deskripsi,
+      mapelId: task.mapel_id.toString(),
+      mapelNama: task.mapel.nama_mapel,
+      mapelWarna: task.mapel.warna,
+      kelasId: task.kelas_id.toString(),
+      kelasNama: task.kelas.nama_kelas,
+      tipePengerjaan: task.tipe_pengerjaan,
+      pertemuanId: task.pertemuan_id ? task.pertemuan_id.toString() : null,
+      pertemuanKe: task.pertemuan ? task.pertemuan.pertemuan_ke : null,
+      pertemuanJudul: task.pertemuan ? task.pertemuan.judul : null,
+      deadline: task.deadline.toISOString(),
+      poinMaksimal: task.poin_maksimal,
+      totalSubmissions: totalSubs,
+      waitingCount: waiting,
+      gradedCount: graded,
+    };
   });
 
   const formattedMeetings = meetingsData.map((m: any) => ({
@@ -153,34 +196,27 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
     })),
   }));
 
-  const formattedTasks = tasksData.map((t) => ({
+  const formattedTasks = rawTasks.map((t) => ({
     id: t.id.toString(),
     judul: t.judul,
     pertemuan_id: (t as any).pertemuan_id ? (t as any).pertemuan_id.toString() : null,
   }));
 
   return (
-    <div className="space-y-6">
-      {/* Tombol Navigasi Kembali & Shortcut ke Tugas */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6 max-w-7xl mx-auto w-full px-2 sm:px-4 lg:px-6">
+      {/* Tombol Navigasi Kembali & Identitas Sekolah */}
+      <div className="flex items-center justify-between">
         <Link
           href="/guru/mapel"
-          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-all group bg-muted/40 hover:bg-muted px-3 py-1.5 rounded-xl border border-border/60"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors group"
         >
-          <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           <span>Kembali ke Jadwal & Mata Pelajaran Saya</span>
         </Link>
 
-        <Link href={`/guru/tugas?mapelId=${mapel.id}&kelasId=${currentKelas.id}`}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8.5 text-xs font-bold gap-2 rounded-xl border-border/80 hover:border-primary/50 cursor-pointer"
-          >
-            <ListTodo className="h-3.5 w-3.5 text-primary" />
-            <span>Kelola Tugas ({tasksData.length})</span>
-          </Button>
-        </Link>
+        <span className="text-xs text-muted-foreground font-mono">
+          SD - SMP Islam Al-Azhar Cairo
+        </span>
       </div>
 
       <TeacherMeetingList
@@ -194,6 +230,8 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
         allAssignedClasses={assignedClasses}
         meetings={formattedMeetings}
         availableTasks={formattedTasks}
+        fullTasks={fullTasks}
+        initialTab={tab}
       />
     </div>
   );

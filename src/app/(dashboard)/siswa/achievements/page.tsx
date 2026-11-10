@@ -22,7 +22,7 @@ export default async function SiswaAchievementsPage() {
       : "SD";
 
   // 1. Ambil prestasi milik siswa ini
-  const [dbPrestasi, { entries: leaderboardEntries }, classes] = await Promise.all([
+  const [dbPrestasi, { entries: leaderboardEntries, allStudents }, classes] = await Promise.all([
     prisma.prestasi.findMany({
       where: {
         OR: [
@@ -66,6 +66,7 @@ export default async function SiswaAchievementsPage() {
     <SiswaAchievementsClient
       myAchievements={serializableAchievements}
       leaderboardEntries={leaderboardEntries}
+      allStudents={allStudents}
       rombelOptions={rombelOptions}
       currentUserId={session.id}
       studentName={session.name}

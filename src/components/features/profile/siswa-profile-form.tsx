@@ -131,19 +131,14 @@ export function SiswaProfileForm({ student }: SiswaProfileFormProps) {
         </div>
 
         {/* Identity info & actions */}
-        <div className="flex-1 space-y-1.5">
+        <div className="flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-bold tracking-tight">{student.name}</h2>
             <Badge variant="success">Siswa Aktif</Badge>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 font-mono text-xs sm:text-sm text-muted-foreground">
-            <span>NIS: {student.nis || "-"}</span>
-            <span>• Kelas: {student.kelas || "-"}</span>
-          </div>
-
           {/* Compact Action Buttons & Feedback */}
-          <div className="pt-1 flex flex-wrap items-center gap-2">
+          <div className="pt-0.5 flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="outline"
@@ -211,6 +206,14 @@ export function SiswaProfileForm({ student }: SiswaProfileFormProps) {
       {/* Form Fields Directly Below (NO duplicate avatar box!) */}
       <div className="p-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label>NIS (Nomor Induk Siswa)</Label>
+            <Input value={student.nis || "-"} disabled className="bg-muted text-muted-foreground font-mono" />
+          </div>
+          <div className="space-y-1">
+            <Label>Nama Kelas</Label>
+            <Input value={student.kelas || "-"} disabled className="bg-muted text-muted-foreground" />
+          </div>
           <div className="space-y-1">
             <Label>Email Akun Siswa</Label>
             <Input value={student.email} disabled className="bg-muted text-muted-foreground" />

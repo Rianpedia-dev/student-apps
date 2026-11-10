@@ -1,13 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Sparkles, ShieldAlert, ShieldCheck, ArrowRight, Calendar } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { formatDateIndo } from "@/lib/utils";
-import { parseViolationKeterangan, VIOLATION_SEVERITY_CONFIG } from "@/lib/constants/violations";
+import { Card } from "@/components/ui/card";
 import { SiswaProfileForm } from "@/components/features/profile/siswa-profile-form";
+import { ProfileLanyardBadge } from "@/components/features/profile/profile-lanyard-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -18,42 +14,15 @@ export default async function SiswaProfilePage() {
   }
 
   let student: any = null;
-  let myAchievements: any[] = [];
-  let myViolations: any[] = [];
-  let totalViolationsCount = 0;
 
   try {
     const isNum = /^\d+$/.test(session.id);
-    const [dbStudent, dbAchieve, dbViolations] = await Promise.all([
-      isNum
-        ? prisma.user.findUnique({
-            where: { id: BigInt(session.id) },
-          })
-        : null,
-      prisma.prestasi.findMany({
-        where: {
-          OR: [
-            { id_user: session.id },
-            ...(session.name ? [{ nama: session.name }] : []),
-          ],
-        },
-        orderBy: [{ created_at: "desc" }, { id: "desc" }],
-      }),
-      prisma.pelanggaran.findMany({
-        where: {
-          OR: [
-            { user_id: session.id },
-            ...(session.name ? [{ nama: session.name }] : []),
-          ],
-        },
-        orderBy: [{ created_at: "desc" }, { id: "desc" }],
-      }),
-    ]);
+    const dbStudent = isNum
+      ? await prisma.user.findUnique({
+          where: { id: BigInt(session.id) },
+        })
+      : null;
     student = dbStudent;
-    myAchievements = dbAchieve;
-    const totalPrestasiPoints = (dbAchieve || []).reduce((acc, ach) => acc + (ach.poin || 1), 0);
-    myViolations = dbViolations;
-    totalViolationsCount = dbViolations.length;
   } catch (e) {
     console.error("Database query error in siswa profile:", e);
   }
@@ -89,144 +58,63 @@ export default async function SiswaProfilePage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="relative space-y-6 max-w-7xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Profil Siswa</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Kelola data diri, pantau riwayat prestasi, dan histori kedisiplinan siswa.
-        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Profile Card & Edit Form (2 Cols) */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="shadow-2xl overflow-hidden rounded-3xl card-elevation">
-            <SiswaProfileForm student={formattedStudent} />
-          </Card>
+      <div className="relative">
+        {/* Grid Konten: Form di Kiri, Kolom Ruang ID Card di Kanan */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Form Profil di Kiri (7 Kolom di Desktop) */}
+          <div className="lg:col-span-7 xl:col-span-7 space-y-6">
+            <Card className="shadow-2xl overflow-hidden rounded-3xl card-elevation">
+              <SiswaProfileForm student={formattedStudent} />
+            </Card>
+          </div>
+
+          {/* Spacer Kolom Kanan di Desktop agar layout proporsional */}
+          <div className="hidden lg:block lg:col-span-5 xl:col-span-5 h-[680px] pointer-events-none" />
         </div>
 
-        {/* Sidebar Info: Prestasi & Catatan Kedisiplinan (1 Col) */}
-        <div className="space-y-6">
-          {/* 1. Catatan Kedisiplinan Siswa (Requirement Profil) */}
-          <Card className="shadow-2xl rounded-3xl card-elevation overflow-hidden border border-border/60">
-            <CardHeader className="pb-3 border-b border-border/40">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 text-rose-500" />
-                  <CardTitle className="text-sm font-bold">Catatan Kedisiplinan</CardTitle>
-                </div>
-                <Badge
-                  variant={totalViolationsCount === 0 ? "emerald" : "outline"}
-                  size="sm"
-                  className="text-[10px] font-semibold"
-                >
-                  {totalViolationsCount === 0 ? "Bersih" : `${totalViolationsCount} Catatan`}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-3">
-              {totalViolationsCount === 0 ? (
-                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
-                  <ShieldCheck className="h-7 w-7 text-emerald-600 dark:text-emerald-400 mx-auto" />
-                  <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                    Alhamdulillah, Catatan Bersih!
-                  </p>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Tidak ada catatan pelanggaran kedisiplinan yang terdaftar atas nama Anda.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {myViolations.slice(0, 3).map((v) => {
-                    const parsed = parseViolationKeterangan(v.keterangan, v.tingkatan);
-                    const severity = (v.tingkatan || parsed.severity || "RINGAN").toUpperCase() as "RINGAN" | "SEDANG" | "BERAT";
-                    const sevConfig = VIOLATION_SEVERITY_CONFIG[severity] || VIOLATION_SEVERITY_CONFIG.RINGAN;
+        {/* Lanyard Badge Desktop: Menjangkau dari margin atas (-top-24) dan radius seluas halaman */}
+        <div className="hidden lg:block pointer-events-none absolute inset-x-0 -top-24 h-[760px] overflow-visible z-20">
+          <ProfileLanyardBadge
+            user={{
+              id: formattedStudent.id,
+              name: formattedStudent.name,
+              email: formattedStudent.email,
+              nis: formattedStudent.nis,
+              kelas: formattedStudent.kelas,
+              gender: formattedStudent.gender,
+              image: formattedStudent.image,
+              address: formattedStudent.address,
+              role: "siswa",
+            }}
+            anchorRatio={0.79}
+            buckleY={175}
+            height="760px"
+          />
+        </div>
 
-                    return (
-                      <div
-                        key={v.id.toString()}
-                        className="rounded-2xl p-3 text-xs bg-muted/40 border border-border/50 space-y-1.5"
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-semibold text-foreground truncate text-xs">
-                            {v.kategori || "Pelanggaran"}
-                          </span>
-                          <Badge variant={sevConfig.badgeVariant} size="sm" className="text-[9px]">
-                            {sevConfig.label}
-                          </Badge>
-                        </div>
-                        <p className="text-[11px] text-foreground/80 line-clamp-2">
-                          {parsed.cleanKeterangan || v.keterangan}
-                        </p>
-                        <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/40">
-                          <span>{v.kelas || "-"}</span>
-                          <span>{formatDateIndo(v.created_at)}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <Link
-                href="/siswa/violations"
-                className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-muted/50 hover:bg-muted text-xs font-semibold text-primary transition-colors border border-border/40 mt-1"
-              >
-                <span>Lihat Riwayat & Filter Lengkap</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* 2. Prestasi Saya */}
-          <Card className="shadow-2xl rounded-3xl card-elevation border border-border/70">
-            <CardHeader className="pb-3 border-b border-border/40 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                <CardTitle className="text-sm font-bold">Prestasi Saya</CardTitle>
-              </div>
-              <span className="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-                {myAchievements.reduce((acc, ach) => acc + (ach.poin || 1), 0)} Poin
-              </span>
-            </CardHeader>
-            <CardContent className="space-y-2.5 pt-3">
-              {myAchievements.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4 italic">
-                  Belum ada catatan prestasi terdaftar.
-                </p>
-              ) : (
-                myAchievements.map((ach) => (
-                  <div
-                    key={ach.id.toString()}
-                    className="rounded-2xl p-3 text-xs glass-subpanel shadow-2xs space-y-1.5 border border-border/50"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 font-bold text-foreground">
-                        <span>🏆</span>
-                        <span className="line-clamp-1">{ach.prestasi}</span>
-                      </div>
-                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 shrink-0">
-                        +{ach.poin ?? 1} Poin
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-                      <span className="font-semibold text-foreground">
-                        {ach.tingkat || "Sekolah"} • {ach.peringkat || "Juara"}
-                      </span>
-                      <span>•</span>
-                      <span>Saat di {ach.kelas_saat_prestasi || ach.kelas}</span>
-                      {ach.created_at && (
-                        <>
-                          <span>•</span>
-                          <span>{formatDateIndo(ach.created_at)}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+        {/* Lanyard Badge Mobile: Tampil di bawah form secara natural */}
+        <div className="lg:hidden mt-8 flex justify-center w-full">
+          <ProfileLanyardBadge
+            user={{
+              id: formattedStudent.id,
+              name: formattedStudent.name,
+              email: formattedStudent.email,
+              nis: formattedStudent.nis,
+              kelas: formattedStudent.kelas,
+              gender: formattedStudent.gender,
+              image: formattedStudent.image,
+              address: formattedStudent.address,
+              role: "siswa",
+            }}
+            anchorRatio={0.5}
+            buckleY={110}
+            height="550px"
+          />
         </div>
       </div>
     </div>

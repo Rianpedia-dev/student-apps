@@ -57,13 +57,12 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
   const selectedClass = classes.find((c) => c.id.toString() === activeKelasId);
   const selectedSubject = subjects.find((s) => s.id.toString() === activeMapelId);
 
-  const isFromMapel = from === "mapel" && !!mapelId;
-  const backHref = isFromMapel
-    ? "/guru/mapel"
-    : mapelId
-      ? `/guru/tugas?mapelId=${mapelId}${kelasId ? `&kelasId=${kelasId}` : ""}`
-      : "/guru/tugas";
-  const backLabel = isFromMapel ? "Kembali ke Mapel & Tugas" : "Kembali ke Daftar Tugas";
+  const backHref = mapelId
+    ? `/guru/mapel/${mapelId}${kelasId ? `?kelasId=${kelasId}&tab=tugas` : "?tab=tugas"}`
+    : "/guru/mapel";
+  const backLabel = selectedSubject
+    ? `Kembali ke Tugas ${selectedSubject.nama_mapel}`
+    : "Kembali ke Mata Pelajaran";
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">

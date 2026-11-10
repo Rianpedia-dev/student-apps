@@ -4,6 +4,7 @@ import {
   deleteViolationAction,
   createAchievementAction,
 } from "@/actions/guru";
+import { AchievementService } from "@/services/achievement.service";
 import {
   formatViolationKeterangan,
   parseViolationKeterangan,
@@ -24,9 +25,11 @@ vi.mock("@/lib/prisma", () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      findMany: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
       update: vi.fn(),
     },
     tahunAjar: {
@@ -76,6 +79,8 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
         id: "202",
         name: "Ustadz Budi",
         role: "guru",
+        status: "4",
+        kelas: "4 Abu Bakar",
       } as any);
 
       vi.mocked(prisma.pelanggaran.create).mockResolvedValueOnce({
@@ -116,6 +121,8 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
         id: "202",
         name: "Ustadz Budi",
         role: "guru",
+        status: "4",
+        kelas: "4 Abu Bakar",
       } as any);
 
       const formData = new FormData();
@@ -133,6 +140,8 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
         id: "202",
         name: "Ustadz Budi",
         role: "guru",
+        status: "4",
+        kelas: "4 Abu Bakar",
       } as any);
 
       vi.mocked(prisma.prestasi.create).mockResolvedValueOnce({
@@ -169,6 +178,8 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
         id: "202",
         name: "Ustadz Budi",
         role: "guru",
+        status: "4",
+        kelas: "4 Abu Bakar",
       } as any);
 
       vi.mocked(prisma.pelanggaran.findUnique).mockResolvedValueOnce({
@@ -189,6 +200,81 @@ describe("Suite 7: Buku Kedisiplinan & Pencatatan Prestasi Siswa", () => {
       expect(prisma.pelanggaran.delete).toHaveBeenCalledWith({
         where: { id: BigInt(99) },
       });
+    });
+  });
+
+  describe("7.4: Leaderboard Papan Peringkat Prestasi Siswa", () => {
+    it("harus menyajikan siswa berpoin pada leaderboard default dan menyertakan seluruh siswa (allStudents) untuk pencarian 0 poin", async () => {
+      vi.mocked(prisma.prestasi.findMany).mockResolvedValueOnce([
+        {
+          id: BigInt(1),
+          id_user: "101",
+          nama: "Kaneishia",
+          kelas: "Kelas 4 - Mehmed Al Fatih",
+          tingkat: "Nasional",
+          peringkat: "Juara 1",
+          poin: 12,
+          fotoanak: "/uploads/cert1.png",
+          prestasi: "Juara 1 Olimpiade Sains",
+          jenjang: "SD",
+          created_at: new Date(),
+        },
+        {
+          id: BigInt(2),
+          id_user: "102",
+          nama: "Zahra",
+          kelas: "Kelas 4 - Mehmed Al Fatih",
+          tingkat: "Daerah/Kota",
+          peringkat: "Juara 1",
+          poin: 6,
+          fotoanak: "/uploads/cert2.png",
+          prestasi: "Juara 1 MHQ",
+          jenjang: "SD",
+          created_at: new Date(),
+        },
+      ] as any);
+
+      vi.mocked(prisma.user.findMany).mockResolvedValueOnce([
+        {
+          id: BigInt(101),
+          name: "Kaneishia",
+          image: "/images/kaneishia.png",
+          gender: "P",
+          kelas: "Kelas 4 - Mehmed Al Fatih",
+          jenjang: "SD",
+        },
+        {
+          id: BigInt(102),
+          name: "Zahra",
+          image: "/images/zahra.png",
+          gender: "P",
+          kelas: "Kelas 4 - Mehmed Al Fatih",
+          jenjang: "SD",
+        },
+        {
+          id: BigInt(103),
+          name: "Budi Siswa Nol Poin",
+          image: null,
+          gender: "L",
+          kelas: "Kelas 4 - Mehmed Al Fatih",
+          jenjang: "SD",
+        },
+      ] as any);
+
+      const result = await AchievementService.getLeaderboard({ jenjang: "SD" });
+
+      expect(result.entries.length).toBe(2);
+      expect(result.entries[0].userName).toBe("Kaneishia");
+      expect(result.entries[0].totalPoints).toBe(12);
+      expect(result.entries[0].rank).toBe(1);
+
+      expect(result.entries[1].userName).toBe("Zahra");
+      expect(result.entries[1].totalPoints).toBe(6);
+      expect(result.entries[1].rank).toBe(2);
+
+      // Pastikan allStudents berisi seluruh siswa aktif (termasuk yang 0 poin)
+      expect(result.allStudents.length).toBe(3);
+      expect(result.allStudents.some((s) => s.name === "Budi Siswa Nol Poin")).toBe(true);
     });
   });
 });

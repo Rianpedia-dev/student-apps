@@ -114,15 +114,15 @@ export async function createPertemuanAction(formData: FormData) {
   const pertemuan_ke = parseInt(formData.get("pertemuan_ke") as string) || 1;
   const judul = (formData.get("judul") as string)?.trim();
   const deskripsi = (formData.get("deskripsi") as string)?.trim() || null;
-  const tanggalStr = formData.get("tanggal") as string;
+  const tanggalStr = (formData.get("tanggal") as string) || new Date().toISOString().split("T")[0];
   const video_url = (formData.get("video_url") as string)?.trim() || null;
   const link_eksternal = (formData.get("link_eksternal") as string)?.trim() || null;
   const is_published = formData.get("is_published") === "true";
   const file = formData.get("file_materi") as File | null;
   const linkedTugasId = formData.get("tugas_id") as string | null;
 
-  if (!kelas_id || !mapel_id || !judul || !tanggalStr) {
-    return { success: false, error: "Mohon lengkapi judul, kelas, mata pelajaran, dan tanggal pertemuan." };
+  if (!kelas_id || !mapel_id || !judul) {
+    return { success: false, error: "Mohon lengkapi judul, kelas, dan mata pelajaran." };
   }
 
   let fileUrl: string | null = null;

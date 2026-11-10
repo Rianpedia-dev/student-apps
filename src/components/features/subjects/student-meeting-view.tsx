@@ -4,7 +4,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   BookOpen,
-  Calendar,
   Clock,
   FileText,
   Video,
@@ -227,13 +226,6 @@ export function StudentMeetingView({
                   const isLatest = index === filteredMeetings.length - 1;
                   const youtubeEmbed = getYouTubeEmbedUrl(meeting.videoUrl);
 
-                  const dateFormatted = new Date(meeting.tanggal).toLocaleDateString("id-ID", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  });
-
                   const hasFile = !!meeting.fileUrl;
                   const hasVideo = !!meeting.videoUrl;
                   const hasTasks = meeting.tugas.length > 0;
@@ -290,11 +282,6 @@ export function StudentMeetingView({
                                 <div className="flex flex-wrap items-center gap-2">
                                   <Badge variant="emerald" size="sm" className="font-bold">
                                     Pertemuan {meeting.pertemuanKe}
-                                  </Badge>
-
-                                  <Badge variant="outline" size="sm" className="gap-1 font-medium text-muted-foreground">
-                                    <Calendar className="h-3 w-3 text-primary shrink-0" />
-                                    <span>{dateFormatted}</span>
                                   </Badge>
 
                                   {isLatest && (

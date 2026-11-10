@@ -105,7 +105,7 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
   return (
     <div className="space-y-4">
       {/* Toolbar: Search, Day Filter, and Card/Table View Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/75 dark:bg-card/45 backdrop-blur-xl p-3.5 sm:p-4 rounded-3xl border border-white/50 dark:border-white/10 shadow-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Left side: Search & Day Filter */}
         <div className="flex flex-1 flex-wrap items-center gap-2.5">
           {/* Search Input */}
@@ -178,7 +178,7 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
         </div>
 
         {/* Right side: View Mode Toggle Pill (Card vs Table) */}
-        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-border/40">
+        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
           <span className="text-xs text-muted-foreground font-medium sm:hidden">
             Tampilan:
           </span>

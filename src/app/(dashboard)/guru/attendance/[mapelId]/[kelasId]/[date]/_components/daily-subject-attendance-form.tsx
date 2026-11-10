@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   Save,
   Trash2,
@@ -14,6 +13,7 @@ import {
   Search,
   MessageSquare,
   AlertCircle,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -99,7 +99,7 @@ export function DailySubjectAttendanceForm({
         ...prev[userId],
         keterangan: status,
       },
-    }));
+    })); 
   };
 
   const handleCatatanChange = (userId: string, catatan: string) => {
@@ -126,11 +126,6 @@ export function DailySubjectAttendanceForm({
     setRecords(updated);
     toast.info(`Seluruh siswa diatur ke status: ${status}`);
   };
-
-  const countHadir = Object.values(records).filter((v) => v.keterangan === "Hadir").length;
-  const countSakit = Object.values(records).filter((v) => v.keterangan === "Sakit").length;
-  const countIzin = Object.values(records).filter((v) => v.keterangan === "Izin").length;
-  const countAlpha = Object.values(records).filter((v) => v.keterangan === "Alpha").length;
 
   const filteredStudents = initialStudents.filter(
     (item) =>
@@ -161,7 +156,11 @@ export function DailySubjectAttendanceForm({
 
       if (res.success) {
         toast.success(res.message);
-        router.refresh();
+        if (typeof window !== "undefined" && window.history.length > 1) {
+          router.back();
+        } else {
+          router.push("/guru/attendance");
+        }
       } else {
         toast.error(res.error || "Gagal menyimpan presensi.");
       }
@@ -182,7 +181,11 @@ export function DailySubjectAttendanceForm({
       const res = await deleteSubjectAttendanceAction(dateStr, kelasNama, mapelId);
       if (res.success) {
         toast.success(res.message);
-        router.push("/guru/attendance");
+        if (typeof window !== "undefined" && window.history.length > 1) {
+          router.back();
+        } else {
+          router.push("/guru/attendance");
+        }
       } else {
         toast.error(res.error || "Gagal menghapus data presensi.");
       }
@@ -196,85 +199,79 @@ export function DailySubjectAttendanceForm({
 
   const handleDateChange = (newDate: string) => {
     if (newDate && newDate !== dateStr) {
-      router.push(`/guru/attendance/${mapelId}/${kelasId}/${newDate}`);
+      router.replace(`/guru/attendance/${mapelId}/${kelasId}/${newDate}`);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Control Bar: Date Selector, Quick Set All, and Live Counter */}
-      <Card className="rounded-3xl card-elevation shadow-2xl">
-        <CardContent className="p-4 sm:p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            {/* Date Switcher */}
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-orange-500" /> Tanggal KBM:
-              </span>
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  handleDateChange(e.target.value);
-                }}
-                className="w-40 h-9 text-xs rounded-xl"
-              />
-            </div>
-
-            {/* Quick Set All Button */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleSetAll("Hadir")}
-                className="gap-1.5 text-xs font-semibold rounded-xl border-emerald-500/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 w-full sm:w-auto cursor-pointer"
-              >
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span>Semua Hadir (1-Click)</span>
-              </Button>
-            </div>
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 pb-20">
+      {/* Top Controls Toolbar: Date Picker, Quick Set 1-Click, & Search Bar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        {/* Left: Date Switcher & Quick Set All */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-border/80 bg-card/95 dark:bg-card/90 shadow-2xs backdrop-blur-md">
+            <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 shrink-0">
+              <Calendar className="h-4 w-4 text-orange-500" /> Tanggal KBM:
+            </span>
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                handleDateChange(e.target.value);
+              }}
+              className="w-38 h-8 text-xs rounded-xl bg-background border border-border/50 font-semibold px-2"
+            />
           </div>
 
-          {/* Live Attendance Counter */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Hadir</span>
-              <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{countHadir}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-xl bg-sky-500/10 border border-sky-500/20">
-              <span className="text-xs font-semibold text-sky-700 dark:text-sky-300">Sakit</span>
-              <span className="text-lg font-black text-sky-600 dark:text-sky-400">{countSakit}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Izin</span>
-              <span className="text-lg font-black text-amber-600 dark:text-amber-400">{countIzin}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
-              <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">Alpha</span>
-              <span className="text-lg font-black text-rose-600 dark:text-rose-400">{countAlpha}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleSetAll("Hadir")}
+            className="gap-2 text-xs font-bold rounded-2xl border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 h-10 px-4 cursor-pointer shadow-2xs"
+          >
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Semua Hadir (1-Click)</span>
+          </Button>
+        </div>
 
-      {/* Student List Search */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Cari siswa berdasarkan nama atau NIS..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 h-11 text-xs rounded-xl bg-card border-border/80 shadow-2xs"
-        />
+        {/* Right: Search Input */}
+        <div className="relative w-full md:w-72 lg:w-80">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Cari siswa berdasarkan nama atau NIS..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-8 h-10 text-xs rounded-2xl bg-card/95 dark:bg-card/90 border-border/80 shadow-2xs"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Student Attendance List */}
-      <div className="space-y-2.5">
+      {/* Compact & Wide Student List Container */}
+      <div className="rounded-3xl border border-border/80 bg-card/95 dark:bg-card/90 shadow-sm backdrop-blur-md overflow-hidden divide-y divide-border/60">
+        {/* Table Header (Desktop & Tablet) */}
+        <div className="hidden md:flex items-center px-4 sm:px-6 py-3 bg-muted/40 border-b border-border/60 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+          <span className="w-8 text-center shrink-0">No</span>
+          <span className="w-10 shrink-0 text-center">Foto</span>
+          <span className="flex-1 min-w-0 pl-2">Nama & NIS Siswa</span>
+          <span className="w-72 lg:w-80 text-center shrink-0">Status Kehadiran</span>
+          <span className="w-12 text-center shrink-0">Catatan</span>
+        </div>
+
         {filteredStudents.length === 0 ? (
-          <div className="p-8 text-center rounded-2xl bg-card border border-border text-muted-foreground text-xs">
-            Tidak ada siswa yang sesuai dengan pencarian.
+          <div className="p-8 text-center text-muted-foreground text-xs space-y-1">
+            <p className="font-semibold text-foreground">Tidak ada siswa yang sesuai.</p>
+            <p className="text-[11px]">Coba ubah kata kunci pencarian Anda.</p>
           </div>
         ) : (
           filteredStudents.map((student, idx) => {
@@ -286,25 +283,26 @@ export function DailySubjectAttendanceForm({
               <div
                 key={student.id}
                 className={cn(
-                  "p-3.5 sm:p-4 rounded-3xl border transition-all duration-150 card-elevation flex flex-col gap-3",
-                  currentStatus === "Hadir" && "border-border/80 hover:border-emerald-500/50",
-                  currentStatus === "Sakit" && "border-sky-500/40 bg-sky-500/5",
-                  currentStatus === "Izin" && "border-amber-500/40 bg-amber-500/5",
-                  currentStatus === "Alpha" && "border-rose-500/50 bg-rose-500/5 shadow-xs"
+                  "transition-colors",
+                  currentStatus === "Hadir" && "hover:bg-muted/30",
+                  currentStatus === "Sakit" && "bg-sky-500/5 hover:bg-sky-500/10",
+                  currentStatus === "Izin" && "bg-amber-500/5 hover:bg-amber-500/10",
+                  currentStatus === "Alpha" && "bg-rose-500/8 hover:bg-rose-500/12"
                 )}
               >
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  {/* Student Info */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xs font-bold text-muted-foreground/60 w-5 text-right shrink-0">
-                      {idx + 1}.
-                    </span>
+                {/* Desktop & Tablet Row (md and up) */}
+                <div className="hidden md:flex items-center px-4 sm:px-6 py-2.5 sm:py-3 gap-0">
+                  {/* No */}
+                  <span className="w-8 text-center text-xs font-bold text-muted-foreground/70 shrink-0">
+                    {idx + 1}
+                  </span>
 
-                    {/* Clickable Profile Photo */}
+                  {/* Foto Profil Siswa */}
+                  <div className="w-10 shrink-0 flex items-center justify-center">
                     <button
                       type="button"
                       onClick={() => setPreviewStudent(student)}
-                      className="relative h-9.5 w-9.5 sm:h-10 sm:w-10 rounded-full shrink-0 overflow-hidden ring-2 ring-border/80 hover:ring-primary hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs group"
+                      className="relative h-8 w-8 rounded-full overflow-hidden ring-1.5 ring-border/80 hover:ring-primary hover:scale-110 active:scale-95 transition-all cursor-pointer shadow-2xs group"
                       title={`Klik untuk melihat foto profil ${student.name}`}
                     >
                       <img
@@ -318,69 +316,88 @@ export function DailySubjectAttendanceForm({
                         }}
                       />
                     </button>
+                  </div>
 
-                    <div className="min-w-0">
+                  {/* Nama & NIS Siswa */}
+                  <div className="flex-1 min-w-0 pl-2 pr-4">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-xs sm:text-sm font-bold text-foreground truncate">
                         {student.name}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        NIS: {student.nis || "-"}
-                      </p>
+                      {currentCatatan && (
+                        <span className="inline-flex items-center text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md truncate max-w-[220px]">
+                          {currentCatatan}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10.5px] text-muted-foreground font-mono">
+                      NIS: {student.nis || "-"}
+                    </p>
+                  </div>
+
+                  {/* Status Kehadiran (Pill Segmented Group) */}
+                  <div className="w-72 lg:w-80 shrink-0 flex items-center justify-center">
+                    <div className="grid grid-cols-4 w-full p-1 rounded-xl bg-muted/70 dark:bg-muted/40 border border-border/70 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(student.id, "Hadir")}
+                        className={cn(
+                          "py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center",
+                          currentStatus === "Hadir"
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                        title="Tandai Hadir"
+                      >
+                        Hadir
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(student.id, "Sakit")}
+                        className={cn(
+                          "py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center",
+                          currentStatus === "Sakit"
+                            ? "bg-sky-600 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                        title="Tandai Sakit"
+                      >
+                        Sakit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(student.id, "Izin")}
+                        className={cn(
+                          "py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center",
+                          currentStatus === "Izin"
+                            ? "bg-amber-600 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                        title="Tandai Izin"
+                      >
+                        Izin
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(student.id, "Alpha")}
+                        className={cn(
+                          "py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center",
+                          currentStatus === "Alpha"
+                            ? "bg-rose-600 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                        title="Tandai Alpha"
+                      >
+                        Alpha
+                      </button>
                     </div>
                   </div>
 
-                  {/* Attendance Status Buttons */}
-                  <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange(student.id, "Hadir")}
-                      className={cn(
-                        "flex-1 sm:flex-none px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
-                        currentStatus === "Hadir"
-                          ? "bg-emerald-600 text-white shadow-xs shadow-emerald-600/30 ring-2 ring-emerald-500/30"
-                          : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                      )}
-                    >
-                      Hadir
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange(student.id, "Sakit")}
-                      className={cn(
-                        "flex-1 sm:flex-none px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
-                        currentStatus === "Sakit"
-                          ? "bg-sky-600 text-white shadow-xs shadow-sky-600/30 ring-2 ring-sky-500/30"
-                          : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                      )}
-                    >
-                      Sakit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange(student.id, "Izin")}
-                      className={cn(
-                        "flex-1 sm:flex-none px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
-                        currentStatus === "Izin"
-                          ? "bg-amber-600 text-white shadow-xs shadow-amber-600/30 ring-2 ring-amber-500/30"
-                          : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                      )}
-                    >
-                      Izin
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange(student.id, "Alpha")}
-                      className={cn(
-                        "flex-1 sm:flex-none px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
-                        currentStatus === "Alpha"
-                          ? "bg-rose-600 text-white shadow-xs shadow-rose-600/30 ring-2 ring-rose-500/30"
-                          : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                      )}
-                    >
-                      Alpha
-                    </button>
-
-                    {/* Note toggle */}
+                  {/* Tombol Catatan */}
+                  <div className="w-12 shrink-0 flex items-center justify-center">
                     <button
                       type="button"
                       onClick={() =>
@@ -389,12 +406,12 @@ export function DailySubjectAttendanceForm({
                           [student.id]: !prev[student.id],
                         }))
                       }
-                      title="Tambah Catatan KBM"
+                      title={currentCatatan ? `Catatan: ${currentCatatan}` : "Tambah Catatan KBM"}
                       className={cn(
-                        "p-1.5 rounded-xl text-xs transition-colors shrink-0 ml-1 cursor-pointer",
+                        "p-2 rounded-xl text-xs transition-all shrink-0 cursor-pointer border",
                         currentCatatan
-                          ? "bg-orange-500/10 text-orange-600 dark:text-orange-400"
-                          : "text-muted-foreground hover:bg-muted"
+                          ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 shadow-2xs"
+                          : "border-transparent text-muted-foreground hover:bg-muted"
                       )}
                     >
                       <MessageSquare className="h-4 w-4" />
@@ -402,14 +419,114 @@ export function DailySubjectAttendanceForm({
                   </div>
                 </div>
 
-                {/* Optional Catatan Input */}
+                {/* Mobile Row (sm and down) */}
+                <div className="md:hidden flex flex-col gap-2.5 p-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-xs font-bold text-muted-foreground/70 w-5 shrink-0 text-center">
+                        {idx + 1}.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewStudent(student)}
+                        className="relative h-9 w-9 rounded-full overflow-hidden ring-1.5 ring-border/80 shrink-0"
+                      >
+                        <img
+                          src={getUserProfileImage(student.image, student.gender, student.name)}
+                          alt={student.name}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-foreground truncate">
+                          {student.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground font-mono">
+                          NIS: {student.nis || "-"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowNotes((prev) => ({
+                          ...prev,
+                          [student.id]: !prev[student.id],
+                        }))
+                      }
+                      className={cn(
+                        "p-2 rounded-xl text-xs shrink-0 border",
+                        currentCatatan
+                          ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300"
+                          : "border-transparent text-muted-foreground hover:bg-muted"
+                      )}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Status buttons on mobile: full width grid with 4 equal columns */}
+                  <div className="grid grid-cols-4 p-1 rounded-xl bg-muted/70 dark:bg-muted/40 border border-border/70 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange(student.id, "Hadir")}
+                      className={cn(
+                        "py-2 text-xs font-bold rounded-lg text-center transition-all cursor-pointer",
+                        currentStatus === "Hadir"
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      Hadir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange(student.id, "Sakit")}
+                      className={cn(
+                        "py-2 text-xs font-bold rounded-lg text-center transition-all cursor-pointer",
+                        currentStatus === "Sakit"
+                          ? "bg-sky-600 text-white shadow-xs"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      Sakit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange(student.id, "Izin")}
+                      className={cn(
+                        "py-2 text-xs font-bold rounded-lg text-center transition-all cursor-pointer",
+                        currentStatus === "Izin"
+                          ? "bg-amber-600 text-white shadow-xs"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      Izin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange(student.id, "Alpha")}
+                      className={cn(
+                        "py-2 text-xs font-bold rounded-lg text-center transition-all cursor-pointer",
+                        currentStatus === "Alpha"
+                          ? "bg-rose-600 text-white shadow-xs"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      Alpha
+                    </button>
+                  </div>
+                </div>
+
+                {/* Optional Catatan Input Box */}
                 {isNoteOpen && (
-                  <div className="pt-2 border-t border-border/40 pl-8">
+                  <div className="px-4 pb-3 sm:px-6 sm:pb-3.5 pt-0">
                     <Input
-                      placeholder="Tulis catatan (misal: Izin ke UKS pukul 08.15, terlambat 15 menit, dll)..."
+                      placeholder="Tulis alasan / catatan (misal: Sakit demam, Izin lomba, dll)..."
                       value={currentCatatan}
                       onChange={(e) => handleCatatanChange(student.id, e.target.value)}
-                      className="h-8 text-xs rounded-lg bg-background"
+                      className="h-8.5 text-xs rounded-xl bg-background border-border/80 shadow-2xs"
                     />
                   </div>
                 )}
@@ -419,9 +536,9 @@ export function DailySubjectAttendanceForm({
         )}
       </div>
 
-      {/* Floating or Bottom Action Buttons */}
-      <div className="sticky bottom-4 z-20 p-4 rounded-3xl bg-card/85 dark:bg-card/60 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-2xl flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      {/* Sticky Floating Bottom Action Bar */}
+      <div className="sticky bottom-3 sm:bottom-4 z-20 p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-card/95 dark:bg-card/90 backdrop-blur-xl border border-border/80 shadow-2xl flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
           {isAlreadyFilled && (
             <Button
               type="button"
@@ -429,24 +546,35 @@ export function DailySubjectAttendanceForm({
               size="sm"
               onClick={handleDelete}
               disabled={isSubmitting}
-              className="gap-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl cursor-pointer"
+              className="gap-1.5 text-xs text-rose-600 hover:text-rose-700 border-rose-300 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Hapus Presensi Tanggal Ini</span>
+              <span>Hapus Presensi</span>
             </Button>
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link href="/guru/attendance">
-            <Button type="button" variant="ghost" size="sm" className="text-xs rounded-xl">
-              Kembali
-            </Button>
-          </Link>
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/guru/attendance");
+              }
+            }}
+            className="text-xs rounded-xl cursor-pointer flex-1 sm:flex-none"
+          >
+            Batal / Kembali
+          </Button>
+
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl px-5 shadow-md shadow-emerald-600/20 cursor-pointer"
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl px-5 h-10 shadow-md shadow-emerald-600/20 cursor-pointer flex-1 sm:flex-none justify-center"
           >
             <Save className="h-4 w-4" />
             <span>{isSubmitting ? "Menyimpan..." : "Simpan Presensi Kelas"}</span>

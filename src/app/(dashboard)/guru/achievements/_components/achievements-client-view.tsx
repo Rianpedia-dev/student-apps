@@ -10,7 +10,7 @@ import {
 } from "./add-achievement-modal";
 import { DeleteAchievementDialog } from "./delete-achievement-dialog";
 import { AchievementLeaderboardView } from "@/components/features/achievements/achievement-leaderboard-view";
-import type { StudentLeaderboardEntry } from "@/services/achievement.service";
+import type { StudentLeaderboardEntry, StudentBasicInfo } from "@/services/achievement.service";
 import type { AchievementItem } from "./achievement-detail-modal";
 
 interface AchievementsClientViewProps {
@@ -21,6 +21,7 @@ interface AchievementsClientViewProps {
   userRole?: string;
   userStatus?: string;
   leaderboardEntries?: StudentLeaderboardEntry[];
+  allStudents?: StudentBasicInfo[];
   rombelOptions?: { id: string; name: string }[];
   currentUserId?: string;
   jenjangLabel?: string;
@@ -33,6 +34,7 @@ export function AchievementsClientView({
   userRole = "guru",
   userStatus = "4",
   leaderboardEntries = [],
+  allStudents = [],
   rombelOptions = [],
   currentUserId,
   jenjangLabel = "SD",
@@ -51,6 +53,7 @@ export function AchievementsClientView({
       {/* Papan Peringkat (Leaderboard) sebagai Tampilan Utama & Eksklusif */}
       <AchievementLeaderboardView
         entries={leaderboardEntries}
+        allStudents={allStudents}
         rombelOptions={rombelOptions}
         currentUserId={currentUserId}
         jenjangLabel={jenjangLabel}
