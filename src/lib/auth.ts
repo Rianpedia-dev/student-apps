@@ -5,17 +5,7 @@ import prisma from "./prisma";
 import { getRoleFromStatus, resolveUserJenjang } from "./utils";
 import { JENJANG_COOKIE_NAME } from "./jenjang";
 import { SystemSettingService } from "@/services/system-setting.service";
-
-const authSecret = process.env.AUTH_SECRET;
-if (process.env.NODE_ENV === "production" && (!authSecret || authSecret.length < 32)) {
-  throw new Error(
-    "FATAL SECURITY ERROR: AUTH_SECRET wajib disetel minimal 32 karakter di environment production!"
-  );
-}
-
-const SECRET_KEY = new TextEncoder().encode(
-  authSecret || "alazharsdsecretkey2026modernrebuild_at_least_32_chars_long!!"
-);
+import { getAuthSecretKey } from "./auth-secret";
 
 export interface SessionUser {
   id: string;
@@ -42,12 +32,13 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(SECRET_KEY);
+    .sign(getAuthSecretKey());
 }
 
 export async function verifySessionToken(token: string): Promise<SessionUser | null> {
+  const secretKey = getAuthSecretKey();
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY);
+    const { payload } = await jwtVerify(token, secretKey);
     return payload as unknown as SessionUser;
   } catch {
     return null;

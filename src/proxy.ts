@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-
-const authSecret = process.env.AUTH_SECRET;
-if (process.env.NODE_ENV === "production" && (!authSecret || authSecret.length < 32)) {
-  console.error("[CRITICAL] AUTH_SECRET is not configured or too short in production!");
-}
-
-const SECRET_KEY = new TextEncoder().encode(
-  authSecret || "alazharsdsecretkey2026modernrebuild_at_least_32_chars_long!!"
-);
+import { getAuthSecretKey } from "@/lib/auth-secret";
 
 interface SessionPayload {
   id: string;
@@ -28,9 +20,12 @@ export async function proxy(request: NextRequest) {
   let session: SessionPayload | null = null;
   if (token) {
     try {
-      const { payload } = await jwtVerify(token, SECRET_KEY);
+      const { payload } = await jwtVerify(token, getAuthSecretKey());
       session = payload as unknown as SessionPayload;
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("FATAL SECURITY ERROR")) {
+        console.error("[CRITICAL]", err.message);
+      }
       session = null;
     }
   }

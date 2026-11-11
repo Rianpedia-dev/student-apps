@@ -2,13 +2,7 @@ import { NextResponse } from "next/server";
 import { SignJWT } from "jose";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-
-// Secret HARUS identik dengan yang dipakai di src/lib/auth.ts (createSessionToken)
-// dan yang diverifikasi oleh server/socket-server.cjs.
-const authSecret = process.env.AUTH_SECRET;
-const SECRET_KEY = new TextEncoder().encode(
-  authSecret || "alazharsdsecretkey2026modernrebuild_at_least_32_chars_long!!"
-);
+import { getAuthSecretKey } from "@/lib/auth-secret";
 
 /**
  * Menerbitkan "capability token" berumur pendek untuk handshake Socket.IO.
@@ -50,7 +44,7 @@ export async function GET() {
       .setSubject(session.id)
       .setIssuedAt()
       .setExpirationTime("15m")
-      .sign(SECRET_KEY);
+      .sign(getAuthSecretKey());
 
     return NextResponse.json({ token, expiresIn: 900 });
   } catch (err) {

@@ -3,6 +3,8 @@ import AuthSwitch from "@/components/features/auth/auth-switch";
 import { PencilLoader } from "@/components/ui/loader-1";
 import { SystemSettingService } from "@/services/system-setting.service";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Masuk Akun",
   description: "Portal Sistem Sekolah Terpadu SD - SMP Islam Al-Azhar Cairo Palembang",

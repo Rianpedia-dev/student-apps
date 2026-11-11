@@ -25,9 +25,9 @@ export function getUploadRootDir(): string {
   if (envDir) {
     return path.isAbsolute(envDir)
       ? path.resolve(envDir)
-      : path.resolve(process.cwd(), envDir);
+      : path.resolve(/*turbopackIgnore: true*/ process.cwd(), envDir);
   }
-  return path.resolve(process.cwd(), "public", "uploads");
+  return path.resolve(/*turbopackIgnore: true*/ process.cwd(), "public", "uploads");
 }
 
 /**
