@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { createSessionToken, verifySessionToken, type SessionUser } from "@/lib/auth";
+import { getAuthSecretKey } from "@/lib/auth-secret";
 import { getRoleFromStatus, getRoleLabel } from "@/lib/utils";
 import { checkRateLimit } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
@@ -140,5 +141,32 @@ describe("AUDIT KEAMANAN: 5. Proteksi Path Traversal pada File Download", () => 
     expect(isValidDownloadPath("../../.env")).toBe(false);
     expect(isValidDownloadPath("../../../windows/system32/cmd.exe")).toBe(false);
     expect(isValidDownloadPath("/var/www/secret.key")).toBe(false);
+  });
+});
+
+describe("AUDIT KEAMANAN: 6. Validasi Runtime AUTH_SECRET (Build-Safe & Fail-Closed)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("wajib menolak di runtime production jika AUTH_SECRET kosong atau < 32 karakter", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("AUTH_SECRET", "");
+    vi.stubEnv("BETTER_AUTH_SECRET", "");
+
+    expect(() => getAuthSecretKey()).toThrow("FATAL SECURITY ERROR");
+
+    vi.stubEnv("AUTH_SECRET", "terlalu-pendek");
+    expect(() => getAuthSecretKey()).toThrow("FATAL SECURITY ERROR");
+  });
+
+  it("menerima AUTH_SECRET atau BETTER_AUTH_SECRET minimal 32 karakter di production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("AUTH_SECRET", "alazhar-cairo-secret-key-min-32-chars-2026");
+    expect(getAuthSecretKey().byteLength).toBeGreaterThanOrEqual(32);
+
+    vi.stubEnv("AUTH_SECRET", "");
+    vi.stubEnv("BETTER_AUTH_SECRET", "alazhar-cairo-secret-key-min-32-chars-2026");
+    expect(getAuthSecretKey().byteLength).toBeGreaterThanOrEqual(32);
   });
 });
