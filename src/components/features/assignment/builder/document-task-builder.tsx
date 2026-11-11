@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { createDocumentTugasAction } from "@/actions/assignment";
+import { DeadlinePicker } from "@/components/shared/deadline-picker";
 
 export interface DocumentTaskBuilderProps {
   classes: Array<{ id: string; nama: string; jenjang?: string; tingkat?: number | null }>;
@@ -31,6 +32,16 @@ export interface DocumentTaskBuilderProps {
   defaultKelas?: string;
   initialKelasId?: string;
   initialMapelId?: string;
+  fromOrigin?: string;
+}
+
+function getDefaultLocalDeadline(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 3);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T23:59`;
 }
 
 export function DocumentTaskBuilder({
@@ -40,25 +51,21 @@ export function DocumentTaskBuilder({
   defaultKelas,
   initialKelasId,
   initialMapelId,
+  fromOrigin,
 }: DocumentTaskBuilderProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form State
   const matchedClass = classes.find((c) => c.nama === defaultKelas);
-  const [kelasId, setKelasId] = useState<string>(initialKelasId || matchedClass?.id || classes[0]?.id || "");
-  const [mapelId, setMapelId] = useState<string>(initialMapelId || subjects[0]?.id || "");
+  const kelasId = initialKelasId || matchedClass?.id || classes[0]?.id || "";
+  const mapelId = initialMapelId || subjects[0]?.id || "";
+
   const [pertemuanId, setPertemuanId] = useState<string>("");
   const [judul, setJudul] = useState<string>("");
   const [deskripsi, setDeskripsi] = useState<string>(
     "Kerjakan lembar kerja berikut dengan teliti."
   );
-
-  // Default deadline 3 days ahead at 23:59
-  const defaultDate = new Date();
-  defaultDate.setDate(defaultDate.getDate() + 3);
-  defaultDate.setHours(23, 59, 0, 0);
-  const [deadline, setDeadline] = useState<string>(defaultDate.toISOString().slice(0, 16));
+  const [deadline, setDeadline] = useState<string>(getDefaultLocalDeadline);
   const [poinMaksimal, setPoinMaksimal] = useState<number>(100);
 
   // File Upload State
@@ -153,86 +160,87 @@ export function DocumentTaskBuilder({
 
       if (res.success && res.data) {
         toast.success(res.message);
-        router.push(`/guru/tugas/${res.data.id}`);
+        if (fromOrigin === "mapel" && mapelId && kelasId) {
+          router.push(`/guru/mapel/${mapelId}?kelasId=${kelasId}&tab=tugas`);
+        } else {
+          router.push(`/guru/tugas/${res.data.id}`);
+        }
       } else {
         toast.error(res.error || "Gagal membuat tugas.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Terjadi kesalahan saat membuat tugas.");
+      toast.error(
+        err instanceof Error ? err.message : "Terjadi kesalahan saat membuat tugas."
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Card className="max-w-3xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-xl rounded-3xl">
-        <CardHeader>
-          <CardTitle className="text-base sm:text-lg">Informasi Tugas</CardTitle>
+    <form onSubmit={handleSubmit} className="w-full">
+      <Card className="w-full rounded-2xl sm:rounded-3xl card-elevation shadow-2xl">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
+          <CardTitle className="text-base sm:text-lg font-bold">Informasi Tugas</CardTitle>
           <CardDescription className="text-xs">
-            Lengkapi data utama tugas seperti judul, kelas tujuan, mata pelajaran, dan tenggat waktu pengerjaan.
+            Lengkapi data utama tugas seperti judul, tenggat waktu, skor maksimal, dan berkas lembar soal.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4">
-          {/* Judul Tugas */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">
-              Judul Tugas <span className="text-destructive">*</span>
-            </label>
-            <Input
-              value={judul}
-              onChange={(e) => setJudul(e.target.value)}
-              placeholder="Contoh: LKS Bab 1 - Bilangan Bulat"
-              className="text-xs sm:text-sm h-10"
-              required
-            />
-          </div>
-
-          {/* Pertemuan (Opsional) */}
-          {pertemuanList.length > 0 && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
-                Tautkan ke Pertemuan (Opsional)
-              </label>
-              <Select
-                items={pertemuanItems}
-                value={pertemuanId || "none"}
-                onValueChange={(val) => setPertemuanId(val === "none" ? "" : val || "")}
-              >
-                <SelectTrigger className="w-full text-xs h-10">
-                  <SelectValue placeholder="Tidak ditautkan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Tidak ditautkan</SelectItem>
-                  {pertemuanList.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      Pertemuan {p.pertemuan_ke}: {p.judul}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Tenggat Waktu & Skor Maksimal */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
-                Tenggat Waktu / Deadline <span className="text-destructive">*</span>
+        <CardContent className="p-4 sm:p-6 pt-2 space-y-4 sm:space-y-5">
+          {/* Judul & Pertemuan */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className={`space-y-1.5 ${pertemuanList.length > 0 ? "lg:col-span-7" : "lg:col-span-12"}`}>
+              <label className="text-xs font-semibold text-foreground block">
+                Judul Tugas <span className="text-destructive">*</span>
               </label>
               <Input
-                type="datetime-local"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="text-xs sm:text-sm h-10"
+                value={judul}
+                onChange={(e) => setJudul(e.target.value)}
+                placeholder="Contoh: LKS Bab 1 - Bilangan Bulat"
+                className="text-xs sm:text-sm h-10 rounded-xl"
                 required
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
+            {pertemuanList.length > 0 && (
+              <div className="space-y-1.5 lg:col-span-5">
+                <label className="text-xs font-semibold text-foreground block">
+                  Tautkan ke Pertemuan (Opsional)
+                </label>
+                <Select
+                  items={pertemuanItems}
+                  value={pertemuanId || "none"}
+                  onValueChange={(val) => setPertemuanId(val === "none" ? "" : val || "")}
+                >
+                  <SelectTrigger className="w-full text-xs h-10 rounded-xl">
+                    <SelectValue placeholder="Tidak ditautkan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Tidak ditautkan</SelectItem>
+                    {pertemuanList.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        Pertemuan {p.pertemuan_ke}: {p.judul}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Tenggat Waktu & Skor Maksimal */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            <div className="space-y-1.5 lg:col-span-8">
+              <label className="text-xs font-semibold text-foreground block">
+                Tenggat Waktu / Deadline <span className="text-destructive">*</span>
+              </label>
+              <DeadlinePicker value={deadline} onChange={setDeadline} />
+            </div>
+
+            <div className="space-y-1.5 lg:col-span-4">
+              <label className="text-xs font-semibold text-foreground block">
                 Skor / Poin Maksimal <span className="text-destructive">*</span>
               </label>
               <Input
@@ -241,96 +249,102 @@ export function DocumentTaskBuilder({
                 max={100}
                 value={poinMaksimal}
                 onChange={(e) => setPoinMaksimal(Number(e.target.value) || 100)}
-                className="text-xs sm:text-sm h-10"
+                className="text-xs sm:text-sm h-10 rounded-xl"
                 required
               />
             </div>
           </div>
 
-          {/* Unggah Berkas Lembar Soal */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">
-              Unggah Berkas Lembar Soal <span className="text-destructive">*</span>
-            </label>
-            {!fileSoal ? (
-              <label className="border-2 border-dashed border-input hover:border-emerald-500 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer bg-muted/20 hover:bg-emerald-50/20 transition-colors">
-                <div className="p-2.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600">
-                  <Upload className="h-5 w-5" />
-                </div>
-                <div className="text-center">
-                  <p className="text-xs font-bold text-foreground">Klik untuk memilih berkas soal</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Format: PDF atau Gambar (JPG, PNG, WebP). Maksimal 25MB.</p>
-                </div>
-                <input
-                  type="file"
-                  accept=".pdf,image/png,image/jpeg,image/webp"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
+          {/* Unggah Berkas Lembar Soal & Instruksi (Sejajar di Desktop/iPad Landscape, Tumpuk di Mobile/iPad Portrait) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            {/* Unggah Berkas Lembar Soal */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground block">
+                Unggah Berkas Lembar Soal <span className="text-destructive">*</span>
               </label>
-            ) : (
-              <div className="rounded-xl border border-input p-3 bg-muted/20 space-y-2.5">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 shrink-0">
-                      {fileSoal.name.toLowerCase().endsWith(".pdf") ? (
-                        <FileText className="h-5 w-5" />
-                      ) : (
-                        <ImageIcon className="h-5 w-5" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-foreground truncate">{fileSoal.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {(fileSoal.size / (1024 * 1024)).toFixed(2)} MB
-                      </p>
-                    </div>
+              {!fileSoal ? (
+                <label className="border-2 border-dashed border-input hover:border-emerald-500 rounded-2xl p-5 min-h-[126px] flex flex-col items-center justify-center gap-2 cursor-pointer bg-muted/20 hover:bg-emerald-500/5 transition-colors">
+                  <div className="p-2.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    <Upload className="h-5 w-5" />
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRemoveFile}
-                    className="text-destructive hover:text-destructive h-8 px-2 text-xs"
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    <span>Ganti</span>
-                  </Button>
+                  <div className="text-center">
+                    <p className="text-xs font-bold text-foreground">Klik untuk memilih berkas soal</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Format: PDF atau Gambar (JPG, PNG, WebP). Maksimal 25MB.
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf,image/png,image/jpeg,image/webp"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              ) : (
+                <div className="rounded-2xl border border-input p-3.5 bg-muted/20 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        {fileSoal.name.toLowerCase().endsWith(".pdf") ? (
+                          <FileText className="h-5 w-5" />
+                        ) : (
+                          <ImageIcon className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-foreground truncate">{fileSoal.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {(fileSoal.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveFile}
+                      className="text-destructive hover:text-destructive h-8 px-2.5 text-xs shrink-0 rounded-xl"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      <span>Ganti</span>
+                    </Button>
+                  </div>
+
+                  {filePreviewUrl && (
+                    <div className="rounded-xl overflow-hidden border border-input bg-black/5 aspect-4/3 max-h-48 relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={filePreviewUrl}
+                        alt="Pratinjau Lembar Soal"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  )}
+
+                  {fileSoal.name.toLowerCase().endsWith(".pdf") && (
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                      <span>Berkas PDF siap. Sistem akan otomatis mengaktifkan kanvas interaktif.</span>
+                    </div>
+                  )}
                 </div>
+              )}
+            </div>
 
-                {filePreviewUrl && (
-                  <div className="rounded-lg overflow-hidden border border-input bg-black/5 aspect-4/3 max-h-48 relative">
-                    <img
-                      src={filePreviewUrl}
-                      alt="Pratinjau Lembar Soal"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                )}
-
-                {fileSoal.name.toLowerCase().endsWith(".pdf") && (
-                  <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 shrink-0" />
-                    <span>Berkas PDF siap. Sistem akan otomatis mengaktifkan kanvas interaktif.</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Instruksi / Petunjuk Pengerjaan */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">
-              Instruksi / Petunjuk Pengerjaan <span className="text-destructive">*</span>
-            </label>
-            <Textarea
-              value={deskripsi}
-              onChange={(e) => setDeskripsi(e.target.value)}
-              rows={3}
-              placeholder="Tuliskan petunjuk pengerjaan tugas untuk siswa..."
-              className="text-xs sm:text-sm leading-relaxed"
-              required
-            />
+            {/* Instruksi / Petunjuk Pengerjaan */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground block">
+                Instruksi / Petunjuk Pengerjaan <span className="text-destructive">*</span>
+              </label>
+              <Textarea
+                value={deskripsi}
+                onChange={(e) => setDeskripsi(e.target.value)}
+                rows={5}
+                placeholder="Tuliskan petunjuk pengerjaan tugas untuk siswa..."
+                className="text-xs sm:text-sm leading-relaxed rounded-2xl min-h-[126px]"
+                required
+              />
+            </div>
           </div>
 
           {/* Action Button */}
@@ -338,7 +352,7 @@ export function DocumentTaskBuilder({
             <Button
               type="submit"
               disabled={isSubmitting || !fileSoal}
-              className="text-xs font-semibold gap-1.5 h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+              className="w-full sm:w-auto text-xs font-semibold gap-1.5 h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
             >
               {isSubmitting ? (
                 <>

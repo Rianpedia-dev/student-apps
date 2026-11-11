@@ -53,6 +53,22 @@ const DEFAULT_OPTIONS: QuestionOptionInput[] = [
   { label: "D", teks_opsi: "", gambar_opsi: null, is_benar: false },
 ];
 
+function formatLocalDateTimeInput(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+}
+
+function getDefaultLocalDeadline(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 3);
+  d.setHours(23, 59, 0, 0);
+  return formatLocalDateTimeInput(d);
+}
+
 export function InteractiveTaskBuilder({
   classes,
   subjects,
@@ -87,14 +103,11 @@ export function InteractiveTaskBuilder({
       "Pilihlah salah satu jawaban yang paling tepat. Pastikan memeriksa kembali sebelum mengumpulkan!"
   );
 
-  // Default deadline: 3 days ahead
-  const defaultDate = new Date();
-  defaultDate.setDate(defaultDate.getDate() + 3);
-  defaultDate.setHours(23, 59, 0, 0);
+  // Default deadline: 3 days ahead at 23:59 local time
   const [deadline, setDeadline] = useState(
     initialData?.deadline
-      ? new Date(initialData.deadline).toISOString().slice(0, 16)
-      : defaultDate.toISOString().slice(0, 16)
+      ? formatLocalDateTimeInput(new Date(initialData.deadline))
+      : getDefaultLocalDeadline()
   );
 
   // Step 3 (Pengaturan Kuis)
@@ -325,7 +338,7 @@ export function InteractiveTaskBuilder({
         if (res.success && res.data) {
           toast.success(res.message);
           if (fromOrigin === "mapel" && mapelId && kelasId) {
-            router.push(`/guru/tugas?mapelId=${mapelId}&kelasId=${kelasId}`);
+            router.push(`/guru/mapel/${mapelId}?kelasId=${kelasId}&tab=tugas`);
           } else {
             router.push(`/guru/tugas/${res.data.id}`);
           }
@@ -341,86 +354,86 @@ export function InteractiveTaskBuilder({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-5">
       {/* ── Stepper Header ── */}
-      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl shadow-slate-900/5">
-        <div className="flex items-center justify-between gap-2 max-w-xl mx-auto">
+      <div className="rounded-2xl sm:rounded-3xl card-elevation shadow-xl p-3.5 sm:p-5">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-3 max-w-2xl mx-auto">
           {/* Step 1 */}
           <button
             type="button"
             onClick={() => setActiveStep(1)}
-            className={`flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-semibold transition-colors cursor-pointer shrink-0 ${
               activeStep === 1
-                ? "text-blue-600 dark:text-blue-400 font-bold"
+                ? "text-sky-600 dark:text-sky-400 font-bold"
                 : activeStep > 1
-                ? "text-foreground hover:text-blue-600"
+                ? "text-foreground hover:text-sky-600"
                 : "text-muted-foreground"
             }`}
           >
             <span
-              className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
+              className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center text-[11px] sm:text-xs font-bold transition-all ${
                 activeStep === 1
-                  ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                  ? "bg-sky-600 text-white shadow-sm shadow-sky-600/30"
                   : activeStep > 1
-                  ? "bg-blue-100 dark:bg-blue-950/50 text-blue-600"
-                  : "bg-slate-100 dark:bg-slate-800 text-muted-foreground"
+                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-400"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               1
             </span>
-            <span>Info Tugas</span>
+            <span className="whitespace-nowrap">Info Tugas</span>
           </button>
 
-          <div className="h-px flex-1 max-w-16 bg-slate-200 dark:bg-slate-700" />
+          <div className="h-px flex-1 bg-border/70 min-w-3" />
 
           {/* Step 2 */}
           <button
             type="button"
             onClick={() => handleNextFromStep1()}
-            className={`flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-semibold transition-colors cursor-pointer shrink-0 ${
               activeStep === 2
-                ? "text-blue-600 dark:text-blue-400 font-bold"
+                ? "text-sky-600 dark:text-sky-400 font-bold"
                 : activeStep > 2
-                ? "text-foreground hover:text-blue-600"
+                ? "text-foreground hover:text-sky-600"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span
-              className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
+              className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center text-[11px] sm:text-xs font-bold transition-all ${
                 activeStep === 2
-                  ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                  ? "bg-sky-600 text-white shadow-sm shadow-sky-600/30"
                   : activeStep > 2
-                  ? "bg-blue-100 dark:bg-blue-950/50 text-blue-600"
-                  : "bg-slate-100 dark:bg-slate-800 text-muted-foreground"
+                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-400"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               2
             </span>
-            <span>Butir Soal ({questions.length})</span>
+            <span className="whitespace-nowrap">Butir Soal ({questions.length})</span>
           </button>
 
-          <div className="h-px flex-1 max-w-16 bg-slate-200 dark:bg-slate-700" />
+          <div className="h-px flex-1 bg-border/70 min-w-3" />
 
           {/* Step 3 */}
           <button
             type="button"
             onClick={() => handleNextFromStep2()}
-            className={`flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-semibold transition-colors cursor-pointer shrink-0 ${
               activeStep === 3
-                ? "text-blue-600 dark:text-blue-400 font-bold"
+                ? "text-sky-600 dark:text-sky-400 font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span
-              className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
+              className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center text-[11px] sm:text-xs font-bold transition-all ${
                 activeStep === 3
-                  ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
-                  : "bg-slate-100 dark:bg-slate-800 text-muted-foreground"
+                  ? "bg-sky-600 text-white shadow-sm shadow-sky-600/30"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               3
             </span>
-            <span>Pengaturan</span>
+            <span className="whitespace-nowrap">Pengaturan</span>
           </button>
         </div>
       </div>

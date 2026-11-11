@@ -17,6 +17,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export interface DocViewerFile {
   url: string;
@@ -33,6 +34,7 @@ interface InBrowserDocViewerProps {
   allowDownload?: boolean;
   downloadPrefix?: string;
   inline?: boolean;
+  className?: string;
 }
 
 export function InBrowserDocViewer({
@@ -44,6 +46,7 @@ export function InBrowserDocViewer({
   allowDownload = true,
   downloadPrefix = "Dokumen",
   inline = false,
+  className,
 }: InBrowserDocViewerProps) {
   // Normalize files array
   const fileList: DocViewerFile[] = React.useMemo(() => {
@@ -120,14 +123,19 @@ export function InBrowserDocViewer({
   const viewerContent = (
     <div
       ref={containerRef}
-      className={`flex flex-col bg-background text-foreground overflow-hidden ${inline
+      className={cn(
+        "flex flex-col bg-background text-foreground overflow-hidden",
+        inline
           ? "rounded-2xl border border-border shadow-xs w-full h-[520px] sm:h-[600px]"
-          : "fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
-        }`}
+          : "fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150",
+        className
+      )}
     >
       <div
-        className={`flex flex-col w-full h-full bg-card rounded-2xl border border-border shadow-2xl overflow-hidden ${!inline ? "max-w-6xl max-h-[94vh]" : ""
-          }`}
+        className={cn(
+          "flex flex-col w-full h-full bg-card rounded-2xl border border-border shadow-2xl overflow-hidden",
+          !inline ? "max-w-6xl max-h-[94vh]" : "border-0 rounded-none shadow-none"
+        )}
       >
         {/* Top Header & Toolbar */}
         <div className="h-14 px-3 sm:px-5 border-b border-border bg-card flex items-center justify-between gap-2 shrink-0">

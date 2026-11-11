@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BuildingLibraryIcon } from "@/components/icons/building-library-icon";
 import { BookOpenCheckIcon } from "@/components/icons/book-open-check-icon";
-import { ShieldAlert, ArrowLeft } from "lucide-react";
+import { ShieldAlert, ArrowLeft, Video } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -162,8 +162,15 @@ export default async function GuruMyClassPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight">Kelas Saya: {guruClass}</h1>
+
+        <Link href="/guru/kelas-online?mode=wali">
+          <Button variant="emerald" size="sm" className="rounded-xl gap-2 shadow-xs">
+            <Video className="h-4 w-4" />
+            <span>Mulai Kelas Wali</span>
+          </Button>
+        </Link>
       </div>
 
       <MyClassTable

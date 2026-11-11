@@ -96,6 +96,7 @@ interface TeacherMeetingListProps {
   }>;
   fullTasks?: TeacherTaskItem[];
   initialTab?: string;
+  activeOnlineRoomId?: string | null;
 }
 
 function getYouTubeEmbedUrl(url?: string | null): string | null {
@@ -122,6 +123,7 @@ export function TeacherMeetingList({
   availableTasks,
   fullTasks = [],
   initialTab = "materi",
+  activeOnlineRoomId = null,
 }: TeacherMeetingListProps) {
   const router = useRouter();
   const [activeMainTab, setActiveMainTab] = useState<"materi" | "tugas">(
@@ -306,6 +308,27 @@ export function TeacherMeetingList({
 
         {/* Action Buttons Group */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap relative z-10 self-start lg:self-center">
+          <Link
+            href={
+              activeOnlineRoomId
+                ? `/guru/kelas-online/${activeOnlineRoomId}`
+                : `/guru/kelas-online?mapelId=${mapel.id}&kelasId=${currentKelas.id}`
+            }
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              className={`h-10 text-xs font-bold gap-2 rounded-2xl cursor-pointer shadow-2xs ${
+                activeOnlineRoomId
+                  ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
+                  : "border-sky-500/40 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/40"
+              }`}
+            >
+              <Video className="h-4 w-4" />
+              <span>{activeOnlineRoomId ? "Masuk Kelas Live" : "Kelas Online"}</span>
+            </Button>
+          </Link>
+
           <Link
             href={`/guru/attendance/${mapel.id}/${currentKelas.id}/${new Date().toISOString().split("T")[0]}`}
           >
@@ -916,7 +939,22 @@ export function TeacherMeetingList({
                         )}
 
                         {/* 4. FOOTER: TEACHER ACTION BUTTONS */}
-                        <div className="flex items-center justify-end gap-2 pt-3 border-t border-border/60">
+                        <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-border/60">
+                          <Link
+                            href={`/guru/kelas-online?mapelId=${mapel.id}&kelasId=${currentKelas.id}&pertemuanId=${meeting.id}`}
+                          >
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              title="Mulai Kelas Online untuk pertemuan ini"
+                              className="h-8 text-xs gap-1.5 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 border-emerald-500/30 rounded-xl cursor-pointer"
+                            >
+                              <Video className="h-3.5 w-3.5" />
+                              <span>Kelas Online</span>
+                            </Button>
+                          </Link>
+
                           {allAssignedClasses.length > 1 && (
                             <Button
                               variant="outline"

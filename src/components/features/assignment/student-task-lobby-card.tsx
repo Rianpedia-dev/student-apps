@@ -19,7 +19,6 @@ import { Separator } from "@/components/ui/separator";
 import { startTaskSessionAction } from "@/actions/assignment";
 import { toast } from "sonner";
 import Link from "next/link";
-import { getStatusConfig } from "@/lib/task-status";
 
 interface StudentTaskLobbyCardProps {
   tugasId: string;
@@ -62,7 +61,9 @@ export function StudentTaskLobbyCard({
     existingSubmission &&
     (existingSubmission.status === "sudah_dinilai" ||
       existingSubmission.status === "selesai" ||
-      existingSubmission.status === "menunggu_penilaian");
+      existingSubmission.status === "menunggu_penilaian" ||
+      existingSubmission.status === "dikumpulkan" ||
+      existingSubmission.status === "terlambat");
 
   const isInProgress =
     existingSubmission && existingSubmission.status === "sedang_mengerjakan";
@@ -87,95 +88,105 @@ export function StudentTaskLobbyCard({
   };
 
   return (
-    <Card className="rounded-3xl shadow-2xl">
+    <Card className="rounded-2xl sm:rounded-3xl card-elevation shadow-2xl">
       {/* Header: Judul Tugas */}
-      <CardHeader>
-        <CardTitle className="text-xl sm:text-2xl font-bold">{judul}</CardTitle>
+      <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
+        <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold leading-snug break-words">
+          {judul}
+        </CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-5">
+      <CardContent className="p-4 sm:p-6 pt-0 space-y-4 sm:space-y-5">
         {/* Instructions */}
         {deskripsi && (
-          <div className="p-4 rounded-2xl glass-subpanel text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-            <div className="flex items-center gap-1.5 font-semibold text-xs text-muted-foreground mb-2">
-              <Info className="h-3.5 w-3.5" />
-              Petunjuk Pengerjaan
+          <div className="p-3.5 sm:p-4 rounded-2xl glass-subpanel text-xs sm:text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap break-words">
+            <div className="flex items-center gap-1.5 font-semibold text-xs text-muted-foreground mb-1.5 sm:mb-2">
+              <Info className="h-3.5 w-3.5 shrink-0" />
+              <span>Petunjuk Pengerjaan</span>
             </div>
             {deskripsi}
           </div>
         )}
 
         {/* Info Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
           <InfoPill icon={HelpCircle} label="Jumlah Soal" value={`${totalSoal} Soal`} />
           <InfoPill icon={Clock} label="Durasi" value={durasiMenit ? `${durasiMenit} Menit` : "Bebas"} />
           <InfoPill icon={Award} label="Skor Maks" value={`${poinMaksimal} Poin`} />
-          <InfoPill icon={Calendar} label="Deadline" value={deadlineFormatted} truncate />
+          <InfoPill icon={Calendar} label="Deadline" value={deadlineFormatted} />
         </div>
       </CardContent>
 
       <Separator />
 
       {/* Action Panel */}
-      <CardFooter className="p-5 sm:p-6">
+      <CardFooter className="p-4 sm:p-6">
         {isRevisionNeeded ? (
           <div className="w-full space-y-3">
-            <div className="flex items-start gap-3 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 backdrop-blur-md">
+            <div className="flex items-start gap-3 p-3.5 sm:p-4 rounded-2xl bg-destructive/10 border border-destructive/20 backdrop-blur-md">
               <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-              <div className="space-y-1 flex-1">
+              <div className="space-y-1 flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">Tugas perlu diperbaiki</p>
                 {existingSubmission.catatanGuru && (
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed break-words">
                     Catatan guru: &quot;{existingSubmission.catatanGuru}&quot;
                   </p>
                 )}
               </div>
             </div>
             <div className="flex justify-end">
-              <Link href={`/siswa/tugas/${tugasId}/kerjakan`}>
-                <Button className="gap-2 font-semibold">
+              <Link href={`/siswa/tugas/${tugasId}/kerjakan`} className="w-full sm:w-auto block">
+                <Button className="w-full sm:w-auto h-10 sm:h-9 rounded-xl gap-2 font-semibold">
                   <RotateCw className="h-4 w-4" />
-                  Perbaiki Tugas
+                  <span>Perbaiki Tugas</span>
                 </Button>
               </Link>
             </div>
           </div>
         ) : hasSubmitted ? (
-          <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div className="space-y-0.5">
               <p className="text-sm font-semibold text-foreground">
                 Tugas sudah diselesaikan
               </p>
               <p className="text-xs text-muted-foreground">
-                Nilai: <strong className="text-foreground">{existingSubmission?.nilai ?? 0}</strong> / {poinMaksimal}
+                Nilai:{" "}
+                <strong className="text-foreground">
+                  {existingSubmission?.nilai !== null && existingSubmission?.nilai !== undefined
+                    ? `${existingSubmission.nilai} / ${poinMaksimal}`
+                    : "Menunggu Penilaian"}
+                </strong>
               </p>
             </div>
-            <Link href={`/siswa/tugas/${tugasId}/hasil`}>
-              <Button variant="outline" className="font-semibold gap-2">
+            <Link href={`/siswa/tugas/${tugasId}/hasil`} className="w-full sm:w-auto block shrink-0">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto h-10 sm:h-9 rounded-xl font-semibold gap-2 justify-center"
+              >
                 Lihat Hasil & Pembahasan
               </Button>
             </Link>
           </div>
         ) : isInProgress ? (
-          <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div className="space-y-0.5">
               <p className="text-sm font-semibold text-foreground">Pengerjaan sedang berlangsung</p>
               <p className="text-xs text-muted-foreground">Ada draft jawaban yang belum diselesaikan.</p>
             </div>
-            <Link href={`/siswa/tugas/${tugasId}/kerjakan`}>
-              <Button className="gap-2 font-semibold">
+            <Link href={`/siswa/tugas/${tugasId}/kerjakan`} className="w-full sm:w-auto block shrink-0">
+              <Button className="w-full sm:w-auto h-10 sm:h-9 rounded-xl gap-2 font-semibold justify-center">
                 <RotateCw className="h-4 w-4" />
-                Lanjutkan Pengerjaan
+                <span>Lanjutkan Pengerjaan</span>
               </Button>
             </Link>
           </div>
         ) : isLate ? (
-          <div className="w-full flex items-center gap-2 text-destructive text-sm font-medium">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            Batas waktu pengerjaan sudah berakhir pada {deadlineFormatted}.
+          <div className="w-full flex items-start sm:items-center gap-2 text-destructive text-xs sm:text-sm font-medium leading-relaxed">
+            <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 sm:mt-0" />
+            <span>Batas waktu pengerjaan sudah berakhir pada {deadlineFormatted}.</span>
           </div>
         ) : (
-          <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div className="space-y-0.5">
               <p className="text-sm font-semibold text-foreground">Siap mengerjakan?</p>
               <p className="text-xs text-muted-foreground">Jawaban akan tersimpan otomatis.</p>
@@ -184,17 +195,17 @@ export function StudentTaskLobbyCard({
               type="button"
               disabled={isStarting}
               onClick={handleStartTask}
-              className="h-11 px-6 font-semibold gap-2"
+              className="w-full sm:w-auto h-11 px-6 rounded-xl font-semibold gap-2 shrink-0"
             >
               {isStarting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Membuka Soal...
+                  <span>Membuka Soal...</span>
                 </>
               ) : (
                 <>
                   <Play className="h-4 w-4 fill-current" />
-                  Mulai Kerjakan
+                  <span>Mulai Kerjakan</span>
                 </>
               )}
             </Button>
@@ -210,20 +221,18 @@ function InfoPill({
   icon: Icon,
   label,
   value,
-  truncate,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
-  truncate?: boolean;
 }) {
   return (
-    <div className="p-3.5 rounded-2xl glass-subpanel space-y-1">
+    <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl glass-subpanel space-y-1 min-w-0">
       <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{label}</span>
       </span>
-      <strong className={`text-sm font-bold text-foreground block ${truncate ? "truncate" : ""}`}>
+      <strong className="text-xs sm:text-sm font-bold text-foreground block leading-snug break-words">
         {value}
       </strong>
     </div>

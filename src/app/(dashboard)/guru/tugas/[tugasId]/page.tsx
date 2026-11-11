@@ -2,11 +2,9 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { Clock, Edit3, HelpCircle, Award, Layers, Download, FileText } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Edit3, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TeacherSubmissionsView, StudentSubmissionItem } from "@/components/features/assignment/teacher-submissions-view";
 import { DashboardBreadcrumb } from "@/components/shared/dashboard-breadcrumb";
 
@@ -139,38 +137,31 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
     (Boolean(tugas.file_petunjuk) && tugas.soal.length === 0);
 
   return (
-    <div className="space-y-5 max-w-5xl mx-auto">
+    <div className="space-y-5">
       <DashboardBreadcrumb backHref={backHref} backLabel={backLabel} />
 
       {/* Header Card */}
-      <Card>
-        <CardHeader>
+      <Card className="rounded-3xl card-elevation shadow-2xl">
+        <CardHeader className="pb-5 sm:pb-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="secondary" size="sm">{tugas.mapel.nama_mapel}</Badge>
-                <Badge variant="outline" size="sm">{tugas.kelas.nama_kelas}</Badge>
-                {isDocumentTask && (
-                  <Badge variant="emerald" size="sm">Lembar Kerja Berkas</Badge>
-                )}
-              </div>
-              <CardTitle className="text-xl sm:text-2xl">{tugas.judul}</CardTitle>
-            </div>
-            <div className="flex items-center gap-2">
+            <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight">
+              {tugas.judul}
+            </CardTitle>
+            <div className="flex items-center gap-2 shrink-0">
               {isDocumentTask && tugas.file_petunjuk ? (
                 <a
                   href={`/api/download?file=${encodeURIComponent(tugas.file_petunjuk)}&name=${encodeURIComponent(`Soal-${tugas.judul}`)}`}
                   download
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-bold text-foreground hover:bg-muted transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 rounded-xl border border-border bg-card text-xs font-bold text-foreground hover:bg-muted transition-colors"
                 >
                   <Download className="h-3.5 w-3.5 text-primary" />
                   <span>Unduh Soal</span>
                 </a>
               ) : (
                 <Link href={`/guru/tugas/${tugasId}/edit`}>
-                  <Button variant="outline" size="sm" className="text-xs gap-1.5">
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 rounded-xl">
                     <Edit3 className="h-3.5 w-3.5" />
-                    Edit Soal
+                    <span>Edit Soal</span>
                   </Button>
                 </Link>
               )}
@@ -182,39 +173,6 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
             </CardDescription>
           )}
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
-              <span className="text-muted-foreground flex items-center gap-1">
-                {isDocumentTask ? <FileText className="h-3 w-3" /> : <HelpCircle className="h-3 w-3" />}
-                {isDocumentTask ? "Moda" : "Soal"}
-              </span>
-              <strong className="text-foreground block truncate">
-                {isDocumentTask ? "Lembar Kerja PDF/Img" : `${tugas.soal.length} Butir`}
-              </strong>
-            </div>
-            <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
-              <span className="text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" /> Durasi
-              </span>
-              <strong className="text-foreground block">
-                {tugas.durasi_menit ? `${tugas.durasi_menit} Menit` : "Tanpa Batas"}
-              </strong>
-            </div>
-            <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
-              <span className="text-muted-foreground flex items-center gap-1">
-                <Award className="h-3 w-3" /> Skor Maks
-              </span>
-              <strong className="text-foreground block">{tugas.poin_maksimal} Poin</strong>
-            </div>
-            <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-0.5">
-              <span className="text-muted-foreground flex items-center gap-1">
-                <Layers className="h-3 w-3" /> Deadline
-              </span>
-              <strong className="text-foreground block truncate">{deadlineFormatted}</strong>
-            </div>
-          </div>
-        </CardContent>
       </Card>
 
       {/* Submissions */}

@@ -81,6 +81,7 @@ export default async function GuruReviewTugasPage({ params, searchParams }: Page
   if (isDocumentTask) {
     return (
       <TeacherDocumentTaskReview
+        key={submission.id.toString()}
         tugasId={submission.tugas_id.toString()}
         tugasJudul={submission.tugas.judul}
         mapelNama={submission.tugas.mapel.nama_mapel}
@@ -94,6 +95,7 @@ export default async function GuruReviewTugasPage({ params, searchParams }: Page
           catatanGuru: submission.catatan_guru,
           catatanSiswa: submission.catatan_siswa,
           fileUrl: submission.file_url,
+          fileType: submission.file_type,
           annotatedFileUrl: submission.annotated_file_url,
           annotatedData: submission.annotated_data,
           submittedAt: submission.submitted_at ? submission.submitted_at.toISOString() : null,

@@ -1,9 +1,9 @@
 "use client";
 
-import { Video, Users, Clock, BookOpen, User, Sparkles, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { KelasOnlineSessionType } from "@/types/kelas-online";
 
 interface RoomData {
   id: string;
@@ -11,6 +11,9 @@ interface RoomData {
   guru_name: string;
   kelas: string;
   mata_pelajaran: string | null;
+  session_type?: KelasOnlineSessionType;
+  topik?: string | null;
+  pertemuan_ke?: number | null;
   status: string;
   started_at: string | null;
   active_participants?: number;
@@ -31,11 +34,11 @@ interface RoomCardProps {
 function getTimeAgo(dateStr: string | null): string {
   if (!dateStr) return "";
   const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
+  const minutes = Math.max(0, Math.floor(diff / 60000));
   if (minutes < 1) return "Baru saja";
   if (minutes < 60) return `${minutes} menit lalu`;
   const hours = Math.floor(minutes / 60);
-  return `${hours} jam ${minutes % 60} menit lalu`;
+  return `${hours}j ${minutes % 60}m lalu`;
 }
 
 function formatDuration(minutes: number | null | undefined): string {
@@ -43,19 +46,7 @@ function formatDuration(minutes: number | null | undefined): string {
   if (minutes < 60) return `${minutes} menit`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return m > 0 ? `${h} jam ${m} menit` : `${h} jam`;
-}
-
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return "-";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return m > 0 ? `${h}j ${m}m` : `${h} jam`;
 }
 
 export function RoomCard({
@@ -67,124 +58,126 @@ export function RoomCard({
   isLoading,
 }: RoomCardProps) {
   const isActive = variant === "active";
+  const isWaliSession = room.session_type === "WALI_KELAS";
+  const displayTitle = isWaliSession
+    ? "Pertemuan Wali Kelas"
+    : room.mata_pelajaran || "Kelas Online";
 
   return (
     <Card
-      className={`relative overflow-hidden rounded-3xl py-0 gap-0 transition-all duration-300 hover:scale-[1.01] ${
+      className={`relative overflow-hidden rounded-2xl py-0 gap-0 h-full transition-all duration-200 ${
         isActive
-          ? "border-2 border-emerald-500/50 bg-gradient-to-br from-emerald-50/90 via-card/90 to-teal-50/50 shadow-2xl dark:from-emerald-950/40 dark:via-slate-900/80 dark:to-teal-950/20 dark:border-emerald-700/60"
-          : "border border-white/30 bg-card dark:border-white/10 shadow-xl"
+          ? "border border-emerald-500/40 bg-gradient-to-br from-emerald-50/90 via-card/95 to-teal-50/50 shadow-md hover:shadow-lg dark:from-emerald-950/40 dark:via-slate-900/85 dark:to-teal-950/25 dark:border-emerald-600/40"
+          : "border border-border/70 bg-card shadow-sm"
       }`}
     >
       {isActive && (
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600" />
       )}
 
-      <CardContent className="p-5 sm:p-6">
-        {/* Status Header */}
-        <div className="flex items-center justify-between mb-4">
-          {isActive ? (
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-              </span>
-              <Badge variant="success" size="lg" className="font-bold tracking-wide">
-                KELAS SEDANG AKTIF
+      <CardContent className="p-4 sm:p-4.5 flex flex-col justify-between gap-3.5 h-full">
+        <div className="space-y-3">
+          {/* Status & Metadata Badges */}
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {isActive ? (
+                <Badge variant="success" size="xs" className="gap-1.5 font-semibold tracking-wide">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
+                  </span>
+                  AKTIF
+                </Badge>
+              ) : (
+                <Badge variant="secondary" size="xs">
+                  Selesai
+                </Badge>
+              )}
+
+              <Badge variant={isWaliSession ? "violet" : "indigo"} size="xs">
+                {isWaliSession ? "Wali Kelas" : "Mapel"}
               </Badge>
-            </div>
-          ) : (
-            <Badge variant="secondary" size="lg">
-              ⚫ Selesai
-            </Badge>
-          )}
 
-          {isActive && room.active_participants !== undefined && (
-            <Badge variant="sky" size="sm" className="gap-1.5 font-semibold">
-              <Users className="h-3.5 w-3.5" />
-              <span>{room.active_participants} peserta hadir</span>
-            </Badge>
-          )}
-        </div>
+              {room.pertemuan_ke && (
+                <Badge variant="outline" size="xs">
+                  Pert. {room.pertemuan_ke}
+                </Badge>
+              )}
+            </div>
 
-        {/* Room Info */}
-        <div className="space-y-2.5 mb-5">
-          <div className="flex items-start gap-2.5">
-            <div className="p-2 rounded-xl bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 shrink-0 mt-0.5">
-              <BookOpen className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100 leading-tight">
-                {room.mata_pelajaran || "Kelas Online"}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{room.kelas}</p>
-            </div>
+            {isActive && room.active_participants !== undefined && (
+              <Badge variant="sky" size="xs" className="font-semibold">
+                {room.active_participants} hadir
+              </Badge>
+            )}
           </div>
 
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5 truncate">
-              <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <span className="truncate">{room.guru_name}</span>
-            </div>
+          {/* Room Title & Topic */}
+          <div className="min-w-0 space-y-0.5">
+            <h3 className="font-bold text-sm sm:text-[15px] text-slate-900 dark:text-slate-100 leading-snug line-clamp-1">
+              {displayTitle}
+            </h3>
+            <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+              {room.kelas}
+            </p>
+            {room.topik && (
+              <p className="text-[11px] sm:text-xs text-foreground/80 pt-0.5 line-clamp-2">
+                Topik: <span className="font-medium">{room.topik}</span>
+              </p>
+            )}
+          </div>
+        </div>
 
-            <div className="flex items-center gap-1.5 truncate">
-              <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <span className="truncate">
-                {isActive
-                  ? `Mulai ${getTimeAgo(room.started_at)}`
-                  : formatDuration(room.duration_minutes)}
-              </span>
-            </div>
+        <div className="space-y-3">
+          {/* Teacher & Time Info */}
+          <div className="pt-2.5 border-t border-slate-200/70 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] sm:text-xs text-muted-foreground">
+            <span className="truncate">{room.guru_name}</span>
+            <span className="shrink-0">
+              {isActive
+                ? `Mulai ${getTimeAgo(room.started_at)}`
+                : formatDuration(room.duration_minutes)}
+            </span>
           </div>
 
           {!isActive && room.total_attendance !== undefined && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-              <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              <span>{room.total_attendance} siswa tercatat hadir</span>
+            <p className="text-[11px] sm:text-xs text-muted-foreground">
+              {room.total_attendance} siswa tercatat hadir
+            </p>
+          )}
+
+          {/* Action Buttons */}
+          {isActive && (onJoin || (onEnd && role === "guru")) && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
+              {onJoin && (
+                <Button
+                  onClick={onJoin}
+                  disabled={isLoading}
+                  variant={role === "siswa" ? "launch" : "emerald"}
+                  size="sm"
+                  className="w-full sm:w-fit h-9 px-4 rounded-xl text-xs sm:text-[13px] font-semibold shadow-xs"
+                >
+                  {isLoading
+                    ? "Menghubungkan..."
+                    : role === "siswa"
+                      ? "Mulai Belajar"
+                      : "Masuk Kelas"}
+                </Button>
+              )}
+
+              {onEnd && role === "guru" && (
+                <Button
+                  onClick={onEnd}
+                  disabled={isLoading}
+                  variant="destructive"
+                  size="sm"
+                  className="w-full sm:w-fit h-9 px-4 rounded-xl text-xs sm:text-[13px] font-semibold shrink-0"
+                >
+                  Akhiri
+                </Button>
+              )}
             </div>
           )}
         </div>
-
-        {/* Action Buttons */}
-        {isActive && (
-          <div className="flex flex-col sm:flex-row gap-2 pt-1">
-            {onJoin && (
-              <Button
-                onClick={onJoin}
-                disabled={isLoading}
-                variant={role === "siswa" ? "launch" : "default"}
-                size="xl"
-                className="flex-1"
-              >
-                {role === "siswa" ? (
-                  <>
-                    <Sparkles className="h-5 w-5 text-amber-950 fill-amber-950/20" />
-                    <span>Mulai Belajar Sekarang</span>
-                    <ArrowRight className="h-5 w-5 ml-1" />
-                  </>
-                ) : (
-                  <>
-                    <Video className="h-5 w-5" />
-                    <span>Masuk ke Ruang Kelas</span>
-                    <ArrowRight className="h-5 w-5 ml-1" />
-                  </>
-                )}
-              </Button>
-            )}
-
-            {onEnd && role === "guru" && (
-              <Button
-                onClick={onEnd}
-                disabled={isLoading}
-                variant="destructive"
-                size="xl"
-                className="px-5 shrink-0"
-              >
-                Akhiri
-              </Button>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

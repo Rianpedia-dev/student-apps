@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { ArrowLeft } from "lucide-react";
 import { TeacherMeetingList } from "@/components/features/teacher-subjects/teacher-meeting-list";
 import { TeacherTaskItem } from "@/components/features/assignment/teacher-task-list";
+import { KelasOnlineService } from "@/services/kelas-online.service";
 
 export const dynamic = "force-dynamic";
 
@@ -86,6 +87,15 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
   // Tentukan kelas aktif
   const currentKelas =
     assignedClasses.find((c) => c.id === kelasId) || assignedClasses[0];
+
+  const activeOnlineRoom =
+    session.role === "guru"
+      ? await KelasOnlineService.getActiveRoomForTeacherSubject(
+          session.id,
+          currentKelas.id,
+          mapel.id.toString()
+        )
+      : null;
 
   // Ambil pertemuan untuk kelas & mapel ini
   const meetingsData = (prisma as any).pertemuan?.findMany
@@ -232,6 +242,7 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
         availableTasks={formattedTasks}
         fullTasks={fullTasks}
         initialTab={tab}
+        activeOnlineRoomId={activeOnlineRoom?.id || null}
       />
     </div>
   );

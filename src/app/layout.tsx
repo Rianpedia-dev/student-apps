@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Inter, Source_Code_Pro } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter, Source_Code_Pro, Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -20,6 +20,13 @@ const inter = Inter({
 
 const sourceCodePro = Source_Code_Pro({
   variable: "--font-source-code-pro",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const poppins = Poppins({
+  variable: "--font-poppins",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -47,7 +54,7 @@ export default function RootLayout({
       lang="id"
       dir="ltr"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} ${inter.variable} ${sourceCodePro.variable} h-full antialiased`}
+      className={`${plusJakartaSans.variable} ${inter.variable} ${sourceCodePro.variable} ${poppins.variable} h-full antialiased`}
     >
       <body dir="ltr" className="min-h-full flex flex-col font-sans bg-transparent text-foreground relative">
         <ThemeProvider

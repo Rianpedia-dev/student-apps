@@ -8,7 +8,6 @@ import {
   Tv,
   HelpCircle,
   LogOut,
-  ExternalLink,
   Loader2,
   ScreenShare,
   StopCircle,
@@ -135,7 +134,9 @@ export function PersistentVideoHost() {
           setIsSharingScreen(false);
         };
         const onLeftMeeting = () => {
-          leaveSession();
+          if (!isCancelled) {
+            leaveSession();
+          }
         };
 
         callFrame.on("joined-meeting", onJoinedMeeting);
@@ -244,9 +245,9 @@ export function PersistentVideoHost() {
       "fixed bottom-4 right-4 z-50 w-[330px] sm:w-[400px] h-[230px] sm:h-[270px] rounded-2xl shadow-2xl border-2 border-emerald-500/80 bg-slate-950 flex flex-col overflow-hidden transition-all duration-300 ease-out ring-4 ring-emerald-500/10";
     containerStyle = {};
   } else {
-    // Normal in-page mode matching anchor position (z-10 so ClassroomTopBar and Navbar stay on top when scrolling)
+    // Normal in-page mode filling the edge-to-edge classroom anchor seamlessly without nested card borders
     containerClasses =
-      "fixed z-10 rounded-2xl overflow-hidden shadow-xl border border-slate-800 bg-slate-950 flex flex-col";
+      "fixed z-10 overflow-hidden bg-slate-950 flex flex-col";
     containerStyle = {
       top: `${anchorRect.top}px`,
       left: `${anchorRect.left}px`,
@@ -308,14 +309,6 @@ export function PersistentVideoHost() {
               <Badge variant="success">
                 {activeSession.mataPelajaran || "Kelas Online"}
               </Badge>
-              <span className="text-sm font-medium text-slate-300">
-                {activeSession.kelas}
-              </span>
-              {activeSession.guruName && (
-                <span className="text-xs text-slate-400 hidden sm:inline">
-                  • {activeSession.guruName}
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -424,43 +417,6 @@ export function PersistentVideoHost() {
             onLoad={() => setIsLoading(false)}
             title="Ruang Kelas Online Al-Azhar"
           />
-
-          {/* Helper Footer (only when not in minimized/PIP) */}
-          {!isPip && (
-            <div className="flex items-center justify-between gap-2 px-3.5 py-2 bg-slate-900/95 text-[11px] text-slate-400 border-t border-slate-800 shrink-0">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="flex items-center gap-1.5 text-slate-300 font-medium truncate">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
-                  Kelas Online • SD Al-Azhar Cairo
-                </span>
-                {isSharingScreen && (
-                  <button
-                    type="button"
-                    onClick={toggleScreenShare}
-                    className="px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-bold flex items-center gap-1 shrink-0 animate-pulse hover:bg-rose-500/30 cursor-pointer transition-colors"
-                    title="Klik untuk menghentikan berbagi layar"
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-rose-400"></span>
-                    Sedang Berbagi Layar (Hentikan)
-                  </button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href={embedUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition-colors py-1 px-2 rounded-lg hover:bg-slate-800/60 text-xs font-medium"
-                  title="Buka ruang kelas di tab peramban terpisah jika kamera atau layar terkendala"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Buka di Tab Terpisah</span>
-                  <span className="sm:hidden">Tab Baru</span>
-                </a>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

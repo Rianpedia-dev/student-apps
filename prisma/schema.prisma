@@ -64,6 +64,7 @@ model Kelas {
   jadwal        JadwalPelajaran[]
   tugas         Tugas[]
   pertemuan     Pertemuan[]
+  kelasOnline   KelasOnline[]
 
   @@map("tbl_kelas")
 }
@@ -321,25 +322,39 @@ model roles {
 }
 
 model KelasOnline {
-  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  room_name        String    @map("room_name") @db.VarChar(255)
-  room_url         String    @map("room_url") @db.VarChar(500)
-  daily_room_id    String?   @map("daily_room_id") @db.VarChar(255)
-  guru_id          BigInt    @map("guru_id") @db.UnsignedBigInt
-  guru_name        String    @map("guru_name") @db.VarChar(255)
-  kelas            String    @db.VarChar(255)
-  mata_pelajaran   String?   @map("mata_pelajaran") @db.VarChar(255)
-  status           String    @default("active") @db.VarChar(50)
-  started_at       DateTime? @map("started_at") @db.Timestamp(0)
-  ended_at         DateTime? @map("ended_at") @db.Timestamp(0)
-  max_participants Int?      @map("max_participants") @default(50)
-  created_at       DateTime? @db.Timestamp(0)
-  updated_at       DateTime? @updatedAt @db.Timestamp(0)
+  id                   BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  room_name            String    @map("room_name") @db.VarChar(255)
+  room_url             String    @map("room_url") @db.VarChar(500)
+  daily_room_id        String?   @map("daily_room_id") @db.VarChar(255)
+  guru_id              BigInt    @map("guru_id") @db.UnsignedBigInt
+  guru_name            String    @map("guru_name") @db.VarChar(255)
+  kelas                String    @db.VarChar(255)
+  mata_pelajaran       String?   @map("mata_pelajaran") @db.VarChar(255)
+  kelas_id             BigInt?   @map("kelas_id") @db.UnsignedBigInt
+  mapel_id             BigInt?   @map("mapel_id") @db.UnsignedBigInt
+  jadwal_id            BigInt?   @map("jadwal_id") @db.UnsignedBigInt
+  pertemuan_id         BigInt?   @map("pertemuan_id") @db.UnsignedBigInt
+  session_type         String    @default("MAPEL") @map("session_type") @db.VarChar(30)
+  topik                String?   @db.VarChar(255)
+  is_attendance_synced Boolean   @default(false) @map("is_attendance_synced")
+  status               String    @default("active") @db.VarChar(50)
+  started_at           DateTime? @map("started_at") @db.Timestamp(0)
+  ended_at             DateTime? @map("ended_at") @db.Timestamp(0)
+  max_participants     Int?      @map("max_participants") @default(50)
+  created_at           DateTime? @db.Timestamp(0)
+  updated_at           DateTime? @updatedAt @db.Timestamp(0)
 
+  kelasRef   Kelas?                  @relation(fields: [kelas_id], references: [id], onDelete: SetNull)
+  mapelRef   MataPelajaran?          @relation(fields: [mapel_id], references: [id], onDelete: SetNull)
+  jadwalRef  JadwalPelajaran?        @relation(fields: [jadwal_id], references: [id], onDelete: SetNull)
+  pertemuan  Pertemuan?              @relation(fields: [pertemuan_id], references: [id], onDelete: SetNull)
   attendance KelasOnlineAttendance[]
 
   @@index([status, kelas])
+  @@index([status, kelas_id])
   @@index([guru_id])
+  @@index([guru_id, status])
+  @@index([mapel_id, kelas_id])
   @@map("tbl_kelas_online")
 }
 
@@ -376,6 +391,7 @@ model MataPelajaran {
   tugas       Tugas[]
   pertemuan   Pertemuan[]
   absensi     Absen[]
+  kelasOnline KelasOnline[]
 
   @@map("tbl_mata_pelajaran")
 }
@@ -397,6 +413,7 @@ model JadwalPelajaran {
   mapel       MataPelajaran @relation(fields: [mapel_id], references: [id], onDelete: Cascade)
   guru        User          @relation(fields: [guru_id], references: [id], onDelete: Cascade)
   absensi     Absen[]
+  kelasOnline KelasOnline[]
 
   @@index([kelas_id, hari])
   @@index([guru_id])
@@ -598,6 +615,7 @@ model Pertemuan {
   tugas          Tugas[]
   progressSiswa  PertemuanProgress[]
   absensi        Absen[]
+  kelasOnline    KelasOnline[]
 
   @@index([kelas_id, mapel_id])
   @@index([kelas_id, mapel_id, is_published])

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSession, setSessionCookie } from "@/lib/auth";
 import { saveUploadedFile } from "@/lib/upload";
+import { checkUploadRateLimit } from "@/lib/rate-limit";
 import { AnnouncementService } from "@/services/announcement.service";
 import { UserService } from "@/services/user.service";
 
@@ -35,6 +36,10 @@ export async function updateStudentProfileAction(formData: FormData) {
     } else {
       const rawFile = formData.get("image") || formData.get("photo");
       if (rawFile && typeof rawFile === "object" && "size" in rawFile && (rawFile as Blob).size > 0) {
+        const rl = await checkUploadRateLimit(session.id);
+        if (!rl.allowed) {
+          return { success: false, error: rl.error };
+        }
         const uploadRes = await saveUploadedFile(rawFile as Blob, { category: "avatar" });
         if (!uploadRes.success) {
           return { success: false, error: uploadRes.error || "Gagal mengunggah foto profil." };
@@ -79,6 +84,11 @@ export async function uploadPhotoAction(formData: FormData) {
     const rawFile = formData.get("image") || formData.get("photo") || formData.get("file");
     if (!rawFile || typeof rawFile !== "object" || !("size" in rawFile) || (rawFile as Blob).size === 0) {
       return { success: false, error: "Silakan pilih file foto terlebih dahulu." };
+    }
+
+    const rl = await checkUploadRateLimit(session.id);
+    if (!rl.allowed) {
+      return { success: false, error: rl.error };
     }
 
     const uploadRes = await saveUploadedFile(rawFile as Blob, { category: "avatar" });

@@ -41,7 +41,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Trigger dev server reload: 2026-11-02-announcements-jenjang-v1
+  // Trigger dev server reload: 2026-11-11-kelas-online-relations-v1
   // output: "standalone" hanya untuk Docker container / self-hosted VPS.
   // Pada platform Vercel, output standalone menyebabkan error nft.json pada tahap onBuildComplete.
   ...(process.env.VERCEL ? {} : { output: "standalone" }),
@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: "10mb",
+      bodySizeLimit: "40mb",
     },
   },
   async headers() {

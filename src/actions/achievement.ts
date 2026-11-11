@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { saveUploadedFile } from "@/lib/upload";
+import { checkUploadRateLimit } from "@/lib/rate-limit";
 import { AchievementService } from "@/services/achievement.service";
 import { calculateAchievementPoints } from "@/lib/achievement-points";
 import { AchievementFormSchema } from "@/lib/validators/achievement.schema";
@@ -91,6 +92,10 @@ export async function createAchievementAction(formData: FormData) {
     let fotoanak = "/images/trophy.png";
     const rawFile = formData.get("foto_upload") || formData.get("fotoanak");
     if (rawFile && typeof rawFile === "object" && "size" in rawFile && (rawFile as Blob).size > 0) {
+      const rl = await checkUploadRateLimit(session.id);
+      if (!rl.allowed) {
+        return { error: rl.error };
+      }
       const uploadRes = await saveUploadedFile(rawFile as Blob, { category: "achievement" });
       if (!uploadRes.success) {
         return { error: uploadRes.error };
@@ -191,6 +196,10 @@ export async function updateAchievementAction(id: string, formData: FormData) {
     let fotoanak = existing.fotoanak;
     const rawFile = formData.get("foto_upload") || formData.get("fotoanak");
     if (rawFile && typeof rawFile === "object" && "size" in rawFile && (rawFile as Blob).size > 0) {
+      const rl = await checkUploadRateLimit(session.id);
+      if (!rl.allowed) {
+        return { error: rl.error };
+      }
       const uploadRes = await saveUploadedFile(rawFile as Blob, { category: "achievement" });
       if (!uploadRes.success) {
         return { error: uploadRes.error };

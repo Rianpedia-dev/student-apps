@@ -26,7 +26,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { submitDocumentTaskAction } from "@/actions/assignment";
-import { InBrowserDocViewer } from "../in-browser-doc-viewer";
+import { StudentSubmissionViewerModal } from "./student-submission-viewer-modal";
+import { hasCanvasAnnotations } from "@/lib/document-task-helpers";
 import { cn } from "@/lib/utils";
 
 export interface StudentDocumentTaskCardProps {
@@ -50,6 +51,7 @@ export interface StudentDocumentTaskCardProps {
     fileName: string | null;
     fileType: string | null;
     annotatedFileUrl?: string | null;
+    annotatedData?: string | null;
     submittedAt: string | null;
   } | null;
 }
@@ -72,14 +74,17 @@ export function StudentDocumentTaskCard({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [catatanSiswa, setCatatanSiswa] = useState("");
   const [showViewer, setShowViewer] = useState(false);
-  const [viewerUrl, setViewerUrl] = useState<string>("");
-  const [viewerTitle, setViewerTitle] = useState<string>("");
 
   const isPdf = fileSoalUrl.toLowerCase().includes(".pdf");
   const status = existingSubmission?.status || "belum_mengumpulkan";
   const isPerluRevisi = status === "perlu_revisi";
   const isSudahDinilai = status === "sudah_dinilai";
   const isMenungguPenilaian = status === "menunggu_penilaian";
+  const hasInspectableSubmission = Boolean(
+    existingSubmission?.annotatedFileUrl ||
+      hasCanvasAnnotations(existingSubmission?.annotatedData) ||
+      existingSubmission?.fileUrl
+  );
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,13 +119,7 @@ export function StudentDocumentTaskCard({
   };
 
   const openCorrectionViewer = () => {
-    if (existingSubmission?.annotatedFileUrl) {
-      setViewerUrl(existingSubmission.annotatedFileUrl);
-      setViewerTitle(`Lembar Hasil Koreksi Guru - ${judul}`);
-      setShowViewer(true);
-    } else if (existingSubmission?.fileUrl) {
-      setViewerUrl(existingSubmission.fileUrl);
-      setViewerTitle(`Lembar Jawaban Siswa - ${judul}`);
+    if (hasInspectableSubmission) {
       setShowViewer(true);
     }
   };
@@ -148,14 +147,14 @@ export function StudentDocumentTaskCard({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-            {existingSubmission?.annotatedFileUrl && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
+            {hasInspectableSubmission && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={openCorrectionViewer}
-                className="text-xs h-9 gap-1.5 rounded-xl border-amber-500/30"
+                className="w-full sm:w-auto text-xs h-9 gap-1.5 rounded-xl border-amber-500/30"
               >
                 <Eye className="h-3.5 w-3.5 text-amber-600" />
                 <span>Lihat Coretan Guru</span>
@@ -178,16 +177,10 @@ export function StudentDocumentTaskCard({
       {isSudahDinilai && (
         <div className="p-4 sm:p-5 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-600 text-white shrink-0">
-              <Sparkles className="h-5 w-5" />
-            </div>
             <div>
               <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
-                Alhamdulillah, Tugas Sudah Dinilai! ⭐
+                Alhamdulillah, Tugas Sudah Dinilai!
               </h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Kerja bagus! Periksa hasil nilai dan coretan evaluasi dari Ustadz/Ustadzah.
-              </p>
               {existingSubmission?.catatanGuru && (
                 <div className="mt-2 p-2.5 rounded-lg bg-card border border-emerald-500/20 text-xs text-foreground font-medium">
                   <strong>Catatan Guru:</strong> &ldquo;{existingSubmission.catatanGuru}&rdquo;
@@ -195,20 +188,20 @@ export function StudentDocumentTaskCard({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="text-right">
+          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-emerald-500/20">
+            <div className="text-left sm:text-right">
               <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Nilai Akhir</span>
-              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+              <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
                 {existingSubmission?.nilai} / {poinMaksimal}
               </span>
             </div>
-            {(existingSubmission?.annotatedFileUrl || existingSubmission?.fileUrl) && (
+            {hasInspectableSubmission && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={openCorrectionViewer}
-                className="text-xs h-9 gap-1.5 rounded-xl border-emerald-500/30 font-bold"
+                className="w-full sm:w-auto text-xs h-9 gap-1.5 rounded-xl border-emerald-500/30 font-bold"
               >
                 <Eye className="h-3.5 w-3.5 text-emerald-600" />
                 <span>Lihat Hasil Koreksi</span>
@@ -219,42 +212,41 @@ export function StudentDocumentTaskCard({
       )}
 
       {isMenungguPenilaian && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="p-4 sm:p-5 rounded-2xl bg-blue-500/10 border-2 border-blue-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-3">
             <div className="p-2.5 rounded-xl bg-blue-600 text-white shrink-0">
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300">
-                Tugas Berhasil Dikumpulkan! 🚀
+                Tugas Berhasil Dikumpulkan!
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Lembar jawabanmu sudah tersimpan di sistem dan sedang menunggu koreksi dari dewan guru.
               </p>
             </div>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={openCorrectionViewer}
-            className="text-xs h-9 gap-1.5 rounded-xl shrink-0"
-          >
-            <Eye className="h-3.5 w-3.5 text-blue-600" />
-            <span>Lihat Lembar Jawaban</span>
-          </Button>
+          {hasInspectableSubmission && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={openCorrectionViewer}
+              className="w-full sm:w-auto text-xs h-9 gap-1.5 rounded-xl shrink-0"
+            >
+              <Eye className="h-3.5 w-3.5 text-blue-600" />
+              <span>Lihat Lembar Jawaban</span>
+            </Button>
+          )}
         </div>
       )}
 
       {/* 2. Main Task Card */}
-      <Card className="overflow-hidden border border-border shadow-sm">
+      <Card className="rounded-2xl sm:rounded-3xl card-elevation shadow-2xl overflow-hidden">
         <CardHeader className="p-5 sm:p-6 bg-card border-b border-border space-y-3">
           {/* Baris 1: Kategori & Batas Waktu */}
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="emerald" size="sm" className="font-semibold text-xs px-2.5 py-0.5">
-                Lembar Kerja
-              </Badge>
             </div>
             <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-semibold bg-muted/60 px-3 py-1 rounded-xl border border-border/70">
               <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -272,9 +264,8 @@ export function StudentDocumentTaskCard({
             !deskripsi.includes("Silakan kerjakan lembar soal berikut secara langsung di aplikasi") &&
             deskripsi.trim().length > 0 && (
               <div className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/30 border border-border/80 text-xs text-foreground font-medium leading-relaxed">
-                <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-foreground">Petunjuk Pengerjaan: </span>
+                  <span className="font-bold text-foreground">Petunjuk: </span>
                   <span className="text-muted-foreground">{deskripsi}</span>
                 </div>
               </div>
@@ -283,11 +274,9 @@ export function StudentDocumentTaskCard({
           {/* Baris 4: Informasi Metadata Ringkas */}
           <div className="flex flex-wrap items-center gap-y-2 gap-x-6 pt-3 border-t border-border/60 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <Award className="h-3.5 w-3.5 text-amber-500 shrink-0" />
               <span>Skor Maksimal: <strong className="text-foreground">{poinMaksimal} Poin</strong></span>
             </div>
             <div className="flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5 text-blue-500 shrink-0" />
               <span>Format: <strong className="text-foreground">{isPdf ? "Dokumen PDF" : "File Gambar"}</strong></span>
             </div>
           </div>
@@ -304,15 +293,12 @@ export function StudentDocumentTaskCard({
                 <h4 className="text-xs sm:text-sm font-bold text-foreground truncate">
                   Berkas Lembar Soal ({isPdf ? "PDF" : "Gambar"})
                 </h4>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  Lembar tugas resmi dari pendidik, siap dikerjakan di layar atau diunduh
-                </p>
               </div>
             </div>
             <a
               href={`/api/download?file=${encodeURIComponent(fileSoalUrl)}&name=${encodeURIComponent(`Soal-${judul}`)}`}
               download
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-card border border-border text-foreground hover:bg-muted text-xs font-bold transition-all shrink-0 shadow-2xs hover:scale-[1.01]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-card border border-border text-foreground hover:bg-muted text-xs font-bold transition-all shrink-0 shadow-2xs hover:scale-[1.01]"
             >
               <Download className="h-3.5 w-3.5 text-primary" />
               <span>Unduh Berkas Soal</span>
@@ -320,14 +306,13 @@ export function StudentDocumentTaskCard({
           </div>
 
           {/* 2 Pilihan Pengerjaan (Seimbang, Simetris & Rapi) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
             {/* OPSI 1: In-App Canvas Editor (Rekomendasi Utama) */}
             <div className="p-5 sm:p-6 rounded-2xl border-2 border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500/70 transition-all flex flex-col justify-between gap-5 relative overflow-hidden group shadow-2xs">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Badge variant="emerald" size="sm" className="font-bold gap-1 text-[11px] px-2.5 py-0.5">
-                    <Sparkles className="h-3 w-3" />
-                    <span>Pilihan 1 (Praktis di Layar)</span>
+                    <span>Pilihan 1</span>
                   </Badge>
                   <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600">
                     <Edit3 className="h-4 w-4" />
@@ -336,7 +321,7 @@ export function StudentDocumentTaskCard({
 
                 <div>
                   <h4 className="text-base sm:text-lg font-black text-foreground">
-                    Kerjakan Langsung di Layar
+                    Kerjakan Langsung
                   </h4>
                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                     Tulis jawaban langsung di atas lembar soal tanpa perlu mencetak kertas.
@@ -368,10 +353,10 @@ export function StudentDocumentTaskCard({
                   <Edit3 className="h-4 w-4" />
                   <span>
                     {isPerluRevisi
-                      ? "Perbaiki Lembar Kerja 🚀"
+                      ? "Perbaiki Lembar Tugas"
                       : isSudahDinilai || isMenungguPenilaian
                       ? "Buka Kembali Kanvas Pengerjaan"
-                      : "Buka Kanvas & Kerjakan 🚀"}
+                      : "Buka Kanvas & Kerjakan"}
                   </span>
                 </Button>
               </Link>
@@ -382,7 +367,7 @@ export function StudentDocumentTaskCard({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Badge variant="outline" size="sm" className="font-semibold text-muted-foreground gap-1 text-[11px] px-2.5 py-0.5">
-                    <span>Pilihan 2 (Cetak / Manual)</span>
+                    <span>Pilihan 2</span>
                   </Badge>
                   <div className="p-1.5 rounded-lg bg-muted text-muted-foreground">
                     <Upload className="h-4 w-4" />
@@ -475,12 +460,14 @@ export function StudentDocumentTaskCard({
       </Card>
 
       {/* Document Viewer Modal for Inspection */}
-      {showViewer && (
-        <InBrowserDocViewer
+      {showViewer && existingSubmission && (
+        <StudentSubmissionViewerModal
           isOpen={showViewer}
           onClose={() => setShowViewer(false)}
-          title={viewerTitle}
-          files={viewerUrl}
+          judul={judul}
+          fileSoalUrl={fileSoalUrl}
+          poinMaksimal={poinMaksimal}
+          submission={existingSubmission}
         />
       )}
     </div>

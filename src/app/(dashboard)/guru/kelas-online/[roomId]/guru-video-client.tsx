@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ClassroomTopBar } from "@/components/features/kelas-online/classroom-top-bar";
+import { ClassroomRoomFrame } from "@/components/features/kelas-online/classroom-top-bar";
 import { useKelasOnline } from "@/components/features/kelas-online/kelas-online-context";
 
 interface RoomData {
@@ -13,6 +13,9 @@ interface RoomData {
   guru_name: string;
   kelas: string;
   mata_pelajaran: string | null;
+  session_type?: "MAPEL" | "WALI_KELAS";
+  topik?: string | null;
+  pertemuan_ke?: number | null;
   started_at: string | null;
   active_participants: number;
 }
@@ -31,9 +34,15 @@ export function GuruVideoCallClient({
   const router = useRouter();
   const { activeSession, startSession, endSession } = useKelasOnline();
   const [isEnding, setIsEnding] = useState(false);
+  const initializedRoomIdRef = useRef<string | null>(null);
+  const isEndingRef = useRef(false);
 
-  // Initialize or synchronize active call session in global context
   useEffect(() => {
+    if (isEndingRef.current || initializedRoomIdRef.current === room.id) {
+      return;
+    }
+    initializedRoomIdRef.current = room.id;
+
     if (!activeSession || activeSession.roomId !== room.id) {
       startSession({
         roomId: room.id,
@@ -44,6 +53,9 @@ export function GuruVideoCallClient({
         role: "guru",
         kelas: room.kelas,
         mataPelajaran: room.mata_pelajaran,
+        sessionType: room.session_type,
+        topik: room.topik,
+        pertemuanKe: room.pertemuan_ke,
         guruName: room.guru_name,
         startedAt: room.started_at,
         activeParticipants: room.active_participants,
@@ -52,6 +64,7 @@ export function GuruVideoCallClient({
   }, [activeSession, room, token, userName, startSession]);
 
   const handleEndClass = async () => {
+    isEndingRef.current = true;
     setIsEnding(true);
     try {
       const res = await fetch("/api/kelas-online/end-room", {
@@ -65,8 +78,10 @@ export function GuruVideoCallClient({
 
       toast.success("Kelas online telah berhasil diakhiri.");
       endSession();
-      router.push("/guru/kelas-online");
+      router.replace("/guru/kelas-online");
+      router.refresh();
     } catch (err: unknown) {
+      isEndingRef.current = false;
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       toast.error(message);
       setIsEnding(false);
@@ -74,19 +89,10 @@ export function GuruVideoCallClient({
   };
 
   return (
-    <div className="flex flex-col gap-3.5 min-h-[calc(100vh-130px)] pb-4">
-      {/* Interactive Top Bar */}
-      <ClassroomTopBar
-        role="guru"
-        onEndClass={handleEndClass}
-        isEnding={isEnding}
-      />
-
-      {/* Video Anchor Slot: PersistentVideoHost tracks this element */}
-      <div
-        id="kelas-video-anchor"
-        className="w-full flex-1 rounded-2xl min-h-[520px] sm:min-h-[580px] h-[calc(100vh-210px)] border border-dashed border-slate-200 dark:border-slate-800 bg-slate-950/5 relative"
-      />
-    </div>
+    <ClassroomRoomFrame
+      role="guru"
+      onEndClass={handleEndClass}
+      isEnding={isEnding}
+    />
   );
 }

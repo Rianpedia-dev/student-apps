@@ -4,21 +4,18 @@ import { useState } from "react";
 import { BarChart3, ChevronDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-export interface SessionLogItem {
-  id: string;
-  guru_name: string;
-  kelas: string;
-  mata_pelajaran: string | null;
-  status: string;
-  started_at: string | null;
-  ended_at: string | null;
-  duration_minutes: number | null;
-  total_attendance: number;
-}
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { AdminSessionLogItem } from "../page";
 
 interface AdminSessionLogSectionProps {
-  sessions: SessionLogItem[];
+  sessions: AdminSessionLogItem[];
 }
 
 export function AdminSessionLogSection({ sessions }: AdminSessionLogSectionProps) {
@@ -57,71 +54,75 @@ export function AdminSessionLogSection({ sessions }: AdminSessionLogSectionProps
         <div className="pt-1 animate-in fade-in-50 duration-200">
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-slate-50/80 dark:bg-slate-900/50">
-                      <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Guru</th>
-                      <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Kelas</th>
-                      <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Mapel</th>
-                      <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Mulai</th>
-                      <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Durasi</th>
-                      <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Hadir</th>
-                      <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sessions.map((s) => (
-                      <tr
-                        key={s.id}
-                        className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50"
-                      >
-                        <td className="py-2.5 px-4 font-medium">{s.guru_name}</td>
-                        <td className="py-2.5 px-4 text-muted-foreground text-xs">{s.kelas}</td>
-                        <td className="py-2.5 px-4">{s.mata_pelajaran || "-"}</td>
-                        <td className="py-2.5 px-4 text-muted-foreground text-xs">
-                          {s.started_at
-                            ? new Date(s.started_at).toLocaleString("id-ID", {
-                                day: "numeric",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "-"}
-                        </td>
-                        <td className="py-2.5 px-4 text-muted-foreground">
-                          {s.duration_minutes
-                            ? s.duration_minutes < 60
-                              ? `${s.duration_minutes}m`
-                              : `${Math.floor(s.duration_minutes / 60)}j ${s.duration_minutes % 60}m`
-                            : "-"}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <span className="font-medium">{s.total_attendance}</span>
-                        </td>
-                        <td className="py-2.5 px-4">
-                          {s.status === "active" ? (
-                            <Badge variant="success" size="sm">
-                              Aktif
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" size="sm">
-                              Selesai
-                            </Badge>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {sessions.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                          Belum ada sesi kelas online bulan ini
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead>Guru</TableHead>
+                    <TableHead>Kelas</TableHead>
+                    <TableHead>Mapel / Tipe</TableHead>
+                    <TableHead>Mulai</TableHead>
+                    <TableHead>Durasi</TableHead>
+                    <TableHead>Hadir</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sessions.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium">{s.guru_name}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs">{s.kelas}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <span>{s.mata_pelajaran || "-"}</span>
+                          <Badge
+                            variant={s.session_type === "WALI_KELAS" ? "violet" : "outline"}
+                            size="xs"
+                          >
+                            {s.session_type === "WALI_KELAS" ? "Wali" : "Mapel"}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {s.started_at
+                          ? new Date(s.started_at).toLocaleString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              timeZone: "Asia/Jakarta",
+                            })
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {s.duration_minutes
+                          ? s.duration_minutes < 60
+                            ? `${s.duration_minutes}m`
+                            : `${Math.floor(s.duration_minutes / 60)}j ${s.duration_minutes % 60}m`
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="font-medium">{s.total_attendance}</TableCell>
+                      <TableCell>
+                        {s.status === "active" ? (
+                          <Badge variant="success" size="sm">
+                            Aktif
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" size="sm">
+                            Selesai
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {sessions.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                        Belum ada sesi kelas online bulan ini
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>

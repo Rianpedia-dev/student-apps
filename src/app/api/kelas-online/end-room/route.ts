@@ -10,14 +10,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await request.json()) as { roomId?: string };
+    const body = (await request.json().catch(() => ({}))) as { roomId?: string };
     const roomId = body.roomId;
 
-    if (!roomId) {
-      return NextResponse.json({ error: "roomId diperlukan" }, { status: 400 });
+    if (!roomId || !/^\d+$/.test(roomId)) {
+      return NextResponse.json({ error: "roomId tidak valid." }, { status: 400 });
     }
 
-    // Find the room
     const room = await prisma.kelasOnline.findUnique({
       where: { id: BigInt(roomId) },
     });
@@ -26,7 +25,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Kelas online tidak ditemukan." }, { status: 404 });
     }
 
-    // Verify the guru is the owner of this room
     if (room.guru_id.toString() !== session.id) {
       return NextResponse.json(
         { error: "Hanya guru yang membuat kelas ini yang dapat mengakhirinya." },
@@ -40,7 +38,6 @@ export async function POST(request: Request) {
 
     const now = new Date();
 
-    // Update room status to ended
     await prisma.kelasOnline.update({
       where: { id: BigInt(roomId) },
       data: {
@@ -49,7 +46,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Update all attendance records that don't have left_at yet
     const openAttendances = await prisma.kelasOnlineAttendance.findMany({
       where: {
         kelas_online_id: BigInt(roomId),
@@ -59,7 +55,7 @@ export async function POST(request: Request) {
 
     for (const att of openAttendances) {
       const joinedAt = att.joined_at || now;
-      const durationMs = now.getTime() - joinedAt.getTime();
+      const durationMs = Math.max(0, now.getTime() - joinedAt.getTime());
       const durationMinutes = Math.round(durationMs / 60000);
 
       await prisma.kelasOnlineAttendance.update({
@@ -71,14 +67,16 @@ export async function POST(request: Request) {
       });
     }
 
-    // Cleanup: delete the room from Daily.co
     try {
       await deleteDailyRoom(room.room_name);
     } catch (e) {
       console.warn("Failed to delete Daily room (non-critical):", e);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      roomId: room.id.toString(),
+    });
   } catch (error: unknown) {
     console.error("Error ending room:", error);
     const message = error instanceof Error ? error.message : "Gagal mengakhiri kelas online.";

@@ -4,9 +4,6 @@ import { getSession } from "@/lib/auth";
 import { TaskCreateTabs } from "@/components/features/assignment/builder/task-create-tabs";
 import { DashboardBreadcrumb } from "@/components/shared/dashboard-breadcrumb";
 
-import { GraduationCap, BookOpen, FileEdit } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-
 export const dynamic = "force-dynamic";
 
 interface PageProps {
@@ -24,6 +21,8 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
   }
 
   const { mapelId, kelasId, from } = await searchParams;
+  const safeMapelId = mapelId && /^\d+$/.test(mapelId) ? mapelId : undefined;
+  const safeKelasId = kelasId && /^\d+$/.test(kelasId) ? kelasId : undefined;
 
   const [classes, subjects, pertemuanList] = await Promise.all([
     prisma.kelas.findMany({
@@ -34,9 +33,9 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
     }),
     prisma.pertemuan.findMany({
       where: {
-        guru_id: BigInt(session.id),
-        ...(mapelId ? { mapel_id: BigInt(mapelId) } : {}),
-        ...(kelasId ? { kelas_id: BigInt(kelasId) } : {}),
+        ...(session.role === "admin" ? {} : { guru_id: BigInt(session.id) }),
+        ...(safeMapelId ? { mapel_id: BigInt(safeMapelId) } : {}),
+        ...(safeKelasId ? { kelas_id: BigInt(safeKelasId) } : {}),
       },
       select: {
         id: true,
@@ -48,57 +47,34 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
   ]);
 
   const activeKelasId =
-    kelasId ||
+    safeKelasId ||
     classes.find((c) => c.nama_kelas === session.kelas)?.id.toString() ||
     classes[0]?.id.toString() ||
     "";
-  const activeMapelId = mapelId || subjects[0]?.id.toString() || "";
+  const activeMapelId = safeMapelId || subjects[0]?.id.toString() || "";
 
-  const selectedClass = classes.find((c) => c.id.toString() === activeKelasId);
   const selectedSubject = subjects.find((s) => s.id.toString() === activeMapelId);
 
-  const backHref = mapelId
-    ? `/guru/mapel/${mapelId}${kelasId ? `?kelasId=${kelasId}&tab=tugas` : "?tab=tugas"}`
+  const backHref = safeMapelId
+    ? `/guru/mapel/${safeMapelId}${safeKelasId ? `?kelasId=${safeKelasId}&tab=tugas` : "?tab=tugas"}`
     : "/guru/mapel";
   const backLabel = selectedSubject
     ? `Kembali ke Tugas ${selectedSubject.nama_mapel}`
     : "Kembali ke Mata Pelajaran";
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="w-full space-y-4 sm:space-y-5">
       {/* Back Navigation */}
-      <DashboardBreadcrumb
-        backHref={backHref}
-        backLabel={backLabel}
-      />
+      <DashboardBreadcrumb backHref={backHref} backLabel={backLabel} />
 
-      {/* Header Info - Clean & Minimal */}
-      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-            Buat Tugas Baru
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Pilih jenis tugas dan lengkapi konfigurasi berikut.
-          </p>
-        </div>
-
-        {(selectedClass || selectedSubject) && (
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {selectedClass && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-foreground">
-                <GraduationCap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>{selectedClass.nama_kelas}</span>
-              </div>
-            )}
-            {selectedSubject && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-foreground">
-                <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>{selectedSubject.nama_mapel}</span>
-              </div>
-            )}
-          </div>
-        )}
+      {/* Header Info */}
+      <div className="rounded-2xl sm:rounded-3xl card-elevation shadow-2xl p-4 sm:p-6">
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground tracking-tight">
+          Buat Tugas Baru
+        </h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+          Pilih jenis tugas dan lengkapi konfigurasi berikut.
+        </p>
       </div>
 
       <TaskCreateTabs

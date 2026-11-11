@@ -3,11 +3,8 @@
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import crypto from "crypto";
-import { optimizeImage } from "@/lib/image-optimizer";
-import { saveUploadedFile } from "@/lib/upload";
+import { saveUploadedFile, saveBase64Image } from "@/lib/upload";
+import { checkUploadRateLimit } from "@/lib/rate-limit";
 
 export interface QuestionOptionInput {
   label: string; // A, B, C, D, E
@@ -53,33 +50,24 @@ export async function uploadTaskImageAction(formData: FormData) {
   }
 
   const file = formData.get("image") as File | null;
-  if (!file || file.size === 0) {
+  if (!file || !(file instanceof Blob) || file.size === 0) {
     return { success: false, error: "Tidak ada berkas gambar yang dipilih." };
   }
 
-  try {
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const optRes = await optimizeImage(buffer, { category: "task_media" });
-    if (!optRes.success) {
-      return { success: false, error: optRes.error };
-    }
-
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas", "media");
-    await mkdir(uploadDir, { recursive: true });
-
-    const safeName = `img-${Date.now()}-${crypto.randomBytes(4).toString("hex")}.webp`;
-    await writeFile(path.join(uploadDir, safeName), optRes.buffer);
-
-    return {
-      success: true,
-      url: `/uploads/tugas/media/${safeName}`,
-    };
-  } catch (err: any) {
-    console.error("Gagal menyimpan gambar soal:", err);
-    return { success: false, error: "Gagal menyimpan gambar ke server." };
+  const rl = await checkUploadRateLimit(session.id, "task_media");
+  if (!rl.allowed) {
+    return { success: false, error: rl.error };
   }
+
+  const uploadRes = await saveUploadedFile(file, { category: "task_media" });
+  if (!uploadRes.success || !uploadRes.filePath) {
+    return { success: false, error: uploadRes.error || "Gagal menyimpan gambar ke server." };
+  }
+
+  return {
+    success: true,
+    url: uploadRes.filePath,
+  };
 }
 
 /**
@@ -832,17 +820,6 @@ export async function updateSubmissionAction({
   }
 }
 
-function parseBase64Image(dataUrl: string): { buffer: Buffer; ext: string } | null {
-  const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-  if (!matches || matches.length !== 3) return null;
-  const mime = matches[1];
-  const buffer = Buffer.from(matches[2], "base64");
-  let ext = ".png";
-  if (mime === "image/webp") ext = ".webp";
-  else if (mime === "image/jpeg" || mime === "image/jpg") ext = ".jpg";
-  return { buffer, ext };
-}
-
 /**
  * Buat Tugas Lembar Kerja Berkas Baru (PDF / Image) oleh Guru
  */
@@ -867,6 +844,11 @@ export async function createDocumentTugasAction(formData: FormData) {
 
   if (!file || !(file instanceof Blob) || file.size === 0) {
     return { success: false, error: "Mohon pilih berkas soal (PDF atau Gambar Lembar Soal)." };
+  }
+
+  const rl = await checkUploadRateLimit(session.id);
+  if (!rl.allowed) {
+    return { success: false, error: rl.error };
   }
 
   const uploadRes = await saveUploadedFile(file, { category: "task_worksheet" });
@@ -988,13 +970,17 @@ export async function submitDocumentTaskAction(formData: FormData) {
   const tugas = await prisma.tugas.findUnique({ where: { id: tId } });
   if (!tugas) return { success: false, error: "Tugas tidak ditemukan." };
 
-  let savedFilePath = "";
+  let savedFilePath: string | null = null;
   let savedFileName = "";
   let savedFileType = "webp";
 
   if (submissionMode === "upload") {
     if (!rawFile || !(rawFile instanceof Blob) || rawFile.size === 0) {
       return { success: false, error: "Silakan pilih berkas lembar pengerjaan kamu terlebih dahulu." };
+    }
+    const rl = await checkUploadRateLimit(session.id);
+    if (!rl.allowed) {
+      return { success: false, error: rl.error };
     }
     const uploadRes = await saveUploadedFile(rawFile, { category: "task_submission" });
     if (!uploadRes.success || !uploadRes.filePath) {
@@ -1006,27 +992,36 @@ export async function submitDocumentTaskAction(formData: FormData) {
   } else {
     // Mode In-App Canvas
     if (canvasImageData && canvasImageData.startsWith("data:image")) {
-      const parsed = parseBase64Image(canvasImageData);
-      if (parsed) {
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas");
-        await mkdir(uploadDir, { recursive: true });
-        const fileName = `canvas-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${parsed.ext}`;
-        await writeFile(path.join(uploadDir, fileName), parsed.buffer);
-        savedFilePath = `/uploads/tugas/${fileName}`;
-        savedFileName = fileName;
-        savedFileType = parsed.ext.replace(".", "");
+      const rl = await checkUploadRateLimit(session.id);
+      if (!rl.allowed) {
+        return { success: false, error: rl.error };
       }
+      const savedCanvas = await saveBase64Image(canvasImageData, {
+        category: "task_submission",
+        prefix: "canvas",
+      });
+      if (!savedCanvas.success || !savedCanvas.filePath) {
+        return { success: false, error: savedCanvas.error || "Gagal menyimpan hasil kanvas." };
+      }
+      savedFilePath = savedCanvas.filePath;
+      savedFileName = savedCanvas.fileName || "canvas-submission.webp";
+      savedFileType = savedCanvas.fileType || "webp";
     } else if (rawFile && rawFile instanceof Blob && rawFile.size > 0) {
-      const uploadRes = await saveUploadedFile(rawFile, { category: "task_submission" });
-      if (uploadRes.success && uploadRes.filePath) {
-        savedFilePath = uploadRes.filePath;
-        savedFileName = uploadRes.fileName || "lembar-jawaban.webp";
-        savedFileType = uploadRes.fileType || "webp";
+      const rl = await checkUploadRateLimit(session.id);
+      if (!rl.allowed) {
+        return { success: false, error: rl.error };
       }
+      const uploadRes = await saveUploadedFile(rawFile, { category: "task_submission" });
+      if (!uploadRes.success || !uploadRes.filePath) {
+        return { success: false, error: uploadRes.error || "Gagal mengunggah berkas pengerjaan." };
+      }
+      savedFilePath = uploadRes.filePath;
+      savedFileName = uploadRes.fileName || "lembar-jawaban.webp";
+      savedFileType = uploadRes.fileType || "webp";
     }
 
     if (!savedFilePath) {
-      savedFilePath = tugas.file_petunjuk || "/uploads/tugas/default-worksheet.webp";
+      savedFilePath = tugas.file_petunjuk || null;
       savedFileName = "Lembar Kerja Siswa";
       savedFileType = "worksheet";
     }
@@ -1059,6 +1054,7 @@ export async function submitDocumentTaskAction(formData: FormData) {
         file_type: savedFileType,
         catatan_siswa: catatanSiswa.trim() || null,
         annotated_data: annotatedData,
+        annotated_file_url: null,
         status: "menunggu_penilaian",
         submitted_at: now,
       },
@@ -1111,14 +1107,14 @@ export async function gradeDocumentTaskAction({
 
     let teacherAnnotatedFileUrl = existing.annotated_file_url;
     if (teacherImageData && teacherImageData.startsWith("data:image")) {
-      const parsed = parseBase64Image(teacherImageData);
-      if (parsed) {
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas");
-        await mkdir(uploadDir, { recursive: true });
-        const fileName = `corrected-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${parsed.ext}`;
-        await writeFile(path.join(uploadDir, fileName), parsed.buffer);
-        teacherAnnotatedFileUrl = `/uploads/tugas/${fileName}`;
+      const savedCorrection = await saveBase64Image(teacherImageData, {
+        category: "task_submission",
+        prefix: "corrected",
+      });
+      if (!savedCorrection.success || !savedCorrection.filePath) {
+        return { success: false, error: savedCorrection.error || "Gagal menyimpan lembar koreksi." };
       }
+      teacherAnnotatedFileUrl = savedCorrection.filePath;
     }
 
     const maxScore = existing.tugas.poin_maksimal || 100;
@@ -1183,14 +1179,14 @@ export async function requestTaskRevisionAction({
 
     let teacherAnnotatedFileUrl = existing.annotated_file_url;
     if (teacherImageData && teacherImageData.startsWith("data:image")) {
-      const parsed = parseBase64Image(teacherImageData);
-      if (parsed) {
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "tugas");
-        await mkdir(uploadDir, { recursive: true });
-        const fileName = `corrected-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${parsed.ext}`;
-        await writeFile(path.join(uploadDir, fileName), parsed.buffer);
-        teacherAnnotatedFileUrl = `/uploads/tugas/${fileName}`;
+      const savedCorrection = await saveBase64Image(teacherImageData, {
+        category: "task_submission",
+        prefix: "corrected",
+      });
+      if (!savedCorrection.success || !savedCorrection.filePath) {
+        return { success: false, error: savedCorrection.error || "Gagal menyimpan lembar koreksi." };
       }
+      teacherAnnotatedFileUrl = savedCorrection.filePath;
     }
 
     await prisma.tugasSubmission.update({

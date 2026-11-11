@@ -1,50 +1,47 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { getAcademicYear } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
+export interface NavbarAcademicInfo {
+  tahunPelajaran: string;
+  semester?: string;
+  semesterNum?: number;
+}
+
 interface NavbarLiveClockProps {
-  academic?: {
-    tahunPelajaran: string;
-    semester?: string;
+  academic?: NavbarAcademicInfo;
+}
+
+/**
+ * Menormalkan label tahun pelajaran dan semester berjalan untuk tampilan banner navbar.
+ */
+export function resolveSemesterDisplay(academic?: NavbarAcademicInfo) {
+  const fallback = getAcademicYear();
+  const tahunPelajaran = academic?.tahunPelajaran || fallback.tahunPelajaran;
+  const semesterNum =
+    academic?.semesterNum ??
+    (academic?.semester
+      ? academic.semester.includes("2") || /genap/i.test(academic.semester)
+        ? 2
+        : 1
+      : fallback.semesterNum);
+
+  return {
+    tahunPelajaran,
+    semesterNum,
+    semesterLabel: `Semester ${semesterNum}`,
+    semesterPeriod: semesterNum === 2 ? "Genap" : "Ganjil",
   };
 }
 
 export function NavbarLiveClock({ academic: academicProp }: NavbarLiveClockProps = {}) {
-  const [now, setNow] = useState<Date | null>(null);
-
-  useEffect(() => {
-    setNow(new Date());
-    const timer = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const academic = academicProp || getAcademicYear();
+  const { tahunPelajaran, semesterLabel, semesterPeriod } = resolveSemesterDisplay(academicProp);
 
   const baseShadow = "0px 2px 4px 0px rgba(0, 0, 0, 0.25)";
   const hoverShadow = "0px 3px 6px 0px rgba(0, 0, 0, 0.35)";
   const pressedShadow = "0px 0px 0px 0px rgba(0, 0, 0, 0.25)";
-
-  if (!now) {
-    return (
-      <div
-        style={{ boxShadow: baseShadow }}
-        className="inline-flex flex-col justify-center rounded-2xl border border-white/60 dark:border-white/15 bg-white/70 dark:bg-white/[0.06] px-3.5 sm:px-4 py-1.5 text-xs select-none shrink-0 w-fit backdrop-blur-xl shadow-md"
-      >
-        <span className="inline-block h-3.5 w-20 animate-pulse rounded-lg bg-muted" />
-        <span className="inline-block h-3 w-16 animate-pulse rounded-lg bg-muted/70 mt-1" />
-      </div>
-    );
-  }
-
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  const seconds = String(now.getSeconds()).padStart(2, "0");
-  const timeStr = `${hours}:${minutes}:${seconds}`;
 
   return (
     <motion.div
@@ -57,19 +54,17 @@ export function NavbarLiveClock({ academic: academicProp }: NavbarLiveClockProps
     >
       {/* Baris 1 (Atas): Tahun Pelajaran */}
       <div className="flex items-center text-xs sm:text-[13px] font-extrabold text-foreground leading-tight tracking-tight">
-        <span>TP {academic.tahunPelajaran}</span>
+        <span>TP {tahunPelajaran}</span>
       </div>
 
-      {/* Baris 2 (Bawah): Jam:Menit:Detik & WIB */}
-      <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs leading-tight text-muted-foreground tabular-nums mt-0.5 sm:mt-1 tracking-tight font-medium">
-        {/* Live Time with seconds */}
-        <span className="font-mono font-bold text-xs sm:text-[13px] text-foreground tracking-tight">
-          {timeStr}
+      {/* Baris 2 (Bawah): Semester Berjalan */}
+      <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs leading-tight text-muted-foreground mt-0.5 sm:mt-1 tracking-tight font-medium">
+        <span className="font-bold text-xs sm:text-[13px] text-foreground tracking-tight">
+          {semesterLabel}
         </span>
 
-        {/* WIB suffix */}
         <Badge variant="emerald" size="xs" className="text-[9px] font-bold uppercase tracking-wider">
-          WIB
+          {semesterPeriod}
         </Badge>
       </div>
     </motion.div>

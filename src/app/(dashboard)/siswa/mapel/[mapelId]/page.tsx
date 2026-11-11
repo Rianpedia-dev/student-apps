@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StudentMeetingView } from "@/components/features/subjects/student-meeting-view";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { KelasOnlineService } from "@/services/kelas-online.service";
+import { StudentLiveClassBanner } from "@/components/features/kelas-online/student-live-class-banner";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +69,13 @@ export default async function SiswaMapelDetailPage({ params, searchParams }: Pag
   const targetGuru = jadwal?.guru || fallbackGuru;
   const targetGuruId = targetGuru?.id ? targetGuru.id.toString() : null;
   const chatHref = targetGuruId ? `/siswa/chat?guruId=${targetGuruId}` : "/siswa/chat";
+
+  const activeOnlineRoom = studentClass
+    ? await KelasOnlineService.getActiveRoomForStudentSubject(
+        studentClass,
+        mapel.id.toString()
+      )
+    : null;
 
   // Pertemuan yang sudah diterbitkan untuk kelas ini
   const meetingsData =
@@ -241,6 +250,9 @@ export default async function SiswaMapelDetailPage({ params, searchParams }: Pag
           </div>
         </div>
       </div>
+
+      {/* Banner Live Now Kelas Online jika sedang aktif */}
+      {activeOnlineRoom && <StudentLiveClassBanner room={activeOnlineRoom} />}
 
       {/* Komponen Tampilan Materi per Pertemuan & Tugas Siswa */}
       <StudentMeetingView

@@ -1,169 +1,75 @@
 import { redirect } from "next/navigation";
-import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getActiveJenjang } from "@/lib/jenjang";
-import { Wifi } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { CreateRoomForm } from "@/components/features/kelas-online/create-room-form";
-import { GuruRoomList } from "./_components/guru-room-list";
-import { GuruHistorySection } from "./_components/guru-history-section";
+import { KelasOnlineService } from "@/services/kelas-online.service";
+import { GuruKelasOnlineClient } from "./_components/guru-kelas-online-client";
+import type { CreateRoomInitialPreset } from "@/types/kelas-online";
 
 export const dynamic = "force-dynamic";
 
-interface GuruActiveRoom {
-  id: string;
-  room_name: string;
-  room_url: string;
-  guru_name: string;
-  kelas: string;
-  mata_pelajaran: string | null;
-  status: string;
-  started_at: string | null;
-  active_participants: number;
+interface GuruKelasOnlinePageProps {
+  searchParams: Promise<{
+    mapelId?: string;
+    kelasId?: string;
+    pertemuanId?: string;
+    mode?: string;
+  }>;
 }
 
-interface GuruEndedRoom {
-  id: string;
-  room_name: string;
-  room_url: string;
-  guru_name: string;
-  kelas: string;
-  mata_pelajaran: string | null;
-  status: string;
-  started_at: string | null;
-  ended_at: string | null;
-  duration_minutes: number | null;
-  total_attendance: number;
-}
-
-export default async function GuruKelasOnlinePage() {
+export default async function GuruKelasOnlinePage({
+  searchParams,
+}: GuruKelasOnlinePageProps) {
   const session = await getSession();
   if (!session || session.role !== "guru") {
     redirect("/login");
   }
 
+  const resolvedParams = await searchParams;
   const activeJenjang = await getActiveJenjang(session);
-  const isRestricted = activeJenjang !== "ALL";
 
-  const guruClass = session.kelas || "";
-  const guruClassJenjang = guruClass && /SMP|Kelas (7|8|9)/i.test(guruClass) ? "SMP" : "SD";
-  const effectiveGuruClass = !isRestricted || activeJenjang === guruClassJenjang ? guruClass : "";
+  await KelasOnlineService.cleanupExpiredRooms();
 
-  // Fetch active rooms for this guru
-  let activeRooms: GuruActiveRoom[] = [];
-  let endedRooms: GuruEndedRoom[] = [];
+  const context = await KelasOnlineService.getTeacherOnlineClassContext(
+    session.id,
+    activeJenjang
+  );
 
-  try {
-    let allowedClassNames: string[] = [];
-    if (isRestricted) {
-      const allowedClasses = await prisma.kelas.findMany({
-        where: { jenjang: activeJenjang },
-        select: { nama_kelas: true },
-      });
-      allowedClassNames = allowedClasses.map((c) => c.nama_kelas);
-    }
+  const { activeRooms, endedRooms, waliMonitorRooms } =
+    await KelasOnlineService.getGuruRoomsAndMonitoring(
+      session.id,
+      activeJenjang,
+      context
+    );
 
-    const [dbActive, dbEnded] = await Promise.all([
-      prisma.kelasOnline.findMany({
-        where: {
-          guru_id: BigInt(session.id),
-          status: "active",
-          ...(isRestricted ? { kelas: { in: allowedClassNames } } : {}),
-        },
-        include: {
-          attendance: {
-            where: { left_at: null },
-            select: { id: true },
-          },
-        },
-        orderBy: { started_at: "desc" },
-      }),
-      prisma.kelasOnline.findMany({
-        where: {
-          guru_id: BigInt(session.id),
-          status: "ended",
-          ...(isRestricted ? { kelas: { in: allowedClassNames } } : {}),
-        },
-        include: {
-          attendance: {
-            where: { user_role: "siswa" },
-            select: { id: true },
-          },
-        },
-        orderBy: { ended_at: "desc" },
-        take: 20,
-      }),
-    ]);
-
-    activeRooms = dbActive.map((r) => ({
-      id: r.id.toString(),
-      room_name: r.room_name,
-      room_url: r.room_url,
-      guru_name: r.guru_name,
-      kelas: r.kelas,
-      mata_pelajaran: r.mata_pelajaran,
-      status: r.status,
-      started_at: r.started_at?.toISOString() || null,
-      active_participants: r.attendance.length,
-    }));
-
-    endedRooms = dbEnded.map((r) => {
-      const startMs = r.started_at?.getTime() || 0;
-      const endMs = r.ended_at?.getTime() || 0;
-      const durationMinutes = startMs && endMs ? Math.round((endMs - startMs) / 60000) : null;
-      return {
-        id: r.id.toString(),
-        room_name: r.room_name,
-        room_url: r.room_url,
-        guru_name: r.guru_name,
-        kelas: r.kelas,
-        mata_pelajaran: r.mata_pelajaran,
-        status: r.status,
-        started_at: r.started_at?.toISOString() || null,
-        ended_at: r.ended_at?.toISOString() || null,
-        duration_minutes: durationMinutes,
-        total_attendance: r.attendance.length,
-      };
-    });
-  } catch (e) {
-    console.error("Error fetching kelas online data:", e);
-  }
+  const initialPreset: CreateRoomInitialPreset | undefined =
+    resolvedParams.mapelId ||
+    resolvedParams.kelasId ||
+    resolvedParams.pertemuanId ||
+    resolvedParams.mode === "wali"
+      ? {
+          sessionType: resolvedParams.mode === "wali" ? "WALI_KELAS" : "MAPEL",
+          kelasId:
+            resolvedParams.kelasId && /^\d+$/.test(resolvedParams.kelasId)
+              ? resolvedParams.kelasId
+              : undefined,
+          mapelId:
+            resolvedParams.mapelId && /^\d+$/.test(resolvedParams.mapelId)
+              ? resolvedParams.mapelId
+              : undefined,
+          pertemuanId:
+            resolvedParams.pertemuanId && /^\d+$/.test(resolvedParams.pertemuanId)
+              ? resolvedParams.pertemuanId
+              : undefined,
+        }
+      : undefined;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Kelas Online
-          </h1>
-        </div>
-        {effectiveGuruClass && (
-          <Badge variant="indigo">
-            {effectiveGuruClass}
-          </Badge>
-        )}
-      </div>
-
-      {/* Create Room Form */}
-      <CreateRoomForm kelas={effectiveGuruClass} />
-
-      {/* Active Rooms */}
-      {activeRooms.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Wifi className="h-5 w-5 text-emerald-500" />
-            Kelas Aktif
-            <Badge variant="success" size="sm">
-              {activeRooms.length}
-            </Badge>
-          </h2>
-          <GuruRoomList rooms={activeRooms} variant="active" />
-        </div>
-      )}
-
-      {/* History */}
-      <GuruHistorySection rooms={endedRooms} />
-    </div>
+    <GuruKelasOnlineClient
+      context={context}
+      activeRooms={activeRooms}
+      endedRooms={endedRooms}
+      waliMonitorRooms={waliMonitorRooms}
+      initialPreset={initialPreset}
+    />
   );
 }

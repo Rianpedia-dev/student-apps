@@ -53,10 +53,10 @@ export function BuilderStepQuestions({
   const currentQ = questions[activeQuestionIndex] || questions[0];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
       {/* ── Sidebar: Question Map & Action Buttons ── */}
       <div className="lg:col-span-4 space-y-4">
-        <Card className="sticky top-20">
+        <Card className="rounded-2xl sm:rounded-3xl card-elevation shadow-xl lg:sticky lg:top-20">
           <CardContent className="p-4 sm:p-5 space-y-4">
             {/* Header: Total questions & points */}
             <div className="flex items-center justify-between">
@@ -83,7 +83,7 @@ export function BuilderStepQuestions({
             </div>
 
             {/* Question Buttons Grid */}
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-[320px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-4 xl:grid-cols-5 gap-2 max-h-[320px] overflow-y-auto pr-1">
               {questions.map((q, idx) => {
                 const isActive = idx === activeQuestionIndex;
                 const isComplete =

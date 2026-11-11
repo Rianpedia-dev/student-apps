@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { SidebarProvider, useSidebar } from "@/components/providers/sidebar-provider";
 import { Sidebar } from "./sidebar";
 import { Navbar } from "./navbar";
+import type { NavbarAcademicInfo } from "./navbar-clock";
 import { Footer } from "./footer";
 import { cn } from "@/lib/utils";
 import { KelasOnlineProvider } from "@/components/features/kelas-online/kelas-online-context";
@@ -20,6 +21,7 @@ interface DashboardShellProps {
   jenjang?: "SD" | "SMP" | "ALL" | null;
   activeJenjang?: "SD" | "SMP" | "ALL" | null;
   userImage?: string | null;
+  academic?: NavbarAcademicInfo;
   children: React.ReactNode;
 }
 
@@ -32,17 +34,22 @@ function DashboardLayoutContent({
   jenjang,
   activeJenjang,
   userImage,
+  academic,
   children,
 }: DashboardShellProps) {
   const { isCollapsed } = useSidebar();
   const pathname = usePathname();
   const isChatPage = pathname?.endsWith("/chat") || pathname?.includes("/chat/");
+  const isClassroomRoomPage = /^\/(guru|siswa)\/kelas-online\/\d+\/?$/.test(
+    pathname || ""
+  );
+  const isFullHeightWorkspace = isChatPage || isClassroomRoomPage;
 
   return (
     <div
       className={cn(
         "flex min-h-screen bg-transparent text-foreground relative",
-        isChatPage && "h-dvh max-h-dvh overflow-hidden"
+        isFullHeightWorkspace && "h-dvh max-h-dvh overflow-hidden"
       )}
     >
       {/* Desktop & Tablet Sidebar */}
@@ -86,17 +93,18 @@ function DashboardLayoutContent({
           jenjang={jenjang}
           activeJenjang={activeJenjang}
           userImage={userImage}
+          academic={academic}
         />
         <main
           className={cn(
-            isChatPage
+            isFullHeightWorkspace
               ? "flex-1 p-0 w-full min-w-0 min-h-0 h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] overflow-hidden flex flex-col"
               : "flex-1 px-2 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-5 md:py-6 lg:py-8 pb-8 w-full max-w-7xl mx-auto min-w-0 flex flex-col"
           )}
         >
           <RouteTransitionOverlay>{children}</RouteTransitionOverlay>
         </main>
-        {!isChatPage && <Footer />}
+        {!isFullHeightWorkspace && <Footer />}
       </div>
     </div>
   );

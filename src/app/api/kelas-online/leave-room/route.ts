@@ -9,11 +9,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await request.json()) as { attendanceId?: string };
+    const body = (await request.json().catch(() => ({}))) as { attendanceId?: string };
     const attendanceId = body.attendanceId;
 
-    if (!attendanceId) {
-      return NextResponse.json({ error: "attendanceId diperlukan" }, { status: 400 });
+    if (!attendanceId || !/^\d+$/.test(attendanceId)) {
+      return NextResponse.json({ error: "attendanceId tidak valid." }, { status: 400 });
     }
 
     const attendance = await prisma.kelasOnlineAttendance.findUnique({
@@ -24,14 +24,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Data kehadiran tidak ditemukan." }, { status: 404 });
     }
 
-    // Only update if not already left
+    if (attendance.user_id.toString() !== session.id) {
+      return NextResponse.json(
+        { error: "Anda tidak berhak mengubah catatan kehadiran pengguna lain." },
+        { status: 403 }
+      );
+    }
+
     if (attendance.left_at) {
       return NextResponse.json({ success: true, message: "Sudah tercatat keluar sebelumnya." });
     }
 
     const now = new Date();
     const joinedAt = attendance.joined_at || now;
-    const durationMs = now.getTime() - joinedAt.getTime();
+    const durationMs = Math.max(0, now.getTime() - joinedAt.getTime());
     const durationMinutes = Math.round(durationMs / 60000);
 
     await prisma.kelasOnlineAttendance.update({

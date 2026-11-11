@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createMeetingToken } from "@/lib/daily";
+import { KelasOnlineService } from "@/services/kelas-online.service";
 import { SiswaVideoCallClient } from "./siswa-video-client";
 
 export const dynamic = "force-dynamic";
@@ -17,22 +18,49 @@ export default async function SiswaVideoCallPage({
   }
 
   const { roomId } = await params;
+  if (!/^\d+$/.test(roomId)) {
+    redirect("/siswa/kelas-online");
+  }
 
-  // Fetch room data
+  await KelasOnlineService.cleanupExpiredRooms();
+
   const room = await prisma.kelasOnline.findUnique({
     where: { id: BigInt(roomId) },
+    include: {
+      pertemuan: { select: { pertemuan_ke: true } },
+    },
   });
 
   if (!room || room.status !== "active") {
     redirect("/siswa/kelas-online");
   }
 
-  // Security check: student can only join rooms for their class
-  if (session.kelas !== room.kelas) {
+  // Resolusi kelas siswa & validasi berbasis kelas_id (fallback string kelas untuk record lama)
+  let studentClassName = session.kelas || "";
+  if (/^\d+$/.test(session.id)) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: BigInt(session.id) },
+      select: { kelas: true },
+    });
+    if (dbUser?.kelas) studentClassName = dbUser.kelas;
+  }
+
+  const studentKelas = studentClassName
+    ? await prisma.kelas.findFirst({
+        where: { nama_kelas: studentClassName },
+        select: { id: true },
+      })
+    : null;
+
+  const isAllowed =
+    room.kelas_id && studentKelas
+      ? room.kelas_id === studentKelas.id
+      : studentClassName === room.kelas;
+
+  if (!isAllowed) {
     redirect("/siswa/kelas-online");
   }
 
-  // Generate meeting token for siswa (not owner)
   let token = "";
   let attendanceId = "";
   try {
@@ -45,7 +73,6 @@ export default async function SiswaVideoCallPage({
     });
     token = tokenResponse.token;
 
-    // Find existing active attendance or create new
     let attendance = await prisma.kelasOnlineAttendance.findFirst({
       where: {
         kelas_online_id: room.id,
@@ -79,7 +106,13 @@ export default async function SiswaVideoCallPage({
     room_url: room.room_url,
     guru_name: room.guru_name,
     kelas: room.kelas,
-    mata_pelajaran: room.mata_pelajaran,
+    mata_pelajaran:
+      room.session_type === "WALI_KELAS" ? "Sesi Wali Kelas" : room.mata_pelajaran,
+    session_type: (room.session_type === "WALI_KELAS" ? "WALI_KELAS" : "MAPEL") as
+      | "MAPEL"
+      | "WALI_KELAS",
+    topik: room.topik,
+    pertemuan_ke: room.pertemuan?.pertemuan_ke ?? null,
   };
 
   return (

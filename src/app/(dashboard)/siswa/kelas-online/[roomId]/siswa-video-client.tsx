@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { ClassroomTopBar } from "@/components/features/kelas-online/classroom-top-bar";
+import React, { useEffect, useRef } from "react";
+import { ClassroomRoomFrame } from "@/components/features/kelas-online/classroom-top-bar";
 import { useKelasOnline } from "@/components/features/kelas-online/kelas-online-context";
 
 interface RoomData {
@@ -11,6 +11,9 @@ interface RoomData {
   guru_name: string;
   kelas: string;
   mata_pelajaran: string | null;
+  session_type?: "MAPEL" | "WALI_KELAS";
+  topik?: string | null;
+  pertemuan_ke?: number | null;
 }
 
 interface SiswaVideoCallClientProps {
@@ -27,9 +30,14 @@ export function SiswaVideoCallClient({
   attendanceId,
 }: SiswaVideoCallClientProps) {
   const { activeSession, startSession } = useKelasOnline();
+  const initializedRoomIdRef = useRef<string | null>(null);
 
-  // Initialize or synchronize active call session in global context
   useEffect(() => {
+    if (initializedRoomIdRef.current === room.id) {
+      return;
+    }
+    initializedRoomIdRef.current = room.id;
+
     if (!activeSession || activeSession.roomId !== room.id) {
       startSession({
         roomId: room.id,
@@ -40,22 +48,14 @@ export function SiswaVideoCallClient({
         role: "siswa",
         kelas: room.kelas,
         mataPelajaran: room.mata_pelajaran,
+        sessionType: room.session_type,
+        topik: room.topik,
+        pertemuanKe: room.pertemuan_ke,
         guruName: room.guru_name,
         attendanceId: attendanceId,
       });
     }
   }, [activeSession, room, token, userName, attendanceId, startSession]);
 
-  return (
-    <div className="flex flex-col gap-3.5 min-h-[calc(100vh-130px)] pb-4">
-      {/* Interactive Top Bar */}
-      <ClassroomTopBar role="siswa" />
-
-      {/* Video Anchor Slot: PersistentVideoHost tracks this element */}
-      <div
-        id="kelas-video-anchor"
-        className="w-full flex-1 rounded-2xl min-h-[520px] sm:min-h-[580px] h-[calc(100vh-210px)] border border-dashed border-slate-200 dark:border-slate-800 bg-slate-950/5 relative"
-      />
-    </div>
-  );
+  return <ClassroomRoomFrame role="siswa" />;
 }

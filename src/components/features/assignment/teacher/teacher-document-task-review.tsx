@@ -31,8 +31,12 @@ import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { DocumentCanvasEditor } from "../canvas/document-canvas-editor";
+import {
+  DocumentCanvasEditor,
+  DocumentCanvasEditorHandle,
+} from "../canvas/document-canvas-editor";
 import { gradeDocumentTaskAction, requestTaskRevisionAction } from "@/actions/assignment";
+import { resolveAnnotationBaseDocumentUrl } from "@/lib/document-task-helpers";
 
 export interface TeacherDocumentTaskReviewProps {
   tugasId: string;
@@ -47,6 +51,7 @@ export interface TeacherDocumentTaskReviewProps {
     catatanGuru: string | null;
     catatanSiswa?: string | null;
     fileUrl: string | null;
+    fileType?: string | null;
     annotatedFileUrl?: string | null;
     annotatedData?: string | null;
     submittedAt: string | null;
@@ -134,10 +139,7 @@ export function TeacherDocumentTaskReview({
   }, [isReviewFullscreen]);
 
   // Annotation data and rendered canvas data from editor
-  const canvasEditorRef = React.useRef<{
-    getFlattenedCanvasDataUrl?: () => string;
-    getAnnotationDataJson?: () => string;
-  }>({});
+  const canvasEditorRef = React.useRef<DocumentCanvasEditorHandle | null>(null);
 
   const [currentAnnotationData, setCurrentAnnotationData] = useState<string>(
     submission.annotatedData || ""
@@ -147,15 +149,41 @@ export function TeacherDocumentTaskReview({
     ? `/guru/tugas/${tugasId}?from=mapel`
     : `/guru/tugas/${tugasId}`;
 
+  const collectLatestCanvasPayload = (override?: {
+    annotationData?: string;
+    renderedImageDataUrl?: string;
+  }) => {
+    let finalAnnotationData = override?.annotationData;
+    if (!finalAnnotationData && canvasEditorRef.current) {
+      const committed = canvasEditorRef.current.commitPendingText();
+      finalAnnotationData = JSON.stringify(committed);
+    }
+    if (!finalAnnotationData) {
+      finalAnnotationData = currentAnnotationData;
+    }
+
+    const teacherImageData =
+      override?.renderedImageDataUrl ||
+      canvasEditorRef.current?.getFlattenedCanvasDataUrl() ||
+      undefined;
+
+    return { finalAnnotationData, teacherImageData };
+  };
+
   // Handle Save Grade
-  const handleGradeSubmit = async () => {
+  const handleGradeSubmit = async (override?: {
+    annotationData?: string;
+    renderedImageDataUrl?: string;
+  }) => {
     setIsGrading(true);
     try {
+      const { finalAnnotationData, teacherImageData } = collectLatestCanvasPayload(override);
       const res = await gradeDocumentTaskAction({
         submissionId: submission.id,
         nilai: Number(nilai) || 0,
         catatanGuru: catatanGuru.trim(),
-        annotatedData: currentAnnotationData,
+        annotatedData: finalAnnotationData,
+        teacherImageData,
       });
 
       if (res.success) {
@@ -185,10 +213,12 @@ export function TeacherDocumentTaskReview({
 
     setIsRequestingRevision(true);
     try {
+      const { finalAnnotationData, teacherImageData } = collectLatestCanvasPayload();
       const res = await requestTaskRevisionAction({
         submissionId: submission.id,
         catatanRevisi: catatanGuru.trim(),
-        annotatedData: currentAnnotationData,
+        annotatedData: finalAnnotationData,
+        teacherImageData,
       });
 
       if (res.success) {
@@ -209,15 +239,12 @@ export function TeacherDocumentTaskReview({
     }
   };
 
-  // Worksheet URL to display:
-  // If student did the assignment via in-app canvas (has annotatedData), load the original worksheet PDF (fileSoalUrl)
-  // so the teacher sees the pristine document with student's vector annotations overlaid.
-  // Otherwise, if student submitted by uploading a file directly (no annotatedData), annotate their uploaded file.
-  const hasInAppAnnotations = Boolean(
-    submission.annotatedData && submission.annotatedData.trim().length > 0
-  );
-  const documentToAnnotate =
-    (hasInAppAnnotations ? (fileSoalUrl || submission.fileUrl) : (submission.fileUrl || fileSoalUrl)) || "";
+  // Resolve base worksheet/upload document consistently across first grade and re-grades
+  const documentToAnnotate = resolveAnnotationBaseDocumentUrl({
+    fileSoalUrl,
+    submissionFileUrl: submission.fileUrl,
+    submissionFileType: submission.fileType,
+  });
 
   return (
     <div
@@ -332,6 +359,7 @@ export function TeacherDocumentTaskReview({
         {/* Sisi Kiri: Document Canvas Editor (Teacher Mode) */}
         <div className="lg:col-span-8 xl:col-span-9 h-full min-h-[400px]">
           <DocumentCanvasEditor
+            ref={canvasEditorRef}
             fileUrl={documentToAnnotate}
             fileName={`Lembar Siswa - ${submission.siswa.name}`}
             mode="teacher"
@@ -340,9 +368,9 @@ export function TeacherDocumentTaskReview({
             onSaveDraft={async ({ annotationData }) => {
               setCurrentAnnotationData(annotationData);
             }}
-            onSubmit={async ({ annotationData }) => {
+            onSubmit={async ({ annotationData, renderedImageDataUrl }) => {
               setCurrentAnnotationData(annotationData);
-              await handleGradeSubmit();
+              await handleGradeSubmit({ annotationData, renderedImageDataUrl });
             }}
             isSubmitting={isGrading}
             submitButtonText="Simpan Nilai & Koreksi"
@@ -422,7 +450,7 @@ export function TeacherDocumentTaskReview({
                         <Button
                           type="button"
                           disabled={isGrading || isRequestingRevision}
-                          onClick={handleGradeSubmit}
+                          onClick={() => handleGradeSubmit()}
                           size="sm"
                           className="flex-1 h-8 text-xs font-bold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs"
                         >
@@ -437,7 +465,7 @@ export function TeacherDocumentTaskReview({
                           type="button"
                           variant="outline"
                           disabled={isGrading || isRequestingRevision}
-                          onClick={handleRevisionSubmit}
+                          onClick={() => handleRevisionSubmit()}
                           size="sm"
                           className="h-8 text-[11px] font-bold text-amber-600 border-amber-500/30 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-xl"
                           title="Minta Siswa Revisi"
@@ -574,7 +602,7 @@ export function TeacherDocumentTaskReview({
             <Button
               type="button"
               disabled={isGrading || isRequestingRevision}
-              onClick={handleGradeSubmit}
+              onClick={() => handleGradeSubmit()}
               className="w-full h-10 text-xs font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs"
             >
               {isGrading ? (
@@ -595,7 +623,7 @@ export function TeacherDocumentTaskReview({
               type="button"
               variant="outline"
               disabled={isGrading || isRequestingRevision}
-              onClick={handleRevisionSubmit}
+              onClick={() => handleRevisionSubmit()}
               className="w-full h-9 text-xs font-bold gap-2 text-amber-700 dark:text-amber-400 border-amber-500/30 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-xl"
             >
               {isRequestingRevision ? (

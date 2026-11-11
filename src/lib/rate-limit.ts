@@ -46,6 +46,7 @@ export const RATE_LIMIT_POLICIES = {
   REGISTER: { limit: 3, windowSeconds: 60 * 60 }, // 3 pendaftaran per jam
   PASSWORD_RESET: { limit: 3, windowSeconds: 30 * 60 }, // 3 per 30 menit
   FILE_UPLOAD: { limit: 10, windowSeconds: 5 * 60 }, // 10 upload per 5 menit
+  TASK_MEDIA_UPLOAD: { limit: 60, windowSeconds: 5 * 60 }, // 60 gambar stimulus/opsi soal per 5 menit
   CHAT_MESSAGE: { limit: 30, windowSeconds: 60 }, // 30 pesan per menit
   API_GENERIC: { limit: 100, windowSeconds: 60 }, // 100 request per menit
   ADMIN_BULK: { limit: 5, windowSeconds: 60 }, // 5 operasi bulk per menit
@@ -139,6 +140,34 @@ export async function checkRateLimitAsync(
     // Graceful fallback to memory on any Redis error
     return checkRateLimit(identifier, limit, windowSeconds);
   }
+}
+
+/**
+ * Helper terpusat untuk rate limiting aksi upload berkas per pengguna.
+ */
+export async function checkUploadRateLimit(
+  userId: string,
+  kind: "standard" | "task_media" = "standard"
+): Promise<{ allowed: boolean; error?: string }> {
+  const policy =
+    kind === "task_media"
+      ? RATE_LIMIT_POLICIES.TASK_MEDIA_UPLOAD
+      : RATE_LIMIT_POLICIES.FILE_UPLOAD;
+
+  const rl = await checkRateLimitAsync(
+    `upload:${kind}:${userId}`,
+    policy.limit,
+    policy.windowSeconds
+  );
+
+  if (!rl.success) {
+    return {
+      allowed: false,
+      error: `Terlalu banyak percobaan unggah berkas. Silakan tunggu sekitar ${rl.resetSeconds} detik.`,
+    };
+  }
+
+  return { allowed: true };
 }
 
 /**

@@ -16,6 +16,9 @@ export interface ActiveCallSession {
   role: "guru" | "siswa" | "admin";
   kelas: string;
   mataPelajaran: string | null;
+  sessionType?: "MAPEL" | "WALI_KELAS";
+  topik?: string | null;
+  pertemuanKe?: number | null;
   guruName?: string;
   attendanceId?: string;
   startedAt?: string | null;

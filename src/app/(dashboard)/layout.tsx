@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { DashboardShell } from "@/components/layouts/dashboard-shell";
-import { getUserProfileImage, resolveUserJenjang } from "@/lib/utils";
+import { getAcademicYear, getUserProfileImage, resolveUserJenjang } from "@/lib/utils";
 import { getActiveJenjang } from "@/lib/jenjang";
 
 export default async function DashboardLayout({
@@ -54,6 +54,7 @@ export default async function DashboardLayout({
 
   const finalUserImage = getUserProfileImage(userImage, userGender);
   const activeJenjang = await getActiveJenjang(session);
+  const academic = getAcademicYear();
 
   return (
     <DashboardShell
@@ -65,6 +66,7 @@ export default async function DashboardLayout({
       jenjang={userJenjang}
       activeJenjang={activeJenjang}
       userImage={finalUserImage}
+      academic={academic}
     >
       {children}
     </DashboardShell>

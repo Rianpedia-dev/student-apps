@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
+import { stat } from "fs/promises";
+import { Readable } from "stream";
+import { getSession } from "@/lib/auth";
+import { resolveUploadFilePath } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const session = await getSession();
+  if (!session || session.status === "0") {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const filePath = searchParams.get("file");
   const customName = searchParams.get("name");
@@ -14,56 +23,50 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const decodedPath = decodeURIComponent(filePath).trim();
-
-    // Security: normalize and prevent path traversal
-    const normalized = path.normalize(decodedPath).replace(/^(\.\.[\/\\])+/, "");
-
-    // Must be inside uploads directory
-    const isUploadPath =
-      normalized.startsWith("/uploads") ||
-      normalized.startsWith("uploads") ||
-      normalized.startsWith("\\uploads");
-
-    if (!isUploadPath) {
+    const resolved = resolveUploadFilePath(filePath);
+    if (!resolved.valid) {
       return new NextResponse("Unauthorized path", { status: 403 });
     }
 
-    const cleanRelative = normalized.replace(/^[\\\/]+/, "");
-    const fullPath = path.join(process.cwd(), "public", cleanRelative);
-
-    if (!fs.existsSync(fullPath)) {
+    let fileStat: Awaited<ReturnType<typeof stat>>;
+    try {
+      fileStat = await stat(resolved.fullPath);
+    } catch {
       return new NextResponse("File tidak ditemukan", { status: 404 });
     }
 
-    const stat = fs.statSync(fullPath);
-    if (!stat.isFile()) {
+    if (!fileStat.isFile()) {
       return new NextResponse("Target bukan file", { status: 400 });
     }
 
-    const ext = path.extname(fullPath);
-    let downloadFilename = path.basename(fullPath);
+    const ext = path.extname(resolved.fullPath);
+    let downloadFilename = path.basename(resolved.fullPath);
 
     if (customName) {
-      const cleanCustom = customName.replace(/[/\\?%*:|"<>]/g, "-").trim();
+      const cleanCustom = customName
+        .replace(/[\r\n\0/\\?%*:|"<>]/g, "-")
+        .trim();
       if (cleanCustom) {
-        downloadFilename = cleanCustom.endsWith(ext)
+        downloadFilename = cleanCustom.toLowerCase().endsWith(ext.toLowerCase())
           ? cleanCustom
           : `${cleanCustom}${ext}`;
       }
     }
 
-    const fileBuffer = fs.readFileSync(fullPath);
+    const asciiFilename = downloadFilename.replace(/[^\x20-\x7E]|["\\;]/g, "_");
+    const nodeStream = fs.createReadStream(resolved.fullPath);
+    const webStream = Readable.toWeb(nodeStream) as unknown as BodyInit;
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(webStream, {
       status: 200,
       headers: {
         "Content-Type": "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${downloadFilename}"; filename*=UTF-8''${encodeURIComponent(
+        "Content-Disposition": `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(
           downloadFilename
         )}`,
-        "Content-Length": stat.size.toString(),
-        "Cache-Control": "no-cache",
+        "Content-Length": fileStat.size.toString(),
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "private, no-cache",
       },
     });
   } catch (error) {

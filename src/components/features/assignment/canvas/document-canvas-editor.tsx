@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useImperativeHandle } from "react";
+import { parseAnnotationData } from "@/lib/document-task-helpers";
 import {
   Pen,
   Highlighter,
@@ -70,7 +71,14 @@ export interface DocumentAnnotationData {
   stamps: StampAnnotation[];
 }
 
+export interface DocumentCanvasEditorHandle {
+  getFlattenedCanvasDataUrl: () => string;
+  getAnnotationDataJson: () => string;
+  commitPendingText: () => DocumentAnnotationData;
+}
+
 export interface DocumentCanvasEditorProps {
+  ref?: React.Ref<DocumentCanvasEditorHandle>;
   fileUrl: string;
   fileName?: string;
   mode?: "student" | "teacher";
@@ -82,6 +90,130 @@ export interface DocumentCanvasEditorProps {
   submitButtonText?: string;
   readOnly?: boolean;
   floatingOverlay?: React.ReactNode;
+  className?: string;
+}
+
+/**
+ * Pure helper to draw strokes, texts, and stamps for a single page onto a 2D canvas.
+ */
+function renderAnnotationsToCanvas(
+  canvas: HTMLCanvasElement,
+  {
+    strokes,
+    texts,
+    stamps,
+    currentPage,
+    editingTextId,
+  }: {
+    strokes: Stroke[];
+    texts: TextAnnotation[];
+    stamps: StampAnnotation[];
+    currentPage: number;
+    editingTextId?: string | null;
+  }
+) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const pageStrokes = strokes.filter((s) => s.page === currentPage);
+  const pageTexts = texts.filter((t) => t.page === currentPage);
+  const pageStamps = stamps.filter((s) => s.page === currentPage);
+
+  // 1. Draw strokes
+  for (const stroke of pageStrokes) {
+    if (stroke.points.length < 1) continue;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (stroke.tool === "highlighter") {
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.size * 3;
+      ctx.globalAlpha = 0.38;
+    } else if (stroke.tool === "eraser") {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.lineWidth = stroke.size * 4;
+    } else {
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.size;
+      ctx.globalAlpha = 1.0;
+    }
+
+    ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+    for (let i = 1; i < stroke.points.length; i++) {
+      const pt = stroke.points[i];
+      ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 2. Draw Text Annotations
+  for (const textItem of pageTexts) {
+    if (editingTextId && editingTextId === textItem.id) continue;
+
+    ctx.save();
+    ctx.font = `600 ${textItem.fontSize}px 'Outfit', 'Inter', sans-serif`;
+    ctx.fillStyle = textItem.color;
+    ctx.textBaseline = "top";
+
+    const lines = textItem.text.split("\n");
+    let lineY = textItem.y;
+    for (const line of lines) {
+      ctx.fillText(line, textItem.x, lineY);
+      lineY += textItem.fontSize * 1.25;
+    }
+    ctx.restore();
+  }
+
+  // 3. Draw Stamps (✓, ✗, ⭐)
+  for (const stamp of pageStamps) {
+    ctx.save();
+    ctx.translate(stamp.x, stamp.y);
+    if (stamp.type === "check") {
+      ctx.fillStyle = "#16a34a";
+      ctx.beginPath();
+      ctx.arc(0, 0, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-7, 0);
+      ctx.lineTo(-2, 5);
+      ctx.lineTo(8, -5);
+      ctx.stroke();
+    } else if (stamp.type === "cross") {
+      ctx.fillStyle = "#dc2626";
+      ctx.beginPath();
+      ctx.arc(0, 0, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-6, -6);
+      ctx.lineTo(6, 6);
+      ctx.moveTo(6, -6);
+      ctx.lineTo(-6, 6);
+      ctx.stroke();
+    } else if (stamp.type === "star") {
+      ctx.fillStyle = "#eab308";
+      ctx.beginPath();
+      ctx.arc(0, 0, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("★", 0, 1);
+    }
+    ctx.restore();
+  }
 }
 
 const PEN_COLORS = [
@@ -101,6 +233,7 @@ const HIGHLIGHTER_COLORS = [
 ];
 
 export function DocumentCanvasEditor({
+  ref,
   fileUrl,
   fileName = "Lembar Soal",
   mode = "student",
@@ -112,6 +245,7 @@ export function DocumentCanvasEditor({
   submitButtonText,
   readOnly = false,
   floatingOverlay,
+  className,
 }: DocumentCanvasEditorProps) {
   // Fullscreen / Zen Mode State
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -173,7 +307,8 @@ export function DocumentCanvasEditor({
   // Tool state
   const [activeTool, setActiveTool] = useState<
     "pen" | "highlighter" | "text" | "eraser" | "stamp_check" | "stamp_cross" | "stamp_star" | "pan"
-  >(mode === "teacher" ? "pen" : "pen");
+  >(readOnly ? "pan" : "pen");
+  const effectiveTool = readOnly ? "pan" : activeTool;
 
   const [penColor, setPenColor] = useState(mode === "teacher" ? "#dc2626" : "#2563eb");
   const [highlighterColor, setHighlighterColor] = useState("#facc15");
@@ -233,17 +368,19 @@ export function DocumentCanvasEditor({
 
   // 1. Parse initial annotations
   useEffect(() => {
-    if (initialAnnotationData) {
-      try {
-        const parsed = JSON.parse(initialAnnotationData) as DocumentAnnotationData;
-        if (parsed.strokes) setStrokes(parsed.strokes);
-        if (parsed.texts) setTexts(parsed.texts);
-        if (parsed.stamps) setStamps(parsed.stamps);
-        setHistory([parsed]);
-        setHistoryIndex(0);
-      } catch (e) {
-        console.error("Gagal parse initial annotation data:", e);
-      }
+    const parsed = parseAnnotationData(initialAnnotationData);
+    if (parsed) {
+      setStrokes(parsed.strokes);
+      setTexts(parsed.texts);
+      setStamps(parsed.stamps);
+      setHistory([parsed]);
+      setHistoryIndex(0);
+    } else {
+      setStrokes([]);
+      setTexts([]);
+      setStamps([]);
+      setHistory([]);
+      setHistoryIndex(-1);
     }
   }, [initialAnnotationData]);
 
@@ -284,6 +421,9 @@ export function DocumentCanvasEditor({
     let isCancelled = false;
     setIsLoadingDoc(true);
     setLoadError(null);
+    setCurrentPage(1);
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
 
     async function loadBackground() {
       try {
@@ -291,9 +431,11 @@ export function DocumentCanvasEditor({
           // Check if window.pdfjsLib is loaded
           if (!(window as any).pdfjsLib) {
             await new Promise<void>((resolve, reject) => {
-              const script = document.createElement("script");
-              script.src = "/vendor/pdfjs/pdf.min.js";
-              script.onload = () => {
+              const existingScript = document.querySelector(
+                'script[src="/vendor/pdfjs/pdf.min.js"]'
+              ) as HTMLScriptElement | null;
+
+              const onLoaded = () => {
                 const pdfjs = (window as any).pdfjsLib;
                 if (pdfjs) {
                   pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.min.js";
@@ -302,6 +444,20 @@ export function DocumentCanvasEditor({
                   reject(new Error("pdfjsLib tidak ditemukan"));
                 }
               };
+
+              if (existingScript) {
+                existingScript.addEventListener("load", onLoaded, { once: true });
+                existingScript.addEventListener(
+                  "error",
+                  () => reject(new Error("Gagal memuat library PDF")),
+                  { once: true }
+                );
+                return;
+              }
+
+              const script = document.createElement("script");
+              script.src = "/vendor/pdfjs/pdf.min.js";
+              script.onload = onLoaded;
               script.onerror = () => reject(new Error("Gagal memuat library PDF"));
               document.head.appendChild(script);
             });
@@ -315,8 +471,8 @@ export function DocumentCanvasEditor({
           pdfDocRef.current = pdfDoc;
           setTotalPages(pdfDoc.numPages);
 
-          // Get dimensions from page
-          const page = await pdfDoc.getPage(currentPage || 1);
+          // Get dimensions from page 1
+          const page = await pdfDoc.getPage(1);
           const viewport = page.getViewport({ scale: 1.5 });
           const width = Math.round(viewport.width);
           const height = Math.round(viewport.height);
@@ -461,110 +617,13 @@ export function DocumentCanvasEditor({
   const redrawAnnotations = useCallback(() => {
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Filter by current page
-    const pageStrokes = strokes.filter((s) => s.page === currentPage);
-    const pageTexts = texts.filter((t) => t.page === currentPage);
-    const pageStamps = stamps.filter((s) => s.page === currentPage);
-
-    // 1. Draw strokes
-    for (const stroke of pageStrokes) {
-      if (stroke.points.length < 1) continue;
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-
-      if (stroke.tool === "highlighter") {
-        ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = stroke.size * 3;
-        ctx.globalAlpha = 0.38;
-      } else if (stroke.tool === "eraser") {
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = stroke.size * 4;
-      } else {
-        ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = stroke.size;
-        ctx.globalAlpha = 1.0;
-      }
-
-      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-      for (let i = 1; i < stroke.points.length; i++) {
-        const pt = stroke.points[i];
-        ctx.lineTo(pt.x, pt.y);
-      }
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // 2. Draw Text Annotations
-    for (const textItem of pageTexts) {
-      if (editingText && editingText.id === textItem.id) continue;
-
-      ctx.save();
-      ctx.font = `600 ${textItem.fontSize}px 'Outfit', 'Inter', sans-serif`;
-      ctx.fillStyle = textItem.color;
-      ctx.textBaseline = "top";
-
-      // Draw light background pill for clarity if needed
-      const lines = textItem.text.split("\n");
-      let lineY = textItem.y;
-      for (const line of lines) {
-        ctx.fillText(line, textItem.x, lineY);
-        lineY += textItem.fontSize * 1.25;
-      }
-      ctx.restore();
-    }
-
-    // 3. Draw Stamps (✓, ✗, ⭐)
-    for (const stamp of pageStamps) {
-      ctx.save();
-      ctx.translate(stamp.x, stamp.y);
-      if (stamp.type === "check") {
-        ctx.fillStyle = "#16a34a";
-        ctx.beginPath();
-        ctx.arc(0, 0, 16, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 3;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(-7, 0);
-        ctx.lineTo(-2, 5);
-        ctx.lineTo(8, -5);
-        ctx.stroke();
-      } else if (stamp.type === "cross") {
-        ctx.fillStyle = "#dc2626";
-        ctx.beginPath();
-        ctx.arc(0, 0, 16, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 3;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(-6, -6);
-        ctx.lineTo(6, 6);
-        ctx.moveTo(6, -6);
-        ctx.lineTo(-6, 6);
-        ctx.stroke();
-      } else if (stamp.type === "star") {
-        ctx.fillStyle = "#eab308";
-        ctx.beginPath();
-        ctx.arc(0, 0, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 16px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("★", 0, 1);
-      }
-      ctx.restore();
-    }
+    renderAnnotationsToCanvas(canvas, {
+      strokes,
+      texts,
+      stamps,
+      currentPage,
+      editingTextId: editingText?.id ?? null,
+    });
   }, [strokes, texts, stamps, currentPage, editingText]);
 
   // Sync canvas dimensions
@@ -632,13 +691,13 @@ export function DocumentCanvasEditor({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (readOnly) return;
-
-    if (activeTool === "pan") {
+    if (effectiveTool === "pan") {
       setIsPanning(true);
       panStartRef.current = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
       return;
     }
+
+    if (readOnly) return;
 
     const coords = getCanvasCoords(e);
 
@@ -720,7 +779,7 @@ export function DocumentCanvasEditor({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (isPanning && activeTool === "pan") {
+    if (isPanning && effectiveTool === "pan") {
       setPanOffset({
         x: e.clientX - panStartRef.current.x,
         y: e.clientY - panStartRef.current.y,
@@ -856,11 +915,62 @@ export function DocumentCanvasEditor({
     };
   }, [strokes, texts, stamps, saveStatus, onSaveDraft, readOnly]);
 
+  const commitPendingText = useCallback((): DocumentAnnotationData => {
+    let nextTexts = texts;
+    if (editingText) {
+      const val = editingText.text.trim();
+      if (val) {
+        if (editingText.isNew) {
+          nextTexts = [
+            ...texts,
+            {
+              id: editingText.id,
+              text: val,
+              x: editingText.x,
+              y: editingText.y,
+              color: editingText.color,
+              fontSize: editingText.fontSize,
+              page: editingText.page,
+            },
+          ];
+        } else {
+          nextTexts = texts.map((t) =>
+            t.id === editingText.id ? { ...t, text: val } : t
+          );
+        }
+      } else if (!editingText.isNew) {
+        nextTexts = texts.filter((t) => t.id !== editingText.id);
+      }
+
+      if (nextTexts !== texts) {
+        setTexts(nextTexts);
+        recordHistory(strokes, nextTexts, stamps);
+      }
+      setEditingText(null);
+      if (drawCanvasRef.current) {
+        renderAnnotationsToCanvas(drawCanvasRef.current, {
+          strokes,
+          texts: nextTexts,
+          stamps,
+          currentPage,
+          editingTextId: null,
+        });
+      }
+    }
+
+    return {
+      version: 1,
+      strokes,
+      texts: nextTexts,
+      stamps,
+    };
+  }, [editingText, texts, strokes, stamps, currentPage, recordHistory]);
+
   // Export Flattened Canvas (Background + Annotations merged)
-  const getFlattenedCanvasDataUrl = (): string => {
+  const getFlattenedCanvasDataUrl = useCallback((): string => {
     const bgCanvas = bgCanvasRef.current;
     const drawCanvas = drawCanvasRef.current;
-    if (!bgCanvas || !drawCanvas) return "";
+    if (!bgCanvas || !drawCanvas || isLoadingDoc) return "";
 
     const mergeCanvas = document.createElement("canvas");
     mergeCanvas.width = canvasDimensions.width;
@@ -877,18 +987,37 @@ export function DocumentCanvasEditor({
     // Draw annotations layer
     ctx.drawImage(drawCanvas, 0, 0);
 
-    return mergeCanvas.toDataURL("image/webp", 0.9);
-  };
+    try {
+      return mergeCanvas.toDataURL("image/webp", 0.9);
+    } catch {
+      return "";
+    }
+  }, [canvasDimensions.width, canvasDimensions.height, isLoadingDoc]);
 
-  const handleManualSubmit = async () => {
-    if (!onSubmit) return;
-    const finalDataUrl = getFlattenedCanvasDataUrl();
-    const dataJson = JSON.stringify({
+  const getAnnotationDataJson = useCallback((): string => {
+    return JSON.stringify({
       version: 1,
       strokes,
       texts,
       stamps,
     });
+  }, [strokes, texts, stamps]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      getFlattenedCanvasDataUrl,
+      getAnnotationDataJson,
+      commitPendingText,
+    }),
+    [getFlattenedCanvasDataUrl, getAnnotationDataJson, commitPendingText]
+  );
+
+  const handleManualSubmit = async () => {
+    if (!onSubmit) return;
+    const committed = commitPendingText();
+    const finalDataUrl = getFlattenedCanvasDataUrl();
+    const dataJson = JSON.stringify(committed);
     await onSubmit({ annotationData: dataJson, renderedImageDataUrl: finalDataUrl });
   };
 
@@ -899,7 +1028,7 @@ export function DocumentCanvasEditor({
         "flex flex-row w-full h-full bg-card transition-all duration-200 overflow-hidden relative",
         isFullscreen
           ? "fixed inset-0 z-[100] w-screen h-screen rounded-none border-0 shadow-none"
-          : "rounded-2xl border border-border shadow-md"
+          : cn("rounded-2xl border border-border shadow-md", className)
       )}
     >
       {/* Side Toolbar (Placed beside the file, leaves top 100% uncovered) */}
@@ -912,7 +1041,17 @@ export function DocumentCanvasEditor({
         )}
       >
         {/* Header / Collapse Toggle */}
-        <div className={cn("flex items-center w-full pb-2 border-b border-border/80", isSidebarCollapsed ? "justify-center" : "justify-end")}>
+        <div
+          className={cn(
+            "flex items-center w-full pb-2 border-b border-border/80",
+            isSidebarCollapsed ? "justify-center" : readOnly ? "justify-between" : "justify-end"
+          )}
+        >
+          {!isSidebarCollapsed && readOnly && (
+            <Badge variant="outline" size="xs" className="text-[10px] font-semibold">
+              Mode Pratinjau
+            </Badge>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -955,82 +1094,86 @@ export function DocumentCanvasEditor({
           </Button>
         </div>
 
-        {/* Tool Selection */}
+        {/* Tool Selection (hidden editing tools in readOnly mode, keeps Pan for inspecting) */}
         <div className="w-full pt-2.5 space-y-1">
           {!isSidebarCollapsed && (
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">
-              Alat Gambar
+              {readOnly ? "Navigasi" : "Alat Gambar"}
             </span>
           )}
           <div className={cn(isSidebarCollapsed ? "flex flex-col items-center gap-1.5" : "grid grid-cols-2 gap-1.5")}>
-            {/* Pena */}
-            <Button
-              type="button"
-              variant={activeTool === "pen" ? "default" : "outline"}
-              size={isSidebarCollapsed ? "icon-xs" : "sm"}
-              onClick={() => setActiveTool("pen")}
-              className={cn(
-                "rounded-xl font-semibold",
-                isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1.5 text-xs justify-start"
-              )}
-              title="Pena Coret"
-            >
-              <Pen className="h-3.5 w-3.5 shrink-0" />
-              {!isSidebarCollapsed && <span>Pena</span>}
-            </Button>
+            {!readOnly && (
+              <>
+                {/* Pena */}
+                <Button
+                  type="button"
+                  variant={activeTool === "pen" ? "default" : "outline"}
+                  size={isSidebarCollapsed ? "icon-xs" : "sm"}
+                  onClick={() => setActiveTool("pen")}
+                  className={cn(
+                    "rounded-xl font-semibold",
+                    isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1.5 text-xs justify-start"
+                  )}
+                  title="Pena Coret"
+                >
+                  <Pen className="h-3.5 w-3.5 shrink-0" />
+                  {!isSidebarCollapsed && <span>Pena</span>}
+                </Button>
 
-            {/* Stabilo */}
-            <Button
-              type="button"
-              variant={activeTool === "highlighter" ? "default" : "outline"}
-              size={isSidebarCollapsed ? "icon-xs" : "sm"}
-              onClick={() => setActiveTool("highlighter")}
-              className={cn(
-                "rounded-xl font-semibold",
-                isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1.5 text-xs justify-start"
-              )}
-              title="Stabilo / Sorot"
-            >
-              <Highlighter className="h-3.5 w-3.5 shrink-0" />
-              {!isSidebarCollapsed && <span>Stabilo</span>}
-            </Button>
+                {/* Stabilo */}
+                <Button
+                  type="button"
+                  variant={activeTool === "highlighter" ? "default" : "outline"}
+                  size={isSidebarCollapsed ? "icon-xs" : "sm"}
+                  onClick={() => setActiveTool("highlighter")}
+                  className={cn(
+                    "rounded-xl font-semibold",
+                    isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1.5 text-xs justify-start"
+                  )}
+                  title="Stabilo / Sorot"
+                >
+                  <Highlighter className="h-3.5 w-3.5 shrink-0" />
+                  {!isSidebarCollapsed && <span>Stabilo</span>}
+                </Button>
 
-            {/* Teks */}
-            <Button
-              type="button"
-              variant={activeTool === "text" ? "default" : "outline"}
-              size={isSidebarCollapsed ? "icon-xs" : "sm"}
-              onClick={() => setActiveTool("text")}
-              className={cn(
-                "rounded-xl font-semibold",
-                isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1.5 text-xs justify-start"
-              )}
-              title="Ketik Teks Jawaban"
-            >
-              <Type className="h-3.5 w-3.5 shrink-0" />
-              {!isSidebarCollapsed && <span>Teks</span>}
-            </Button>
+                {/* Teks */}
+                <Button
+                  type="button"
+                  variant={activeTool === "text" ? "default" : "outline"}
+                  size={isSidebarCollapsed ? "icon-xs" : "sm"}
+                  onClick={() => setActiveTool("text")}
+                  className={cn(
+                    "rounded-xl font-semibold",
+                    isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1.5 text-xs justify-start"
+                  )}
+                  title="Ketik Teks Jawaban"
+                >
+                  <Type className="h-3.5 w-3.5 shrink-0" />
+                  {!isSidebarCollapsed && <span>Teks</span>}
+                </Button>
 
-            {/* Hapus */}
-            <Button
-              type="button"
-              variant={activeTool === "eraser" ? "default" : "outline"}
-              size={isSidebarCollapsed ? "icon-xs" : "sm"}
-              onClick={() => setActiveTool("eraser")}
-              className={cn(
-                "rounded-xl font-semibold",
-                isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1.5 text-xs justify-start"
-              )}
-              title="Penghapus"
-            >
-              <Eraser className="h-3.5 w-3.5 shrink-0" />
-              {!isSidebarCollapsed && <span>Hapus</span>}
-            </Button>
+                {/* Hapus */}
+                <Button
+                  type="button"
+                  variant={activeTool === "eraser" ? "default" : "outline"}
+                  size={isSidebarCollapsed ? "icon-xs" : "sm"}
+                  onClick={() => setActiveTool("eraser")}
+                  className={cn(
+                    "rounded-xl font-semibold",
+                    isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1.5 text-xs justify-start"
+                  )}
+                  title="Penghapus"
+                >
+                  <Eraser className="h-3.5 w-3.5 shrink-0" />
+                  {!isSidebarCollapsed && <span>Hapus</span>}
+                </Button>
+              </>
+            )}
 
             {/* Pan / Geser */}
             <Button
               type="button"
-              variant={activeTool === "pan" ? "default" : "outline"}
+              variant={effectiveTool === "pan" ? "default" : "outline"}
               size={isSidebarCollapsed ? "icon-xs" : "sm"}
               onClick={() => setActiveTool("pan")}
               className={cn(
@@ -1045,8 +1188,8 @@ export function DocumentCanvasEditor({
           </div>
         </div>
 
-        {/* Teacher Correction Stamps (if mode === 'teacher') */}
-        {mode === "teacher" && (
+        {/* Teacher Correction Stamps (if mode === 'teacher' && !readOnly) */}
+        {!readOnly && mode === "teacher" && (
           <div className="w-full pt-2 space-y-1">
             {!isSidebarCollapsed && (
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">
@@ -1089,7 +1232,7 @@ export function DocumentCanvasEditor({
         )}
 
         {/* Colors Selection for Pen / Highlighter */}
-        {(activeTool === "pen" || activeTool === "highlighter") && (
+        {!readOnly && (activeTool === "pen" || activeTool === "highlighter") && (
           <div className="w-full pt-2.5 space-y-1.5 border-t border-border/70 mt-2">
             {!isSidebarCollapsed && (
               <div className="flex items-center justify-between px-1">
@@ -1128,7 +1271,7 @@ export function DocumentCanvasEditor({
         )}
 
         {/* Thickness selector */}
-        {(activeTool === "pen" || activeTool === "highlighter" || activeTool === "eraser") && (
+        {!readOnly && (activeTool === "pen" || activeTool === "highlighter" || activeTool === "eraser") && (
           <div className="w-full pt-2 space-y-1">
             {!isSidebarCollapsed && (
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">
@@ -1156,39 +1299,41 @@ export function DocumentCanvasEditor({
         )}
 
         {/* Undo / Redo */}
-        <div className="w-full pt-2.5 space-y-1 border-t border-border/70 mt-2">
-          {!isSidebarCollapsed && (
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">
-              Riwayat
-            </span>
-          )}
-          <div className={cn(isSidebarCollapsed ? "flex flex-col items-center gap-1" : "grid grid-cols-2 gap-1.5")}>
-            <Button
-              type="button"
-              variant="outline"
-              size={isSidebarCollapsed ? "icon-xs" : "sm"}
-              disabled={historyIndex <= 0}
-              onClick={handleUndo}
-              className={cn("rounded-xl", isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1 text-xs")}
-              title="Batal Coret (Undo)"
-            >
-              <Undo2 className="h-3.5 w-3.5" />
-              {!isSidebarCollapsed && <span>Batal</span>}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size={isSidebarCollapsed ? "icon-xs" : "sm"}
-              disabled={historyIndex >= history.length - 1}
-              onClick={handleRedo}
-              className={cn("rounded-xl", isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1 text-xs")}
-              title="Ulangi Coret (Redo)"
-            >
-              <Redo2 className="h-3.5 w-3.5" />
-              {!isSidebarCollapsed && <span>Ulang</span>}
-            </Button>
+        {!readOnly && (
+          <div className="w-full pt-2.5 space-y-1 border-t border-border/70 mt-2">
+            {!isSidebarCollapsed && (
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">
+                Riwayat
+              </span>
+            )}
+            <div className={cn(isSidebarCollapsed ? "flex flex-col items-center gap-1" : "grid grid-cols-2 gap-1.5")}>
+              <Button
+                type="button"
+                variant="outline"
+                size={isSidebarCollapsed ? "icon-xs" : "sm"}
+                disabled={historyIndex <= 0}
+                onClick={handleUndo}
+                className={cn("rounded-xl", isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1 text-xs")}
+                title="Batal Coret (Undo)"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                {!isSidebarCollapsed && <span>Batal</span>}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size={isSidebarCollapsed ? "icon-xs" : "sm"}
+                disabled={historyIndex >= history.length - 1}
+                onClick={handleRedo}
+                className={cn("rounded-xl", isSidebarCollapsed ? "h-8 w-8" : "h-8 px-2 gap-1 text-xs")}
+                title="Ulangi Coret (Redo)"
+              >
+                <Redo2 className="h-3.5 w-3.5" />
+                {!isSidebarCollapsed && <span>Ulang</span>}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Multi-page controls */}
         {totalPages > 1 && (
@@ -1240,7 +1385,7 @@ export function DocumentCanvasEditor({
               type="button"
               variant="ghost"
               size="icon-xs"
-              onClick={() => setZoom((z) => Math.max(0.6, Math.round((z - 0.2) * 10) / 10))}
+              onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.2) * 10) / 10))}
               className="h-6 w-6"
               title="Perkecil (-)"
             >
@@ -1276,61 +1421,63 @@ export function DocumentCanvasEditor({
         </div>
 
         {/* Bottom Actions: Autosave & Submit */}
-        <div className="w-full mt-auto pt-3 border-t border-border/70 space-y-2 shrink-0">
-          {!readOnly && onSaveDraft && (
-            <div className={cn("flex items-center gap-1 text-[10px] text-muted-foreground", isSidebarCollapsed ? "justify-center" : "justify-center py-0.5")}>
-              <span
-                className={cn(
-                  "h-2 w-2 rounded-full shrink-0",
-                  saveStatus === "saved"
-                    ? "bg-emerald-500 animate-pulse"
-                    : saveStatus === "saving"
-                    ? "bg-amber-500 animate-spin"
-                    : "bg-muted-foreground"
+        {!readOnly && (onSaveDraft || onSubmit) && (
+          <div className="w-full mt-auto pt-3 border-t border-border/70 space-y-2 shrink-0">
+            {onSaveDraft && (
+              <div className={cn("flex items-center gap-1 text-[10px] text-muted-foreground", isSidebarCollapsed ? "justify-center" : "justify-center py-0.5")}>
+                <span
+                  className={cn(
+                    "h-2 w-2 rounded-full shrink-0",
+                    saveStatus === "saved"
+                      ? "bg-emerald-500 animate-pulse"
+                      : saveStatus === "saving"
+                      ? "bg-amber-500 animate-spin"
+                      : "bg-muted-foreground"
+                  )}
+                />
+                {!isSidebarCollapsed && (
+                  <span className="truncate">
+                    {saveStatus === "saved" ? "Tersimpan Otomatis" : saveStatus === "saving" ? "Menyimpan..." : "Belum Tersimpan"}
+                  </span>
                 )}
-              />
-              {!isSidebarCollapsed && (
-                <span className="truncate">
-                  {saveStatus === "saved" ? "Tersimpan Otomatis" : saveStatus === "saving" ? "Menyimpan..." : "Belum Tersimpan"}
-                </span>
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
-          {onSubmit && !readOnly && (
-            <Button
-              type="button"
-              variant="default"
-              size={isSidebarCollapsed ? "icon-xs" : "sm"}
-              disabled={isSubmitting}
-              onClick={handleManualSubmit}
-              className={cn(
-                "rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all",
-                isSidebarCollapsed ? "h-9 w-9 p-0 mx-auto flex items-center justify-center" : "w-full h-9 px-2 gap-1.5 text-xs"
-              )}
-              title={submitButtonText || (mode === "teacher" ? "Simpan Nilai & Koreksi" : "Kumpulkan Tugas 🚀")}
-            >
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-              ) : (
-                <Send className="h-3.5 w-3.5 shrink-0" />
-              )}
-              {!isSidebarCollapsed && (
-                <span className="truncate">
-                  {submitButtonText || (mode === "teacher" ? "Simpan Nilai" : "Kumpulkan 🚀")}
-                </span>
-              )}
-            </Button>
-          )}
-        </div>
+            {onSubmit && (
+              <Button
+                type="button"
+                variant="default"
+                size={isSidebarCollapsed ? "icon-xs" : "sm"}
+                disabled={isSubmitting}
+                onClick={handleManualSubmit}
+                className={cn(
+                  "rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all",
+                  isSidebarCollapsed ? "h-9 w-9 p-0 mx-auto flex items-center justify-center" : "w-full h-9 px-2 gap-1.5 text-xs"
+                )}
+                title={submitButtonText || (mode === "teacher" ? "Simpan Nilai & Koreksi" : "Kumpulkan Tugas 🚀")}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                ) : (
+                  <Send className="h-3.5 w-3.5 shrink-0" />
+                )}
+                {!isSidebarCollapsed && (
+                  <span className="truncate">
+                    {submitButtonText || (mode === "teacher" ? "Simpan Nilai" : "Kumpulkan 🚀")}
+                  </span>
+                )}
+              </Button>
+            )}
+          </div>
+        )}
       </aside>
 
       {/* Canvas Workspace Area (Starts right at the top, zero top obstruction) */}
       <div
         ref={containerRef}
-        className="relative flex-1 w-full h-full overflow-auto bg-muted/40 flex items-start justify-center p-4 sm:p-8 select-none"
+        className="relative flex-1 w-full h-full overflow-auto bg-muted/40 flex items-start p-4 sm:p-8 select-none"
         style={{
-          cursor: activeTool === "pan" ? (isPanning ? "grabbing" : "grab") : activeTool === "text" ? "text" : "crosshair",
+          cursor: effectiveTool === "pan" ? (isPanning ? "grabbing" : "grab") : effectiveTool === "text" ? "text" : "crosshair",
         }}
       >
         {/* Loading Spinner */}
@@ -1360,7 +1507,7 @@ export function DocumentCanvasEditor({
 
         {/* Canvas Render Frame with Zoom and Pan Transform (Clean top margin, 100% visible) */}
         <div
-          className="relative rounded-lg shadow-xl border border-border bg-white overflow-hidden transition-transform duration-75 origin-top-center shrink-0 my-2 sm:my-4"
+          className="relative rounded-lg shadow-xl border border-border bg-white overflow-hidden transition-transform duration-75 origin-top shrink-0 mx-auto my-2 sm:my-4"
           style={{
             width: canvasDimensions.width,
             height: canvasDimensions.height,
@@ -1388,7 +1535,7 @@ export function DocumentCanvasEditor({
           />
 
           {/* Layer 3: In-Place Floating Text Editor */}
-          {editingText && editingText.page === currentPage && (
+          {!readOnly && editingText && editingText.page === currentPage && (
             <div
               className="absolute z-30 flex items-center gap-1.5 p-1.5 bg-card/95 backdrop-blur-md rounded-xl shadow-2xl border-2 border-primary animate-in fade-in zoom-in-95 pointer-events-auto"
               style={{

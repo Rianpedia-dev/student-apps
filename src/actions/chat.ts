@@ -5,10 +5,8 @@ import { getSession } from "@/lib/auth";
 import { getUserProfileImage, resolveUserJenjang } from "@/lib/utils";
 import { getActiveJenjang } from "@/lib/jenjang";
 import { revalidatePath } from "next/cache";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import crypto from "crypto";
-import { optimizeImage, isImageFileName } from "@/lib/image-optimizer";
+import { saveUploadedFile } from "@/lib/upload";
+import { checkUploadRateLimit } from "@/lib/rate-limit";
 
 /**
  * Membuka atau membuat ruang obrolan langsung (1-on-1).
@@ -325,35 +323,21 @@ export async function sendMessageAction(formData: FormData) {
     let attachmentType: string | null = null;
 
     if (file && file.size > 0) {
-      try {
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "chat");
-        await mkdir(uploadDir, { recursive: true });
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        const isImage = isImageFileName(file.name) || (file.type && file.type.startsWith("image/"));
-
-        if (isImage) {
-          const optRes = await optimizeImage(buffer, { category: "chat" });
-          if (optRes.success) {
-            const randomHex = crypto.randomBytes(6).toString("hex");
-            const safeName = `chat-${Date.now()}-${randomHex}.webp`;
-            await writeFile(path.join(uploadDir, safeName), optRes.buffer);
-            attachmentUrl = `/uploads/chat/${safeName}`;
-            attachmentType = "image";
-          }
-        }
-
-        // Jika bukan gambar (dokumen PDF, Word, Excel, dsb)
-        if (!attachmentUrl) {
-          const safeName = `chat-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-          await writeFile(path.join(uploadDir, safeName), buffer);
-          attachmentUrl = `/uploads/chat/${safeName}`;
-          attachmentType = "file";
-        }
-      } catch (e) {
-        console.error("Gagal mengunggah lampiran chat:", e);
+      const rl = await checkUploadRateLimit(session.id);
+      if (!rl.allowed) {
+        return { success: false, error: rl.error };
       }
+
+      const uploadRes = await saveUploadedFile(file, { category: "chat" });
+      if (!uploadRes.success || !uploadRes.filePath) {
+        return {
+          success: false,
+          error: uploadRes.error || "Gagal mengunggah lampiran chat.",
+        };
+      }
+
+      attachmentUrl = uploadRes.filePath;
+      attachmentType = uploadRes.fileType === "webp" ? "image" : "file";
     }
 
     const chat = await prisma.chatMessage.create({

@@ -150,11 +150,8 @@ export function StudentAchievementHistoryDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           showCloseButton={false}
-          className="!fixed !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-[96vw] sm:!w-[94vw] md:!w-[92vw] lg:!w-[90vw] !max-w-[1240px] sm:!max-w-[1240px] h-[94vh] sm:h-[90vh] !p-0 !gap-0 !overflow-hidden bg-white dark:bg-black border border-neutral-200/80 dark:border-neutral-800 shadow-2xl rounded-3xl focus:outline-none flex flex-col no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          className="!fixed !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-[95vw] sm:!w-[92vw] lg:!w-[90vw] !max-w-[1160px] sm:!max-w-[1160px] h-[92vh] sm:h-[90vh] !p-0 !gap-0 !overflow-hidden bg-white dark:bg-black border border-neutral-200/80 dark:border-neutral-800 shadow-2xl rounded-2xl sm:rounded-3xl focus:outline-none flex flex-col no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           style={{
-            width: "95vw",
-            maxWidth: "1240px",
-            maxHeight: "92vh",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
           }}
@@ -168,7 +165,7 @@ export function StudentAchievementHistoryDialog({
 
           {/* Tombol Tutup Melayang yang Elegan (Frosted Glass Circular Button) */}
           <DialogClose
-            className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-40 flex items-center justify-center h-9 w-9 rounded-full bg-white dark:bg-black text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white border border-neutral-200/90 dark:border-neutral-800 shadow-sm hover:shadow-md backdrop-blur-md transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-40 flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white dark:bg-black text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white border border-neutral-200/90 dark:border-neutral-800 shadow-sm hover:shadow-md backdrop-blur-md transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
             title="Tutup riwayat"
           >
             <X className="h-4 w-4" />
@@ -177,7 +174,7 @@ export function StudentAchievementHistoryDialog({
 
           {/* Body Konten: Riwayat Prestasi Papan Pinboard (Scrollable Tanpa Scrollbar Visual) */}
           <div
-            className="flex-1 overflow-y-auto pt-6 no-scrollbar scrollbar-none scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="flex-1 overflow-y-auto overflow-x-hidden pt-10 sm:pt-6 no-scrollbar scrollbar-none scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {loading ? (

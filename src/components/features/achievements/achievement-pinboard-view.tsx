@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2 } from "lucide-react";
@@ -164,51 +164,73 @@ export function AchievementPinboardView({
 
   const count = sortedAchievements.length;
 
-  // Hitung total tinggi kanvas desktop secara dinamis
-  const desktopHeight = useMemo(() => {
-    if (count <= 1) return 460;
-    if (count === 2) return 560;
-    if (count === 3) return 920;
-    if (count === 4) return 1060;
-    return Math.ceil(count / 2) * 500 + 160;
-  }, [count]);
+  const boardRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [svgMetrics, setSvgMetrics] = useState<{
+    width: number;
+    height: number;
+    path: string;
+  }>({ width: 0, height: 0, path: "" });
 
-  // Kalkulasi kurva SVG garis putus-putus berliku (Winding Path)
-  const svgWindingPath = useMemo(() => {
-    if (count <= 1) return "";
+  // Hitung path SVG garis putus-putus berdasarkan posisi aktual kartu di grid agar selalu selaras di semua ukuran layar
+  useEffect(() => {
+    const boardEl = boardRef.current;
+    if (!boardEl || count <= 1) return;
 
-    let path = "";
-    for (let i = 0; i < count - 1; i++) {
-      const isCurrentRight = i % 2 === 1;
-      const isNextRight = (i + 1) % 2 === 1;
+    const computePath = () => {
+      if (!boardRef.current) return;
+      const boardRect = boardRef.current.getBoundingClientRect();
+      if (boardRect.width === 0 || boardRect.height === 0) return;
 
-      // Titik tengah kartu awal
-      const x1 = isCurrentRight ? 720 : 280;
-      const y1 = isCurrentRight
-        ? Math.floor(i / 2) * 500 + 340
-        : Math.floor(i / 2) * 500 + 200;
-
-      // Titik tengah kartu berikutnya
-      const x2 = isNextRight ? 720 : 280;
-      const y2 = isNextRight
-        ? Math.floor((i + 1) / 2) * 500 + 340
-        : Math.floor((i + 1) / 2) * 500 + 200;
-
-      if (i === 0) {
-        // 1 -> 2 (Kiri ke Kanan)
-        path = `M ${x1} ${y1} C 500 ${y1}, 550 ${y2}, ${x2} ${y2}`;
-      } else if (!isCurrentRight) {
-        // Kiri ke Kanan
-        path += ` C 500 ${y1}, 550 ${y2}, ${x2} ${y2}`;
-      } else {
-        // Kanan ke Kiri
-        const midY = (y1 + y2) / 2;
-        path += ` C 850 ${y1}, 500 ${midY}, ${x2} ${y2}`;
+      const points: { x: number; y: number }[] = [];
+      for (let i = 0; i < count; i++) {
+        const el = itemRefs.current[i];
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        points.push({
+          x: rect.left - boardRect.left + rect.width / 2,
+          y: rect.top - boardRect.top + rect.height / 2,
+        });
       }
-    }
 
-    return path;
-  }, [count]);
+      if (points.length <= 1) return;
+
+      let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+      for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2;
+
+        if (Math.abs(p1.x - p2.x) > 40) {
+          d += ` C ${midX.toFixed(1)} ${p1.y.toFixed(1)}, ${midX.toFixed(1)} ${p2.y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+        } else {
+          d += ` Q ${(p1.x + 28).toFixed(1)} ${midY.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+        }
+      }
+
+      setSvgMetrics({
+        width: boardRect.width,
+        height: boardRect.height,
+        path: d,
+      });
+    };
+
+    const rafId = requestAnimationFrame(computePath);
+    const observer = new ResizeObserver(computePath);
+    observer.observe(boardEl);
+    for (let i = 0; i < count; i++) {
+      const card = itemRefs.current[i];
+      if (card) observer.observe(card);
+    }
+    window.addEventListener("resize", computePath);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      observer.disconnect();
+      window.removeEventListener("resize", computePath);
+    };
+  }, [count, sortedAchievements]);
 
   if (count === 0) {
     return (
@@ -221,17 +243,8 @@ export function AchievementPinboardView({
   return (
     <LazyMotion features={domAnimation}>
       <div
-        className={`relative w-full py-8 sm:py-12 px-4 sm:px-6 select-none ${className || ""}`}
+        className={`relative w-full py-6 sm:py-10 lg:py-12 px-4 sm:px-6 md:px-8 select-none overflow-x-hidden ${className || ""}`}
       >
-        {/* CSS Scoped untuk memastikan Absolute Position aktif khusus Desktop & Tablet (md ke atas) */}
-        <style>{`
-          @media (min-width: 768px) {
-            .pinboard-desktop-item {
-              position: absolute !important;
-            }
-          }
-        `}</style>
-
         {/* Latar Belakang Kertas Buku Bergaris (Lined Paper Background) */}
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.08] dark:opacity-[0.14]"
@@ -251,30 +264,27 @@ export function AchievementPinboardView({
         />
 
         {/* Gradien Fade di Tepi Kiri & Kanan (Side Vignettes) */}
-        <div className="from-background pointer-events-none absolute inset-y-0 left-0 w-12 sm:w-24 bg-gradient-to-r z-1" />
-        <div className="from-background pointer-events-none absolute inset-y-0 right-0 w-12 sm:w-24 bg-gradient-to-l z-1" />
+        <div className="from-background pointer-events-none absolute inset-y-0 left-0 w-8 sm:w-16 lg:w-24 bg-gradient-to-r z-1" />
+        <div className="from-background pointer-events-none absolute inset-y-0 right-0 w-8 sm:w-16 lg:w-24 bg-gradient-to-l z-1" />
 
-        <div className="max-w-6xl mx-auto relative z-10">
+        <div className="max-w-5xl mx-auto relative z-10">
           <div
-            className="relative w-full max-w-[1000px] mx-auto flex flex-col space-y-8 md:space-y-0 md:block"
-            style={
-              {
-                minHeight:
-                  typeof window !== "undefined" && window.innerWidth >= 768
-                    ? `${desktopHeight}px`
-                    : "auto",
-              } as React.CSSProperties
-            }
+            ref={boardRef}
+            className={`relative w-full mx-auto grid items-start ${
+              count === 1
+                ? "grid-cols-1 max-w-[380px]"
+                : "grid-cols-1 md:grid-cols-2 gap-y-7 sm:gap-y-9 md:gap-y-10 lg:gap-y-12 md:gap-x-8 lg:gap-x-12 xl:gap-x-16"
+            }`}
           >
             {/* SVG Connecting Animated Winding Dashed Path (Tampil di Layar Tablet & Desktop md+) */}
-            {count > 1 && svgWindingPath && (
+            {count > 1 && svgMetrics.path && svgMetrics.width > 0 && svgMetrics.height > 0 && (
               <svg
-                className="absolute top-0 left-0 w-full h-full pointer-events-none hidden md:block z-0"
-                viewBox={`0 0 1000 ${desktopHeight}`}
+                className="absolute inset-0 w-full h-full pointer-events-none hidden md:block z-0"
+                viewBox={`0 0 ${svgMetrics.width} ${svgMetrics.height}`}
                 preserveAspectRatio="none"
               >
                 <m.path
-                  d={svgWindingPath}
+                  d={svgMetrics.path}
                   stroke="currentColor"
                   className="text-amber-500/40 dark:text-amber-400/30"
                   strokeWidth="2.5"
@@ -304,42 +314,35 @@ export function AchievementPinboardView({
               // Pilih skema palet warna solid dinamis (Warna-Warni Solid)
               const palette = SOLID_CARD_PALETTES[index % SOLID_CARD_PALETTES.length];
 
-              // Posisi & Rotasi kartu
+              // Staggered kolom kanan + kemiringan responsif tanpa saling bertumpuk
               const isRight = index % 2 === 1;
-              const rowIndex = Math.floor(index / 2);
-              const topOffset = rowIndex * 500 + (isRight ? 150 : 0);
-              const rotateClass = isRight ? "-rotate-6" : "rotate-6";
-
-              // Kalkulasi Style Desktop
-              const desktopStyle: React.CSSProperties =
+              const staggerClass =
+                count > 1 && isRight ? "md:mt-12 lg:mt-16 xl:mt-20" : "";
+              const rotateClass =
                 count === 1
-                  ? {
-                      top: "20px",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                    }
-                  : {
-                      top: `${topOffset}px`,
-                      left: isRight ? undefined : "10%",
-                      right: isRight ? "10%" : undefined,
-                    };
+                  ? "rotate-0 sm:rotate-1"
+                  : isRight
+                    ? "-rotate-1 sm:-rotate-2 md:-rotate-3 lg:-rotate-4"
+                    : "rotate-1 sm:rotate-2 md:rotate-3 lg:rotate-4";
 
               return (
                 <div
                   key={item.id}
-                  style={desktopStyle}
-                  className={`pinboard-desktop-item relative w-full max-w-[380px] mx-auto md:w-[350px] lg:w-[380px] transition-transform duration-300 hover:z-30 hover:scale-105 hover:rotate-0 ${rotateClass}`}
+                  ref={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
+                  className={`relative w-full max-w-[320px] sm:max-w-[350px] md:max-w-[295px] lg:max-w-[345px] xl:max-w-[375px] mx-auto transition-transform duration-300 hover:z-30 hover:scale-[1.03] hover:rotate-0 ${staggerClass} ${rotateClass}`}
                 >
                   {/* Polaroid Solid Color Card Container (Warna-Warni yang Solid) */}
                   <div
-                    className={`group ${palette.outerBg} p-2.5 sm:p-3 rounded-[24px] ${palette.outerShadow} border ${palette.outerBorder} transition-all duration-300 hover:shadow-[0px_16px_36px_0px_rgba(0,0,0,0.35)] flex flex-col`}
+                    className={`group ${palette.outerBg} p-2 sm:p-2.5 lg:p-3 rounded-[20px] sm:rounded-[24px] ${palette.outerShadow} border ${palette.outerBorder} transition-all duration-300 hover:shadow-[0px_16px_36px_0px_rgba(0,0,0,0.35)] flex flex-col`}
                   >
                     {/* Pushpin Jarum Pentul Putih 3D di Bagian Atas */}
-                    <Pin className="w-8 h-8 text-white z-20 mb-3 mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" />
+                    <Pin className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white z-20 mb-2 sm:mb-2.5 lg:mb-3 mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" />
 
                     {/* Pastel Inner Note dengan Sertifikat sebagai Background */}
                     <div
-                      className={`${palette.innerBg} border ${palette.innerBorder} rounded-[18px] p-4 sm:p-5 min-h-[220px] sm:min-h-[240px] flex-1 flex flex-col relative overflow-hidden`}
+                      className={`${palette.innerBg} border ${palette.innerBorder} rounded-[15px] sm:rounded-[18px] p-3.5 sm:p-4 lg:p-5 min-h-[195px] sm:min-h-[215px] lg:min-h-[235px] flex-1 flex flex-col relative overflow-hidden`}
                     >
                       {/* Background Foto Sertifikat (Jika Ada Piagam) */}
                       {hasPhoto && (
@@ -354,10 +357,10 @@ export function AchievementPinboardView({
 
                       <div className="relative z-10 flex-1 flex flex-col justify-between">
                         {/* Bagian Atas: Badges & Judul Kejuaraan */}
-                        <div className="space-y-3 mb-3">
+                        <div className="space-y-2.5 sm:space-y-3 mb-3">
                           {/* Baris Badges: Tingkat, Peringkat, & Poin di Dalam Note */}
                           <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                            <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                               <Badge variant={getTingkatBadgeVariant(item.tingkat)} size="xs" className="font-bold">
                                 {item.tingkat}
                               </Badge>
@@ -373,7 +376,7 @@ export function AchievementPinboardView({
 
                           {/* Judul Kejuaraan */}
                           <h3
-                            className="text-[15px] sm:text-[16px] font-extrabold text-neutral-950 dark:text-neutral-50 leading-snug tracking-tight break-words pt-1"
+                            className="text-sm sm:text-[15px] lg:text-base font-extrabold text-neutral-950 dark:text-neutral-50 leading-snug tracking-tight break-words pt-0.5"
                             title={item.prestasi}
                           >
                             {item.prestasi}
@@ -383,14 +386,14 @@ export function AchievementPinboardView({
                         {/* Bagian Bawah: Divider Garis + Metadata Kelas & Tanggal + Tombol Aksi */}
                         <div className="pt-2.5 border-t border-neutral-300/80 dark:border-neutral-700/80 mt-auto space-y-1.5">
                           {/* Nama Kelas Lengkap (Tidak Terpotong) */}
-                          <div className="font-bold text-neutral-900 dark:text-neutral-100 text-xs sm:text-[13px] leading-snug break-words">
+                          <div className="font-bold text-neutral-900 dark:text-neutral-100 text-[11px] sm:text-xs lg:text-[13px] leading-snug break-words">
                             {item.kelas_saat_prestasi || item.kelas}
                           </div>
 
                           {/* Baris Tanggal & Tombol Aksi */}
-                          <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
                             {item.tanggal_prestasi ? (
-                              <div className="text-neutral-800 dark:text-neutral-200 font-semibold text-xs">
+                              <div className="text-neutral-800 dark:text-neutral-200 font-semibold text-[11px] sm:text-xs">
                                 {formatCleanDate(item.tanggal_prestasi)}
                               </div>
                             ) : (
@@ -424,13 +427,13 @@ export function AchievementPinboardView({
                                 <button
                                   type="button"
                                   onClick={() => onPreviewPhoto?.(item.fotoanak, item.prestasi)}
-                                  className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm hover:scale-105 transition-all cursor-pointer"
+                                  className="shrink-0 text-[11px] sm:text-xs font-bold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm hover:scale-105 transition-all cursor-pointer"
                                   title="Lihat Sertifikat"
                                 >
                                   View
                                 </button>
                               ) : (
-                                <div className="shrink-0 text-xs font-semibold text-neutral-800 dark:text-neutral-200 italic pb-0.5">
+                                <div className="shrink-0 text-[11px] sm:text-xs font-semibold text-neutral-800 dark:text-neutral-200 italic pb-0.5">
                                   Piagam tervalidasi
                                 </div>
                               )}

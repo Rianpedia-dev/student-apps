@@ -47,9 +47,9 @@ export function BuilderStepSettings({
   onSubmit,
 }: BuilderStepSettingsProps) {
   return (
-    <Card className="max-w-3xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-xl rounded-3xl">
-      <CardHeader>
-        <CardTitle className="text-base sm:text-lg">
+    <Card className="w-full rounded-2xl sm:rounded-3xl card-elevation shadow-2xl">
+      <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
+        <CardTitle className="text-base sm:text-lg font-bold">
           Pengaturan Pengerjaan & Konfirmasi
         </CardTitle>
         <CardDescription className="text-xs">
@@ -57,10 +57,10 @@ export function BuilderStepSettings({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="p-4 sm:p-6 pt-2 space-y-5 sm:space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Durasi Pengerjaan */}
-          <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-3">
+          <div className="p-4 rounded-2xl border border-border bg-muted/20 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-primary" />
@@ -111,7 +111,7 @@ export function BuilderStepSettings({
           </div>
 
           {/* Opsi Acak & Tampilan Nilai */}
-          <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-3.5">
+          <div className="p-4 rounded-2xl border border-border bg-muted/20 space-y-3.5">
             <label className="flex items-start gap-3 cursor-pointer">
               <Checkbox
                 checked={acakSoal}
@@ -163,7 +163,7 @@ export function BuilderStepSettings({
         </div>
 
         {/* Ringkasan Akhir */}
-        <div className="p-4 rounded-lg bg-muted/40 border border-border space-y-3">
+        <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <Award className="h-4 w-4 text-primary" />
@@ -211,13 +211,13 @@ export function BuilderStepSettings({
         </div>
 
         {/* Tombol Navigasi / Submit */}
-        <div className="pt-2 flex items-center justify-between">
+        <div className="pt-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onBack}
-            className="text-xs h-10 px-4 gap-1.5"
+            className="w-full sm:w-auto text-xs h-10 px-4 gap-1.5 rounded-xl"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Kembali ke Soal</span>
@@ -227,7 +227,7 @@ export function BuilderStepSettings({
             type="button"
             disabled={isSubmitting}
             onClick={onSubmit}
-            className="text-xs font-semibold h-10 px-5 gap-2"
+            className="w-full sm:w-auto text-xs font-semibold h-10 px-5 gap-2 rounded-xl"
           >
             {isSubmitting ? (
               <>

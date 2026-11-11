@@ -425,7 +425,7 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                           gender={sch.guru?.gender}
                           name={sch.guru?.name || "Guru Pengampu"}
                           className="h-8 w-8 rounded-full border border-border object-cover shrink-0"
-                          previewable={false}
+                          previewable={true}
                         />
                         <span className="text-xs font-semibold text-foreground truncate">
                           {sch.guru?.name || "Guru Pengampu"}

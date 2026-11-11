@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createMeetingToken } from "@/lib/daily";
+import { KelasOnlineService } from "@/services/kelas-online.service";
 import { GuruVideoCallClient } from "./guru-video-client";
 
 export const dynamic = "force-dynamic";
@@ -17,19 +18,20 @@ export default async function GuruVideoCallPage({
   }
 
   const { roomId } = await params;
+  if (!/^\d+$/.test(roomId)) {
+    redirect("/guru/kelas-online");
+  }
 
-  // Fetch room data
+  await KelasOnlineService.cleanupExpiredRooms();
+
   const room = await prisma.kelasOnline.findUnique({
     where: { id: BigInt(roomId) },
     include: {
+      pertemuan: { select: { pertemuan_ke: true, judul: true } },
       attendance: {
         select: {
           id: true,
-          user_name: true,
-          user_role: true,
-          joined_at: true,
           left_at: true,
-          duration_minutes: true,
         },
       },
     },
@@ -39,7 +41,6 @@ export default async function GuruVideoCallPage({
     redirect("/guru/kelas-online");
   }
 
-  // Generate a fresh meeting token for the guru
   let token = "";
   try {
     const expTimestamp = Math.floor(Date.now() / 1000) + 60 * 60 * 4;
@@ -61,7 +62,13 @@ export default async function GuruVideoCallPage({
     room_url: room.room_url,
     guru_name: room.guru_name,
     kelas: room.kelas,
-    mata_pelajaran: room.mata_pelajaran,
+    mata_pelajaran:
+      room.session_type === "WALI_KELAS" ? "Sesi Wali Kelas" : room.mata_pelajaran,
+    session_type: (room.session_type === "WALI_KELAS" ? "WALI_KELAS" : "MAPEL") as
+      | "MAPEL"
+      | "WALI_KELAS",
+    topik: room.topik,
+    pertemuan_ke: room.pertemuan?.pertemuan_ke ?? null,
     started_at: room.started_at?.toISOString() || null,
     active_participants: room.attendance.filter((a) => !a.left_at).length,
   };

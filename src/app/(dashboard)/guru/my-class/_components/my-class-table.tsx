@@ -9,7 +9,6 @@ import {
   X,
   Eye,
   Search,
-  ChevronLeft,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
@@ -55,8 +54,6 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
   const [data, setData] = useState<StudentRow[]>(students);
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
 
   // Modals
   const [openEnrollModal, setOpenEnrollModal] = useState(false);
@@ -69,9 +66,6 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
     (s.nis || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-
   // Multi-select handling
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -79,11 +73,15 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
     );
   };
 
+  const isAllSelected =
+    filtered.length > 0 && filtered.every((s) => selectedIds.includes(s.id));
+
   const toggleSelectAll = () => {
-    if (selectedIds.length === paginated.length) {
-      setSelectedIds([]);
+    if (isAllSelected) {
+      const filteredIdSet = new Set(filtered.map((s) => s.id));
+      setSelectedIds((prev) => prev.filter((id) => !filteredIdSet.has(id)));
     } else {
-      setSelectedIds(paginated.map((s) => s.id));
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...filtered.map((s) => s.id)])));
     }
   };
 
@@ -135,10 +133,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
           <Input
             placeholder="Cari siswa atau NIS..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -175,7 +170,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
               <TableHead className="w-10 text-center">
                 <input
                   type="checkbox"
-                  checked={selectedIds.length > 0 && selectedIds.length === paginated.length}
+                  checked={isAllSelected}
                   onChange={toggleSelectAll}
                   className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                 />
@@ -188,14 +183,14 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginated.length === 0 ? (
+            {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   Belum ada siswa di kelas {guruClass}. Klik tombol &quot;Tambah Siswa ke Kelas&quot; untuk mendaftarkan siswa.
                 </TableCell>
               </TableRow>
             ) : (
-              paginated.map((s, idx) => {
+              filtered.map((s, idx) => {
                 const isSelected = selectedIds.includes(s.id);
                 return (
                   <TableRow key={s.id} className={isSelected ? "bg-muted/60" : "hover:bg-muted/30"}>
@@ -208,7 +203,7 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
                       />
                     </TableCell>
                     <TableCell className="text-center font-medium">
-                      {(page - 1) * pageSize + idx + 1}
+                      {idx + 1}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2.5">
@@ -268,12 +263,12 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
 
       {/* Mobile Student Cards View (Touch-Friendly without horizontal scroll) */}
       <div className="block md:hidden space-y-3">
-        {paginated.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed p-8 text-center text-xs text-muted-foreground">
             Belum ada siswa di kelas {guruClass}. Klik tombol &quot;Tambah Siswa ke Kelas&quot;.
           </div>
         ) : (
-          paginated.map((s, idx) => {
+          filtered.map((s) => {
             const isSelected = selectedIds.includes(s.id);
 
             return (
@@ -330,30 +325,12 @@ export function MyClassTable({ students, availableStudents, guruClass }: MyClass
         )}
       </div>
 
-      {/* Pagination Footer */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-2 text-xs text-muted-foreground">
-        <div className="text-center sm:text-left">
-          Halaman {page} dari {totalPages} ({filtered.length} siswa)
-        </div>
-        <div className="flex items-center justify-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="h-8 gap-1 cursor-pointer"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" /> Sebelumnya
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages}
-            className="h-8 gap-1 cursor-pointer"
-          >
-            Berikutnya <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
+      {/* Summary Footer */}
+      <div className="flex items-center justify-between px-2 text-xs text-muted-foreground">
+        <div>
+          {search.trim()
+            ? `Menampilkan ${filtered.length} dari ${data.length} siswa`
+            : `Menampilkan semua ${filtered.length} siswa`}
         </div>
       </div>
 

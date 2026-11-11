@@ -2,22 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RoomCard } from "@/components/features/kelas-online/room-card";
 import { toast } from "sonner";
-
-interface RoomData {
-  id: string;
-  room_name: string;
-  guru_name: string;
-  kelas: string;
-  mata_pelajaran: string | null;
-  status: string;
-  started_at: string | null;
-  active_participants?: number;
-}
+import { RoomCard } from "@/components/features/kelas-online/room-card";
+import type { OnlineClassRoomItem } from "@/types/kelas-online";
 
 interface SiswaRoomListProps {
-  rooms: RoomData[];
+  rooms: OnlineClassRoomItem[];
 }
 
 export function SiswaRoomList({ rooms }: SiswaRoomListProps) {
@@ -27,7 +17,6 @@ export function SiswaRoomList({ rooms }: SiswaRoomListProps) {
   const handleJoin = async (roomId: string) => {
     setLoadingId(roomId);
     try {
-      // Pre-join via API (to record attendance and get token)
       const res = await fetch("/api/kelas-online/join-room", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,7 +35,7 @@ export function SiswaRoomList({ rooms }: SiswaRoomListProps) {
   };
 
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {rooms.map((room) => (
         <RoomCard
           key={room.id}

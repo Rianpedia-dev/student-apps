@@ -1,16 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React from "react";
 import Link from "next/link";
 import {
-  ListTodo,
   AlertCircle,
   Clock,
-  CheckCircle2,
-  Search,
-  X,
   FileCheck,
-  FolderOpen,
   Award,
   Sparkles,
   ArrowRight,
@@ -51,157 +46,9 @@ export function StudentSubjectTasksView({
   studentClass,
   tasks: allTasks,
 }: StudentSubjectTasksViewProps) {
-  const [taskFilter, setTaskFilter] = useState<"all" | "todo" | "pending" | "graded">("all");
-  const [taskSearch, setTaskSearch] = useState("");
-
-  const unsubmittedCount = useMemo(() => {
-    return allTasks.filter((t) => !t.isGraded && !t.isPending).length;
-  }, [allTasks]);
-
-  const filteredTasks = useMemo(() => {
-    return allTasks.filter((t) => {
-      if (taskFilter === "todo" && (t.isGraded || t.isPending)) return false;
-      if (taskFilter === "pending" && !t.isPending) return false;
-      if (taskFilter === "graded" && !t.isGraded) return false;
-
-      if (taskSearch.trim()) {
-        const q = taskSearch.toLowerCase();
-        const matchTitle = t.judul.toLowerCase().includes(q);
-        const matchDesc = t.deskripsi?.toLowerCase().includes(q) || false;
-        if (!matchTitle && !matchDesc) return false;
-      }
-
-      return true;
-    });
-  }, [allTasks, taskFilter, taskSearch]);
-
   return (
     <div className="space-y-5">
-      {/* 1. Header & Quick Stats */}
-      {allTasks.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-2xl p-3.5 bg-card/80 border border-border/70 backdrop-blur-xs flex items-center gap-3 shadow-xs">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <ListTodo className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-muted-foreground">Total Tugas</p>
-              <p className="text-lg font-extrabold text-foreground">{allTasks.length}</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl p-3.5 bg-card/80 border border-border/70 backdrop-blur-xs flex items-center gap-3 shadow-xs">
-            <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <AlertCircle className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-muted-foreground">Perlu Dikerjakan</p>
-              <p className="text-lg font-extrabold text-foreground">{unsubmittedCount}</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl p-3.5 bg-card/80 border border-border/70 backdrop-blur-xs flex items-center gap-3 shadow-xs">
-            <div className="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-              <Clock className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-muted-foreground">Sedang Diperiksa</p>
-              <p className="text-lg font-extrabold text-foreground">
-                {allTasks.filter((t) => t.isPending).length}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl p-3.5 bg-card/80 border border-border/70 backdrop-blur-xs flex items-center gap-3 shadow-xs">
-            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-muted-foreground">Selesai & Dinilai</p>
-              <p className="text-lg font-extrabold text-foreground">
-                {allTasks.filter((t) => t.isGraded).length}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Toolbar: Filter Pills & Search */}
-      {allTasks.length > 0 && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/75 dark:bg-card/45 backdrop-blur-xl p-3.5 rounded-2xl border border-white/50 dark:border-white/10 shadow-xs">
-          {/* Filter Pills */}
-          <div className="inline-flex rounded-xl bg-muted/60 p-1 border border-border/60 text-xs font-medium gap-1 overflow-x-auto max-w-full">
-            <button
-              type="button"
-              onClick={() => setTaskFilter("all")}
-              className={`rounded-lg px-2.5 py-1 transition-all text-xs font-semibold cursor-pointer whitespace-nowrap ${
-                taskFilter === "all"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Semua ({allTasks.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setTaskFilter("todo")}
-              className={`rounded-lg px-2.5 py-1 transition-all text-xs font-semibold cursor-pointer whitespace-nowrap ${
-                taskFilter === "todo"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Perlu Dikerjakan ({unsubmittedCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setTaskFilter("pending")}
-              className={`rounded-lg px-2.5 py-1 transition-all text-xs font-semibold cursor-pointer whitespace-nowrap ${
-                taskFilter === "pending"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Sedang Diperiksa ({allTasks.filter((t) => t.isPending).length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setTaskFilter("graded")}
-              className={`rounded-lg px-2.5 py-1 transition-all text-xs font-semibold cursor-pointer whitespace-nowrap ${
-                taskFilter === "graded"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Sudah Dinilai ({allTasks.filter((t) => t.isGraded).length})
-            </button>
-          </div>
-
-          {/* Search */}
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Cari tugas..."
-              value={taskSearch}
-              onChange={(e) => setTaskSearch(e.target.value)}
-              className="w-full h-8.5 pl-8 pr-7 rounded-xl bg-background border border-border text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-            />
-            {taskSearch && (
-              <button
-                type="button"
-                onClick={() => setTaskSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                title="Hapus pencarian"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 3. Empty States */}
+      {/* Empty State */}
       {allTasks.length === 0 ? (
         <div className="p-12 text-center rounded-3xl bg-card border border-border text-muted-foreground space-y-4 shadow-xs">
           <div className="h-16 w-16 rounded-3xl bg-emerald-500/10 text-emerald-600 mx-auto flex items-center justify-center">
@@ -228,29 +75,10 @@ export function StudentSubjectTasksView({
             </Link>
           </div>
         </div>
-      ) : filteredTasks.length === 0 ? (
-        <div className="p-10 text-center rounded-3xl bg-card border border-border text-muted-foreground space-y-3">
-          <FolderOpen className="h-10 w-10 mx-auto text-muted-foreground/60" />
-          <p className="text-sm font-bold text-foreground">Tugas Tidak Ditemukan</p>
-          <p className="text-xs max-w-sm mx-auto">
-            Tidak ada tugas yang sesuai dengan filter atau kata kunci pencarian Anda.
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setTaskFilter("all");
-              setTaskSearch("");
-            }}
-            className="mt-2 text-xs rounded-xl cursor-pointer"
-          >
-            Reset Filter
-          </Button>
-        </div>
       ) : (
-        /* 4. Daftar Kartu Tugas */
+        /* Daftar Kartu Tugas */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-          {filteredTasks.map((task) => {
+          {allTasks.map((task) => {
             const deadlineDate = new Date(task.deadline);
             const isLate = new Date() > deadlineDate;
             const deadlineFormatted = deadlineDate.toLocaleDateString("id-ID", {
@@ -287,22 +115,22 @@ export function StudentSubjectTasksView({
                       {task.isGraded ? (
                         <>
                           <Award className="h-3 w-3" />
-                          <span>Nilai: {task.nilai ?? 0} / {task.poinMaksimal} ⭐</span>
+                          <span>Nilai: {task.nilai ?? 0} / {task.poinMaksimal} </span>
                         </>
                       ) : task.isPending ? (
                         <>
                           <Clock className="h-3 w-3" />
-                          <span>Sedang Dinilai ⏳</span>
+                          <span>Sedang Dinilai</span>
                         </>
                       ) : isLate ? (
                         <>
                           <AlertCircle className="h-3 w-3" />
-                          <span>Terlambat ⚠️</span>
+                          <span>Terlambat</span>
                         </>
                       ) : (
                         <>
                           <Sparkles className="h-3 w-3" />
-                          <span>Belum Dikerjakan 🚀</span>
+                          <span>Belum Dikerjakan</span>
                         </>
                       )}
                     </Badge>
@@ -331,38 +159,21 @@ export function StudentSubjectTasksView({
                       {task.deskripsi}
                     </p>
                   )}
-
-                  {/* Row 4: Meta chips (Pertemuan, Tipe) */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    {task.pertemuanKe && (
-                      <Badge variant="outline" size="xs" className="font-medium text-muted-foreground">
-                        Pertemuan {task.pertemuanKe}
-                      </Badge>
-                    )}
-                    <Badge variant="teal" size="xs" className="font-medium">
-                      {task.tipePengerjaan === "LEMBAR_KERJA"
-                        ? "Lembar Kerja Siswa"
-                        : `Kuis Interaktif${task.totalSoal && task.totalSoal > 0 ? ` (${task.totalSoal} Soal)` : ""}`}
-                    </Badge>
-                    {task.durasiMenit && (
-                      <span className="text-[10px] text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-md font-medium">
-                        ⏱️ {task.durasiMenit} Menit
-                      </span>
-                    )}
-                  </div>
                 </div>
 
                 {/* Bottom Action Row */}
-                <div className="pt-3.5 border-t border-border/60 flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    Maksimal {task.poinMaksimal} Poin
-                  </span>
-
-                  <Link href={`/siswa/tugas/${task.id}`}>
+                <div className="pt-3.5 border-t border-border/60 flex justify-end">
+                  <Link
+                    href={
+                      task.isGraded && task.tipePengerjaan !== "LEMBAR_KERJA"
+                        ? `/siswa/tugas/${task.id}/hasil`
+                        : `/siswa/tugas/${task.id}`
+                    }
+                  >
                     <Button
                       size="sm"
                       variant={task.isGraded ? "outline" : "default"}
-                      className="h-8.5 text-xs font-bold rounded-xl gap-1.5 shadow-xs cursor-pointer"
+                      className="h-8.5 px-4 text-xs font-bold rounded-xl gap-1.5 shadow-xs cursor-pointer"
                     >
                       <span>
                         {task.isGraded

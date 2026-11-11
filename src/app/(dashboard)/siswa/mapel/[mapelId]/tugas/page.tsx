@@ -2,9 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ArrowLeft, BookOpen, MessageSquare, ListTodo } from "lucide-react";
+import { ArrowLeft, BookOpen, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import {
   StudentSubjectTasksView,
@@ -163,20 +162,6 @@ export default async function SiswaMapelTugasPage({ params }: PageProps) {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
           {/* Info Mapel & Tugas */}
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <Badge variant="amber" size="sm" className="font-bold gap-1">
-                <ListTodo className="h-3 w-3" />
-                <span>Halaman Tugas</span>
-              </Badge>
-              <Badge
-                variant={(mapel.warna as any) || "emerald"}
-                size="sm"
-                className="font-mono font-bold uppercase"
-              >
-                {mapel.kode_mapel}
-              </Badge>
-            </div>
-
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
               Tugas & Latihan: {mapel.nama_mapel}
             </h1>

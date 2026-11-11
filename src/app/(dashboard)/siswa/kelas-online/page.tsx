@@ -1,35 +1,13 @@
 import { redirect } from "next/navigation";
-import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { Inbox } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { KelasOnlineService } from "@/services/kelas-online.service";
 import { SiswaRoomList } from "./_components/siswa-room-list";
 import { SiswaHistorySection } from "./_components/siswa-history-section";
 
 export const dynamic = "force-dynamic";
-
-interface SiswaActiveRoom {
-  id: string;
-  room_name: string;
-  room_url: string;
-  guru_name: string;
-  kelas: string;
-  mata_pelajaran: string | null;
-  status: string;
-  started_at: string | null;
-  active_participants: number;
-}
-
-interface SiswaHistoryRecord {
-  id: string;
-  mata_pelajaran: string;
-  guru_name: string;
-  joined_at: string | null;
-  left_at: string | null;
-  duration_minutes: number | null;
-  date: string;
-}
 
 export default async function SiswaKelasOnlinePage() {
   const session = await getSession();
@@ -37,83 +15,19 @@ export default async function SiswaKelasOnlinePage() {
     redirect("/login");
   }
 
-  const studentClass = session.kelas || "";
+  await KelasOnlineService.cleanupExpiredRooms();
 
-  let activeRooms: SiswaActiveRoom[] = [];
-  let historyRecords: SiswaHistoryRecord[] = [];
-
-  try {
-    // Fetch active rooms for student's class
-    const dbActive = await prisma.kelasOnline.findMany({
-      where: {
-        kelas: studentClass,
-        status: "active",
-      },
-      include: {
-        attendance: {
-          where: { left_at: null },
-          select: { id: true },
-        },
-      },
-      orderBy: { started_at: "desc" },
-    });
-
-    activeRooms = dbActive.map((r) => ({
-      id: r.id.toString(),
-      room_name: r.room_name,
-      room_url: r.room_url,
-      guru_name: r.guru_name,
-      kelas: r.kelas,
-      mata_pelajaran: r.mata_pelajaran,
-      status: r.status,
-      started_at: r.started_at?.toISOString() || null,
-      active_participants: r.attendance.length,
-    }));
-
-    // Fetch student's attendance history
-    const isNum = /^\d+$/.test(session.id);
-    if (isNum) {
-      const dbHistory = await prisma.kelasOnlineAttendance.findMany({
-        where: {
-          user_id: BigInt(session.id),
-        },
-        include: {
-          kelasOnline: {
-            select: {
-              mata_pelajaran: true,
-              guru_name: true,
-              kelas: true,
-              started_at: true,
-            },
-          },
-        },
-        orderBy: { joined_at: "desc" },
-        take: 20,
-      });
-
-      historyRecords = dbHistory.map((a) => ({
-        id: a.id.toString(),
-        mata_pelajaran: a.kelasOnline.mata_pelajaran || "Kelas Online",
-        guru_name: a.kelasOnline.guru_name,
-        joined_at: a.joined_at?.toISOString() || null,
-        left_at: a.left_at?.toISOString() || null,
-        duration_minutes: a.duration_minutes,
-        date: a.kelasOnline.started_at?.toLocaleDateString("id-ID", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }) || "-",
-      }));
-    }
-  } catch (e) {
-    console.error("Error fetching siswa kelas online:", e);
-  }
+  const { activeRooms, historyRecords } =
+    await KelasOnlineService.getStudentKelasOnlineData(
+      session.id,
+      session.kelas
+    );
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-4 sm:space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
           Kelas Online
         </h1>
       </div>
@@ -121,24 +35,27 @@ export default async function SiswaKelasOnlinePage() {
       {/* Active Classes */}
       {activeRooms.length > 0 ? (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
             </span>
-            Kelas Sedang Berlangsung
+            <span>Kelas Sedang Berlangsung</span>
+            <Badge variant="success" size="xs">
+              {activeRooms.length}
+            </Badge>
           </h2>
           <SiswaRoomList rooms={activeRooms} />
         </div>
       ) : (
         <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <Inbox className="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
-            <p className="text-lg font-semibold text-muted-foreground">
+          <CardContent className="py-10 sm:py-12 text-center">
+            <Inbox className="h-10 w-10 sm:h-11 sm:w-11 mx-auto mb-2.5 text-slate-300 dark:text-slate-600" />
+            <p className="text-sm sm:text-base font-semibold text-muted-foreground">
               Tidak ada kelas online saat ini
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Tunggu guru memulai kelas ya! 😊
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Tunggu Ustadz/Ustadzah memulai kelas ya!
             </p>
           </CardContent>
         </Card>

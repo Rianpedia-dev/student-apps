@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { saveUploadedFile } from "@/lib/upload";
+import { checkUploadRateLimit } from "@/lib/rate-limit";
 import path from "path";
 
 /**
@@ -131,6 +132,10 @@ export async function createPertemuanAction(formData: FormData) {
   let fileType: string | null = null;
 
   if (file && file.size > 0) {
+    const rl = await checkUploadRateLimit(session.id);
+    if (!rl.allowed) {
+      return { success: false, error: rl.error };
+    }
     const uploadRes = await saveUploadedFile(file, { category: "material" });
     if (!uploadRes.success) {
       return { success: false, error: uploadRes.error || "Gagal mengunggah berkas materi." };
@@ -226,6 +231,10 @@ export async function updatePertemuanAction(id: string, formData: FormData) {
   let fileType = existing.file_type;
 
   if (file && file.size > 0) {
+    const rl = await checkUploadRateLimit(session.id);
+    if (!rl.allowed) {
+      return { success: false, error: rl.error };
+    }
     const uploadRes = await saveUploadedFile(file, { category: "material" });
     if (!uploadRes.success) {
       return { success: false, error: uploadRes.error || "Gagal mengunggah berkas materi baru." };

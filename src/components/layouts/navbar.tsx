@@ -8,7 +8,7 @@ import { NotificationIcon } from "@/components/icons/notification-icon";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./sidebar";
 import { useSidebar } from "@/components/providers/sidebar-provider";
-import { NavbarLiveClock } from "./navbar-clock";
+import { NavbarLiveClock, type NavbarAcademicInfo } from "./navbar-clock";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { getAcademicYear, getRoleLabel, cn } from "@/lib/utils";
 import { AlAzharCornerMosaic } from "@/components/shared/alazhar-patterns";
@@ -22,14 +22,15 @@ interface NavbarProps {
   jenjang?: "SD" | "SMP" | "ALL" | null;
   activeJenjang?: "SD" | "SMP" | "ALL" | null;
   userImage?: string | null;
+  academic?: NavbarAcademicInfo;
 }
 
-export function Navbar({ role, userName, userEmail, kelas, status, userImage }: NavbarProps) {
+export function Navbar({ role, userName, userEmail, kelas, status, userImage, academic: academicProp }: NavbarProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [openMobile, setOpenMobile] = useState(false);
   const [isBellHovered, setIsBellHovered] = useState(false);
   const { isCollapsed, toggleSidebar } = useSidebar();
-  const academic = getAcademicYear();
+  const academic = academicProp || getAcademicYear();
 
   useEffect(() => {
     const handleFsChange = () => {
@@ -137,7 +138,7 @@ export function Navbar({ role, userName, userEmail, kelas, status, userImage }: 
           </Link>
         </div>
 
-        {/* Academic & Live Clock Combined Banner (Hidden on mobile, visible on desktop) */}
+        {/* Academic Year & Active Semester Banner (Hidden on mobile, visible on desktop) */}
         <div className="hidden md:inline-flex shrink-0">
           <NavbarLiveClock academic={academic} />
         </div>

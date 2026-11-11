@@ -83,6 +83,15 @@ export default async function GuruMapelPage() {
     const meetingsInSchedule = meetings.filter(
       (m: any) => m.kelas_id === sch.kelas_id && m.mapel_id === sch.mapel_id
     );
+    const pendingGradingCount = tasksInSchedule.reduce((acc, t) => {
+      const waiting = t.submissions.filter(
+        (s) =>
+          s.status === "menunggu_penilaian" ||
+          s.status === "terlambat" ||
+          s.status === "perlu_revisi"
+      ).length;
+      return acc + waiting;
+    }, 0);
 
     return {
       id: sch.id.toString(),
@@ -98,24 +107,20 @@ export default async function GuruMapelPage() {
       jamSelesai: sch.jam_selesai,
       meetingsCount: meetingsInSchedule.length,
       tasksCount: tasksInSchedule.length,
+      pendingGradingCount,
     };
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="bg-card/95 backdrop-blur-md p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border/80 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
-            Jadwal Mengajar & Mata Pelajaran
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Pusat KBM Guru: Buka materi silabus pertemuan, kelola tugas siswa, dan lakukan presensi kelas harian.
-          </p>
-        </div>
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          Jadwal Mengajar & Mata Pelajaran
+        </h1>
       </div>
 
-      {/* Schedule Table View */}
+      {/* Konten Jadwal Mengajar (Card & Table View) */}
       {formattedSchedules.length === 0 ? (
         <div className="p-12 text-center rounded-2xl bg-card border border-border text-muted-foreground">
           <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/60" />

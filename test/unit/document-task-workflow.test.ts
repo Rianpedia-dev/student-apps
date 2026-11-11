@@ -4,6 +4,13 @@ import fs from "fs/promises";
 import path from "path";
 import { saveUploadedFile } from "@/lib/upload";
 import { TaskRecapInfo, TaskRecapStudent } from "@/lib/export-task-recap";
+import {
+  parseAnnotationData,
+  hasCanvasAnnotations,
+  summarizeCanvasAnnotations,
+  isUploadedSubmissionFile,
+  resolveAnnotationBaseDocumentUrl,
+} from "@/lib/document-task-helpers";
 
 describe("WORKFLOW FITUR TUGAS BARU: Lembar Kerja Berkas (PDF & Image)", () => {
   // 1. Tes Unggah Soal PDF & Image
@@ -315,6 +322,72 @@ describe("WORKFLOW FITUR TUGAS BARU: Lembar Kerja Berkas (PDF & Image)", () => {
       const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
       expect(buffer).toBeDefined();
       expect(buffer.length).toBeGreaterThan(1000);
+    });
+  });
+
+  // 5. Tes Helper Resolusi Dokumen & Deteksi Koreksi Anotasi Guru/Siswa
+  describe("5. Helper Resolusi Dokumen Koreksi & Ringkasan Anotasi", () => {
+    const worksheetPdf = "/uploads/tugas/task_worksheet-1794375423293-abc.pdf";
+    const inAppCanvasSnap = "/uploads/tugas/canvas-1794375544806-def.webp";
+    const manualUploadPhoto = "/uploads/tugas/task_submission-1794375600000-ghi.webp";
+
+    it("menggunakan fileSoalUrl untuk pengerjaan in-app canvas (snapshot /canvas- atau tipe worksheet)", () => {
+      expect(isUploadedSubmissionFile(inAppCanvasSnap, worksheetPdf, "webp")).toBe(false);
+      expect(isUploadedSubmissionFile(worksheetPdf, worksheetPdf, "worksheet")).toBe(false);
+      expect(
+        resolveAnnotationBaseDocumentUrl({
+          fileSoalUrl: worksheetPdf,
+          submissionFileUrl: inAppCanvasSnap,
+          submissionFileType: "webp",
+        })
+      ).toBe(worksheetPdf);
+    });
+
+    it("tetap menggunakan berkas unggahan siswa untuk mode upload manual meski sudah ada annotatedData guru", () => {
+      expect(isUploadedSubmissionFile(manualUploadPhoto, worksheetPdf, "webp")).toBe(true);
+      expect(
+        resolveAnnotationBaseDocumentUrl({
+          fileSoalUrl: worksheetPdf,
+          submissionFileUrl: manualUploadPhoto,
+          submissionFileType: "webp",
+        })
+      ).toBe(manualUploadPhoto);
+    });
+
+    it("mendeteksi dan meringkas coretan, teks, dan stempel koreksi guru lintas halaman", () => {
+      expect(hasCanvasAnnotations(null)).toBe(false);
+      expect(hasCanvasAnnotations("")).toBe(false);
+      expect(hasCanvasAnnotations("invalid-json")).toBe(false);
+      expect(
+        hasCanvasAnnotations(JSON.stringify({ version: 1, strokes: [], texts: [], stamps: [] }))
+      ).toBe(false);
+
+      const gradedPayload = JSON.stringify({
+        version: 1,
+        strokes: [
+          { id: "s1", tool: "pen", color: "#2563eb", size: 3, points: [{ x: 10, y: 20 }], page: 1 },
+        ],
+        texts: [
+          { id: "t1", text: "Bagus!", x: 40, y: 50, color: "#dc2626", fontSize: 16, page: 2 },
+        ],
+        stamps: [
+          { id: "st1", type: "check", x: 100, y: 120, page: 1 },
+          { id: "st2", type: "cross", x: 100, y: 220, page: 1 },
+          { id: "st3", type: "star", x: 200, y: 50, page: 2 },
+        ],
+      });
+
+      expect(parseAnnotationData(gradedPayload)?.stamps).toHaveLength(3);
+      expect(hasCanvasAnnotations(gradedPayload)).toBe(true);
+      expect(summarizeCanvasAnnotations(gradedPayload)).toEqual({
+        strokeCount: 1,
+        textCount: 1,
+        checkCount: 1,
+        crossCount: 1,
+        starCount: 1,
+        totalCount: 5,
+        pages: [1, 2],
+      });
     });
   });
 });

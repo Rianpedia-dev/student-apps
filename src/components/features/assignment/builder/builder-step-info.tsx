@@ -13,6 +13,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { DeadlinePicker } from "@/components/shared/deadline-picker";
 
 export interface ClassOption {
   id: string;
@@ -85,33 +86,33 @@ export function BuilderStepInfo({
   }, [pertemuanList]);
 
   return (
-    <Card className="max-w-3xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-xl rounded-3xl">
-      <CardHeader>
-        <CardTitle className="text-base sm:text-lg">Informasi Tugas</CardTitle>
+    <Card className="w-full rounded-2xl sm:rounded-3xl card-elevation shadow-2xl">
+      <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
+        <CardTitle className="text-base sm:text-lg font-bold">Informasi Tugas</CardTitle>
         <CardDescription className="text-xs">
-          Lengkapi data utama tugas seperti judul, kelas tujuan, mata pelajaran, dan tenggat waktu pengerjaan.
+          Lengkapi data utama tugas seperti judul, tenggat waktu pengerjaan, dan petunjuk kuis.
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="p-4 sm:p-6 pt-2 space-y-4 sm:space-y-5">
         {/* Judul Tugas */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground">
+          <label className="text-xs font-semibold text-foreground block">
             Judul Tugas <span className="text-destructive">*</span>
           </label>
           <Input
             value={judul}
             onChange={(e) => setJudul(e.target.value)}
             placeholder="Contoh: Kuis Interaktif Bab 1 - Bilangan Bulat"
-            className="text-xs sm:text-sm h-10"
+            className="text-xs sm:text-sm h-10 rounded-xl"
           />
         </div>
 
         {/* Pertemuan & Deadline */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           {pertemuanList.length > 0 ? (
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
+            <div className="space-y-1.5 lg:col-span-5">
+              <label className="text-xs font-semibold text-foreground block">
                 Tautkan ke Pertemuan (Opsional)
               </label>
               <Select
@@ -119,7 +120,7 @@ export function BuilderStepInfo({
                 value={pertemuanId || "none"}
                 onValueChange={(val) => setPertemuanId(val === "none" ? "" : val || "")}
               >
-                <SelectTrigger className="w-full text-xs h-10">
+                <SelectTrigger className="w-full text-xs h-10 rounded-xl">
                   <SelectValue placeholder="Tidak ditautkan" />
                 </SelectTrigger>
                 <SelectContent>
@@ -134,30 +135,25 @@ export function BuilderStepInfo({
             </div>
           ) : null}
 
-          <div className={`space-y-1.5 ${pertemuanList.length === 0 ? "sm:col-span-2" : ""}`}>
-            <label className="text-xs font-semibold text-foreground">
+          <div className={`space-y-1.5 ${pertemuanList.length === 0 ? "lg:col-span-12" : "lg:col-span-7"}`}>
+            <label className="text-xs font-semibold text-foreground block">
               Tenggat Waktu / Deadline <span className="text-destructive">*</span>
             </label>
-            <Input
-              type="datetime-local"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              className="text-xs sm:text-sm h-10"
-            />
+            <DeadlinePicker value={deadline} onChange={setDeadline} />
           </div>
         </div>
 
         {/* Deskripsi */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground">
+          <label className="text-xs font-semibold text-foreground block">
             Instruksi / Petunjuk Pengerjaan <span className="text-destructive">*</span>
           </label>
           <Textarea
             value={deskripsi}
             onChange={(e) => setDeskripsi(e.target.value)}
-            rows={3}
+            rows={4}
             placeholder="Tuliskan petunjuk pengerjaan tugas untuk siswa..."
-            className="text-xs sm:text-sm leading-relaxed"
+            className="text-xs sm:text-sm leading-relaxed rounded-2xl"
           />
         </div>
 
@@ -166,7 +162,7 @@ export function BuilderStepInfo({
           <Button
             type="button"
             onClick={onNext}
-            className="text-xs font-semibold gap-1.5 h-10 px-5"
+            className="w-full sm:w-auto text-xs font-semibold gap-1.5 h-10 px-5 rounded-xl cursor-pointer"
           >
             <span>Lanjut ke Butir Soal</span>
             <ArrowRight className="h-4 w-4" />

@@ -84,8 +84,8 @@ export function BuilderQuestionEditor({
   };
 
   return (
-    <Card>
-      <CardContent className="p-4 sm:p-5 space-y-4">
+    <Card className="rounded-2xl sm:rounded-3xl card-elevation shadow-xl">
+      <CardContent className="p-4 sm:p-5 md:p-6 space-y-4">
         {/* Header Bar: Question Number, Type Selector, Points, Delete */}
         <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
@@ -359,14 +359,14 @@ export function BuilderQuestionEditor({
         </div>
 
         {/* Bottom Navigation Buttons */}
-        <div className="pt-3 border-t border-border flex items-center justify-between">
+        <div className="pt-3 border-t border-border flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           <Button
             type="button"
             variant="outline"
             size="sm"
             disabled={questionIndex === 0}
             onClick={onPrev}
-            className="text-xs h-9 gap-1.5"
+            className="w-full sm:w-auto text-xs h-9 rounded-xl gap-1.5"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Soal Sebelumnya</span>
@@ -377,7 +377,7 @@ export function BuilderQuestionEditor({
               type="button"
               size="sm"
               onClick={onProceedToStep3}
-              className="text-xs font-semibold h-9 px-4 gap-1.5"
+              className="w-full sm:w-auto text-xs font-semibold h-9 px-4 rounded-xl gap-1.5"
             >
               <span>Lanjut ke Pengaturan</span>
               <ArrowRight className="h-4 w-4" />
@@ -388,7 +388,7 @@ export function BuilderQuestionEditor({
               variant="outline"
               size="sm"
               onClick={onNext}
-              className="text-xs h-9 px-4 gap-1.5"
+              className="w-full sm:w-auto text-xs h-9 px-4 rounded-xl gap-1.5"
             >
               <span>Soal Berikutnya</span>
               <ArrowRight className="h-3.5 w-3.5" />

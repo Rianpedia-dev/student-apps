@@ -49,6 +49,7 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
         fileName: sub.file_name,
         fileType: sub.file_type,
         annotatedFileUrl: sub.annotated_file_url,
+        annotatedData: sub.annotated_data,
         totalBenar: sub.total_benar ?? 0,
         totalSalah: sub.total_salah ?? 0,
         submittedAt: sub.submitted_at.toISOString(),
@@ -70,14 +71,14 @@ export default async function SiswaTugasDetailPage({ params }: PageProps) {
     (Boolean(tugas.file_petunjuk) && tugas.soal.length === 0);
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto">
+    <div className="space-y-4 sm:space-y-5 w-full">
       {/* Back to Mission Board */}
       <div>
         <Link
           href={`/siswa/mapel/${tugas.mapel_id}/tugas`}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-card px-3 py-1.5 rounded-xl border border-transparent hover:border-border transition-all"
+          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-all group bg-muted/40 hover:bg-muted px-3.5 py-2 rounded-xl border border-border/60 min-h-9"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
           <span>Kembali ke Daftar Tugas</span>
         </Link>
       </div>

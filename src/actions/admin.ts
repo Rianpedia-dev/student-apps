@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { saveUploadedFile } from "@/lib/upload";
+import { checkUploadRateLimit } from "@/lib/rate-limit";
 import { UserService } from "@/services/user.service";
 import { ClassService } from "@/services/class.service";
 import { AnnouncementService } from "@/services/announcement.service";
@@ -694,6 +695,10 @@ export async function createAnnouncementAction(formData: FormData) {
 
     let filePath: string | null = null;
     if (fileUpload && typeof fileUpload === "object" && fileUpload.size > 0) {
+      const rl = await checkUploadRateLimit(session.id);
+      if (!rl.allowed) {
+        return { error: rl.error };
+      }
       const uploadRes = await saveUploadedFile(fileUpload, { category: "attachment" });
       if (!uploadRes.success) {
         return { error: uploadRes.error };
@@ -792,6 +797,10 @@ export async function updateAnnouncementAction(id: string, formData: FormData) {
     const fileUrl = formData.get("file") as string | null;
 
     if (fileUpload && typeof fileUpload === "object" && fileUpload.size > 0) {
+      const rl = await checkUploadRateLimit(session.id);
+      if (!rl.allowed) {
+        return { error: rl.error };
+      }
       const uploadRes = await saveUploadedFile(fileUpload, { category: "attachment" });
       if (!uploadRes.success) {
         return { error: uploadRes.error };

@@ -4,6 +4,10 @@ import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { StudentDocumentRunnerClient } from "./_components/student-document-runner-client";
+import {
+  isUploadedSubmissionFile,
+  resolveAnnotationBaseDocumentUrl,
+} from "@/lib/document-task-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +66,22 @@ export default async function SiswaKerjakanTugasBerkasPage({ params }: PageProps
   }
 
   const isGraded = submission.status === "sudah_dinilai";
+  const shouldUseUploadedBase =
+    isGraded ||
+    (isUploadedSubmissionFile(
+      submission.file_url,
+      tugas.file_petunjuk,
+      submission.file_type
+    ) &&
+      Boolean(submission.annotated_data));
+
+  const resolvedFileSoalUrl = shouldUseUploadedBase
+    ? resolveAnnotationBaseDocumentUrl({
+        fileSoalUrl: tugas.file_petunjuk,
+        submissionFileUrl: submission.file_url,
+        submissionFileType: submission.file_type,
+      })
+    : tugas.file_petunjuk;
 
   return (
     <div className="space-y-4 max-w-6xl mx-auto h-[calc(100vh-5rem)] flex flex-col">
@@ -90,7 +110,7 @@ export default async function SiswaKerjakanTugasBerkasPage({ params }: PageProps
         <StudentDocumentRunnerClient
           tugasId={tugas.id.toString()}
           tugasJudul={tugas.judul}
-          fileSoalUrl={tugas.file_petunjuk}
+          fileSoalUrl={resolvedFileSoalUrl}
           submissionId={submission.id.toString()}
           initialAnnotationData={submission.annotated_data}
           isGraded={isGraded}
