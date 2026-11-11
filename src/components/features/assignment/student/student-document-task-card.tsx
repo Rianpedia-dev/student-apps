@@ -336,7 +336,7 @@ export function StudentDocumentTaskCard({
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                    <span>Tersimpan otomatis & langsung dinilai guru</span>
+                    <span>Tersimpan otomatis & langsung dinilai guru.</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
