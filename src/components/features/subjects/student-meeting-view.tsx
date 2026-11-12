@@ -3,37 +3,20 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
-  BookOpen,
   Clock,
-  FileText,
-  Video,
-  Link as LinkIcon,
   FileCheck,
-  Download,
-  Sparkles,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
-  Eye,
-  Play,
   Search,
-  Filter,
   ArrowRight,
-  GraduationCap,
-  MessageSquare,
   Compass,
-  AlertCircle,
   FolderOpen,
-  CheckCheck,
-  HelpCircle,
-  Award,
-  ListTodo,
-  CheckCircle2,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { InBrowserDocViewer } from "@/components/features/assignment/in-browser-doc-viewer";
+import { MeetingMaterialsSection } from "./meeting-materials-section";
+import { isVideoFile, resolveLearningVideo } from "@/lib/video-embed";
 
 interface TaskItem {
   id: string;
@@ -62,7 +45,6 @@ interface MeetingItem {
   fileSize?: number | null;
   fileType?: string | null;
   videoUrl?: string | null;
-  linkEksternal?: string | null;
   isCompleted: boolean;
   tugas: TaskItem[];
 }
@@ -85,22 +67,6 @@ interface StudentMeetingViewProps {
   meetings: MeetingItem[];
   allTasks?: TaskItem[];
   defaultTab?: "pertemuan" | "tugas";
-}
-
-function getYouTubeEmbedUrl(url?: string | null): string | null {
-  if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11
-    ? `https://www.youtube-nocookie.com/embed/${match[2]}`
-    : null;
-}
-
-function formatFileSize(bytes?: number | null): string {
-  if (!bytes) return "";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1048576).toFixed(1)} MB`;
 }
 
 export function StudentMeetingView({
@@ -128,7 +94,7 @@ export function StudentMeetingView({
   const [searchQuery, setSearchQuery] = useState("");
 
   // In-browser doc viewer modal
-  const [viewerFile, setViewerFile] = useState<{ url: string; name: string } | null>(null);
+  const [viewerFile, setViewerFile] = useState<{ url: string; name: string; type?: string } | null>(null);
 
   // Toggle single card expand/collapse
   const toggleExpand = (id: string) => {
@@ -224,11 +190,15 @@ export function StudentMeetingView({
                 {filteredMeetings.map((meeting, index) => {
                   const isExpanded = expandedIds.has(meeting.id);
                   const isLatest = index === filteredMeetings.length - 1;
-                  const youtubeEmbed = getYouTubeEmbedUrl(meeting.videoUrl);
 
                   const hasFile = !!meeting.fileUrl;
-                  const hasVideo = !!meeting.videoUrl;
-                  const hasTasks = meeting.tugas.length > 0;
+                  const uploadedVideoUrl =
+                    hasFile && isVideoFile(meeting.fileUrl, meeting.fileType)
+                      ? meeting.fileUrl!
+                      : null;
+                  const effectiveVideoUrl = meeting.videoUrl || uploadedVideoUrl;
+                  const hasVideo = !!resolveLearningVideo(effectiveVideoUrl);
+                  const taskStepNumber = (hasFile ? 1 : 0) + (hasVideo ? 1 : 0) + 1;
 
                   return (
                     <div
@@ -270,8 +240,8 @@ export function StudentMeetingView({
                           onClick={() => toggleExpand(meeting.id)}
                           className="p-3.5 sm:p-4 cursor-pointer select-none transition-colors hover:bg-muted/15"
                         >
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                            {/* Left: Mobile Session Number, Session badge, Date, Title */}
+                          <div className="flex items-center justify-between gap-2.5">
+                            {/* Left: Mobile Session Number, Session badge, Title */}
                             <div className="flex items-start gap-3 flex-1 min-w-0">
                               {/* Mobile session number */}
                               <div className="md:hidden h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs select-none mt-0.5">
@@ -283,13 +253,6 @@ export function StudentMeetingView({
                                   <Badge variant="emerald" size="sm" className="font-bold">
                                     Pertemuan {meeting.pertemuanKe}
                                   </Badge>
-
-                                  {isLatest && (
-                                    <Badge variant="sky" size="sm" className="gap-1">
-                                      <Sparkles className="h-3 w-3 animate-pulse" />
-                                      <span>Materi Pekan Ini</span>
-                                    </Badge>
-                                  )}
                                 </div>
 
                                 <h3 className="text-sm sm:text-base font-bold text-foreground leading-snug tracking-tight">
@@ -298,46 +261,8 @@ export function StudentMeetingView({
                               </div>
                             </div>
 
-                        {/* Right: Media & Task Badges + Chevron */}
-                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                          <div className="flex items-center gap-1.5 text-xs">
-                            {hasFile && (
-                              <Badge
-                                variant="teal"
-                                size="xs"
-                                className="gap-1"
-                                title="Modul Dokumen Ajar Tersedia"
-                              >
-                                <FileText className="h-3 w-3" />
-                                <span>Modul</span>
-                              </Badge>
-                            )}
-
-                            {hasVideo && (
-                              <Badge
-                                variant="rose"
-                                size="xs"
-                                className="gap-1"
-                                title="Video Penjelasan Tersedia"
-                              >
-                                <Video className="h-3 w-3" />
-                                <span>Video</span>
-                              </Badge>
-                            )}
-
-                            {hasTasks && (
-                              <Badge
-                                variant="amber"
-                                size="xs"
-                                className="gap-1"
-                                title="Terdapat Latihan Soal/Tugas"
-                              >
-                                <FileCheck className="h-3 w-3" />
-                                <span>{meeting.tugas.length} Tugas</span>
-                              </Badge>
-                            )}
-                          </div>
-
+                        {/* Right: Chevron */}
+                        <div className="flex items-center shrink-0">
                           <div className="p-1 rounded-lg bg-muted/60 text-muted-foreground group-hover:text-foreground transition-colors">
                             {isExpanded ? (
                               <ChevronUp className="h-4 w-4" />
@@ -351,154 +276,30 @@ export function StudentMeetingView({
 
                     {/* EXPANDED CONTENT AREA */}
                     {isExpanded && (
-                      <div className="px-3.5 sm:px-4 pb-4 pt-3 border-t border-border/60 space-y-3.5 bg-muted/10">
-                        {/* 1. PESAN GURU / RINGKASAN */}
-                        {meeting.deskripsi && (
-                          <div className="rounded-xl bg-card border border-border/70 p-3 sm:p-3.5 space-y-1.5 shadow-2xs">
-                            <div className="flex items-center gap-1.5 text-primary font-bold text-xs">
-                              <MessageSquare className="h-3.5 w-3.5" />
-                              <span>Pesan Ustadz / Ustadzah:</span>
-                            </div>
-                            <p className="text-xs sm:text-sm text-foreground/90 whitespace-pre-line leading-relaxed font-normal">
-                              {meeting.deskripsi}
-                            </p>
-                          </div>
-                        )}
+                      <div className="px-3.5 sm:px-5 pb-4 pt-3.5 border-t border-border/60 space-y-4 bg-muted/10">
+                        <MeetingMaterialsSection
+                          judul={meeting.judul}
+                          deskripsi={meeting.deskripsi}
+                          fileUrl={meeting.fileUrl}
+                          fileName={meeting.fileName}
+                          fileType={meeting.fileType}
+                          videoUrl={meeting.videoUrl}
+                          showStepNumbers={true}
+                          onPreviewFile={setViewerFile}
+                        />
 
-                        {/* 2. BAHAN AJAR (MODUL & VIDEO) */}
-                        {(hasFile || youtubeEmbed || meeting.linkEksternal) && (
-                          <div
-                            className={`grid gap-3 ${
-                              hasFile && youtubeEmbed
-                                ? "grid-cols-1 lg:grid-cols-2"
-                                : "grid-cols-1"
-                            }`}
-                          >
-                            {/* Berkas Modul */}
-                            {hasFile && (
-                              <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                                  <FileText className="h-3.5 w-3.5 text-emerald-600" />
-                                  <span>Bahan Bacaan & Modul:</span>
-                                </div>
-
-                                <div className="p-3 rounded-xl bg-card border border-border/80 shadow-2xs flex flex-col justify-between gap-3">
-                                  <div className="flex items-center gap-3 min-w-0">
-                                    <div className="h-9 w-9 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                                      <FileText className="h-4.5 w-4.5" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                      <p className="text-xs sm:text-sm font-bold text-foreground truncate">
-                                        {meeting.fileName || "Modul Pembelajaran"}
-                                      </p>
-                                      <p className="text-[10px] text-muted-foreground font-medium">
-                                        {meeting.fileType ? meeting.fileType.toUpperCase() : "DOKUMEN"}
-                                        {meeting.fileSize ? ` • ${formatFileSize(meeting.fileSize)}` : ""}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center gap-2 pt-1 border-t border-border/50">
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      onClick={() =>
-                                        setViewerFile({
-                                          url: meeting.fileUrl!,
-                                          name: meeting.fileName || meeting.judul,
-                                        })
-                                      }
-                                      className="h-8 px-3 text-xs font-bold gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex-1"
-                                    >
-                                      <Eye className="h-3.5 w-3.5" />
-                                      <span>Baca Materi</span>
-                                    </Button>
-
-                                    <a
-                                      href={meeting.fileUrl || undefined}
-                                      download={meeting.fileName || "modul-pembelajaran"}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 px-2.5 text-xs font-semibold gap-1 rounded-lg"
-                                      >
-                                        <Download className="h-3.5 w-3.5" />
-                                        <span className="hidden sm:inline">Unduh</span>
-                                      </Button>
-                                    </a>
-                                  </div>
-                                </div>
-
-                                {/* Referensi Web jika tidak ada video */}
-                                {meeting.linkEksternal && !youtubeEmbed && (
-                                  <a
-                                    href={meeting.linkEksternal}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex items-center justify-between p-2.5 px-3 rounded-xl bg-blue-500/10 text-blue-600 border border-blue-500/20 text-xs font-medium hover:bg-blue-500/15 transition-colors"
-                                  >
-                                    <div className="flex items-center gap-2 truncate">
-                                      <LinkIcon className="h-3.5 w-3.5 shrink-0" />
-                                      <span className="truncate">{meeting.linkEksternal}</span>
-                                    </div>
-                                    <ExternalLink className="h-3.5 w-3.5 shrink-0 ml-1.5 opacity-80" />
-                                  </a>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Video Pembelajaran */}
-                            {youtubeEmbed && (
-                              <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                                  <Video className="h-3.5 w-3.5 text-red-500" />
-                                  <span>Video Pembelajaran:</span>
-                                </div>
-
-                                <div className="aspect-video w-full rounded-xl overflow-hidden border border-border shadow-2xs bg-black max-h-[220px]">
-                                  <iframe
-                                    src={youtubeEmbed}
-                                    title={meeting.judul}
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                    className="w-full h-full"
-                                  />
-                                </div>
-
-                                {/* Referensi Web di bawah video jika ada */}
-                                {meeting.linkEksternal && (
-                                  <a
-                                    href={meeting.linkEksternal}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex items-center justify-between p-2.5 px-3 rounded-xl bg-blue-500/10 text-blue-600 border border-blue-500/20 text-xs font-medium hover:bg-blue-500/15 transition-colors"
-                                  >
-                                    <div className="flex items-center gap-2 truncate">
-                                      <LinkIcon className="h-3.5 w-3.5 shrink-0" />
-                                      <span className="truncate">Tautan Referensi Tambahan</span>
-                                    </div>
-                                    <ExternalLink className="h-3.5 w-3.5 shrink-0 ml-1.5 opacity-80" />
-                                  </a>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* 3. TUGAS / LATIHAN PERTEMUAN INI */}
+                        {/* TUGAS */}
                         {meeting.tugas.length > 0 && (
-                          <div className="space-y-2 pt-1 border-t border-border/60">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                          <div className="space-y-2 pt-3 border-t border-border/60">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+                              {hasFile || hasVideo ? (
+                                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                                  {taskStepNumber}
+                                </span>
+                              ) : (
                                 <FileCheck className="h-3.5 w-3.5 text-primary" />
-                                <span>Tugas Pertemuan Ini ({meeting.tugas.length}):</span>
-                              </div>
-                              <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                                Selesaikan tugas untuk mengasah pemahamanmu
-                              </span>
+                              )}
+                              <span>Tugas ({meeting.tugas.length})</span>
                             </div>
 
                             <div className="space-y-2">
@@ -508,35 +309,16 @@ export function StudentMeetingView({
                                   className="p-3 rounded-xl bg-card border border-border/80 hover:border-primary/40 transition-colors shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                                 >
                                   <div className="space-y-1 min-w-0 flex-1">
-                                    <div className="flex items-center flex-wrap gap-2">
-                                      <Badge
-                                        variant={
-                                          t.isGraded
-                                            ? "success"
-                                            : t.isPending
-                                            ? "sky"
-                                            : "amber"
-                                        }
-                                        size="xs"
-                                      >
-                                        {t.isGraded
-                                          ? `Nilai: ${t.nilai} / ${t.poinMaksimal} ⭐`
-                                          : t.isPending
-                                          ? "Sedang Dinilai ⏳"
-                                          : "Belum Dikerjakan 🚀"}
-                                      </Badge>
-
-                                      <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
-                                        <Clock className="h-3 w-3" />
-                                        <span>
-                                          Tenggat:{" "}
-                                          {new Date(t.deadline).toLocaleDateString("id-ID", {
-                                            day: "numeric",
-                                            month: "short",
-                                          })}
-                                        </span>
+                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
+                                      <Clock className="h-3 w-3" />
+                                      <span>
+                                        Tenggat:{" "}
+                                        {new Date(t.deadline).toLocaleDateString("id-ID", {
+                                          day: "numeric",
+                                          month: "short",
+                                        })}
                                       </span>
-                                    </div>
+                                    </span>
 
                                     <h4 className="text-xs sm:text-sm font-bold text-foreground truncate">
                                       {t.judul}
@@ -582,8 +364,9 @@ export function StudentMeetingView({
           isOpen={true}
           onClose={() => setViewerFile(null)}
           title={viewerFile.name}
-          files={[{ url: viewerFile.url, name: viewerFile.name }]}
+          files={[{ url: viewerFile.url, name: viewerFile.name, type: viewerFile.type }]}
           allowDownload={true}
+          downloadPrefix="Modul"
         />
       )}
     </div>

@@ -193,7 +193,6 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
     fileSize: m.file_size,
     fileType: m.file_type,
     videoUrl: m.video_url,
-    linkEksternal: m.link_eksternal,
     isPublished: m.is_published,
     tugas: (m.tugas || []).map((t: any) => ({
       id: t.id.toString(),

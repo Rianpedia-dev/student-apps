@@ -184,21 +184,21 @@ export function AttendanceHistoryClient({
     <div className="space-y-6">
 
       {/* Main Tab Navigation Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 w-full">
         <Button
           type="button"
           variant={activeTab === "mapel" ? "default" : "outline"}
           size="sm"
           onClick={() => setActiveTab("mapel")}
           className={cn(
-            "h-11 sm:h-10 px-3.5 rounded-xl text-xs font-bold gap-2 transition-all cursor-pointer shadow-xs justify-center",
+            "h-10 sm:h-10 px-3.5 rounded-xl text-xs font-bold gap-2 transition-all cursor-pointer shadow-xs justify-center",
             activeTab === "mapel"
               ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
               : "bg-card/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/80"
           )}
         >
           <BookOpen className="h-4 w-4 shrink-0" />
-          <span>Presensi per Mata Pelajaran</span>
+          <span className="truncate">Presensi per Mata Pelajaran</span>
         </Button>
 
         <Button
@@ -207,14 +207,14 @@ export function AttendanceHistoryClient({
           size="sm"
           onClick={() => setActiveTab("calendar")}
           className={cn(
-            "h-11 sm:h-10 px-3.5 rounded-xl text-xs font-bold gap-2 transition-all cursor-pointer shadow-xs justify-center",
+            "h-10 sm:h-10 px-3.5 rounded-xl text-xs font-bold gap-2 transition-all cursor-pointer shadow-xs justify-center",
             activeTab === "calendar"
               ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
               : "bg-card/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/80"
           )}
         >
           <Calendar className="h-4 w-4 shrink-0" />
-          <span>Kalender Presensi</span>
+          <span className="truncate">Kalender Presensi</span>
         </Button>
 
         <Button
@@ -223,14 +223,14 @@ export function AttendanceHistoryClient({
           size="sm"
           onClick={() => setActiveTab("logs")}
           className={cn(
-            "h-11 sm:h-10 px-3.5 rounded-xl text-xs font-bold gap-2 transition-all cursor-pointer shadow-xs justify-center",
+            "h-10 sm:h-10 px-3.5 rounded-xl text-xs font-bold gap-2 transition-all cursor-pointer shadow-xs justify-center sm:col-span-2 lg:col-span-1",
             activeTab === "logs"
               ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
               : "bg-card/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/80"
           )}
         >
           <Clock className="h-4 w-4 shrink-0" />
-          <span>Riwayat Presensi</span>
+          <span className="truncate">Riwayat Presensi</span>
         </Button>
       </div>
 
@@ -238,14 +238,14 @@ export function AttendanceHistoryClient({
       {activeTab === "mapel" && (
         <div className="space-y-4 animate-in fade-in-50 duration-200">
           {/* Search Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
             <div className="relative flex-1 w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Cari mata pelajaran..."
                 value={subjectSearch}
                 onChange={(e) => setSubjectSearch(e.target.value)}
-                className="pl-9 text-xs h-9.5 rounded-xl bg-card/60 backdrop-blur-xs border-border/80"
+                className="pl-9 text-xs h-9.5 rounded-xl bg-card/80 backdrop-blur-xs border-border/80"
               />
             </div>
             {subjectSearch && (
@@ -253,7 +253,7 @@ export function AttendanceHistoryClient({
                 variant="ghost"
                 size="sm"
                 onClick={() => setSubjectSearch("")}
-                className="text-xs h-9 px-3 text-muted-foreground hover:text-foreground self-end sm:self-auto"
+                className="text-xs h-9 px-3 text-muted-foreground hover:text-foreground self-start sm:self-auto"
               >
                 Reset Pencarian
               </Button>
@@ -267,12 +267,131 @@ export function AttendanceHistoryClient({
                   <p>Coba sesuaikan kata kunci pencarian.</p>
                 </div>
               ) : (
-                <Card className="border border-border/80 shadow-xs overflow-hidden bg-card/60 backdrop-blur-xs">
-                  {/* Mobile Scroll Hint Banner */}
-                  <div className="md:hidden px-3.5 py-1.5 bg-muted/40 border-b border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
-                    <span>← Geser tabel ke samping →</span>
-                    <span className="font-semibold text-foreground">{filteredSubjects.length} Mapel</span>
+                <>
+                  {/* Mobile View (< md): Card List Tanpa Scroll Horizontal */}
+                  <div className="md:hidden space-y-3">
+                    {filteredSubjects.map((sub) => {
+                      const isSafe = sub.percentage >= 85;
+                      const isWarning = sub.percentage >= 75 && sub.percentage < 85;
+
+                      return (
+                        <Card
+                          key={sub.mapelId}
+                          elevationSize="sm"
+                          className="border border-border/80 bg-card/85 shadow-xs rounded-2xl p-3.5 space-y-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-sm font-bold text-foreground leading-snug">
+                                {sub.mapelNama}
+                              </h3>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                                {sub.totalPertemuan} Sesi Pertemuan
+                              </p>
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-xs font-bold shrink-0 px-2 py-0.5",
+                                isSafe
+                                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                  : isWarning
+                                  ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  : "border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                              )}
+                            >
+                              {sub.percentage}%
+                            </Badge>
+                          </div>
+
+                          <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
+                            <div className="p-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                              <span className="text-[10px] text-muted-foreground block">Hadir</span>
+                              <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                                {sub.hadir}
+                              </span>
+                            </div>
+                            <div className="p-1.5 rounded-xl bg-sky-500/10 border border-sky-500/20">
+                              <span className="text-[10px] text-muted-foreground block">Sakit</span>
+                              <span className="text-xs font-extrabold text-sky-600 dark:text-sky-400">
+                                {sub.sakit}
+                              </span>
+                            </div>
+                            <div className="p-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                              <span className="text-[10px] text-muted-foreground block">Izin</span>
+                              <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400">
+                                {sub.izin}
+                              </span>
+                            </div>
+                            <div className="p-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                              <span className="text-[10px] text-muted-foreground block">Alpha</span>
+                              <span className="text-xs font-extrabold text-rose-600 dark:text-rose-400">
+                                {sub.alpha}
+                              </span>
+                            </div>
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full h-8 text-xs font-semibold rounded-xl gap-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                            onClick={() => setSelectedSubject(sub)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>Lihat Detail Sesi</span>
+                          </Button>
+                        </Card>
+                      );
+                    })}
+
+                    {/* Mobile Total Rekapitulasi Card */}
+                    <Card
+                      elevationSize="sm"
+                      className="border border-border/80 bg-muted/40 shadow-xs rounded-2xl p-3.5 space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="font-bold text-foreground">Total Rekapitulasi</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          Rata-rata: {overallStats.percentage}%
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
+                        <div className="p-1.5 rounded-lg bg-card/80 border border-border/50">
+                          <span className="text-[10px] text-muted-foreground block">Hadir</span>
+                          <span className="font-black text-emerald-600 dark:text-emerald-400">
+                            {overallStats.hadir}
+                          </span>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-card/80 border border-border/50">
+                          <span className="text-[10px] text-muted-foreground block">Sakit</span>
+                          <span className="font-black text-sky-600 dark:text-sky-400">
+                            {overallStats.sakit}
+                          </span>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-card/80 border border-border/50">
+                          <span className="text-[10px] text-muted-foreground block">Izin</span>
+                          <span className="font-black text-amber-600 dark:text-amber-400">
+                            {overallStats.izin}
+                          </span>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-card/80 border border-border/50">
+                          <span className="text-[10px] text-muted-foreground block">Alpha</span>
+                          <span className="font-black text-rose-600 dark:text-rose-400">
+                            {overallStats.alpha}
+                          </span>
+                        </div>
+                      </div>
+                    </Card>
                   </div>
+
+                  {/* Tablet / iPad & Desktop View (md+): Tabel Rekapitulasi */}
+                  <Card className="hidden md:block border border-border/80 shadow-xs overflow-hidden bg-card/75 backdrop-blur-xs">
+                    {/* Tablet Portrait Scroll Hint Banner */}
+                    <div className="lg:hidden px-3.5 py-1.5 bg-muted/40 border-b border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+                      <span>← Geser tabel jika terpotong →</span>
+                      <span className="font-semibold text-foreground">{filteredSubjects.length} Mapel</span>
+                    </div>
 
                   <div className="relative w-full overflow-x-auto scrollbar-thin">
                     <Table className="text-xs min-w-[660px]">
@@ -389,6 +508,7 @@ export function AttendanceHistoryClient({
                     </Table>
                   </div>
                 </Card>
+                </>
               )}
         </div>
       )}
@@ -405,18 +525,18 @@ export function AttendanceHistoryClient({
             draggable={false}
             className="w-full p-0 border border-white/50 dark:border-white/10 bg-card/65 dark:bg-card/45 shadow-lg overflow-hidden"
           >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 p-4 sm:p-5 pb-3">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-border/60 p-3.5 sm:p-5 pb-3">
+                  <div className="min-w-0">
                     <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
                       <CalendarDays className="h-4 w-4 text-emerald-600 shrink-0" />
-                      <span>Kalender Presensi: {monthNames[month]} {year}</span>
+                      <span className="truncate">Kalender Presensi: {monthNames[month]} {year}</span>
                     </h2>
                     <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
                       Klik tanggal untuk melihat rincian sesi belajar dan jam ke
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                  <div className="flex items-center gap-1.5 self-start sm:self-auto shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
@@ -449,9 +569,9 @@ export function AttendanceHistoryClient({
                   </div>
                 </div>
 
-                <div className="p-3 sm:p-5 pt-3">
+                <div className="p-2.5 sm:p-5 pt-3">
                   {/* Day Headers */}
-                  <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2 text-center text-[11px] sm:text-xs font-semibold text-muted-foreground">
+                  <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 sm:mb-2 text-center text-[10px] sm:text-xs font-semibold text-muted-foreground">
                     {dayNames.map((d) => (
                       <div key={d} className="py-1">
                         {d}
@@ -460,10 +580,10 @@ export function AttendanceHistoryClient({
                   </div>
 
                   {/* Day Grid */}
-                  <div className="grid grid-cols-7 gap-1.5 sm:gap-2 md:gap-2.5">
+                  <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-2.5">
                     {calendarDays.map((d, index) => {
                       if (d === null) {
-                        return <div key={`empty-${index}`} className="min-h-[52px] sm:min-h-[66px] md:min-h-[76px]" />;
+                        return <div key={`empty-${index}`} className="min-h-[48px] sm:min-h-[66px] md:min-h-[76px]" />;
                       }
 
                       const dStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
@@ -614,9 +734,9 @@ export function AttendanceHistoryClient({
                             </span>
                           )}
                           {ev.guruNama && (
-                            <span className="flex items-center gap-1.5 font-medium truncate max-w-[180px]">
+                            <span className="flex items-center gap-1.5 font-medium min-w-0 truncate">
                               <User className="h-3.5 w-3.5 text-muted-foreground/80 shrink-0" />
-                              {ev.guruNama}
+                              <span className="truncate">{ev.guruNama}</span>
                             </span>
                           )}
                         </div>
@@ -653,7 +773,7 @@ export function AttendanceHistoryClient({
                 </div>
 
                 {/* Filter Status Chips */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <Button
                     type="button"
                     variant="outline"
@@ -728,7 +848,7 @@ export function AttendanceHistoryClient({
               </div>
 
               {/* Search Bar in Logs */}
-              <div className="relative pt-2">
+              <div className="relative mt-2.5">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   placeholder="Cari mapel, tanggal (YYYY-MM-DD), guru, atau catatan dispensasi..."
@@ -751,20 +871,20 @@ export function AttendanceHistoryClient({
                   {filteredLogs.slice(0, displayLogsLimit).map((log) => (
                     <div
                       key={log.id}
-                      className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-muted/20 transition-colors"
+                      className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-xs hover:bg-muted/20 transition-colors"
                     >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-foreground text-sm">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                          <span className="font-bold text-foreground text-sm break-words">
                             {log.mapelNama}
                           </span>
                           {log.mapelKode && (
-                            <span className="text-[10px] font-mono text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] font-mono text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded shrink-0">
                               {log.mapelKode}
                             </span>
                           )}
                           {log.jamKe && (
-                            <span className="text-[10px] text-muted-foreground font-medium">
+                            <span className="text-[10px] text-muted-foreground font-medium shrink-0">
                               (Jam: {log.jamKe})
                             </span>
                           )}

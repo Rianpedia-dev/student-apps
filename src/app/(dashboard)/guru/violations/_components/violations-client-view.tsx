@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { ShieldCheck, SearchX, Eye, Pencil, Trash2, Calendar, ShieldAlert, Award, UserCheck, AlertTriangle } from "lucide-react";
+import { ShieldCheck, SearchX, Eye, Pencil, Trash2, Calendar, UserCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -199,126 +198,211 @@ export function ViolationsClientView({
         </div>
       ) : (
         /* Table View */
-        <Card className="rounded-3xl card-elevation overflow-hidden shadow-2xl">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-muted/30 backdrop-blur-xs border-b border-border/60">
-                <TableRow>
-                  <TableHead className="w-12 text-center font-bold">No</TableHead>
-                  <TableHead className="font-bold">Siswa</TableHead>
-                  <TableHead className="font-bold">Tanggal</TableHead>
-                  <TableHead className="font-bold">Semester</TableHead>
-                  <TableHead className="font-bold">Kategori & Tingkat</TableHead>
-                  <TableHead className="font-bold">Deskripsi</TableHead>
-                  <TableHead className="font-bold">Dicatat Oleh</TableHead>
-                  <TableHead className="w-24 text-center font-bold">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredViolations.map((v, idx) => {
-                  const severity = (v.tingkatan || v.severity || "RINGAN").toUpperCase() as "RINGAN" | "SEDANG" | "BERAT";
-                  const severityConfig =
-                    VIOLATION_SEVERITY_CONFIG[severity] ||
-                    VIOLATION_SEVERITY_CONFIG.RINGAN;
+        <Card className="rounded-3xl card-elevation overflow-hidden shadow-xl border border-border/60">
+          {/* Petunjuk Scroll di Mobile & Tablet Portrait */}
+          <div className="lg:hidden px-4 py-2 bg-muted/40 border-b border-border/60 text-[11px] text-muted-foreground flex items-center justify-between">
+            <span>← Geser tabel ke samping →</span>
+            <span className="font-semibold text-foreground">{filteredViolations.length} Catatan</span>
+          </div>
 
-                  return (
-                    <TableRow key={v.id} className="hover:bg-muted/30">
-                      <TableCell className="text-center font-medium text-xs text-muted-foreground">
-                        {idx + 1}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2.5">
-                          <UserAvatar
-                            src={v.studentImage}
-                            gender={v.studentGender}
-                            name={v.nama || "Siswa"}
-                            className="h-8 w-8"
-                          />
-                          <div>
-                            <p className="font-semibold text-xs text-foreground">{v.nama}</p>
-                            <p className="text-[11px] text-muted-foreground">{v.kelas}</p>
-                          </div>
+          <Table>
+            <TableHeader className="bg-muted/35 backdrop-blur-xs">
+              <TableRow className="border-b border-border/70 hover:bg-transparent">
+                <TableHead className="w-11 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground py-3 pl-4">
+                  No
+                </TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground py-3 w-[205px]">
+                  Siswa
+                </TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground py-3 whitespace-nowrap">
+                  Waktu &amp; Semester
+                </TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground py-3">
+                  Kategori &amp; Tingkat
+                </TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground py-3 min-w-[180px]">
+                  Deskripsi
+                </TableHead>
+                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground py-3">
+                  Dicatat Oleh
+                </TableHead>
+                <TableHead className="w-[104px] text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground py-3 pr-4">
+                  Aksi
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredViolations.map((v, idx) => {
+                const severity = (v.tingkatan || v.severity || "RINGAN").toUpperCase() as "RINGAN" | "SEDANG" | "BERAT";
+                const severityConfig =
+                  VIOLATION_SEVERITY_CONFIG[severity] ||
+                  VIOLATION_SEVERITY_CONFIG.RINGAN;
+
+                const severityPillClass =
+                  severity === "BERAT"
+                    ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
+                    : severity === "SEDANG"
+                    ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30"
+                    : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30";
+
+                const severityDotClass =
+                  severity === "BERAT"
+                    ? "bg-rose-500"
+                    : severity === "SEDANG"
+                    ? "bg-purple-500"
+                    : "bg-amber-500";
+
+                const descriptionText = v.cleanKeterangan || v.keterangan || "-";
+
+                return (
+                  <TableRow
+                    key={v.id}
+                    className="group hover:bg-muted/35 transition-colors border-b border-border/50 last:border-b-0"
+                  >
+                    <TableCell className="text-center font-medium text-xs text-muted-foreground py-3.5 pl-4 align-middle">
+                      {idx + 1}
+                    </TableCell>
+
+                    {/* Siswa */}
+                    <TableCell className="py-3.5 align-middle">
+                      <div className="flex items-center gap-2.5 w-[185px] sm:w-[195px] min-w-0 overflow-hidden">
+                        <UserAvatar
+                          src={v.studentImage}
+                          gender={v.studentGender}
+                          name={v.nama || "Siswa"}
+                          className="h-9 w-9 rounded-full object-cover shrink-0 border border-border/60"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className="font-semibold text-xs text-foreground truncate leading-snug"
+                            title={v.nama || undefined}
+                          >
+                            {v.nama || "Tanpa Nama"}
+                          </p>
+                          <p
+                            className="text-[11px] text-muted-foreground truncate mt-0.5"
+                            title={v.kelas || undefined}
+                          >
+                            {v.kelas || "-"}
+                          </p>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDateIndo(v.created_at)}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {v.semester ? (
-                          <Badge variant="outline" size="sm" className="text-[10px] bg-muted/40 font-normal">
+                      </div>
+                    </TableCell>
+
+                    {/* Waktu & Semester */}
+                    <TableCell className="py-3.5 align-middle">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-foreground whitespace-nowrap">
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground/75 shrink-0" />
+                          <span>{formatDateIndo(v.created_at)}</span>
+                        </div>
+                        {v.semester && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted/60 text-[10px] font-medium text-muted-foreground border border-border/50">
                             {v.semester}
-                          </Badge>
-                        ) : (
-                          "-"
+                          </span>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1 items-start">
-                          <Badge variant="outline" size="sm" className="text-[11px] bg-muted/40">
-                            {v.kategori}
-                          </Badge>
-                          <Badge
-                            variant={severityConfig.badgeVariant}
-                            size="sm"
-                            className="text-[10px]"
+                      </div>
+                    </TableCell>
+
+                    {/* Kategori & Tingkat */}
+                    <TableCell className="py-3.5 align-middle">
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <span
+                          className="inline-flex items-center max-w-[175px] truncate px-2 py-0.5 rounded-md bg-muted/60 text-[11px] font-medium text-foreground border border-border/60"
+                          title={v.kategori || undefined}
+                        >
+                          {v.kategori || "Pelanggaran Umum"}
+                        </span>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${severityPillClass}`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${severityDotClass}`} />
+                          <span>{severityConfig.label}</span>
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    {/* Deskripsi */}
+                    <TableCell className="py-3.5 align-middle max-w-[260px]">
+                      <p
+                        className="text-xs text-foreground/85 whitespace-normal line-clamp-2 leading-relaxed"
+                        title={descriptionText}
+                      >
+                        {descriptionText}
+                      </p>
+                    </TableCell>
+
+                    {/* Dicatat Oleh */}
+                    <TableCell className="py-3.5 align-middle">
+                      {v.guru_nama ? (
+                        <div className="inline-flex items-center gap-1.5 max-w-[145px] text-xs">
+                          <UserCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span
+                            className="font-medium text-foreground truncate"
+                            title={v.guru_nama}
                           >
-                            {severityConfig.label}
-                          </Badge>
+                            {v.guru_nama}
+                          </span>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-xs max-w-xs truncate">
-                        {v.cleanKeterangan || v.keterangan}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {v.guru_nama ? (
-                          <div className="flex items-center gap-1">
-                            <UserCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                            <span className="font-medium text-foreground">{v.guru_nama}</span>
-                          </div>
-                        ) : (
-                          "-"
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+
+                    {/* Aksi */}
+                    <TableCell className="py-3.5 pr-4 align-middle text-center">
+                      <div className="inline-flex items-center justify-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="size-7 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/10 cursor-pointer"
+                          onClick={() => setDetailViolation(v)}
+                          title="Lihat Detail"
+                          aria-label="Lihat Detail"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        {canManageViolation(v) && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="size-7 rounded-lg text-muted-foreground hover:text-sky-600 hover:bg-sky-500/10 cursor-pointer"
+                              onClick={() => setEditViolation(v)}
+                              title="Edit Catatan"
+                              aria-label="Edit Catatan"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="size-7 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+                              onClick={() => setDeleteViolation(v)}
+                              title="Hapus Catatan"
+                              aria-label="Hapus Catatan"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
                         )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
-                            onClick={() => setDetailViolation(v)}
-                            title="Detail"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                          {canManageViolation(v) && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
-                                onClick={() => setEditViolation(v)}
-                                title="Edit"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                                onClick={() => setDeleteViolation(v)}
-                                title="Hapus"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+
+          {/* Footer Ringkasan */}
+          <div className="px-4 py-2.5 bg-muted/25 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
+            <span>
+              Menampilkan <strong className="text-foreground">{filteredViolations.length}</strong> dari{" "}
+              {initialViolations.length} catatan kedisiplinan
+            </span>
+            <span className="hidden sm:inline text-[10px] bg-muted/60 px-2 py-0.5 rounded-md">
+              Mode: Tabel
+            </span>
           </div>
         </Card>
       )}

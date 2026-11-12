@@ -473,116 +473,37 @@ export function ModernCalendar({
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* 1. Header & Actions Bar (Mobile, iPad, Desktop Optimized) */}
-      <div className="bg-card/60 backdrop-blur-xs p-5 sm:p-6 rounded-2xl flex flex-col xl:flex-row xl:items-center justify-between gap-3.5 sm:gap-4">
-        <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <span>{pageTitle}</span>
-            {loading && <Loader2 className="h-4 w-4 animate-spin text-emerald-500 shrink-0" />}
-          </h1>
-        </div>
-
-        {/* Toolbar: Category Filter Dropdown, View Switcher & Add Button */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-start sm:justify-end shrink-0">
-          {/* Dropdown Filter Kategori */}
-          <div className="relative min-w-[145px] sm:min-w-[165px]">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className={cn(
-                "w-full h-8 sm:h-9 pl-7 pr-7 rounded-xl border text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs cursor-pointer appearance-none transition-colors",
-                selectedCategory !== "ALL"
-                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-                  : "bg-card border-border/60 text-foreground hover:border-border"
-              )}
-              aria-label="Filter Kategori Kegiatan"
-            >
-              <option value="ALL">Semua Kategori</option>
-              {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
-                <option key={key} value={key}>
-                  {config.label}
-                </option>
-              ))}
-            </select>
-            <Filter
-              className={cn(
-                "absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none",
-                selectedCategory !== "ALL" ? "text-emerald-500" : "text-muted-foreground"
-              )}
-            />
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          </div>
-
-          {/* Switcher Tampilan: Kalender vs Daftar */}
-          <div className="flex items-center p-0.5 sm:p-1 bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/40 text-xs shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewMode("calendar")}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all text-xs cursor-pointer active:scale-95",
-                viewMode === "calendar"
-                  ? "bg-emerald-600 text-white shadow-xs font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <GridIcon className="h-3.5 w-3.5 shrink-0" />
-              <span>Kalender</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all text-xs cursor-pointer active:scale-95",
-                viewMode === "list"
-                  ? "bg-emerald-600 text-white shadow-xs font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <ListIcon className="h-3.5 w-3.5 shrink-0" />
-              <span>Daftar</span>
-            </button>
-          </div>
-
-          {canManage && (
-            <Button
-              type="button"
-              onClick={() => handleOpenCreate(selectedDate)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-xs h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm font-semibold rounded-xl cursor-pointer active:scale-95 shrink-0"
-            >
-              <Plus className="h-4 w-4 shrink-0" />
-              <span>Agenda Baru</span>
-            </Button>
-          )}
-        </div>
+      {/* 1. Header Judul Halaman */}
+      <div className="min-w-0">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
+          <span>{pageTitle}</span>
+          {loading && <Loader2 className="h-4 w-4 animate-spin text-emerald-500 shrink-0" />}
+        </h1>
       </div>
 
-      {/* 2. Tampilan Kalender Bulanan (Month View) - 2-Column pada Desktop XL, Full Width pada Mobile & iPad */}
-      {viewMode === "calendar" && (
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 lg:gap-5 items-start">
-          {/* Kolom Kalender Grid:
-              - Mobile & iPad (< 1280px, xl): 100% full width
-              - Large Desktop (>= 1280px, xl): 8 columns
-          */}
-          <div className="xl:col-span-8 space-y-3 min-w-0">
-            {/* Navigasi Bulan */}
-            <div className="flex items-center justify-between bg-card p-2.5 sm:p-3 rounded-xl border border-border/50 shadow-sm">
+      {/* 2. Bar Navigasi Bulan / Pencarian & Toolbar Aksi (Dibungkus 1 Card) */}
+      <Card elevationSize="sm" className="border border-border/50 bg-card shadow-sm rounded-2xl p-2.5 sm:p-3.5">
+        <div className="flex flex-col lg:flex-row lg:flex-wrap xl:flex-nowrap lg:items-center justify-between gap-3">
+          {/* Kiri: Navigasi Bulan (Mode Kalender) atau Pencarian (Mode Daftar) */}
+          {viewMode === "calendar" ? (
+            <div className="flex items-center justify-between sm:justify-start gap-2 flex-wrap">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 text-foreground"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-foreground"
                   onClick={handlePrevMonth}
                   aria-label="Bulan sebelumnya"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <h2 className="text-sm sm:text-base md:text-lg font-bold text-foreground capitalize px-1 select-none">
+                <h2 className="text-base sm:text-lg font-bold text-foreground capitalize px-1 select-none whitespace-nowrap">
                   {MONTH_NAMES[month]} {year}
                 </h2>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 text-foreground"
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-foreground"
                   onClick={handleNextMonth}
                   aria-label="Bulan berikutnya"
                 >
@@ -590,18 +511,120 @@ export function ModernCalendar({
                 </Button>
               </div>
 
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleToday}
-                  className="h-8 px-2.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 active:scale-95"
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToday}
+                className="h-8 sm:h-9 px-3 rounded-xl border-border/60 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 active:scale-95"
+              >
+                Hari Ini
+              </Button>
+            </div>
+          ) : (
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari judul kegiatan atau kelas..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-8 h-8 sm:h-9 text-xs sm:text-sm rounded-xl bg-background/60 border-border/60"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Hapus pencarian"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  Hari Ini
-                </Button>
-              </div>
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Kanan: Category Filter Dropdown, View Switcher & Add Button */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-start lg:justify-end w-full lg:w-auto shrink-0">
+            {/* Dropdown Filter Kategori */}
+            <div className="relative flex-1 min-w-[140px] sm:flex-none sm:min-w-[165px]">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className={cn(
+                  "w-full h-8 sm:h-9 pl-7 pr-7 rounded-xl border text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs cursor-pointer appearance-none transition-colors",
+                  selectedCategory !== "ALL"
+                    ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                    : "bg-card border-border/60 text-foreground hover:border-border"
+                )}
+                aria-label="Filter Kategori Kegiatan"
+              >
+                <option value="ALL">Semua Kategori</option>
+                {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
+                  <option key={key} value={key}>
+                    {config.label}
+                  </option>
+                ))}
+              </select>
+              <Filter
+                className={cn(
+                  "absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none",
+                  selectedCategory !== "ALL" ? "text-emerald-500" : "text-muted-foreground"
+                )}
+              />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             </div>
 
+            {/* Switcher Tampilan: Kalender vs Daftar */}
+            <div className="flex items-center p-0.5 sm:p-1 bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/40 text-xs shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode("calendar")}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all text-xs cursor-pointer active:scale-95",
+                  viewMode === "calendar"
+                    ? "bg-emerald-600 text-white shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <GridIcon className="h-3.5 w-3.5 shrink-0" />
+                <span>Kalender</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all text-xs cursor-pointer active:scale-95",
+                  viewMode === "list"
+                    ? "bg-emerald-600 text-white shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <ListIcon className="h-3.5 w-3.5 shrink-0" />
+                <span>Daftar</span>
+              </button>
+            </div>
+
+            {canManage && (
+              <Button
+                type="button"
+                onClick={() => handleOpenCreate(selectedDate)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-xs h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm font-semibold rounded-xl cursor-pointer active:scale-95 shrink-0"
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                <span>Agenda Baru</span>
+              </Button>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* 3. Tampilan Kalender Bulanan (Month View) - 2-Column pada Desktop XL, Full Width pada Mobile & iPad */}
+      {viewMode === "calendar" && (
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 lg:gap-5 items-start">
+          {/* Kolom Kalender Grid:
+              - Mobile & iPad (< 1280px, xl): 100% full width
+              - Large Desktop (>= 1280px, xl): 8 columns
+          */}
+          <div className="xl:col-span-8 min-w-0">
             {/* Grid Kalender */}
             <Card className="border border-border/50 overflow-hidden shadow-sm bg-card">
               {/* Header Nama Hari (Sen - Min) */}
@@ -746,15 +769,16 @@ export function ModernCalendar({
                     size="sm"
                     variant="outline"
                     onClick={() => handleOpenCreate(selectedDate)}
-                    className="h-7 sm:h-8 text-xs gap-1 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 shrink-0"
+                    aria-label="Tambah Agenda"
+                    className="h-7 sm:h-8 text-xs gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 shrink-0"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    <span className="hidden xs:inline">Tambah</span>
+                    <span className="hidden sm:inline">Tambah</span>
                   </Button>
                 )}
               </div>
 
-              <CardContent className="p-3 sm:p-4 space-y-3 max-h-[480px] md:max-h-[580px] overflow-y-auto scrollbar-thin">
+              <CardContent className="p-3 sm:p-4 xl:max-h-[580px] xl:overflow-y-auto scrollbar-thin">
                 {selectedDateEvents.length === 0 ? (
                   <div className="py-8 sm:py-10 px-3 text-center space-y-2">
                     <div className="mx-auto w-10 h-10 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground">
@@ -768,84 +792,86 @@ export function ModernCalendar({
                     </p>
                   </div>
                 ) : (
-                  selectedDateEvents.map((ev) => {
-                    const catConfig = CATEGORY_CONFIG[ev.category] || DEFAULT_CATEGORY;
-                    const IconComp = catConfig.icon;
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-3">
+                    {selectedDateEvents.map((ev) => {
+                      const catConfig = CATEGORY_CONFIG[ev.category] || DEFAULT_CATEGORY;
+                      const IconComp = catConfig.icon;
 
-                    return (
-                      <div
-                        key={ev.id}
-                        className={cn(
-                          "p-3 rounded-xl border bg-card/60 transition-all shadow-xs space-y-2",
-                          catConfig.cardBorder,
-                          "border-l-4 hover:border-border"
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <Badge variant={catConfig.badgeVariant} size="sm" className="gap-1 text-[10px]">
-                              <IconComp className="h-3 w-3" />
-                              {catConfig.label}
-                            </Badge>
-                            {ev.kelas && (
-                              <Badge variant="outline" size="sm" className="text-[10px]">
-                                {ev.kelas}
+                      return (
+                        <div
+                          key={ev.id}
+                          className={cn(
+                            "p-3 rounded-xl border bg-card/60 transition-all shadow-xs space-y-2",
+                            catConfig.cardBorder,
+                            "border-l-4 hover:border-border"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Badge variant={catConfig.badgeVariant} size="sm" className="gap-1 text-[10px]">
+                                <IconComp className="h-3 w-3" />
+                                {catConfig.label}
                               </Badge>
+                              {ev.kelas && (
+                                <Badge variant="outline" size="sm" className="text-[10px]">
+                                  {ev.kelas}
+                                </Badge>
+                              )}
+                            </div>
+
+                            {ev.canEdit && (
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => handleOpenEdit(ev)}
+                                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                  title="Edit Agenda"
+                                >
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => {
+                                    setDeletingId(ev.id);
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                  className="h-7 w-7 text-muted-foreground hover:text-rose-400"
+                                  title="Hapus Agenda"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             )}
                           </div>
 
-                          {ev.canEdit && (
-                            <div className="flex items-center gap-0.5 shrink-0">
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => handleOpenEdit(ev)}
-                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                title="Edit Agenda"
-                              >
-                                <Edit2 className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => {
-                                  setDeletingId(ev.id);
-                                  setIsDeleteDialogOpen(true);
-                                }}
-                                className="h-7 w-7 text-muted-foreground hover:text-rose-400"
-                                title="Hapus Agenda"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
+                          <div>
+                            <h4 className="text-xs sm:text-sm font-bold text-foreground leading-snug">
+                              {ev.title}
+                            </h4>
+                            {ev.description && (
+                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                {ev.description}
+                              </p>
+                            )}
+                          </div>
 
-                        <div>
-                          <h4 className="text-xs sm:text-sm font-bold text-foreground leading-snug">
-                            {ev.title}
-                          </h4>
-                          {ev.description && (
-                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                              {ev.description}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-border/30">
-                          <span className="flex items-center gap-1 font-medium text-foreground/80">
-                            <Clock className="h-3 w-3 text-emerald-400" />
-                            {formatTimeOnly(ev.startTime)} - {formatTimeOnly(ev.endTime)} WIB
-                          </span>
-                          {ev.from && (
-                            <span className="text-[10px] text-muted-foreground/80 truncate max-w-[110px]">
-                              Oleh: {ev.from}
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-border/30">
+                            <span className="flex items-center gap-1 font-medium text-foreground/80">
+                              <Clock className="h-3 w-3 text-emerald-400" />
+                              {formatTimeOnly(ev.startTime)} - {formatTimeOnly(ev.endTime)} WIB
                             </span>
-                          )}
+                            {ev.from && (
+                              <span className="text-[10px] text-muted-foreground/80 truncate max-w-[110px]">
+                                Oleh: {ev.from}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -856,26 +882,8 @@ export function ModernCalendar({
       {/* 4. Tampilan Daftar Agenda (List View) - 1 col (mobile), 2 col (iPad), 3 col (Desktop XL) */}
       {viewMode === "list" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cari judul kegiatan atau kelas..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs sm:text-sm bg-card"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-
-            <span className="text-xs text-muted-foreground">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground font-medium">
               Menampilkan {filteredEvents.length} agenda kegiatan
             </span>
           </div>

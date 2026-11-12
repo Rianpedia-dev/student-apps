@@ -32,10 +32,10 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
-      "img-src 'self' data: blob: https://*.daily.co",
+      "img-src 'self' data: blob: https://*.daily.co https://i.ytimg.com https://img.youtube.com",
       "connect-src 'self' ws: wss: https://*.daily.co wss://*.daily.co",
-      "frame-src 'self' https://*.daily.co",
-      "media-src 'self' data: blob: https://*.daily.co",
+      "frame-src 'self' https://*.daily.co https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://player.vimeo.com https://drive.google.com",
+      "media-src 'self' data: blob: https://*.daily.co https:",
     ].join("; "),
   },
 ];

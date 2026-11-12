@@ -356,7 +356,7 @@ export function InteractiveTaskBuilder({
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* ── Stepper Header ── */}
-      <div className="rounded-2xl sm:rounded-3xl card-elevation shadow-xl p-3.5 sm:p-5">
+      <div className="rounded-2xl bg-card/85 backdrop-blur-xs border border-border/80 shadow-2xs px-3.5 py-2.5 sm:px-5 sm:py-3">
         <div className="flex items-center justify-between gap-1.5 sm:gap-3 max-w-2xl mx-auto">
           {/* Step 1 */}
           <button

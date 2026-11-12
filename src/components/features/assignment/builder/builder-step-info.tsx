@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectTrigger,
@@ -87,30 +87,22 @@ export function BuilderStepInfo({
 
   return (
     <Card className="w-full rounded-2xl sm:rounded-3xl card-elevation shadow-2xl">
-      <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
-        <CardTitle className="text-base sm:text-lg font-bold">Informasi Tugas</CardTitle>
-        <CardDescription className="text-xs">
-          Lengkapi data utama tugas seperti judul, tenggat waktu pengerjaan, dan petunjuk kuis.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="p-4 sm:p-6 pt-2 space-y-4 sm:space-y-5">
-        {/* Judul Tugas */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground block">
-            Judul Tugas <span className="text-destructive">*</span>
-          </label>
-          <Input
-            value={judul}
-            onChange={(e) => setJudul(e.target.value)}
-            placeholder="Contoh: Kuis Interaktif Bab 1 - Bilangan Bulat"
-            className="text-xs sm:text-sm h-10 rounded-xl"
-          />
-        </div>
-
-        {/* Pertemuan & Deadline */}
+      <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+        {/* Judul Tugas & Pertemuan */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          {pertemuanList.length > 0 ? (
+          <div className={`space-y-1.5 ${pertemuanList.length > 0 ? "lg:col-span-7" : "lg:col-span-12"}`}>
+            <label className="text-xs font-semibold text-foreground block">
+              Judul Tugas <span className="text-destructive">*</span>
+            </label>
+            <Input
+              value={judul}
+              onChange={(e) => setJudul(e.target.value)}
+              placeholder="Contoh: Kuis Interaktif Bab 1 - Bilangan Bulat"
+              className="text-xs sm:text-sm h-10 rounded-xl"
+            />
+          </div>
+
+          {pertemuanList.length > 0 && (
             <div className="space-y-1.5 lg:col-span-5">
               <label className="text-xs font-semibold text-foreground block">
                 Tautkan ke Pertemuan (Opsional)
@@ -133,14 +125,15 @@ export function BuilderStepInfo({
                 </SelectContent>
               </Select>
             </div>
-          ) : null}
+          )}
+        </div>
 
-          <div className={`space-y-1.5 ${pertemuanList.length === 0 ? "lg:col-span-12" : "lg:col-span-7"}`}>
-            <label className="text-xs font-semibold text-foreground block">
-              Tenggat Waktu / Deadline <span className="text-destructive">*</span>
-            </label>
-            <DeadlinePicker value={deadline} onChange={setDeadline} />
-          </div>
+        {/* Tenggat Waktu */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground block">
+            Tenggat Waktu / Deadline <span className="text-destructive">*</span>
+          </label>
+          <DeadlinePicker value={deadline} onChange={setDeadline} />
         </div>
 
         {/* Deskripsi */}

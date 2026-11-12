@@ -25,9 +25,9 @@ export default async function SiswaAttendancePage() {
       };
 
   return (
-    <div className="space-y-5 sm:space-y-6 max-w-5xl mx-auto w-full px-2 sm:px-4 md:px-0">
+    <div className="space-y-4 sm:space-y-6 max-w-6xl mx-auto w-full">
       {/* Header */}
-      <div className="bg-card/60 backdrop-blur-xs p-5 sm:p-6 rounded-2xl">
+      <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
           Riwayat Presensi Siswa
         </h1>

@@ -347,11 +347,6 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                     >
                       <ListTodo className="h-3.5 w-3.5 text-primary" />
                       <span>Tugas</span>
-                      {sch.unsubmittedTasks > 0 && (
-                        <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-[10px]">
-                          {sch.unsubmittedTasks}
-                        </span>
-                      )}
                     </Button>
                   </Link>
                 </div>
@@ -397,16 +392,9 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                     {/* Mata Pelajaran */}
                     <TableCell className="py-3.5">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-foreground leading-tight">
-                            {sch.namaMapel}
-                          </p>
-                          {sch.unsubmittedTasks > 0 && (
-                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-bold shrink-0">
-                              {sch.unsubmittedTasks} Tugas
-                            </span>
-                          )}
-                        </div>
+                        <p className="text-sm font-bold text-foreground leading-tight">
+                          {sch.namaMapel}
+                        </p>
                         <Badge
                           variant={(sch.warna as any) || "emerald"}
                           size="xs"
@@ -469,11 +457,6 @@ export function SiswaMapelView({ schedules, studentClass }: SiswaMapelViewProps)
                           >
                             <ListTodo className="h-3.5 w-3.5 text-primary" />
                             <span>Tugas</span>
-                            {sch.unsubmittedTasks > 0 && (
-                              <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-[10px]">
-                                {sch.unsubmittedTasks}
-                              </span>
-                            )}
                           </Button>
                         </Link>
                       </div>

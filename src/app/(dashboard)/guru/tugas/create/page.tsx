@@ -54,6 +54,7 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
   const activeMapelId = safeMapelId || subjects[0]?.id.toString() || "";
 
   const selectedSubject = subjects.find((s) => s.id.toString() === activeMapelId);
+  const selectedClass = classes.find((c) => c.id.toString() === activeKelasId);
 
   const backHref = safeMapelId
     ? `/guru/mapel/${safeMapelId}${safeKelasId ? `?kelasId=${safeKelasId}&tab=tugas` : "?tab=tugas"}`
@@ -63,19 +64,9 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
     : "Kembali ke Mata Pelajaran";
 
   return (
-    <div className="w-full space-y-4 sm:space-y-5">
+    <div className="max-w-5xl mx-auto w-full space-y-4 sm:space-y-5">
       {/* Back Navigation */}
       <DashboardBreadcrumb backHref={backHref} backLabel={backLabel} />
-
-      {/* Header Info */}
-      <div className="rounded-2xl sm:rounded-3xl card-elevation shadow-2xl p-4 sm:p-6">
-        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground tracking-tight">
-          Buat Tugas Baru
-        </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Pilih jenis tugas dan lengkapi konfigurasi berikut.
-        </p>
-      </div>
 
       <TaskCreateTabs
         classes={classes.map((c) => ({
@@ -99,6 +90,8 @@ export default async function GuruCreateTugasPage({ searchParams }: PageProps) {
         initialKelasId={activeKelasId}
         initialMapelId={activeMapelId}
         fromOrigin={from}
+        subjectLabel={selectedSubject?.nama_mapel}
+        classLabel={selectedClass?.nama_kelas}
       />
     </div>
   );

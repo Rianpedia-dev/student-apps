@@ -11,7 +11,6 @@ import {
   Clock,
   BookOpen,
   ListTodo,
-  School,
   CheckCircle2,
   AlertCircle,
   X,
@@ -341,10 +340,7 @@ export function GuruMapelTable({ schedules }: GuruMapelTableProps) {
                   </div>
 
                   {/* Row 3: Class / Rombel Info */}
-                  <div className="flex items-center gap-2.5 pt-3 border-t border-border/60">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                      <School className="h-4 w-4" />
-                    </div>
+                  <div className="flex items-center justify-between gap-2.5 pt-3 border-t border-border/60">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-foreground truncate">
                         {sch.kelasNama}
@@ -492,22 +488,17 @@ export function GuruMapelTable({ schedules }: GuruMapelTableProps) {
 
                     {/* Rombel / Kelas */}
                     <TableCell className="py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                          <School className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0 space-y-0.5">
-                          <p className="text-xs font-semibold text-foreground leading-tight truncate">
-                            {sch.kelasNama}
-                          </p>
-                          <Badge
-                            variant={sch.jenjang === "SMP" ? "smp" : "amber"}
-                            size="xs"
-                            className="font-bold"
-                          >
-                            Jenjang {sch.jenjang}
-                          </Badge>
-                        </div>
+                      <div className="min-w-0 space-y-1">
+                        <p className="text-xs font-semibold text-foreground leading-tight truncate">
+                          {sch.kelasNama}
+                        </p>
+                        <Badge
+                          variant={sch.jenjang === "SMP" ? "smp" : "amber"}
+                          size="xs"
+                          className="font-bold"
+                        >
+                          Jenjang {sch.jenjang}
+                        </Badge>
                       </div>
                     </TableCell>
 

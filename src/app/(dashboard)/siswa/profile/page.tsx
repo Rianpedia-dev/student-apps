@@ -59,9 +59,6 @@ export default async function SiswaProfilePage() {
 
   return (
     <div className="relative space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Profil Siswa</h1>
-      </div>
 
       <div className="relative">
         {/* Grid Konten: Form di Kiri, Kolom Ruang ID Card di Kanan */}

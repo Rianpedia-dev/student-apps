@@ -141,7 +141,6 @@ export default async function SiswaMapelDetailPage({ params, searchParams }: Pag
     fileSize: m.file_size,
     fileType: m.file_type,
     videoUrl: m.video_url,
-    linkEksternal: m.link_eksternal,
     isCompleted: m.progressSiswa?.[0]?.is_completed || false,
     tugas: (m.tugas || []).map((t: any) => {
       const sub = t.submissions?.[0];

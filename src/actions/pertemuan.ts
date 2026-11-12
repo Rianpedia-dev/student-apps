@@ -76,7 +76,6 @@ export async function getPertemuanList(
         fileSize: p.file_size,
         fileType: p.file_type,
         videoUrl: p.video_url,
-        linkEksternal: p.link_eksternal,
         isPublished: p.is_published,
         tugas: p.tugas.map((t) => ({
           id: t.id.toString(),
@@ -117,7 +116,6 @@ export async function createPertemuanAction(formData: FormData) {
   const deskripsi = (formData.get("deskripsi") as string)?.trim() || null;
   const tanggalStr = (formData.get("tanggal") as string) || new Date().toISOString().split("T")[0];
   const video_url = (formData.get("video_url") as string)?.trim() || null;
-  const link_eksternal = (formData.get("link_eksternal") as string)?.trim() || null;
   const is_published = formData.get("is_published") === "true";
   const file = formData.get("file_materi") as File | null;
   const linkedTugasId = formData.get("tugas_id") as string | null;
@@ -161,7 +159,6 @@ export async function createPertemuanAction(formData: FormData) {
         file_size: fileSize,
         file_type: fileType,
         video_url,
-        link_eksternal,
         is_published,
       },
     });
@@ -215,10 +212,13 @@ export async function updatePertemuanAction(id: string, formData: FormData) {
 
   const pertemuan_ke = parseInt(formData.get("pertemuan_ke") as string) || existing.pertemuan_ke;
   const judul = (formData.get("judul") as string)?.trim() || existing.judul;
-  const deskripsi = (formData.get("deskripsi") as string)?.trim() ?? existing.deskripsi;
+  const deskripsi = formData.has("deskripsi")
+    ? (formData.get("deskripsi") as string)?.trim() || null
+    : existing.deskripsi;
   const tanggalStr = formData.get("tanggal") as string;
-  const video_url = (formData.get("video_url") as string)?.trim() ?? existing.video_url;
-  const link_eksternal = (formData.get("link_eksternal") as string)?.trim() ?? existing.link_eksternal;
+  const video_url = formData.has("video_url")
+    ? (formData.get("video_url") as string)?.trim() || null
+    : existing.video_url;
   const is_published = formData.has("is_published")
     ? formData.get("is_published") === "true"
     : existing.is_published;
@@ -258,7 +258,6 @@ export async function updatePertemuanAction(id: string, formData: FormData) {
         file_size: fileSize,
         file_type: fileType,
         video_url,
-        link_eksternal,
         is_published,
       },
     });
@@ -474,7 +473,6 @@ export async function duplicatePertemuanToKelasAction(
           file_size: source.file_size,
           file_type: source.file_type,
           video_url: source.video_url,
-          link_eksternal: source.link_eksternal,
           is_published: source.is_published,
         },
       });

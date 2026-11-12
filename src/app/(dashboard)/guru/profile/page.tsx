@@ -57,12 +57,6 @@ export default async function GuruProfilePage() {
 
   return (
     <div className="relative space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Profil Guru & Pendidik</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Kelola data diri dan kartu identitas digital resmi pendidik Al-Azhar Cairo.
-        </p>
-      </div>
 
       <div className="relative">
         {/* Grid Konten: Form Guru di Kiri, Kolom Ruang ID Card di Kanan */}

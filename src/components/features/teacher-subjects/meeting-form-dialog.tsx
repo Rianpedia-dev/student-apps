@@ -18,7 +18,6 @@ import {
   BookOpen,
   Upload,
   Video,
-  Link as LinkIcon,
   FileCheck,
   Sparkles,
   Eye,
@@ -57,7 +56,6 @@ export function MeetingFormDialog({
   const [deskripsi, setDeskripsi] = useState("");
   const [tanggal, setTanggal] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
-  const [linkEksternal, setLinkEksternal] = useState("");
   const [isPublished, setIsPublished] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState("none");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -71,7 +69,6 @@ export function MeetingFormDialog({
       const dateVal = initialData.tanggal ? new Date(initialData.tanggal).toISOString().split("T")[0] : "";
       setTanggal(dateVal);
       setVideoUrl(initialData.videoUrl || initialData.video_url || "");
-      setLinkEksternal(initialData.linkEksternal || initialData.link_eksternal || "");
       setIsPublished(initialData.isPublished ?? initialData.is_published ?? true);
 
       const currentLinkedTask = availableTasks.find(
@@ -85,7 +82,6 @@ export function MeetingFormDialog({
       setDeskripsi("");
       setTanggal(new Date().toISOString().split("T")[0]);
       setVideoUrl("");
-      setLinkEksternal("");
       setIsPublished(true);
       setSelectedTaskId("none");
       setSelectedFile(null);
@@ -110,7 +106,6 @@ export function MeetingFormDialog({
       formData.append("deskripsi", deskripsi.trim());
       formData.append("tanggal", tanggal || new Date().toISOString().split("T")[0]);
       formData.append("video_url", videoUrl.trim());
-      formData.append("link_eksternal", linkEksternal.trim());
       formData.append("is_published", isPublished ? "true" : "false");
       formData.append("tugas_id", selectedTaskId);
 
@@ -244,7 +239,7 @@ export function MeetingFormDialog({
             <input
               id="file-materi-input"
               type="file"
-              accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.mp4,.jpg,.jpeg,.png"
+              accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.mp4,.webm,.jpg,.jpeg,.png"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -305,33 +300,18 @@ export function MeetingFormDialog({
             )}
           </div>
 
-          {/* Media Tambahan: Video & Tautan Web */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <Video className="h-3.5 w-3.5 text-rose-500 shrink-0" />
-                <span>Video YouTube</span>
-              </Label>
-              <Input
-                placeholder="https://www.youtube.com/..."
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                className="h-9.5 rounded-xl text-xs bg-background border-border"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <LinkIcon className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                <span>Tautan Referensi</span>
-              </Label>
-              <Input
-                placeholder="https://..."
-                value={linkEksternal}
-                onChange={(e) => setLinkEksternal(e.target.value)}
-                className="h-9.5 rounded-xl text-xs bg-background border-border"
-              />
-            </div>
+          {/* Media Tambahan: Video */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <Video className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+              <span>Video YouTube</span>
+            </Label>
+            <Input
+              placeholder="https://www.youtube.com/..."
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              className="h-9.5 rounded-xl text-xs bg-background border-border"
+            />
           </div>
 
           {/* Tautkan Tugas */}
