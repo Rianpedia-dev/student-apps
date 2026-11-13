@@ -306,6 +306,8 @@ export async function updateInteractiveTugasAction(tugasId: string, payload: Cre
 
     revalidatePath("/guru/tugas");
     revalidatePath(`/guru/tugas/${tugasId}`);
+    revalidatePath("/guru/mapel");
+    revalidatePath(`/guru/mapel/${mapel_id}`);
     revalidatePath("/siswa/tugas");
     revalidatePath(`/siswa/tugas/${tugasId}`);
 
@@ -330,10 +332,13 @@ export async function deleteTugasAction(tugasId: string) {
   }
 
   try {
-    await prisma.tugas.delete({
+    const deleted = await prisma.tugas.delete({
       where: { id: BigInt(tugasId) },
+      select: { mapel_id: true },
     });
     revalidatePath("/guru/tugas");
+    revalidatePath("/guru/mapel");
+    revalidatePath(`/guru/mapel/${deleted.mapel_id}`);
     revalidatePath("/siswa/tugas");
     revalidatePath("/siswa");
     return { success: true, message: "Tugas berhasil dihapus." };
@@ -752,6 +757,10 @@ export async function gradeInteractiveEssayAction({
     });
 
     revalidatePath(`/guru/tugas/${soal.tugas_id}`);
+    revalidatePath("/guru/mapel");
+    if (tugas?.mapel_id) {
+      revalidatePath(`/guru/mapel/${tugas.mapel_id}`);
+    }
     revalidatePath(`/siswa/tugas/${soal.tugas_id}`);
 
     return { success: true, message: "Nilai soal esai berhasil disimpan!", nilaiFinal: finalScore };
@@ -806,6 +815,8 @@ export async function updateSubmissionAction({
     const updated = await prisma.tugasSubmission.update({ where: { id: subId }, data });
 
     revalidatePath(`/guru/tugas/${existing.tugas_id}`);
+    revalidatePath("/guru/mapel");
+    revalidatePath(`/guru/mapel/${existing.tugas.mapel_id}`);
     revalidatePath(`/siswa/tugas/${existing.tugas_id}`);
     revalidatePath("/siswa/tugas");
 
@@ -889,6 +900,102 @@ export async function createDocumentTugasAction(formData: FormData) {
   } catch (err: any) {
     console.error("Gagal membuat tugas berkas:", err);
     return { success: false, error: err.message || "Gagal membuat tugas baru." };
+  }
+}
+
+/**
+ * Perbarui Tugas Lembar Kerja Berkas (PDF / Image) oleh Guru
+ */
+export async function updateDocumentTugasAction(tugasId: string, formData: FormData) {
+  const session = await getSession();
+  if (!session || (session.role !== "guru" && session.role !== "admin")) {
+    return { success: false, error: "Akses ditolak." };
+  }
+
+  if (!tugasId || !/^\d+$/.test(tugasId)) {
+    return { success: false, error: "ID tugas tidak valid." };
+  }
+
+  const judul = formData.get("judul") as string;
+  const deskripsi = formData.get("deskripsi") as string;
+  const kelas_id = formData.get("kelas_id") as string;
+  const mapel_id = formData.get("mapel_id") as string;
+  const pertemuan_id = formData.get("pertemuan_id") as string | null;
+  const deadline = formData.get("deadline") as string;
+  const poin_maksimal = Number(formData.get("poin_maksimal")) || 100;
+  const file = formData.get("file_soal") as File | null;
+
+  if (!judul?.trim() || !deskripsi?.trim() || !kelas_id || !mapel_id || !deadline) {
+    return { success: false, error: "Mohon lengkapi seluruh informasi tugas (Judul, Deskripsi, Kelas, Mapel, Deadline)." };
+  }
+
+  try {
+    const tId = BigInt(tugasId);
+    const existing = await prisma.tugas.findUnique({
+      where: { id: tId },
+      select: { id: true, file_petunjuk: true, mapel_id: true },
+    });
+
+    if (!existing) {
+      return { success: false, error: "Tugas tidak ditemukan." };
+    }
+
+    let filePetunjuk = existing.file_petunjuk;
+    if (file && file instanceof Blob && file.size > 0) {
+      const rl = await checkUploadRateLimit(session.id);
+      if (!rl.allowed) {
+        return { success: false, error: rl.error };
+      }
+
+      const uploadRes = await saveUploadedFile(file, { category: "task_worksheet" });
+      if (!uploadRes.success || !uploadRes.filePath) {
+        return { success: false, error: uploadRes.error || "Gagal menyimpan berkas soal ke server." };
+      }
+      filePetunjuk = uploadRes.filePath;
+    }
+
+    if (!filePetunjuk) {
+      return { success: false, error: "Mohon unggah berkas soal (PDF atau Gambar Lembar Soal)." };
+    }
+
+    const parsedPertemuanId = pertemuan_id && /^\d+$/.test(pertemuan_id) ? BigInt(pertemuan_id) : null;
+
+    await prisma.tugas.update({
+      where: { id: tId },
+      data: {
+        kelas_id: BigInt(kelas_id),
+        mapel_id: BigInt(mapel_id),
+        pertemuan_id: parsedPertemuanId,
+        judul: judul.trim(),
+        deskripsi: deskripsi.trim(),
+        file_petunjuk: filePetunjuk,
+        deadline: new Date(deadline),
+        poin_maksimal: poin_maksimal,
+      },
+    });
+
+    revalidatePath("/guru/tugas");
+    revalidatePath(`/guru/tugas/${tugasId}`);
+    revalidatePath("/guru/mapel");
+    revalidatePath(`/guru/mapel/${mapel_id}`);
+    if (existing.mapel_id.toString() !== mapel_id) {
+      revalidatePath(`/guru/mapel/${existing.mapel_id}`);
+    }
+    revalidatePath("/siswa/tugas");
+    revalidatePath(`/siswa/tugas/${tugasId}`);
+    revalidatePath("/siswa");
+
+    return {
+      success: true,
+      message: "Tugas lembar kerja berkas berhasil diperbarui!",
+      data: { id: tugasId },
+    };
+  } catch (err: unknown) {
+    console.error("Gagal memperbarui tugas berkas:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Gagal memperbarui tugas.",
+    };
   }
 }
 
@@ -1134,6 +1241,8 @@ export async function gradeDocumentTaskAction({
     });
 
     revalidatePath(`/guru/tugas/${existing.tugas_id}`);
+    revalidatePath("/guru/mapel");
+    revalidatePath(`/guru/mapel/${existing.tugas.mapel_id}`);
     revalidatePath(`/siswa/tugas/${existing.tugas_id}`);
     revalidatePath("/siswa/tugas");
 
@@ -1174,6 +1283,7 @@ export async function requestTaskRevisionAction({
     const subId = BigInt(submissionId);
     const existing = await prisma.tugasSubmission.findUnique({
       where: { id: subId },
+      include: { tugas: { select: { mapel_id: true } } },
     });
     if (!existing) return { success: false, error: "Data pengerjaan tidak ditemukan." };
 
@@ -1202,6 +1312,8 @@ export async function requestTaskRevisionAction({
     });
 
     revalidatePath(`/guru/tugas/${existing.tugas_id}`);
+    revalidatePath("/guru/mapel");
+    revalidatePath(`/guru/mapel/${existing.tugas.mapel_id}`);
     revalidatePath(`/siswa/tugas/${existing.tugas_id}`);
     revalidatePath("/siswa/tugas");
 

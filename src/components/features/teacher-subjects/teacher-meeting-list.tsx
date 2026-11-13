@@ -101,6 +101,12 @@ export function TeacherMeetingList({
   const [activeMainTab, setActiveMainTab] = useState<"materi" | "tugas">(
     initialTab === "tugas" ? "tugas" : "materi"
   );
+  const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
+
+  if (initialTab !== prevInitialTab) {
+    setPrevInitialTab(initialTab);
+    setActiveMainTab(initialTab === "tugas" ? "tugas" : "materi");
+  }
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<any | null>(null);

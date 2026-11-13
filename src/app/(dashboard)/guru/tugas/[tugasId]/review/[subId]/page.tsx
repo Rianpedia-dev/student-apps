@@ -57,11 +57,14 @@ export default async function GuruReviewTugasPage({ params, searchParams }: Page
     },
   });
 
-  if (!submission) notFound();
+  if (!submission || submission.tugas_id.toString() !== tugasId) notFound();
 
   // Fetch sibling submissions in this task for Speed-Grader next/previous navigation
   const allSubs = await prisma.tugasSubmission.findMany({
-    where: { tugas_id: submission.tugas_id },
+    where: {
+      tugas_id: submission.tugas_id,
+      status: { notIn: ["sedang_mengerjakan", "belum_mengumpulkan"] },
+    },
     select: { id: true },
     orderBy: { submitted_at: "asc" },
   });

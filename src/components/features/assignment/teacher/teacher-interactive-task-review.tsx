@@ -163,7 +163,9 @@ export function TeacherInteractiveTaskReview({
   };
 
   const backHref =
-    fromOrigin === "mapel" ? `/guru/mapel` : `/guru/tugas/${tugasId}`;
+    fromOrigin === "mapel"
+      ? `/guru/tugas/${tugasId}?from=mapel`
+      : `/guru/tugas/${tugasId}`;
 
   const totalBenar = questions.filter(
     (q) => q.jawabanSiswa?.is_benar === true
@@ -190,6 +192,7 @@ export function TeacherInteractiveTaskReview({
         backHref={backHref}
         prevSubId={prevSubId}
         nextSubId={nextSubId}
+        fromOrigin={fromOrigin}
         submission={submission}
       />
 

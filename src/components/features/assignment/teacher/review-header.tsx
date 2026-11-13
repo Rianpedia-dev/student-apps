@@ -21,6 +21,7 @@ interface ReviewHeaderProps {
   backHref: string;
   prevSubId?: string | null;
   nextSubId?: string | null;
+  fromOrigin?: string;
   submission: {
     submittedAt: string;
     durasiDetik?: number | null;
@@ -45,9 +46,11 @@ export function ReviewHeader({
   backHref,
   prevSubId,
   nextSubId,
+  fromOrigin,
   submission,
 }: ReviewHeaderProps) {
   const statusCfg = getStatusConfig(currentStatus);
+  const fromQuery = fromOrigin ? `?from=${fromOrigin}` : "";
 
   const formatDuration = (secs?: number | null) => {
     if (!secs) return "-";
@@ -72,7 +75,7 @@ export function ReviewHeader({
         {/* Speed-Grader Navigation */}
         <div className="flex items-center gap-2">
           {prevSubId ? (
-            <Link href={`/guru/tugas/${tugasId}/review/${prevSubId}`}>
+            <Link href={`/guru/tugas/${tugasId}/review/${prevSubId}${fromQuery}`}>
               <Button variant="outline" size="sm" className="text-xs h-8 gap-1">
                 <ChevronLeft className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Siswa Sebelumnya</span>
@@ -88,7 +91,7 @@ export function ReviewHeader({
           )}
 
           {nextSubId ? (
-            <Link href={`/guru/tugas/${tugasId}/review/${nextSubId}`}>
+            <Link href={`/guru/tugas/${tugasId}/review/${nextSubId}${fromQuery}`}>
               <Button variant="outline" size="sm" className="text-xs h-8 gap-1">
                 <span className="hidden sm:inline">Siswa Berikutnya</span>
                 <span className="sm:hidden">Berikutnya</span>

@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { InteractiveTaskBuilder } from "@/components/features/assignment/builder/interactive-task-builder";
+import { DocumentTaskBuilder } from "@/components/features/assignment/builder/document-task-builder";
 import { DashboardBreadcrumb } from "@/components/shared/dashboard-breadcrumb";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export default async function GuruEditTugasPage({ params }: PageProps) {
     }),
     prisma.pertemuan.findMany({
       where: {
-        guru_id: BigInt(session.id),
+        ...(session.role === "admin" ? {} : { guru_id: BigInt(session.id) }),
         mapel_id: tugas.mapel_id,
         kelas_id: tugas.kelas_id,
       },
@@ -54,6 +55,10 @@ export default async function GuruEditTugasPage({ params }: PageProps) {
     }),
   ]);
 
+  const isDocumentTask =
+    tugas.tipe_pengerjaan === "LEMBAR_KERJA" ||
+    (Boolean(tugas.file_petunjuk) && tugas.soal.length === 0);
+
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <DashboardBreadcrumb
@@ -63,14 +68,48 @@ export default async function GuruEditTugasPage({ params }: PageProps) {
 
       <div className="bg-card/70 backdrop-blur-xs p-5 sm:p-6 rounded-2xl border border-border shadow-2xs">
         <h1 className="text-xl sm:text-2xl font-black text-foreground">
-          Edit Tugas Interaktif
+          {isDocumentTask ? "Edit Tugas Lembar Kerja" : "Edit Tugas Interaktif"}
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-          Perbarui informasi, bobot nilai, atau butir-butir soal interaktif.
+          {isDocumentTask
+            ? "Perbarui judul, instruksi, tenggat waktu, atau berkas lembar soal."
+            : "Perbarui informasi, bobot nilai, atau butir-butir soal interaktif."}
         </p>
       </div>
 
-      <InteractiveTaskBuilder
+      {isDocumentTask ? (
+        <DocumentTaskBuilder
+          classes={classes.map((c) => ({
+            id: c.id.toString(),
+            nama: c.nama_kelas,
+            jenjang: c.jenjang,
+            tingkat: c.tingkat,
+          }))}
+          subjects={subjects.map((s) => ({
+            id: s.id.toString(),
+            kode: s.kode_mapel,
+            nama: s.nama_mapel,
+            jenjang: s.jenjang,
+          }))}
+          pertemuanList={pertemuanList.map((p) => ({
+            id: p.id.toString(),
+            pertemuan_ke: p.pertemuan_ke,
+            judul: p.judul,
+          }))}
+          initialData={{
+            id: tugas.id.toString(),
+            judul: tugas.judul,
+            deskripsi: tugas.deskripsi,
+            kelas_id: tugas.kelas_id.toString(),
+            mapel_id: tugas.mapel_id.toString(),
+            pertemuan_id: tugas.pertemuan_id?.toString() || null,
+            deadline: tugas.deadline.toISOString(),
+            poin_maksimal: tugas.poin_maksimal,
+            file_petunjuk: tugas.file_petunjuk,
+          }}
+        />
+      ) : (
+        <InteractiveTaskBuilder
         classes={classes.map((c) => ({
           id: c.id.toString(),
           nama: c.nama_kelas,
@@ -119,6 +158,7 @@ export default async function GuruEditTugasPage({ params }: PageProps) {
           })),
         }}
       />
+      )}
     </div>
   );
 }

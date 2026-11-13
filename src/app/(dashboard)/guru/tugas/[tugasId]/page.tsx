@@ -147,8 +147,8 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
             <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight">
               {tugas.judul}
             </CardTitle>
-            <div className="flex items-center gap-2 shrink-0">
-              {isDocumentTask && tugas.file_petunjuk ? (
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {isDocumentTask && tugas.file_petunjuk && (
                 <a
                   href={`/api/download?file=${encodeURIComponent(tugas.file_petunjuk)}&name=${encodeURIComponent(`Soal-${tugas.judul}`)}`}
                   download
@@ -157,14 +157,13 @@ export default async function GuruTugasSubmissionsPage({ params, searchParams }:
                   <Download className="h-3.5 w-3.5 text-primary" />
                   <span>Unduh Soal</span>
                 </a>
-              ) : (
-                <Link href={`/guru/tugas/${tugasId}/edit`}>
-                  <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 rounded-xl">
-                    <Edit3 className="h-3.5 w-3.5" />
-                    <span>Edit Soal</span>
-                  </Button>
-                </Link>
               )}
+              <Link href={`/guru/tugas/${tugasId}/edit`}>
+                <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 rounded-xl">
+                  <Edit3 className="h-3.5 w-3.5" />
+                  <span>{isDocumentTask ? "Edit Tugas" : "Edit Soal"}</span>
+                </Button>
+              </Link>
             </div>
           </div>
           {tugas.deskripsi && (

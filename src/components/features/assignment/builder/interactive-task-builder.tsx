@@ -115,7 +115,7 @@ export function InteractiveTaskBuilder({
     initialData?.durasi_menit ? initialData.durasi_menit.toString() : "30"
   );
   const [hasDurationLimit, setHasDurationLimit] = useState(
-    initialData?.durasi_menit ? true : true
+    initialData ? Boolean(initialData.durasi_menit) : true
   );
   const [acakSoal, setAcakSoal] = useState(initialData?.acak_soal || false);
   const [acakOpsi, setAcakOpsi] = useState(initialData?.acak_opsi || false);

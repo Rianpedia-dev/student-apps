@@ -148,14 +148,19 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
   });
 
   const fullTasks: TeacherTaskItem[] = rawTasks.map((task) => {
-    const totalSubs = task.submissions.length;
-    const waiting = task.submissions.filter(
+    const submittedSubs = task.submissions.filter(
       (s) =>
-        s.status === "menunggu_penilaian" ||
-        s.status === "terlambat" ||
-        s.status === "perlu_revisi"
+        s.status !== "sedang_mengerjakan" &&
+        s.status !== "belum_mengumpulkan"
+    );
+    const totalSubs = submittedSubs.length;
+    const waiting = submittedSubs.filter(
+      (s) => s.status === "menunggu_penilaian" || s.status === "terlambat"
     ).length;
-    const graded = task.submissions.filter((s) => s.status === "sudah_dinilai").length;
+    const revisionCount = submittedSubs.filter(
+      (s) => s.status === "perlu_revisi"
+    ).length;
+    const graded = submittedSubs.filter((s) => s.status === "sudah_dinilai").length;
 
     return {
       id: task.id.toString(),
@@ -174,6 +179,7 @@ export default async function GuruMapelDetailPage({ params, searchParams }: Page
       poinMaksimal: task.poin_maksimal,
       totalSubmissions: totalSubs,
       waitingCount: waiting,
+      revisionCount,
       gradedCount: graded,
     };
   });

@@ -13,9 +13,20 @@ import {
   X,
   Edit3,
   School,
+  Download,
+  FileSpreadsheet,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableHeader,
@@ -33,6 +44,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { deleteTugasAction } from "@/actions/assignment";
+import { getMapelGradeRecapAction } from "@/actions/grade-recap";
+import {
+  exportMapelGradesToExcel,
+  exportMapelGradesToPdf,
+} from "@/lib/export-mapel-grades";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getDeadlineInfo } from "@/lib/task-status";
@@ -54,6 +70,7 @@ export interface TeacherTaskItem {
   poinMaksimal: number;
   totalSubmissions: number;
   waitingCount: number;
+  revisionCount?: number;
   gradedCount: number;
 }
 
@@ -95,6 +112,47 @@ export function TeacherTaskList({
   );
   const [selectedMapelId, setSelectedMapelId] = useState<string>(initialMapelId || "all");
   const [selectedKelasId, setSelectedKelasId] = useState<string>(initialKelasId || "all");
+  const [exportingFormat, setExportingFormat] = useState<"excel" | "pdf" | null>(null);
+
+  const effectiveKelasId = currentKelasId || initialKelasId;
+
+  const handleExportAllGrades = async (format: "excel" | "pdf") => {
+    if (!initialMapelId || !effectiveKelasId) return;
+    setExportingFormat(format);
+    try {
+      const res = await getMapelGradeRecapAction({
+        mapelId: initialMapelId,
+        kelasId: effectiveKelasId,
+      });
+
+      if (!res.success || !res.data) {
+        toast.error(res.error || "Gagal mengambil rekap nilai tugas.");
+        return;
+      }
+
+      if (res.data.tasks.length === 0) {
+        toast.info("Belum ada tugas pada mata pelajaran dan kelas ini.");
+        return;
+      }
+
+      if (format === "excel") {
+        await exportMapelGradesToExcel(res.data);
+        toast.success("Rekap semua nilai tugas (.xlsx) berhasil diunduh!");
+      } else {
+        await exportMapelGradesToPdf(res.data);
+        toast.success("Rekap semua nilai tugas (.pdf) berhasil diunduh!");
+      }
+    } catch (error) {
+      console.error("[Export Mapel Grades Error]:", error);
+      toast.error(
+        format === "excel"
+          ? "Gagal mengunduh rekap nilai Excel."
+          : "Gagal mengunduh rekap nilai PDF."
+      );
+    } finally {
+      setExportingFormat(null);
+    }
+  };
 
   // Filter tasks based on class & subject dropdowns (for general view)
   const scopedTasks = useMemo(() => {
@@ -112,7 +170,14 @@ export function TeacherTaskList({
     return scopedTasks.filter((task) => {
       // Status Tab filter
       if (activeTab === "need_grading" && task.waitingCount === 0) return false;
-      if (activeTab === "completed" && !(task.waitingCount === 0 && task.totalSubmissions > 0)) {
+      if (
+        activeTab === "completed" &&
+        !(
+          task.waitingCount === 0 &&
+          (task.revisionCount ?? 0) === 0 &&
+          task.totalSubmissions > 0
+        )
+      ) {
         return false;
       }
 
@@ -122,7 +187,7 @@ export function TeacherTaskList({
         const matchJudul = task.judul.toLowerCase().includes(q);
         const matchPertemuan =
           (task.pertemuanJudul || "").toLowerCase().includes(q) ||
-          (task.pertemuanKe !== null && `pertemuan ${task.pertemuanKe}`.includes(q));
+          (task.pertemuanKe != null && `pertemuan ${task.pertemuanKe}`.includes(q));
         const matchKelas = (task.kelasNama || "").toLowerCase().includes(q);
         const matchMapel = (task.mapelNama || "").toLowerCase().includes(q);
 
@@ -157,37 +222,61 @@ export function TeacherTaskList({
   // If no tasks exist at all in this context
   if (tasks.length === 0) {
     return (
-      <div className="bg-card/95 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-border/80 p-10 sm:p-14 text-center space-y-4 shadow-xs">
-        <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
-          <FileText className="h-7 w-7" />
-        </div>
-        <div className="space-y-1">
-          <h3 className="text-base sm:text-lg font-bold text-foreground">
-            Belum Ada Tugas yang Dibuat
-          </h3>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
-            {isSpecificView && activeMapelNama
-              ? `Bapak/Ibu Guru belum membuat tugas untuk ${activeMapelNama}${
-                  activeKelasNama ? ` di ${activeKelasNama}` : ""
-                }. Klik tombol di bawah untuk mulai membuat penugasan baru.`
-              : "Bapak/Ibu Guru belum membuat penugasan kelas. Klik tombol di bawah untuk membuat penugasan pertama."}
-          </p>
-        </div>
-        <div className="pt-2">
-          <Link
-            href={`/guru/tugas/create${
-              initialMapelId
-                ? `?mapelId=${initialMapelId}${
-                    initialKelasId ? `&kelasId=${initialKelasId}` : ""
-                  }&from=mapel`
-                : ""
-            }`}
-          >
-            <Button className="h-10 px-5 gap-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <Plus className="h-4 w-4" />
-              <span>Buat Tugas Baru</span>
-            </Button>
-          </Link>
+      <div className="space-y-4">
+        {isSpecificView && assignedClassesForMapel.length > 1 && (
+          <div className="flex items-center justify-end bg-card/95 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-border/80 shadow-2xs">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-background/80 shadow-2xs text-xs h-9">
+              <School className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <span className="font-bold text-muted-foreground shrink-0 hidden sm:inline">Pilih Kelas:</span>
+              <select
+                value={currentKelasId || initialKelasId}
+                onChange={(e) =>
+                  router.push(`/guru/mapel/${initialMapelId}?kelasId=${e.target.value}&tab=tugas`)
+                }
+                className="bg-transparent text-xs font-bold text-foreground focus:outline-none cursor-pointer"
+              >
+                {assignedClassesForMapel.map((cls) => (
+                  <option key={cls.id} value={cls.id} className="bg-card text-foreground font-semibold">
+                    {cls.name} ({cls.jenjang})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-card/95 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-border/80 p-10 sm:p-14 text-center space-y-4 shadow-xs">
+          <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+            <FileText className="h-7 w-7" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base sm:text-lg font-bold text-foreground">
+              Belum Ada Tugas yang Dibuat
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+              {isSpecificView && activeMapelNama
+                ? `Bapak/Ibu Guru belum membuat tugas untuk ${activeMapelNama}${
+                    activeKelasNama ? ` di ${activeKelasNama}` : ""
+                  }. Klik tombol di bawah untuk mulai membuat penugasan baru.`
+                : "Bapak/Ibu Guru belum membuat penugasan kelas. Klik tombol di bawah untuk membuat penugasan pertama."}
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              href={`/guru/tugas/create${
+                initialMapelId
+                  ? `?mapelId=${initialMapelId}${
+                      initialKelasId ? `&kelasId=${initialKelasId}` : ""
+                    }&from=mapel`
+                  : ""
+              }`}
+            >
+              <Button className="h-10 px-5 gap-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <Plus className="h-4 w-4" />
+                <span>Buat Tugas Baru</span>
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -277,6 +366,62 @@ export function TeacherTaskList({
               </button>
             )}
           </div>
+
+          {/* Tombol Unduh Semua Nilai Tugas (Excel & PDF) pada Mode Mapel Spesifik */}
+          {isSpecificView && initialMapelId && effectiveKelasId && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                disabled={exportingFormat !== null}
+                className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl border border-emerald-500/35 bg-emerald-500/10 hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0 shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+              >
+                {exportingFormat !== null ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                ) : (
+                  <Download className="h-3.5 w-3.5 shrink-0" />
+                )}
+                <span>
+                  {exportingFormat === "excel"
+                    ? "Menyiapkan Excel..."
+                    : exportingFormat === "pdf"
+                    ? "Menyiapkan PDF..."
+                    : "Unduh Semua Nilai"}
+                </span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-75 shrink-0" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60 p-1.5 rounded-xl">
+                <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-2 py-1.5">
+                  Pilih Format Rekap Nilai
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => handleExportAllGrades("excel")}
+                  disabled={exportingFormat !== null}
+                  className="cursor-pointer gap-2.5 px-2.5 py-2 rounded-lg"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-foreground">Unduh Excel (.xlsx)</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Matriks nilai, detail & status tugas
+                    </span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleExportAllGrades("pdf")}
+                  disabled={exportingFormat !== null}
+                  className="cursor-pointer gap-2.5 px-2.5 py-2 rounded-lg"
+                >
+                  <FileText className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-foreground">Unduh PDF (.pdf)</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Dokumen cetak resmi A4 Landscape
+                    </span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* Filter dropdowns (hanya tampil jika BUKAN mode mapel spesifik) */}
           {!isSpecificView && (availableClasses.length > 0 || availableSubjects.length > 0) && (
@@ -505,6 +650,13 @@ export function TeacherTaskList({
                                 >
                                   {task.waitingCount} perlu dinilai
                                 </Badge>
+                              ) : (task.revisionCount ?? 0) > 0 ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-bold bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/30"
+                                >
+                                  {task.revisionCount} perlu revisi
+                                </Badge>
                               ) : (
                                 <Badge
                                   variant="outline"
@@ -677,12 +829,19 @@ export function TeacherTaskList({
                           >
                             {task.waitingCount} perlu dinilai
                           </Badge>
+                        ) : (task.revisionCount ?? 0) > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-bold bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/30"
+                          >
+                            {task.revisionCount} perlu revisi
+                          </Badge>
                         ) : (
                           <Badge
                             variant="outline"
                             className="text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
                           >
-                            {task.totalSubmissions} dinilai
+                            Semua dinilai ({task.totalSubmissions})
                           </Badge>
                         )}
                       </div>

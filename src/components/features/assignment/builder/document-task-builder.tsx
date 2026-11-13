@@ -22,7 +22,10 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { createDocumentTugasAction } from "@/actions/assignment";
+import {
+  createDocumentTugasAction,
+  updateDocumentTugasAction,
+} from "@/actions/assignment";
 import { DeadlinePicker } from "@/components/shared/deadline-picker";
 
 export interface DocumentTaskBuilderProps {
@@ -33,15 +36,33 @@ export interface DocumentTaskBuilderProps {
   initialKelasId?: string;
   initialMapelId?: string;
   fromOrigin?: string;
+  initialData?: {
+    id: string;
+    judul: string;
+    deskripsi: string;
+    kelas_id: string;
+    mapel_id: string;
+    pertemuan_id?: string | null;
+    deadline: string;
+    poin_maksimal: number;
+    file_petunjuk?: string | null;
+  };
+}
+
+function formatLocalDateTimeInput(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 }
 
 function getDefaultLocalDeadline(): string {
   const d = new Date();
   d.setDate(d.getDate() + 3);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}T23:59`;
+  d.setHours(23, 59, 0, 0);
+  return formatLocalDateTimeInput(d);
 }
 
 export function DocumentTaskBuilder({
@@ -52,25 +73,40 @@ export function DocumentTaskBuilder({
   initialKelasId,
   initialMapelId,
   fromOrigin,
+  initialData,
 }: DocumentTaskBuilderProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditing = Boolean(initialData?.id);
 
   const matchedClass = classes.find((c) => c.nama === defaultKelas);
-  const kelasId = initialKelasId || matchedClass?.id || classes[0]?.id || "";
-  const mapelId = initialMapelId || subjects[0]?.id || "";
+  const kelasId =
+    initialData?.kelas_id || initialKelasId || matchedClass?.id || classes[0]?.id || "";
+  const mapelId = initialData?.mapel_id || initialMapelId || subjects[0]?.id || "";
 
-  const [pertemuanId, setPertemuanId] = useState<string>("");
-  const [judul, setJudul] = useState<string>("");
-  const [deskripsi, setDeskripsi] = useState<string>(
-    "Kerjakan lembar kerja berikut dengan teliti."
+  const [pertemuanId, setPertemuanId] = useState<string>(
+    initialData?.pertemuan_id || ""
   );
-  const [deadline, setDeadline] = useState<string>(getDefaultLocalDeadline);
-  const [poinMaksimal, setPoinMaksimal] = useState<number>(100);
+  const [judul, setJudul] = useState<string>(initialData?.judul || "");
+  const [deskripsi, setDeskripsi] = useState<string>(
+    initialData?.deskripsi || "Kerjakan lembar kerja berikut dengan teliti."
+  );
+  const [deadline, setDeadline] = useState<string>(() =>
+    initialData?.deadline
+      ? formatLocalDateTimeInput(new Date(initialData.deadline))
+      : getDefaultLocalDeadline()
+  );
+  const [poinMaksimal, setPoinMaksimal] = useState<number>(
+    initialData?.poin_maksimal ?? 100
+  );
 
   // File Upload State
   const [fileSoal, setFileSoal] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+  const existingFileUrl = initialData?.file_petunjuk || null;
+  const existingFileName = existingFileUrl
+    ? existingFileUrl.split("/").pop()?.split("?")[0] || "Berkas Soal Saat Ini"
+    : null;
 
   const pertemuanItems = React.useMemo(() => {
     const list: Array<{ value: string; label: string }> = [
@@ -138,7 +174,7 @@ export function DocumentTaskBuilder({
       return;
     }
 
-    if (!fileSoal) {
+    if (!fileSoal && !existingFileUrl) {
       toast.error("Mohon unggah file lembar soal (PDF atau Gambar).");
       return;
     }
@@ -154,24 +190,34 @@ export function DocumentTaskBuilder({
       if (pertemuanId) formData.append("pertemuan_id", pertemuanId);
       formData.append("deadline", deadline);
       formData.append("poin_maksimal", String(poinMaksimal));
-      formData.append("file_soal", fileSoal);
+      if (fileSoal) {
+        formData.append("file_soal", fileSoal);
+      }
 
-      const res = await createDocumentTugasAction(formData);
+      const res = initialData?.id
+        ? await updateDocumentTugasAction(initialData.id, formData)
+        : await createDocumentTugasAction(formData);
 
       if (res.success && res.data) {
         toast.success(res.message);
-        if (fromOrigin === "mapel" && mapelId && kelasId) {
+        if (initialData?.id) {
+          router.push(`/guru/tugas/${initialData.id}`);
+        } else if (fromOrigin === "mapel" && mapelId && kelasId) {
           router.push(`/guru/mapel/${mapelId}?kelasId=${kelasId}&tab=tugas`);
         } else {
           router.push(`/guru/tugas/${res.data.id}`);
         }
       } else {
-        toast.error(res.error || "Gagal membuat tugas.");
+        toast.error(res.error || (isEditing ? "Gagal memperbarui tugas." : "Gagal membuat tugas."));
       }
     } catch (err: unknown) {
       console.error(err);
       toast.error(
-        err instanceof Error ? err.message : "Terjadi kesalahan saat membuat tugas."
+        err instanceof Error
+          ? err.message
+          : isEditing
+          ? "Terjadi kesalahan saat memperbarui tugas."
+          : "Terjadi kesalahan saat membuat tugas."
       );
     } finally {
       setIsSubmitting(false);
@@ -255,7 +301,39 @@ export function DocumentTaskBuilder({
               <label className="text-xs font-semibold text-foreground block">
                 Unggah Berkas Lembar Soal <span className="text-destructive">*</span>
               </label>
-              {!fileSoal ? (
+              {!fileSoal && existingFileUrl ? (
+                <div className="rounded-2xl border border-input p-3.5 bg-muted/20 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        {existingFileUrl.toLowerCase().endsWith(".pdf") ? (
+                          <FileText className="h-5 w-5" />
+                        ) : (
+                          <ImageIcon className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-foreground truncate">
+                          {existingFileName}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Berkas soal aktif saat ini
+                        </p>
+                      </div>
+                    </div>
+                    <label className="inline-flex items-center gap-1 px-2.5 h-8 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground cursor-pointer shrink-0 transition-colors">
+                      <Upload className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Ganti Berkas</span>
+                      <input
+                        type="file"
+                        accept=".pdf,image/png,image/jpeg,image/webp"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : !fileSoal ? (
                 <label className="border-2 border-dashed border-input hover:border-emerald-500 rounded-2xl p-5 min-h-[126px] flex flex-col items-center justify-center gap-2 cursor-pointer bg-muted/20 hover:bg-emerald-500/5 transition-colors">
                   <div className="p-2.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                     <Upload className="h-5 w-5" />
@@ -344,18 +422,22 @@ export function DocumentTaskBuilder({
           <div className="pt-2 flex justify-end">
             <Button
               type="submit"
-              disabled={isSubmitting || !fileSoal}
+              disabled={isSubmitting || (!fileSoal && !existingFileUrl)}
               className="w-full sm:w-auto text-xs font-semibold gap-1.5 h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Menerbitkan...</span>
+                  <span>{isEditing ? "Menyimpan..." : "Menerbitkan..."}</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>Terbitkan Tugas Lembar Kerja</span>
+                  <span>
+                    {isEditing
+                      ? "Simpan Perubahan Tugas"
+                      : "Terbitkan Tugas Lembar Kerja"}
+                  </span>
                 </>
               )}
             </Button>

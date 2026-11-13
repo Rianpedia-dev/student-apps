@@ -20,6 +20,7 @@
     "seed:prestasi": "tsx prisma/seeds/seed_prestasi.ts",
     "seed:absensi": "tsx prisma/seeds/seed_absensi.ts",
     "seed:pelanggaran": "tsx prisma/seeds/seed_pelanggaran_demo.ts",
+    "seed:rekap-demo": "tsx prisma/seeds/seed_rekap_nilai_demo.ts",
     "seed:academic": "tsx prisma/seeds/seed_pertemuan.ts && tsx prisma/seeds/seed_tugas.ts && tsx prisma/seeds/seed_jadwal.ts && tsx prisma/seeds/seed_absensi.ts"
   },
   "prisma": {
@@ -39,6 +40,7 @@
     "cobe": "^2.0.1",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
     "framer-motion": "^13.2.0",
     "gsap": "^3.15.1",
     "jose": "^6.2.12",

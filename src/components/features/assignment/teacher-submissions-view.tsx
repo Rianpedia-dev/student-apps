@@ -282,7 +282,10 @@ export function TeacherSubmissionsView({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {students.map((student) => {
             const config = getStatusConfig(student.status);
-            const hasSubmitted = !!student.submissionId;
+            const hasSubmitted =
+              !!student.submissionId &&
+              student.status !== "sedang_mengerjakan" &&
+              student.status !== "belum_mengumpulkan";
             const isGraded = student.status === "sudah_dinilai";
             const submittedFormatted = formatSubmittedAt(student.submittedAt);
 
@@ -406,7 +409,10 @@ export function TeacherSubmissionsView({
             <TableBody>
               {students.map((student, idx) => {
                 const config = getStatusConfig(student.status);
-                const hasSubmitted = !!student.submissionId;
+                const hasSubmitted =
+              !!student.submissionId &&
+              student.status !== "sedang_mengerjakan" &&
+              student.status !== "belum_mengumpulkan";
                 const isGraded = student.status === "sudah_dinilai";
                 const submittedFormatted = formatSubmittedAt(student.submittedAt);
 

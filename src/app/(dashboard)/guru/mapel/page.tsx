@@ -85,10 +85,7 @@ export default async function GuruMapelPage() {
     );
     const pendingGradingCount = tasksInSchedule.reduce((acc, t) => {
       const waiting = t.submissions.filter(
-        (s) =>
-          s.status === "menunggu_penilaian" ||
-          s.status === "terlambat" ||
-          s.status === "perlu_revisi"
+        (s) => s.status === "menunggu_penilaian" || s.status === "terlambat"
       ).length;
       return acc + waiting;
     }, 0);
